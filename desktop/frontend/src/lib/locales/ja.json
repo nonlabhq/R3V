@@ -1031,5 +1031,11 @@
 "In this version": "このバージョン",
 "Before": "以前",
 "{count} file changed": "{count} ファイルを変更",
-"{count} files changed": "{count} ファイルを変更"
+"{count} files changed": "{count} ファイルを変更",
+"Show the sidebar": "サイドバーを表示",
+"Hide the sidebar": "サイドバーを隠す",
+"You are on this version": "今このバージョンにいます",
+"Get updates first": "先に更新を取得してください",
+"Already in the branch you are on": "今のブランチに含まれています",
+"Start a branch from this version": "このバージョンからブランチを作る"
 }

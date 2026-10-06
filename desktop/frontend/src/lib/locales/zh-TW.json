@@ -1031,5 +1031,11 @@
 "In this version": "這個版本",
 "Before": "之前",
 "{count} file changed": "變更了 {count} 個檔案",
-"{count} files changed": "變更了 {count} 個檔案"
+"{count} files changed": "變更了 {count} 個檔案",
+"Show the sidebar": "顯示側欄",
+"Hide the sidebar": "收合側欄",
+"You are on this version": "你目前就在這個版本",
+"Get updates first": "請先取得更新",
+"Already in the branch you are on": "你所在的分支已經包含它",
+"Start a branch from this version": "從這個版本開一個分支"
 }

@@ -488,8 +488,19 @@
   const goAction = (id: string, discard: boolean, label: string): Action => ({
     name: "goto",
     call: (_res, force) => api.GoToVersion(root, id, discard, force),
-    done: () => toast((id === "latest" ? t("Back to the latest version") : t("Now on “{version}”", { version: label })) + reopen(), "ok", 8000),
+    done: () => {
+      toast((id === "latest" ? t("Back to the latest version") : t("Now on “{version}”", { version: label })) + reopen(), "ok", 8000);
+      if (branchAfterGo === id) { branchAfterGo = ""; newBranch = ""; }
+    },
   });
+  // New branch from a version: go to it first (a branch starts where you
+  // are), then name the branch.
+  let branchAfterGo = $state("");
+  function newBranchFrom(v: Version) {
+    if (v.id === st?.head) { newBranch = ""; return; }
+    branchAfterGo = v.id;
+    goTo(v);
+  }
 
   // Go to a version (null: back to the latest), asking first about
   // uncommitted changes.
@@ -681,7 +692,18 @@
             <div class="graph-bar">
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")} />
             </div>
-            <HistoryGraph versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
+            {#snippet cardActions(v: Version)}
+              {@const isNew = incomingIds.has(v.id)}
+              <button disabled={v.id === st!.head || isNew || v.notHere} onclick={() => goTo(v)}
+                title={v.id === st!.head ? t("You are on this version") : isNew ? t("Get updates first") : t("Put the project in the state of this version")}>{t("Go to")}</button>
+              <button disabled={!st!.remoteUrl || !!st!.olderVersion || v.inBranch || isNew} onclick={() => openVersionMerge(v)}
+                title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}>{t("Merge")}</button>
+              <button disabled={!!st!.olderVersion || !v.inBranch || isNew || !v.parents.length} onclick={() => (undoing = v)}
+                title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+              <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
+                title={t("Start a branch from this version")}>{t("New branch")}</button>
+            {/snippet}
+            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
               branch={st.branch} head={st.head} incoming={incomingIds}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)} />
           </div>

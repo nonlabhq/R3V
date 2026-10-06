@@ -1031,5 +1031,11 @@
 "In this version": "这个版本",
 "Before": "之前",
 "{count} file changed": "更改了 {count} 个文件",
-"{count} files changed": "更改了 {count} 个文件"
+"{count} files changed": "更改了 {count} 个文件",
+"Show the sidebar": "显示侧栏",
+"Hide the sidebar": "收起侧栏",
+"You are on this version": "你当前就在这个版本",
+"Get updates first": "请先获取更新",
+"Already in the branch you are on": "你所在的分支已经包含它",
+"Start a branch from this version": "从这个版本开一个分支"
 }

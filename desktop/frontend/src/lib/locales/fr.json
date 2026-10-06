@@ -1031,5 +1031,11 @@
 "In this version": "Dans cette version",
 "Before": "Avant",
 "{count} file changed": "{count} fichier modifié",
-"{count} files changed": "{count} fichiers modifiés"
+"{count} files changed": "{count} fichiers modifiés",
+"Show the sidebar": "Afficher la barre latérale",
+"Hide the sidebar": "Masquer la barre latérale",
+"You are on this version": "Vous êtes sur cette version",
+"Get updates first": "Récupérez d'abord les mises à jour",
+"Already in the branch you are on": "Déjà dans votre branche",
+"Start a branch from this version": "Créer une branche depuis cette version"
 }

@@ -2,13 +2,14 @@
   import { t } from "./i18n.svelte";
   import { ago, type Version } from "./api";
   import { branchGraph, short } from "./branchGraph";
+  import type { Snippet } from "svelte";
 
   // The Overview's left column: the branch graph (see branchGraph.ts), main
   // in the middle. Each branch's newest version is labelled with the branch
   // and its title; every other version is a dot with its author's initial
   // (its title on hover). Your changes not committed yet are a dashed dot
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect }: {
+  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions }: {
     versions: Version[];
     branches: { name: string; latest: string }[];
     branch: string;    // the branch you are on
@@ -17,6 +18,7 @@
     pending: number;   // files changed and not committed (0: no dot for them)
     selected: string;  // a version id, or "pending"
     onselect: (id: string) => void;
+    actions?: Snippet<[Version]>; // the hover card's buttons for a version
   } = $props();
 
   const ROW = 40, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
@@ -85,11 +87,27 @@
     e.kind === "merge" ? g.chainOf.get(e.to)! : g.chainOf.get(e.from)!;
 
   const initial = (name: string) => ([...name.trim()][0] ?? "?").toUpperCase();
-  const tip = (v: Version) => `${v.message || t("(no description)")}\n${v.author} · ${ago(v.time)}`;
+
+  // The card for the version under the pointer: what it is, and what can be
+  // done with it. It stays while the pointer is on the dot or the card.
+  const CARD_W = 280;
+  let hovered = $state<string | null>(null);
+  let hideTimer: ReturnType<typeof setTimeout> | undefined;
+  function hover(id: string) { clearTimeout(hideTimer); hovered = id; }
+  function unhover() { clearTimeout(hideTimer); hideTimer = setTimeout(() => (hovered = null), 180); }
+  let card = $derived.by(() => {
+    const v = hovered ? byID.get(hovered) : undefined;
+    if (!v) return null;
+    const c = g.chainOf.get(v.id)!;
+    const nx = x(c.col);
+    const right = nx + 22 + CARD_W <= full;
+    return { v, branch: c.name, left: right ? nx + 22 : Math.max(4, nx - 22 - CARD_W), top: Math.max(4, y(v.id) - 28) };
+  });
 
   let ids = $derived([...(pending ? ["pending"] : []), ...versions.map((v) => v.id)]);
   let box = $state<HTMLElement>();
   function onkeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") { hovered = null; return; }
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
     e.preventDefault();
     const i = ids.indexOf(selected) + (e.key === "ArrowDown" ? 1 : -1);
@@ -136,9 +154,26 @@
         <button class="node" class:on={selected === v.id} class:here={v.id === head} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
-          title={tip(v)} aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}`}
+          aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}`}
+          onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
           onclick={() => onselect(v.id)}>{initial(v.author)}</button>
       {/each}
+
+      {#if card}
+        {@const v = card.v}
+        <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")}
+          style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px"
+          onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
+          <div class="card-h">
+            <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
+            <div class="card-t">
+              <div class="card-msg">{v.message || t("(no description)")}</div>
+              <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {card.branch}{/if} · <span class="mono">{v.short}</span></div>
+            </div>
+          </div>
+          {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}
+        </div>
+      {/if}
     </div>
   {/if}
 </div>
@@ -159,6 +194,17 @@
   .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--muted); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .card { position: absolute; z-index: 2; padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .card-h { display: flex; gap: var(--sp-10); align-items: flex-start; }
+  .avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--c); display: flex;
+    align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
+  .card-t { min-width: 0; }
+  .card-msg { font-size: var(--fs-md); font-weight: var(--fw-semibold); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden; user-select: text; }
+  .card-meta { font-size: var(--fs-xs); color: var(--faint); margin-top: var(--sp-2); }
+  .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
+  .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   .label { position: absolute; height: auto; padding: var(--sp-2) var(--sp-8);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
     border: var(--border-width) solid var(--line); border-radius: var(--radius); background: var(--panel); line-height: 1.2; }
