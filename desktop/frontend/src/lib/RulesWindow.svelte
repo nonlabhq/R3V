@@ -193,39 +193,39 @@
 </Modal>
 
 <style>
-  section { margin-top: 18px; }
-  h3 { margin: 0 0 6px; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .hint { margin: 0 0 8px; color: var(--muted); font-size: var(--fs-md); }
+  section { margin-top: var(--sp-18); }
+  h3 { margin: 0 0 var(--sp-6); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .hint { margin: 0 0 var(--sp-8); color: var(--muted); font-size: var(--fs-md); }
   .mono { font-family: ui-monospace, monospace; font-size: var(--fs-sm); }
-  .error-box { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 8px 0; border-radius: var(--radius-lg);
-    background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger-text); }
+  .error-box { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-10) var(--sp-12); margin: var(--sp-8) 0; border-radius: var(--radius-lg);
+    background: var(--danger-bg); border: var(--border-width) solid var(--danger-line); color: var(--danger-text); }
   .error-box > div { flex: 1; }
-  .tool { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line);
-    border-radius: var(--radius-lg); margin-bottom: 6px; background: var(--panel-2); }
+  .tool { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-8) var(--sp-10); border: var(--border-width) solid var(--line);
+    border-radius: var(--radius-lg); margin-bottom: var(--sp-6); background: var(--panel-2); }
   .tool.suggested { border-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-text); }
   .tool .what { flex: 1; min-width: 0; }
-  .chip { font-size: var(--fs-xs); padding: 1px 7px; border-radius: var(--radius-pill); background: var(--line); color: var(--muted); margin-left: 6px;
+  .chip { font-size: var(--fs-xs); padding: 1px var(--sp-6); border-radius: var(--radius-pill); background: var(--line); color: var(--muted); margin-left: var(--sp-6);
     white-space: nowrap; }
   .chip.found { background: var(--accent-bg); color: var(--accent); }
-  select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 8px; }
-  .tree { border: 1px solid var(--line); border-radius: var(--radius-lg); max-height: 340px; overflow: auto; padding: 4px 0; }
-  .node { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; font-size: var(--fs-md); }
+  select { background: var(--panel); color: var(--text); border: var(--border-width) solid var(--line); border-radius: var(--radius); padding: var(--sp-4) var(--sp-8); }
+  .tree { border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); max-height: 340px; overflow: auto; padding: var(--sp-4) 0; }
+  .node { display: flex; align-items: center; gap: var(--sp-6); padding: var(--sp-4) var(--sp-10) var(--sp-4) var(--sp-8); font-size: var(--fs-md); }
   .node:hover { background: var(--panel-2); }
   .node.ignored .name { color: var(--faint); text-decoration: line-through; text-decoration-color: var(--dim); }
   .chev { width: 16px; flex: none; background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; font-size: var(--fs-xs); }
   .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .why { flex: 1; min-width: 0; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .size { font-size: var(--fs-sm); width: 70px; text-align: right; flex: none; }
-  .switch { appearance: none; position: relative; width: 26px; height: 15px; margin: 0 0 0 8px; flex: none; cursor: pointer;
+  .switch { appearance: none; position: relative; width: 26px; height: 15px; margin: 0 0 0 var(--sp-8); flex: none; cursor: pointer;
     border-radius: var(--radius-lg); background: var(--line); transition: background .15s; }
   .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
     background: var(--muted); transition: transform .15s; }
   .switch:checked { background: var(--accent); }
   .switch:checked::after { transform: translateX(11px); background: #fff; }
   .switch:disabled { opacity: .5; cursor: default; }
-  .rule { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+  .rule { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-4) 0; }
   .rule .mono { flex: 1; }
-  .kind { font-size: var(--fs-xs); padding: 1px 8px; border-radius: var(--radius-pill); background: var(--danger-bg); color: var(--danger-text); }
+  .kind { font-size: var(--fs-xs); padding: 1px var(--sp-8); border-radius: var(--radius-pill); background: var(--danger-bg); color: var(--danger-text); }
   .kind.keep { background: var(--accent-bg); color: var(--accent); }
-  button.small { padding: 3px 10px; font-size: var(--fs-sm); }
+  button.small { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-sm); }
 </style>

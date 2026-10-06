@@ -333,25 +333,25 @@
 {/if}
 
 <style>
-  section { margin-bottom: 18px; }
-  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  section { margin-bottom: var(--sp-18); }
+  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 var(--sp-8); }
   .small { font-size: var(--fs-md); }
-  section > p { margin: 0 0 8px; }
-  .btns { gap: 6px; margin-top: 8px; }
-  .btns button { padding: 5px 10px; font-size: var(--fs-md); }
-  .grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; }
+  section > p { margin: 0 0 var(--sp-8); }
+  .btns { gap: var(--sp-6); margin-top: var(--sp-8); }
+  .btns button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
+  .grid { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-8) var(--sp-12); align-items: center; }
   .grid label { margin: 0; font-size: var(--fs-md); }
-  .secret { gap: 6px; }
+  .secret { gap: var(--sp-6); }
   .secret input { flex: 1; min-width: 0; }
   .error { color: var(--danger); user-select: text; }
-  .share { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: var(--fs-base); }
+  .share { display: flex; align-items: center; gap: var(--sp-8); color: var(--text); font-size: var(--fs-base); }
   .share input { width: auto; }
   .danger-text { color: var(--danger); }
-  .me { gap: 10px; align-items: center; margin-bottom: 4px; }
-  .me button { padding: 4px 10px; font-size: var(--fs-md); }
+  .me { gap: var(--sp-10); align-items: center; margin-bottom: var(--sp-4); }
+  .me button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   .myname { font-weight: var(--fw-semibold); }
-  .keep { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; color: var(--text); font-size: var(--fs-base); }
-  .keep input { width: auto; margin-top: 3px; }
-  .keep .faint { display: block; margin-top: 2px; }
-  .keep.sub { margin-left: 24px; }
+  .keep { display: flex; gap: var(--sp-10); align-items: flex-start; margin: var(--sp-12) 0 0; color: var(--text); font-size: var(--fs-base); }
+  .keep input { width: auto; margin-top: var(--sp-4); }
+  .keep .faint { display: block; margin-top: var(--sp-2); }
+  .keep.sub { margin-left: var(--sp-24); }
 </style>

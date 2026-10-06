@@ -79,12 +79,12 @@
 </form>
 
 <style>
-  .members { list-style: none; padding: 0; margin: 8px 0 14px; display: flex; flex-direction: column; gap: 6px; }
-  .members label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text); font-size: var(--fs-base); }
+  .members { list-style: none; padding: 0; margin: var(--sp-8) 0 var(--sp-14); display: flex; flex-direction: column; gap: var(--sp-6); }
+  .members label { display: flex; align-items: center; gap: var(--sp-8); margin: 0; color: var(--text); font-size: var(--fs-base); }
   .members input { width: auto; }
-  .small { font-size: var(--fs-sm); margin: 6px 0 0; }
+  .small { font-size: var(--fs-sm); margin: var(--sp-6) 0 0; }
   .error { color: var(--danger); }
-  .share { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--text); font-size: var(--fs-base); }
+  .share { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-14) 0 0; color: var(--text); font-size: var(--fs-base); }
   .share input { width: auto; }
-  .actions { margin-top: 14px; }
+  .actions { margin-top: var(--sp-14); }
 </style>

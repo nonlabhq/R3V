@@ -152,18 +152,18 @@
 
 <style>
   .small { font-size: var(--fs-md); }
-  .src { gap: 10px; align-items: center; margin: 10px 0; }
+  .src { gap: var(--sp-10); align-items: center; margin: var(--sp-10) 0; }
   .label { flex: none; width: 70px; font-size: var(--fs-md); color: var(--muted); margin: 0; }
   .where { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
-  select { flex: 1; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: var(--fs-md); }
-  .plan { margin: 12px 0; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--panel); }
-  .plan p { margin: 0 0 6px; }
-  .plan ul { margin: 0 0 8px; padding-left: 18px; font-size: var(--fs-md); }
+  select { flex: 1; background: var(--panel); color: var(--text); border: var(--border-width) solid var(--line); border-radius: var(--radius); padding: var(--sp-4) var(--sp-8); font: inherit; font-size: var(--fs-md); }
+  .plan { margin: var(--sp-12) 0; padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); }
+  .plan p { margin: 0 0 var(--sp-6); }
+  .plan ul { margin: 0 0 var(--sp-8); padding-left: var(--sp-18); font-size: var(--fs-md); }
   .ok { color: var(--accent); }
-  .bar { height: 4px; border-radius: 2px; background: var(--panel); overflow: hidden; margin: 10px 0 4px; }
+  .bar { height: 4px; border-radius: 2px; background: var(--panel); overflow: hidden; margin: var(--sp-10) 0 var(--sp-4); }
   .bar div { height: 100%; background: var(--accent); transition: width .3s; }
   .error { color: var(--danger); user-select: text; }
-  .bucket { margin: 4px 0 12px; padding: 4px 12px 12px; border-radius: var(--radius-lg); background: var(--panel); }
-  .bucket p { margin: 0 0 8px; }
+  .bucket { margin: var(--sp-4) 0 var(--sp-12); padding: var(--sp-4) var(--sp-12) var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); }
+  .bucket p { margin: 0 0 var(--sp-8); }
   button.on { color: var(--accent); }
 </style>

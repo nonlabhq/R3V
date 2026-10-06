@@ -27,10 +27,10 @@
 </section>
 
 <style>
-  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 6px 0 10px; }
-  .small { font-size: var(--fs-sm); margin: 10px 0 0; }
-  .tracks { list-style: none; padding: 0; margin: 0 0 18px; display: flex; flex-direction: column; gap: 4px; }
-  .tracks li { display: flex; align-items: center; gap: 10px; }
+  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: var(--sp-6) 0 var(--sp-10); }
+  .small { font-size: var(--fs-sm); margin: var(--sp-10) 0 0; }
+  .tracks { list-style: none; padding: 0; margin: 0 0 var(--sp-18); display: flex; flex-direction: column; gap: var(--sp-4); }
+  .tracks li { display: flex; align-items: center; gap: var(--sp-10); }
   .chg { width: 8px; height: 8px; border-radius: 2px; background: var(--mod); }
   .chg.added { background: var(--add); }
   .chg.removed { background: var(--del); }

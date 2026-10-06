@@ -150,6 +150,6 @@
     box-shadow: 0 0 6px rgba(255, 255, 255, .5); }
   .hover { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, .45); pointer-events: none; }
   .hover span { position: absolute; top: 2px; left: 5px; font-size: var(--fs-xs); color: var(--text); background: rgba(0, 0, 0, .6);
-    padding: 0 4px; border-radius: var(--radius-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .note { font-size: var(--fs-sm); color: var(--faint); height: 100%; display: flex; align-items: center; padding: 0 10px; }
+    padding: 0 var(--sp-4); border-radius: var(--radius-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .note { font-size: var(--fs-sm); color: var(--faint); height: 100%; display: flex; align-items: center; padding: 0 var(--sp-10); }
 </style>

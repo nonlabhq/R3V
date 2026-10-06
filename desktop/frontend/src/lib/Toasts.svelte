@@ -4,18 +4,18 @@
 
 <div class="toasts">
   {#each toasts as t (t.id)}
-    <button class="toast {t.kind}" onclick={() => dismiss(t.id)}>{t.text}</button>
+    <button class="toast surface-menu {t.kind}" onclick={() => dismiss(t.id)}>{t.text}</button>
   {/each}
 </div>
 
 <style>
   .toasts {
     position: fixed; right: 18px; bottom: 18px; z-index: var(--z-toast);
-    display: flex; flex-direction: column; gap: 8px; max-width: 380px;
+    display: flex; flex-direction: column; gap: var(--sp-8); max-width: 380px;
   }
   .toast {
-    text-align: left; white-space: pre-line; padding: 10px 14px; border-radius: var(--radius-lg);
-    background: var(--panel-2); border: 1px solid var(--line); box-shadow: var(--shadow-pop);
+    text-align: left; white-space: pre-line; padding: var(--sp-10) var(--sp-14); border-radius: var(--radius-lg);
+    position: relative; border: var(--border-width) solid var(--line); box-shadow: var(--shadow-pop);
   }
   .ok { border-left: 3px solid var(--accent); }
   .warn { border-left: 3px solid var(--warn); }

@@ -20,8 +20,8 @@
 </div>
 
 <style>
-  .progress { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-md); min-width: 0; }
-  .text { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .progress { flex: 1; display: flex; flex-direction: column; gap: var(--sp-6); font-size: var(--fs-md); min-width: 0; }
+  .text { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-12); }
   .detail { font-variant-numeric: tabular-nums; }
   .bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
   .bar > div { height: 100%; background: var(--accent); transition: width .2s; }

@@ -54,18 +54,18 @@
 </Modal>
 
 <style>
-  ul { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  ul { list-style: none; padding: 0; margin: var(--sp-8) 0 0; display: flex; flex-direction: column; gap: var(--sp-8); }
   li {
-    display: flex; align-items: center; gap: 14px; padding: 10px 12px;
-    background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    display: flex; align-items: center; gap: var(--sp-14); padding: var(--sp-10) var(--sp-12);
+    background: var(--bg); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg);
   }
   .what { flex: 1; min-width: 0; }
   .unit { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .seg { display: flex; }
-  .seg button { border-radius: 0; margin-left: -1px; padding: 5px 10px; font-size: var(--fs-md); }
+  .seg button { border-radius: 0; margin-left: -1px; padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   .seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
   .seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  .bulk { margin: 4px 0; }
-  .bulk button { padding: 2px 8px; font-size: var(--fs-md); }
+  .bulk { margin: var(--sp-4) 0; }
+  .bulk button { padding: var(--sp-2) var(--sp-8); font-size: var(--fs-md); }
 </style>

@@ -78,18 +78,18 @@
 </div>
 
 <style>
-  .mc { display: flex; flex-direction: column; gap: 10px; }
-  .bar { display: flex; align-items: center; gap: 12px; }
+  .mc { display: flex; flex-direction: column; gap: var(--sp-10); }
+  .bar { display: flex; align-items: center; gap: var(--sp-12); }
   .hint { margin-left: auto; font-size: var(--fs-sm); }
-  figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  figcaption { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); text-transform: uppercase;
+  figure { margin: 0; display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; }
+  figcaption { display: flex; justify-content: space-between; gap: var(--sp-8); font-size: var(--fs-sm); text-transform: uppercase;
     letter-spacing: .06em; color: var(--muted); }
   .stats { text-transform: none; letter-spacing: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .frame { position: relative; height: 52vh; min-height: 260px; border: 1px solid var(--line); border-radius: var(--radius-lg);
+  .frame { position: relative; height: 52vh; min-height: 260px; border: var(--border-width) solid var(--line); border-radius: var(--radius-lg);
     overflow: hidden; background: radial-gradient(circle at 50% 40%, #2a2d34, #17181c); }
   canvas { display: block; width: 100%; height: 100%; touch-action: none; }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-10); }
   .pair .frame { height: 44vh; }
-  .none { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px;
+  .none { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: var(--sp-20);
     text-align: center; font-size: var(--fs-md); color: var(--faint); pointer-events: none; }
 </style>

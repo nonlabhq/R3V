@@ -37,6 +37,6 @@
 </form>
 
 <style>
-  .actions { margin-top: 16px; }
+  .actions { margin-top: var(--sp-16); }
   .error { color: var(--danger); user-select: text; }
 </style>

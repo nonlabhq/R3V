@@ -139,22 +139,22 @@
 
 <style>
   .small { font-size: var(--fs-sm); }
-  .bar { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
-  .whole { margin: 0 0 0 auto; display: flex; align-items: center; gap: 5px; color: var(--muted); cursor: pointer; }
+  .bar { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-2) 0 var(--sp-6); font-variant-numeric: tabular-nums; }
+  .whole { margin: 0 0 0 auto; display: flex; align-items: center; gap: var(--sp-4); color: var(--muted); cursor: pointer; }
   .whole input { width: auto; margin: 0; padding: 0; }
   .add { color: var(--add); }
   .del { color: var(--del); }
-  .code { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto;
-    max-height: 70vh; padding: 4px 0; line-height: 1.55; user-select: text; }
+  .code { background: var(--bg); border: var(--border-width) solid var(--line); border-radius: var(--radius); overflow: auto;
+    max-height: 70vh; padding: var(--sp-4) 0; line-height: 1.55; user-select: text; }
   .row { display: flex; min-width: max-content; }
   .row.add { background: rgba(111, 207, 127, .10); }
   .row.del { background: rgba(229, 103, 95, .11); }
-  .no { width: 44px; flex: none; padding-right: 8px; text-align: right; color: var(--faint);
+  .no { width: 44px; flex: none; padding-right: var(--sp-8); text-align: right; color: var(--faint);
     font-variant-numeric: tabular-nums; user-select: none; }
   .mark { width: 16px; flex: none; text-align: center; user-select: none; }
   .row.add .mark { color: var(--add); }
   .row.del .mark { color: var(--del); }
-  .txt { white-space: pre; padding: 0 12px 0 6px; tab-size: 4; }
+  .txt { white-space: pre; padding: 0 var(--sp-12) 0 var(--sp-6); tab-size: 4; }
   .gap { color: var(--faint); padding: 0 0 0 100px; user-select: none; }
   /* Syntax colors (highlight.js classes), for the app's dark look. */
   .code :global(.hljs-comment), .code :global(.hljs-quote) { color: var(--syntax-comment); font-style: italic; }

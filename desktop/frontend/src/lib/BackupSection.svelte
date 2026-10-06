@@ -165,10 +165,10 @@
 
 <style>
   .small { font-size: var(--fs-md); }
-  p { margin: 0 0 8px; }
+  p { margin: 0 0 var(--sp-8); }
   .folder { font-family: var(--font-mono); user-select: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .btns { gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-  .btns button { padding: 5px 10px; font-size: var(--fs-md); }
+  .btns { gap: var(--sp-6); margin-top: var(--sp-8); flex-wrap: wrap; }
+  .btns button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   .warn { color: var(--warn); }
   .error { color: var(--danger); user-select: text; }
 </style>

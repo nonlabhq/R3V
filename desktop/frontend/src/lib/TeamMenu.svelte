@@ -140,7 +140,7 @@
     </div>
   {/if}
   {#if open}
-    <div class="menu" role="menu">
+    <div class="menu surface-menu" role="menu">
       {#each overview.teams as t (t.id)}
         <div class="team-row">
           <button class="item" onclick={() => select(t.id)}>
@@ -211,40 +211,40 @@
 {/if}
 
 <style>
-  .team-menu { position: relative; margin-bottom: 10px; }
-  .backup { display: flex; align-items: flex-start; gap: 4px; width: 100%; margin-top: 6px; padding: 6px 8px; border-radius: var(--radius);
+  .team-menu { position: relative; margin-bottom: var(--sp-10); }
+  .backup { display: flex; align-items: flex-start; gap: var(--sp-4); width: 100%; margin-top: var(--sp-6); padding: var(--sp-6) var(--sp-8); border-radius: var(--radius);
     background: var(--panel); font-size: var(--fs-sm); text-align: left; line-height: 1.4; }
   .backup.warn { display: block; background: var(--warn-bg); color: var(--warn); }
-  .backup .go { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0; background: none; text-align: left; font-size: var(--fs-sm); color: var(--text); }
-  .backup .x { padding: 0 5px; line-height: 16px; color: var(--muted); }
+  .backup .go { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); padding: 0; background: none; text-align: left; font-size: var(--fs-sm); color: var(--text); }
+  .backup .x { padding: 0 var(--sp-4); line-height: 16px; color: var(--muted); }
   .current {
     width: 100%; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto;
-    text-align: left; padding: 8px 10px; background: var(--panel); border-radius: var(--radius-lg);
+    text-align: left; padding: var(--sp-8) var(--sp-10); background: var(--panel); border-radius: var(--radius-lg);
   }
   .label { grid-column: 1; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
   .name { grid-column: 1; font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .caret { grid-column: 2; grid-row: 1 / 3; align-self: center; color: var(--muted); }
   .menu {
-    position: absolute; top: calc(100% + 4px); left: 0; right: -60px; z-index: var(--z-menu); padding: 6px;
-    background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
+    position: absolute; top: calc(100% + 4px); left: 0; right: -60px; z-index: var(--z-menu); padding: var(--sp-6);
+    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
-  .item { display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: transparent; padding: 7px 8px; text-align: left; }
+  .item { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; }
   .item:hover { background: var(--hover); }
   .team-row { display: flex; align-items: center; }
   .team-row .item { flex: 1; min-width: 0; }
-  .gear { flex: none; border: none; background: transparent; color: var(--faint); padding: 4px 8px; border-radius: var(--radius); }
+  .gear { flex: none; border: none; background: transparent; color: var(--faint); padding: var(--sp-4) var(--sp-8); border-radius: var(--radius); }
   .gear:hover { color: var(--text); background: var(--hover); }
   .check { width: 14px; color: var(--accent); }
   .tname { flex: 1; }
   .small { font-size: var(--fs-sm); }
   .who {
-    width: 100%; margin-top: 6px; padding: 5px 10px; font-size: var(--fs-md); text-align: left;
-    background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-line); border-radius: var(--radius-lg);
+    width: 100%; margin-top: var(--sp-6); padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); text-align: left;
+    background: var(--warn-bg); color: var(--warn); border: var(--border-width) solid var(--warn-line); border-radius: var(--radius-lg);
   }
-  .sep { height: 1px; background: var(--line); margin: 6px 0; }
-  .found { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; }
-  .found label { display: flex; gap: 10px; align-items: flex-start; margin: 0; color: var(--text); font-size: var(--fs-base); }
-  .found input { width: auto; margin-top: 3px; }
+  .sep { height: 1px; background: var(--line); margin: var(--sp-6) 0; }
+  .found { list-style: none; padding: 0; margin: var(--sp-12) 0 0; display: flex; flex-direction: column; gap: var(--sp-8); }
+  .found label { display: flex; gap: var(--sp-10); align-items: flex-start; margin: 0; color: var(--text); font-size: var(--fs-base); }
+  .found input { width: auto; margin-top: var(--sp-4); }
   .found label > span { flex: 1; min-width: 0; }
   .found .mono { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
