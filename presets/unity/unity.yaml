@@ -1,0 +1,90 @@
+# Unity projects (the folder with Assets/ and ProjectSettings/).
+name: unity
+tool: Unity
+open:
+  files: ["."]          # the project, in the Unity version it was made with
+  with: unity-editor
+checks: [unity-meta]    # every asset with its .meta
+detect: ["ProjectSettings/ProjectVersion.txt"]
+# Following GitHub's Unity.gitignore (matching ignores case here), except
+# *.unitypackage: a package someone imported is kept, it's not a build.
+ignore:
+  - /Library/        # Unity's import cache: rebuilt from Assets
+  - /Temp/
+  - /Obj/
+  - /Logs/
+  - /UserSettings/   # per-person editor layout
+  - /MemoryCaptures/ # big, and may hold sensitive data
+  - /Recordings/
+  - .utmp/           # Unity 6's temporary files (Android builds)
+  - /Build/
+  - /Builds/
+  - "*.apk"
+  - "*.aab"
+  - "*.app"
+  - /ServerData/     # Addressables builds
+  - /UIElementsSchema/
+  - "*.log"
+  - sysinfo.txt      # crash reports
+  - "mono_crash.*"
+  - crashlytics-build.properties
+  - "*.blend1"       # Blender's backups
+  - "*.blend1.meta"
+  # Code editors: solutions and project files Unity generates, caches,
+  # personal settings.
+  - .vs/
+  - /.idea/
+  - .gradle/
+  - .consulo/
+  - ExportedObj/
+  - "*.csproj"
+  - "*.unityproj"
+  - "*.sln"
+  - "*.slnx"
+  - "*.suo"
+  - "*.tmp"
+  - "*.user"
+  - "*.userprefs"
+  - "*.DotSettings.user"
+  - "*.pidb"
+  - "*.pidb.meta"
+  - "*.booproj"
+  - "*.svd"
+  - "*.pdb"
+  - "*.pdb.meta"
+  - "*.mdb"
+  - "*.mdb.meta"
+  - "*.opendb"
+  - "*.VC.db"
+  - "/Assets/Plugins/Editor/JetBrains*"
+  # Generated in Assets/.
+  - "InitTestScene*.unity*"     # by play mode tests
+  - "/Assets/SceneDependencyCache*"
+  - "/Assets/StreamingAssets/aa*" # Addressables
+  - "/Assets/AddressableAssetsData/link.xml*"
+  - "/Assets/Addressables_Temp*"
+  - "/Assets/AddressableAssetsData/*/*.bin*"
+  - /Assets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db
+  - /Assets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
+  - /Assets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers
+  - /Assets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
+handlers:
+  - files: ["*.cs", "*.shader", "*.hlsl", "*.cginc", "*.compute", "*.json", "*.asmdef", "*.asmref",
+            "*.uss", "*.uxml", "*.txt", "*.md", "*.xml", "*.yaml", "*.yml", "*.meta"]
+    merge: text
+  # Scenes, prefabs and assets Unity saves as text (Force Text, the default):
+  # merged object by object with Unity's own UnityYAMLMerge.
+  - files: ["*.unity", "*.prefab", "*.asset", "*.mat", "*.anim", "*.controller", "*.overrideController",
+            "*.mask", "*.playable", "*.signal", "*.mixer", "*.physicMaterial", "*.physicsMaterial2D",
+            "*.renderTexture", "*.lighting", "*.terrainlayer", "*.spriteatlas", "*.spriteatlasv2",
+            "*.preset", "*.guiskin", "*.fontsettings", "*.flare", "*.cubemap", "*.brush", "*.scenetemplate"]
+    merge: unity-yaml
+running: unity-editor
+kinds:
+  scene: ["*.unity"]
+  prefab: ["*.prefab"]
+  script: ["*.cs", "*.shader", "*.hlsl", "*.compute"]
+  image: ["*.png", "*.jpg", "*.jpeg", "*.tga", "*.psd", "*.af", "*.exr", "*.hdr", "*.tif", "*.tiff"]
+  model: ["*.fbx", "*.obj", "*.blend", "*.dae"]
+  audio: ["*.wav", "*.aif", "*.aiff", "*.mp3", "*.ogg", "*.flac"]
+  meta: ["*.meta"]

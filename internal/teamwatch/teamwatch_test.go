@@ -1,0 +1,146 @@
+package teamwatch
+
+import (
+	"io"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/remote"
+	"github.com/nonlabhq/r3v/internal/remote/s3test"
+)
+
+var fixtures = filepath.Join("..", "..", "testdata", "live")
+
+func copyFile(t *testing.T, src, dst string) {
+	t.Helper()
+	in, err := os.Open(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer in.Close()
+	os.MkdirAll(filepath.Dir(dst), 0o755)
+	out, err := os.Create(dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer out.Close()
+	io.Copy(out, in)
+}
+
+func kinds(events []Event) map[EventKind]Event {
+	out := map[EventKind]Event{}
+	for _, e := range events {
+		out[e.Kind] = e
+	}
+	return out
+}
+
+// storage starts team storage (a fake S3 bucket) and returns it with its
+// connection code.
+func storage(t *testing.T) (*s3test.Server, string) {
+	t.Helper()
+	fake := s3test.New("band")
+	t.Cleanup(fake.Close)
+	cfg, err := remote.Storage{Endpoint: fake.URL, Bucket: "band", AccessKey: "k", SecretKey: "s"}.Config()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return fake, remote.EncodeConnectionCode(cfg)
+}
+
+// The watcher tells about new versions, once. It reads the branch head and
+// nothing else: no listings, which storage bills more.
+func TestWatcherEvents(t *testing.T) {
+	fake, code := storage(t)
+	root := watchTeam(t, code)
+	lists := fake.Requests["LIST"]
+	w := New(root)
+	for i := 0; i < 3; i++ {
+		w.Check()
+	}
+	if fake.Requests["LIST"] != lists {
+		t.Errorf("polling listed the bucket %d times", fake.Requests["LIST"]-lists)
+	}
+}
+
+// watchTeam has Yi commit while Alex's watcher looks on; it returns Alex's
+// project folder.
+func watchTeam(t *testing.T, code string) string {
+	t.Helper()
+	rootA := filepath.Join(t.TempDir(), "Song Project")
+	copyFile(t, filepath.Join(fixtures, "SampleAbletonProject_v2.als"), filepath.Join(rootA, "Song.als"))
+	a, err := project.Init(rootA, "yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SetRemote(code); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := a.Save("v2", project.Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	b, _, err := project.Clone(code, "Song", filepath.Join(t.TempDir(), "B"), "alex")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := New(b.Root)
+	if ev := w.Check(); len(ev) != 0 {
+		t.Fatalf("quiet start expected, got %+v", ev)
+	}
+	// Edits in Live are nobody else's business now: no events.
+	copyFile(t, filepath.Join(fixtures, "Split-A.als"), filepath.Join(rootA, "Song.als"))
+	if ev := w.Check(); len(ev) != 0 {
+		t.Fatalf("unsaved edits reported: %+v", ev)
+	}
+
+	// Yi commits: one new version, reported once.
+	if _, _, err := a.Save("group audio", project.Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	ev := kinds(w.Check())
+	if e, ok := ev[NewVersions]; !ok || len(e.Versions) != 1 || e.Versions[0].Message != "group audio" || e.Waiting {
+		t.Errorf("expected one new version, got %+v", ev)
+	}
+	if ev := w.Check(); len(ev) != 0 {
+		t.Errorf("events repeated: %+v", ev)
+	}
+	return b.Root
+}
+
+// A teammate's merge isn't news of its own: only their own version is told.
+func TestWatcherSkipsMerges(t *testing.T) {
+	_, code := storage(t)
+	rootB := watchTeam(t, code)
+	w := New(rootB)
+	w.Check()
+	// Kim and Lee commit at the same time: Lee's save merges Kim's in.
+	clone := func(dir, who string) *project.Repo {
+		r, _, err := project.Clone(code, "Song", filepath.Join(t.TempDir(), dir), who)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	kim, lee := clone("C", "kim"), clone("D", "lee")
+	copyFile(t, filepath.Join(fixtures, "SampleAbletonProject_v3.als"), filepath.Join(kim.Root, "Song.als"))
+	if _, _, err := kim.Save("kim's take", project.Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	copyFile(t, filepath.Join(fixtures, "Split-B.als"), filepath.Join(lee.Root, "Song.als"))
+	if _, _, err := lee.Save("drums", project.Strategy("both")); err != nil {
+		t.Fatal(err)
+	}
+	ev := kinds(w.Check())
+	e, ok := ev[NewVersions]
+	if !ok || len(e.Versions) != 2 {
+		t.Fatalf("expected Kim's and Lee's versions, got %+v", ev)
+	}
+	for _, v := range e.Versions {
+		if len(v.Parents) > 1 {
+			t.Errorf("merge told: %s", v.Message)
+		}
+	}
+}

@@ -1,0 +1,42 @@
+# OS
+Desktop.ini
+Thumbs.db
+.DS_Store
+
+# Ableton derived / cache files
+*.asd
+*_unpacked.xml
+
+# Build output
+/target/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+
+# Merge outputs generated for manual testing in Live
+MergeTest-*.als
+
+
+# Build output
+/r3v
+/r3v.exe
+/dist/
+
+# R3V metadata created when testing inside fixtures
+.r3v/
+
+# Desktop app build output
+/desktop/bin/
+/desktop/*.syso
+/desktop/frontend/node_modules/
+/desktop/frontend/dist/*
+!/desktop/frontend/dist/.gitkeep
+/desktop/frontend/.graphtest/
+
+# Release output
+/dist/
+
+
+# local dev servers for the browser preview
+.claude/launch.json
