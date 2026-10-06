@@ -15,15 +15,18 @@
     try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* the window listens anyway */ }
     const x0 = e.clientX, w0 = left;
     const move = (m: PointerEvent) => {
+      if (!(m.buttons & 1)) return up(); // let go where it wasn't seen
       if (width > 0) splits[key] = Math.min(Math.max(minLeft, w0 + m.clientX - x0), width - minRight) / width;
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
       saveSplits();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
   }
 </script>
 

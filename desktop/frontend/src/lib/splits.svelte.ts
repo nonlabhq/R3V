@@ -5,7 +5,10 @@
 const KEY = "r3v.splits";
 
 export const splits = $state<Record<string, number>>((() => {
-  try { return JSON.parse(localStorage.getItem(KEY) ?? "{}"); } catch { return {}; }
+  try {
+    const v = JSON.parse(localStorage.getItem(KEY) ?? "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  } catch { return {}; }
 })());
 
 export function saveSplits() {

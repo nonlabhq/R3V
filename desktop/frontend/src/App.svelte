@@ -7,6 +7,7 @@
   import { toast } from "./lib/notify.svelte";
   import ProjectView from "./lib/ProjectView.svelte";
   import NewTab from "./lib/NewTab.svelte";
+  import { closeTab, isNew as isNewTab, loadTabs, moveTab, pruneTabs, renameTab, toSave } from "./lib/tabs";
   import ProjectIcon from "./lib/ProjectIcon.svelte";
   import { untrack } from "svelte";
   import { spinner } from "./lib/spin.svelte";
@@ -83,7 +84,9 @@
   const SELECTED_KEY = "r3v.selected";
   // Pinned projects come first in the list (this computer only).
   const PINNED_KEY = "r3v.pinned";
-  let pinned = $state<string[]>((() => { try { return JSON.parse(localStorage.getItem(PINNED_KEY) ?? "[]"); } catch { return []; } })());
+  let pinned = $state<string[]>((() => {
+    try { const v = JSON.parse(localStorage.getItem(PINNED_KEY) ?? "[]"); return Array.isArray(v) ? v.filter((k) => typeof k === "string") : []; } catch { return []; }
+  })());
   function togglePin(p: TeamProject) {
     const key = rowKey(p);
     pinned = pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key];
@@ -242,31 +245,47 @@
   // move it). The sidebar opens one, or goes to it when it is open already.
   // A new tab ("new:…", Ctrl+T or +) picks a team and a project to open in
   // it; new tabs aren't remembered, and stay when the team changes.
-  const tabsKey = () => `r3v.tabs:${overview?.currentTeam ?? ""}`;
-  const isBlank = (k: string) => k.startsWith("new:");
+  const tabsKey = () => `r3v.tabs:${teamId}`;
   let tabKeys = $state<string[]>([]);
   let blank = $state(""); // the new tab shown ("" a project's)
   let tabsClosed = $state(false); // every tab closed: nothing is picked for you
+  // The team's tabs, read when the team changes (not each time the
+  // overview is read again: that would undo a tab closed or moved).
+  let teamId = $derived(overview?.currentTeam ?? "");
   $effect.pre(() => {
-    overview?.currentTeam; // the team's tabs
-    let saved: string[] = [];
+    teamId;
+    let saved: unknown = [];
     try { saved = JSON.parse(localStorage.getItem(tabsKey()) ?? "[]"); } catch { /* none */ }
-    tabKeys = [...saved, ...untrack(() => tabKeys).filter(isBlank)];
+    tabKeys = loadTabs(saved, untrack(() => tabKeys));
     tabsClosed = false;
+  });
+  // Tabs of projects the team no longer lists go (once it has answered, and
+  // was reachable: its list is whole).
+  $effect(() => {
+    if (!overview?.teamChecked || overview.teamError) return;
+    const pruned = pruneTabs(untrack(() => tabKeys), new Set(entries.map(rowKey)));
+    if (pruned.length !== untrack(() => tabKeys).length) { tabKeys = pruned; saveTabs(); }
   });
   type Tab = { key: string; p?: TeamProject };
   let tabItems = $derived(tabKeys.map((k): Tab | null => {
-    if (isBlank(k)) return { key: k };
+    if (isNewTab(k)) return { key: k };
     const p = entries.find((e) => rowKey(e) === k);
     return p ? { key: k, p } : null;
   }).filter((x): x is Tab => !!x));
   let tabEntries = $derived(tabItems.flatMap((x) => (x.p ? [x.p] : [])));
-  const activeTab = (x: Tab) => (x.p ? !blank && selectedEntry === x.p : blank === x.key);
-  function saveTabs() { remember(tabsKey(), JSON.stringify(tabKeys.filter((k) => !isBlank(k)))); }
+  // (by key: reading the overview again makes new project objects)
+  const activeTab = (x: Tab) => (x.p ? !blank && !!selectedEntry && rowKey(selectedEntry) === x.key : blank === x.key);
+  function saveTabs() { remember(tabsKey(), JSON.stringify(toSave(tabKeys))); }
   function openTab(p: TeamProject) {
     tabsClosed = false;
     if (tabKeys.includes(rowKey(p))) return;
     tabKeys = [...tabKeys, rowKey(p)];
+    saveTabs();
+  }
+  // A project's key changed (downloaded, found elsewhere, unlinked): its tab
+  // stays where it was.
+  function renamed(from: string, to: string) {
+    tabKeys = renameTab(tabKeys, from, to);
     saveTabs();
   }
   function newTab() {
@@ -278,24 +297,23 @@
   // From a new tab: the project takes its place (or its own tab, if open).
   function openHere(p: TeamProject) {
     const here = blank;
-    if (tabKeys.includes(rowKey(p))) tabKeys = tabKeys.filter((k) => k !== here);
-    else tabKeys = tabKeys.map((k) => (k === here ? rowKey(p) : k));
+    tabKeys = tabKeys.includes(rowKey(p)) ? tabKeys.filter((k) => k !== here) : tabKeys.map((k) => (k === here ? rowKey(p) : k));
     saveTabs();
     select(p);
   }
-  function closeTab(x: Tab) {
-    const at = tabItems.findIndex((y) => y.key === x.key);
+  function closeTabOf(x: Tab) {
     const wasActive = activeTab(x);
+    const { next } = closeTab(tabItems.map((y) => y.key), x.key);
     tabKeys = tabKeys.filter((k) => k !== x.key);
     saveTabs();
     if (!wasActive) return;
-    const rest = tabItems.filter((y) => y.key !== x.key);
-    const next = rest[Math.min(at, rest.length - 1)];
-    if (next?.p) select(next.p);
-    else if (next) blank = next.key;
+    const n = tabItems.find((y) => y.key === next);
+    if (n?.p) select(n.p);
+    else if (n) blank = n.key;
     else { selected = {}; blank = ""; tabsClosed = true; }
   }
-  // Dragging a tab moves it among the others (a drag isn't a click).
+  // Dragging a tab moves it among the others (a drag isn't a click). It
+  // ends when the button is let go, wherever, or the drag is cancelled.
   let tabDrag: { key: string; x: number; moved: boolean } | null = null;
   let tabDragged = false;
   let tabsEl = $state<HTMLElement>();
@@ -304,27 +322,25 @@
     tabDrag = { key, x: e.clientX, moved: false };
     const move = (m: PointerEvent) => {
       if (!tabDrag) return;
+      if (!(m.buttons & 1)) return up();
       if (!tabDrag.moved && Math.abs(m.clientX - tabDrag.x) < 5) return;
       tabDrag.moved = true;
       const els = [...(tabsEl?.querySelectorAll<HTMLElement>(".tab") ?? [])];
       let to = els.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientX < r.left + r.width / 2; });
       if (to < 0) to = els.length;
-      const from = tabKeys.indexOf(tabDrag.key);
-      if (to > from) to--;
-      if (to !== from) {
-        const keys = tabKeys.filter((k) => k !== tabDrag!.key);
-        keys.splice(to, 0, tabDrag.key);
-        tabKeys = keys;
-      }
+      const moved = moveTab(tabKeys, tabItems.map((x) => x.key), tabDrag.key, to);
+      if (moved !== tabKeys) tabKeys = moved;
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
       if (tabDrag?.moved) { tabDragged = true; saveTabs(); setTimeout(() => (tabDragged = false)); }
       tabDrag = null;
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
   }
   // The sidebar folds to the logo and a button to open it again (remembered).
   const SIDEBAR_KEY = "r3v.sidebar";
@@ -338,7 +354,7 @@
   $effect(() => {
     if (!overview || selectedEntry || tabsClosed || blank) return;
     const last = recall(SELECTED_KEY);
-    const pick = entries.find((p) => p.root && p.root === last) ??
+    const pick = untrack(() => tabItems).find((x) => x.p)?.p ?? entries.find((p) => p.root && p.root === last) ??
       entries.find((p) => p.status === "downloaded") ?? entries[0];
     if (pick) select(pick);
   });
@@ -374,6 +390,7 @@
       const got = await api.DownloadProject(overview!.currentTeam, p.id, parent);
       toast(t("Downloaded “{name}” to {folder}", { name: got.name, folder: got.root }), "ok", 7000);
       justDownloaded = got.root;
+      renamed(rowKey(p), rowKey(got));
       await reload();
       select(got);
     } catch (e) {
@@ -396,6 +413,7 @@
     if (!folder) return;
     try {
       const got = await api.LocateProject(overview!.currentTeam, p.id, folder);
+      renamed(rowKey(p), rowKey(got));
       await reload();
       select(got);
     } catch (e) {
@@ -407,6 +425,7 @@
     await api.ForgetProject(p.root);
     toast(t("Unlinked “{name}”: the folder and its versions are untouched", { name: p.name }), "info");
     selected = {};
+    if (p.id) renamed(rowKey(p), p.id); // on the team still: its tab shows it there
     await reload();
   }
 
@@ -498,7 +517,8 @@
 
 <svelte:window onfocus={reloadIfStale}
   onkeydown={(e) => {
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "t" && overview && !onboarding) {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "t" && overview && !onboarding
+      && !e.repeat && !document.querySelector("[aria-modal='true']") && !(e.target as HTMLElement).closest?.("input, textarea, [contenteditable]")) {
       e.preventDefault();
       newTab();
     }
@@ -526,7 +546,9 @@
     if (root && share) firstShare = root;
     else if (root) justDownloaded = root;
     await reload();
-    if (root) selected = { root };
+    const done = root ? entries.find((p) => p.root === root) : undefined;
+    if (done) select(done);
+    else if (root) selected = { root };
   }} />
 {:else}
   <div class="shell" class:folded>
@@ -612,7 +634,7 @@
 
     <section class="content">
       <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="titlebar" ondblclick={(e) => { if (e.target === e.currentTarget) win(() => Window.ToggleMaximise()); }}>
+      <div class="titlebar" ondblclick={(e) => { if (!(e.target as HTMLElement).closest(".tab, button")) win(() => Window.ToggleMaximise()); }}>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="tabs" role="tablist" tabindex="-1" aria-label={t("Open projects")} bind:this={tabsEl}
           onclickcapture={(e) => { if (tabDragged) { e.stopPropagation(); e.preventDefault(); } }}>
@@ -623,7 +645,7 @@
                 onclick={() => (x.p ? select(x.p) : (blank = x.key))}>
                 {#if x.p}<ProjectIcon p={x.p} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
               </button>
-              <button class="tab-x" onclick={() => closeTab(x)} aria-label={t("Close {name}", { name })}>×</button>
+              <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}>×</button>
             </div>
           {/each}
           <button class="tab-add" onclick={newTab} aria-label={t("New tab")} title={t("New tab (Ctrl+T)")}>+</button>
@@ -731,7 +753,7 @@
 
 {#snippet row(p: TeamProject)}
   <li>
-    <button class="proj {p.status}" class:on={selectedEntry === p} onclick={() => select(p)}
+    <button class="proj {p.status}" class:on={!blank && selectedEntry === p} onclick={() => select(p)}
       class:locked={p.status === "remote" && teamLocked}
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.root}>
       <ProjectIcon {p} size={24} />
