@@ -1053,5 +1053,9 @@
 "List": "列表",
 "Grid": "网格",
 "No files of these kinds here.": "这里没有这些类型的文件。",
-"{count} kind": "{count} 种类型"
+"{count} kind": "{count} 种类型",
+"New tab": "新标签页",
+"New tab (Ctrl+T)": "新标签页（Ctrl+T）",
+"Folder not found": "找不到文件夹",
+"open": "已打开"
 }

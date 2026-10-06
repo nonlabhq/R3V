@@ -1053,5 +1053,9 @@
 "List": "Lista",
 "Grid": "Grade",
 "No files of these kinds here.": "Nenhum arquivo destes tipos aqui.",
-"{count} kind": "{count} tipo"
+"{count} kind": "{count} tipo",
+"New tab": "Nova aba",
+"New tab (Ctrl+T)": "Nova aba (Ctrl+T)",
+"Folder not found": "Pasta não encontrada",
+"open": "aberto"
 }

@@ -1053,5 +1053,9 @@
 "List": "Liste",
 "Grid": "Grille",
 "No files of these kinds here.": "Aucun fichier de ces types ici.",
-"{count} kind": "{count} type"
+"{count} kind": "{count} type",
+"New tab": "Nouvel onglet",
+"New tab (Ctrl+T)": "Nouvel onglet (Ctrl+T)",
+"Folder not found": "Dossier introuvable",
+"open": "ouvert"
 }

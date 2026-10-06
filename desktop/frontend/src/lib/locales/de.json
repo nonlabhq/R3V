@@ -1053,5 +1053,9 @@
 "List": "Liste",
 "Grid": "Raster",
 "No files of these kinds here.": "Hier gibt es keine Dateien dieser Arten.",
-"{count} kind": "{count} Art"
+"{count} kind": "{count} Art",
+"New tab": "Neuer Tab",
+"New tab (Ctrl+T)": "Neuer Tab (Strg+T)",
+"Folder not found": "Ordner nicht gefunden",
+"open": "offen"
 }

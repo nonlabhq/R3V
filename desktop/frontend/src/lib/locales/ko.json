@@ -1053,5 +1053,9 @@
 "List": "목록",
 "Grid": "격자",
 "No files of these kinds here.": "여기에 이 유형의 파일이 없습니다.",
-"{count} kind": "{count}개 유형"
+"{count} kind": "{count}개 유형",
+"New tab": "새 탭",
+"New tab (Ctrl+T)": "새 탭 (Ctrl+T)",
+"Folder not found": "폴더를 찾을 수 없음",
+"open": "열림"
 }
