@@ -354,3 +354,57 @@ describe("ProjectView: files it can't read", () => {
     }
   });
 });
+
+describe("ProjectView: review fixes", () => {
+  const later = () => { const now = Date.now; Date.now = () => now() + 10_000; return () => { Date.now = now; }; };
+
+  it("forgets the team's news once the project has left the team", async () => {
+    const news = version("t1", "Mia's mix", { author: "Mia", parents: ["h1"] });
+    api.TeamState.mockResolvedValue({ online: true, offline: "", branches: [], incoming: [news], takenBack: [],
+      history: [news, version("h1", "v1", { parents: [] })], olderVersion: null, unshared: false, capabilities: {} });
+    await show();
+    await screen.findByRole("button", { name: "Get updates" });
+    // Detached from the team: same version, same branch, no team any more.
+    api.State.mockResolvedValue(state({ remoteUrl: "", teamId: "", teamName: "" }));
+    const back = later();
+    try {
+      await fireEvent(window, new Event("focus"));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "Get updates" })).toBeNull());
+    } finally {
+      back();
+    }
+  });
+
+  it("doesn't ask for a branch name after going to a version when New branch was cancelled", async () => {
+    await show({ changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    // New branch from v1 on its card: your changes first; cancelled.
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^v1,/ }));
+    await fireEvent.click(await screen.findByRole("button", { name: "New branch" }));
+    await fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    // Later: going to v1, discarding the changes.
+    await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
+    api.VersionFiles.mockResolvedValue([]);
+    api.GoToVersion.mockResolvedValue(result("moved"));
+    // (the version's Go to; its card may still be open, with one too)
+    await waitFor(() => expect(screen.getAllByRole("button", { name: "Go to" }).length).toBeGreaterThan(0));
+    await fireEvent.click(screen.getAllByRole("button", { name: "Go to" })[0]);
+    await fireEvent.click(await screen.findByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", true, false));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByText("Branch name")).toBeNull();
+  });
+
+  it("doesn't show the error of a version picked before", async () => {
+    await show({ history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    let fail!: (e: Error) => void;
+    api.VersionFiles.mockReturnValueOnce(new Promise((_, rej) => (fail = rej)));
+    await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
+    api.VersionFiles.mockResolvedValueOnce([]);
+    await fireEvent.click(screen.getByRole("option", { name: /^v2,/ }));
+    await screen.findByText("No file changes.");
+    fail(new Error("team storage not reachable"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("team storage not reachable")).toBeNull();
+    expect(screen.getByText("No file changes.")).toBeTruthy();
+  });
+});

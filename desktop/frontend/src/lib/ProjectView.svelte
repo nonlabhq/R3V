@@ -109,7 +109,9 @@
       // that depend on it (not shared yet, new versions) would blink at each
       // reload, e.g. on every focus while the window is resized.
       const prev = st;
-      const same = !!prev && prev.root === r && prev.teamChecked && prev.head === local.head && prev.branch === local.branch;
+      // (and in the same team: one that left it keeps nothing of it)
+      const same = !!prev && prev.root === r && prev.teamChecked && prev.head === local.head && prev.branch === local.branch
+        && !!local.remoteUrl && prev.remoteUrl === local.remoteUrl;
       if (same) local = { ...local, online: prev.online, offline: prev.offline, branches: prev.branches, incoming: prev.incoming,
         takenBack: prev.takenBack, history: prev.history, olderVersion: prev.olderVersion, unshared: prev.unshared,
         teamChecked: true } as State;
@@ -237,6 +239,7 @@
       }
     } catch (e) {
       toast(errorText(e), "error", 9000);
+      if (a.name === "goto") branchAfterGo = ""; // it didn't go: no new branch
     } finally {
       busy = "";
       progress = null;
@@ -525,6 +528,7 @@
   // Go to a version (null: back to the latest), asking first about
   // uncommitted changes.
   function goTo(v: Version | null) {
+    if (v?.id !== branchAfterGo) branchAfterGo = ""; // going elsewhere: no new branch after it
     if (st?.changes.length) {
       leaving = { target: v, message: "" };
       return;
@@ -864,14 +868,14 @@
 
   {#if liveBlocked}
     {@const b = liveBlocked}
-    <LiveBlockedDialog tool={st.tool} set={b.set} onclose={() => (liveBlocked = null)}
+    <LiveBlockedDialog tool={st.tool} set={b.set} onclose={() => { liveBlocked = null; branchAfterGo = ""; }}
       oncontinue={() => { const { run: action, resolutions } = b; liveBlocked = null; run(action, resolutions); }} />
   {/if}
 
   {#if leaving}
     {@const l = leaving}
     <LeaveChangesDialog changes={st.changes.length} latest={!l.target} older={!!st.olderVersion} team={!!st.remoteUrl}
-      bind:message={l.message} oncommit={commitThenGo} ondiscard={discardThenGo} onclose={() => (leaving = null)} />
+      bind:message={l.message} oncommit={commitThenGo} ondiscard={discardThenGo} onclose={() => { leaving = null; branchAfterGo = ""; }} />
   {/if}
 
   {#if undoing}

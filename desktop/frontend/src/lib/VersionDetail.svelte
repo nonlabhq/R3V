@@ -28,7 +28,9 @@
       if (id !== v.id) return;
       files = f ?? [];
       picked = files[0]?.path ?? "";
-    }).catch((e) => (error = errorText(e)));
+    }).catch((e) => {
+      if (id === v.id) error = errorText(e); // (not one for a version picked before)
+    });
   });
   let current = $derived(files?.find((f) => f.path === picked));
   // The list's width: the same split as your changes' list.
