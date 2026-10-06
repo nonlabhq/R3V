@@ -94,6 +94,7 @@
   // done with it. It stays while the pointer is on the dot or the card.
   const CARD_W = 280;
   let hovered = $state<string | null>(null);
+  let cardHeight = $state(140);
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
   function hover(id: string) { clearTimeout(hideTimer); hovered = id; }
   function unhover() { clearTimeout(hideTimer); hideTimer = setTimeout(() => (hovered = null), 180); }
@@ -101,9 +102,13 @@
     const v = hovered ? byID.get(hovered) : undefined;
     if (!v) return null;
     const c = g.chainOf.get(v.id)!;
-    const nx = panX + x(c.col) * zoom, ny = panY + y(v.id) * zoom, r = 12 * zoom + 10;
-    const right = nx + r + CARD_W <= width - 4;
-    return { v, branch: c.name, left: right ? nx + r : Math.max(4, nx - r - CARD_W), top: Math.min(Math.max(4, ny - 28), Math.max(4, boxHeight - 150)) };
+    // Below the dot, centred on it, clear of the pointer; above it when
+    // there's no room below. The little arrow points at the dot.
+    const nx = panX + x(c.col) * zoom, ny = panY + y(v.id) * zoom, gap = 12 * zoom + 12;
+    const left = Math.min(Math.max(4, nx - CARD_W / 2), Math.max(4, width - 4 - CARD_W));
+    const below = ny + gap + cardHeight <= boxHeight - 4 || ny - gap - cardHeight < 4;
+    return { v, branch: c.name, left, below, top: below ? ny + gap : ny - gap - cardHeight,
+      arrow: Math.min(Math.max(14, nx - left), CARD_W - 14) };
   });
 
   // The view: pan (px on the screen) and zoom.
@@ -243,9 +248,10 @@
     </div>
     {#if card}
       {@const v = card.v}
-      <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")}
-        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px"
-        onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
+      <div class="card surface-menu" class:above={!card.below} role="group" aria-label={v.message || t("(no description)")}
+        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ax="{card.arrow}px"
+        bind:clientHeight={cardHeight} onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
+        <span class="arrow" aria-hidden="true"></span>
         <div class="card-h">
           <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
           <div class="card-t">
@@ -279,6 +285,11 @@
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   .card { position: absolute; z-index: 2; padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .arrow { position: absolute; left: var(--ax); top: -6px; width: 10px; height: 10px; margin-left: -5px;
+    transform: rotate(45deg); background: var(--surface-menu);
+    border-left: var(--border-width) solid var(--line); border-top: var(--border-width) solid var(--line); }
+  .card.above .arrow { top: auto; bottom: -6px; border: none;
+    border-right: var(--border-width) solid var(--line); border-bottom: var(--border-width) solid var(--line); }
   .card-h { display: flex; gap: var(--sp-10); align-items: flex-start; }
   .avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--c); display: flex;
     align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
