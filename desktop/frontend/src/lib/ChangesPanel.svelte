@@ -7,6 +7,8 @@
   import { toast } from "./notify.svelte";
   import FileIcon from "./FileIcon.svelte";
   import FileExplorer from "./FileExplorer.svelte";
+  import Splitter from "./Splitter.svelte";
+  import { splitPx } from "./splits.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { fileView, setFileMode, type FileMode } from "./viewmode.svelte";
   import { viewerFor, type Side } from "./viewers";
@@ -157,25 +159,12 @@
     selected = p;
   }
 
-  // Files tab: the explorer and the file side by side, the line between
-  // them dragged to share the width (remembered).
-  const SPLIT_KEY = "r3v.filesSplit";
+  // The list and the file side by side, the line between them dragged to
+  // share the width; Files keeps its own split.
   let panelWidth = $state(0);
-  let split = $state((() => { try { return Number(localStorage.getItem(SPLIT_KEY)) || 420; } catch { return 420; } })());
-  let sideWidth = $derived(Math.min(Math.max(260, split), Math.max(260, panelWidth - 320)));
-  function resize(e: PointerEvent) {
-    e.preventDefault();
-    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* the window listens anyway */ }
-    const x0 = e.clientX, w0 = sideWidth;
-    const move = (m: PointerEvent) => (split = w0 + m.clientX - x0);
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      try { localStorage.setItem(SPLIT_KEY, String(Math.round(sideWidth))); } catch { /* not remembered */ }
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-  }
+  let splitKey = $derived(scope === "all" ? "files" : "list");
+  let splitDef = $derived(scope === "all" ? 0.4 : 0.34);
+  let sideWidth = $derived(splitPx(splitKey, splitDef, panelWidth, 240, 300));
 
   // History: the selected file's versions, read when it is shown.
   let historyOf = "";
@@ -294,14 +283,12 @@
 <svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".ctx")) menu = null; }}
   onkeydown={(e) => { if (e.key === "Escape") menu = null; }} />
 
-<div class="panel" class:split={scope === "all"} bind:clientWidth={panelWidth}
-  style:grid-template-columns={scope === "all" ? `${sideWidth}px 1fr` : undefined}>
+<div class="panel" bind:clientWidth={panelWidth} style:grid-template-columns="{sideWidth}px 1fr">
+  {#if panelWidth}<Splitter key={splitKey} def={splitDef} width={panelWidth} minLeft={240} minRight={300} />{/if}
   {#if scope === "all"}
   <div class="side">
     <FileExplorer {root} {files} {selected} stamp={loadedAt} onselect={select} onmenu={(e, p, dir) => openMenu(e, p, dir)} />
   </div>
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="splitter" style:left="{sideWidth}px" onpointerdown={resize} title={t("Drag to resize")}></div>
   {:else}
   <div class="side">
   <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll}>
@@ -531,10 +518,7 @@
 {/if}
 
 <style>
-  .panel { display: grid; grid-template-columns: minmax(240px, 34%) 1fr; height: 100%; min-height: 0; }
-  .panel.split { position: relative; }
-  .splitter { position: absolute; top: 0; bottom: 0; width: 7px; margin-left: -4px; cursor: col-resize; z-index: 2; touch-action: none; }
-  .splitter:hover { background: linear-gradient(to right, transparent 3px, var(--accent) 3px, var(--accent) 4px, transparent 4px); }
+  .panel { position: relative; display: grid; grid-template-columns: minmax(240px, 34%) 1fr; height: 100%; min-height: 0; }
   .side { display: flex; flex-direction: column; min-height: 0; border-right: var(--border-width) solid var(--line); }
   .files { flex: 1; overflow: auto; min-height: 0; padding: 0 var(--sp-8) var(--sp-16) 0; }
   /* the header stays at the top, set apart from the tree */

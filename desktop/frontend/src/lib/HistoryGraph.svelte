@@ -118,12 +118,16 @@
   // the middle too, a long one from the top.
   function resetView() {
     zoom = 1;
-    panX = width / 2 - center;
+    // main as near the middle as the labels allow
+    const lo = Math.min(0, width - full), hi = Math.max(0, width - full);
+    panX = Math.min(Math.max(width / 2 - center, lo), hi);
     panY = Math.max(0, (boxHeight - height) / 2);
   }
-  let viewed = false;
+  // Until you move it, the view follows the column's size (and the graph's).
+  let moved = false;
   $effect(() => {
-    if (!viewed && width && boxHeight && (versions.length || pending)) { resetView(); viewed = true; }
+    width; boxHeight; center; height;
+    if (!moved && width && boxHeight && (versions.length || pending)) resetView();
   });
   // Some of the graph always stays in sight.
   function clamp() {
@@ -143,7 +147,7 @@
     if (!drag) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
-    if (!drag.moved) { drag.moved = true; dragging = true; hovered = null; box?.setPointerCapture(drag.id); }
+    if (!drag.moved) { drag.moved = true; dragging = true; moved = true; hovered = null; box?.setPointerCapture(drag.id); }
     panX = drag.px + dx;
     panY = drag.py + dy;
     clamp();
@@ -156,7 +160,7 @@
     if (dragging) { e.stopPropagation(); e.preventDefault(); dragging = false; }
   }
   function ondblclick(e: MouseEvent) {
-    if (!(e.target as HTMLElement).closest("button, .card")) resetView();
+    if (!(e.target as HTMLElement).closest("button, .card")) { moved = false; resetView(); }
   }
   // Scroll: up and down (sideways with a trackpad or Shift); Ctrl+scroll
   // zooms around the pointer. (Not passive: the page mustn't scroll.)
@@ -166,6 +170,7 @@
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
       hovered = null;
+      moved = true;
       if (e.ctrlKey) {
         const r = el.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
         const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * Math.exp(-e.deltaY * 0.0015)));

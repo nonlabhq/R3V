@@ -19,6 +19,8 @@
   import History from "./History.svelte";
   import HistoryGraph from "./HistoryGraph.svelte";
   import BranchMenu from "./BranchMenu.svelte";
+  import Splitter from "./Splitter.svelte";
+  import { splitPx } from "./splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
@@ -196,6 +198,8 @@
     return st.changes.length ? "pending" : st.head || st.history[0]?.id || "";
   });
   let shownVersion = $derived(st?.history.find((v) => v.id === shown));
+  let overviewWidth = $state(0);
+  let graphWidth = $derived(splitPx("graph", 0.36, overviewWidth, 280, 520));
 
   // Runs an action; handles conflicts (ask, retry with decisions) and a
   // running Live (ask, retry with force).
@@ -687,7 +691,8 @@
 
     <main class:flush={tab !== "history" && tab !== "settings"} class:reading inert={reading}>
       {#if tab === "overview"}
-        <div class="overview">
+        <div class="overview" bind:clientWidth={overviewWidth} style:grid-template-columns="{graphWidth}px 1fr">
+          {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
           <div class="graph-pane">
             <div class="graph-bar">
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")} />
@@ -892,7 +897,7 @@
   main.flush { padding: 0; overflow: hidden; min-height: 0; }
   nav .sep { width: var(--border-width); align-self: stretch; margin: var(--sp-6) var(--sp-8); background: var(--line); }
   /* Overview: the graph, then the picked version (or your changes) and its files. */
-  .overview { display: grid; grid-template-columns: minmax(320px, 36%) 1fr; height: 100%; min-height: 0; }
+  .overview { position: relative; display: grid; grid-template-columns: minmax(320px, 36%) 1fr; height: 100%; min-height: 0; }
   .graph-pane { border-right: var(--border-width) solid var(--line); min-height: 0; display: flex; flex-direction: column; }
   .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
   .graph-bar { flex: none; padding: var(--sp-10) var(--sp-12) 0; }

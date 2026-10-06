@@ -46,9 +46,15 @@
         {/if}
       </div>
     {/if}
-    <button class="ghost" onclick={oncheck} title={t("Check the project: Live version, samples, plugins")}>✓</button>
-    <button class="ghost refresh" class:spin={refreshing} onclick={onrefresh} title={t("Refresh")}>↻</button>
-    <button class="ghost" onclick={() => api.ShowFolder(st.root)} title={t("Show folder")}>📁</button>
+    <button class="ghost icon" onclick={oncheck} title={t("Check the project: Live version, samples, plugins")} aria-label={t("Project check")}>
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+    </button>
+    <button class="ghost icon" class:spin={refreshing} onclick={onrefresh} title={t("Refresh")} aria-label={t("Refresh")}>
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg>
+    </button>
+    <button class="ghost icon" onclick={() => api.ShowFolder(st.root)} title={t("Show folder")} aria-label={t("Show folder")}>
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -58,7 +64,10 @@
   h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   h1 { margin: 0; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
   .actions { display: flex; gap: var(--sp-8); flex: none; }
-  .refresh.spin { animation: spin .8s linear infinite; }
+  .icon { display: inline-flex; align-items: center; justify-content: center; padding: var(--sp-6) var(--sp-8); color: var(--muted); }
+  .icon:hover:not(:disabled) { color: var(--text); }
+  .ico { width: 16px; height: 16px; display: block; }
+  .spin .ico { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .open-wrap { position: relative; }
   .menu.right { left: auto; right: 0; min-width: 220px; max-height: 50vh; overflow: auto; }

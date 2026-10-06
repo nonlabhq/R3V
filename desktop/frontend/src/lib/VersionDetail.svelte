@@ -2,6 +2,8 @@
   import { t, tn } from "./i18n.svelte";
   import { api, errorText, type ProjectFile, type Version } from "./api";
   import FileIcon from "./FileIcon.svelte";
+  import Splitter from "./Splitter.svelte";
+  import { splitPx } from "./splits.svelte";
   import { viewerFor, type Side } from "./viewers";
   import type { Snippet } from "svelte";
 
@@ -29,6 +31,9 @@
     }).catch((e) => (error = errorText(e)));
   });
   let current = $derived(files?.find((f) => f.path === picked));
+  // The list's width: the same split as your changes' list.
+  let bodyWidth = $state(0);
+  let listWidth = $derived(splitPx("list", 0.34, bodyWidth, 240, 300));
   const name = (p: string) => p.slice(p.lastIndexOf("/") + 1);
   const dir = (p: string) => p.slice(0, p.lastIndexOf("/") + 1);
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"),
@@ -56,7 +61,8 @@
     </div>
     {#if actions}<div class="acts">{@render actions()}</div>{/if}
   </header>
-  <div class="body">
+  <div class="body" bind:clientWidth={bodyWidth} style:grid-template-columns="{listWidth}px 1fr">
+    {#if bodyWidth}<Splitter key="list" def={0.34} width={bodyWidth} minLeft={240} minRight={300} />{/if}
     <aside>
       <div class="list-h">{files ? tn(files.length, "{count} file changed", "{count} files changed", { count: files.length }) : t("Changes")}</div>
       {#if error}
@@ -104,7 +110,7 @@
   .meta { font-size: var(--fs-sm); color: var(--faint); margin-top: var(--sp-2); }
   .acts { display: flex; gap: var(--sp-6); flex-wrap: wrap; justify-content: flex-end; }
   .acts :global(button) { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
-  .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; }
+  .body { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; }
   aside { border-right: var(--border-width) solid var(--line); overflow: auto; padding: var(--sp-8); }
   .list-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-4) var(--sp-6) var(--sp-8); }
   .pad { padding: 0 var(--sp-6); }

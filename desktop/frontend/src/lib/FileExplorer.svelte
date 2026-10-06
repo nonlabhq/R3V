@@ -93,8 +93,9 @@
   }
   const sortNames = (): Record<SortKey, string> => ({ name: t("Name"), modified: t("Date modified"), size: t("Size"), type: t("Type") });
   const sym: Record<string, string> = { added: "A", modified: "M", deleted: "D", renamed: "R" };
-  let cols = $derived(["minmax(0, 1fr)", look.cols.modified ? "130px" : "", look.cols.size ? "76px" : "", look.cols.type ? "110px" : ""]
+  let cols = $derived(["minmax(160px, 1fr)", look.cols.modified ? "130px" : "", look.cols.size ? "76px" : "", look.cols.type ? "110px" : ""]
     .filter(Boolean).join(" "));
+  let rowMin = $derived(160 + (look.cols.modified ? 140 : 0) + (look.cols.size ? 86 : 0) + (look.cols.type ? 120 : 0) + 16);
 </script>
 
 <svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".tool-wrap")) menu = ""; }} />
@@ -157,7 +158,7 @@
 
   {#if look.mode === "list"}
     <div class="list" role="grid" aria-label={t("Files")}>
-      <div class="row head" role="row" style:grid-template-columns={cols}>
+      <div class="row head" role="row" style:grid-template-columns={cols} style:min-width="{rowMin}px">
         <button role="columnheader" onclick={() => sortBy("name")}>{t("Name")}{#if look.sort === "name"} {look.desc ? "↓" : "↑"}{/if}</button>
         {#if look.cols.modified}<button role="columnheader" onclick={() => sortBy("modified")}>{t("Date modified")}{#if look.sort === "modified"} {look.desc ? "↓" : "↑"}{/if}</button>{/if}
         {#if look.cols.size}<button role="columnheader" class="num" onclick={() => sortBy("size")}>{t("Size")}{#if look.sort === "size"} {look.desc ? "↓" : "↑"}{/if}</button>{/if}
@@ -165,7 +166,7 @@
       </div>
       {#each entries as e (e.path)}
         <button class="row" role="row" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
-          style:grid-template-columns={cols} onclick={() => open(e)} ondblclick={() => open(e)}
+          style:grid-template-columns={cols} style:min-width="{rowMin}px" onclick={() => open(e)} ondblclick={() => open(e)}
           oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="cell name"><FileIcon kind={e.kind} open={false} /><span class="nm">{e.name}</span>
             {#if e.file && sym[e.file.status]}<span class="st {e.file.status}">{sym[e.file.status]}</span>{/if}</span>
