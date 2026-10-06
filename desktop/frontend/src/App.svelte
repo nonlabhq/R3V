@@ -494,7 +494,7 @@
         <div class="section row-h">
           <span>{t("Projects")}</span>
           {#if current}
-            <button class="ghost tiny" class:spin={reloading} onclick={reload} title={t("Check the team for new projects")}>↻</button>
+            <button class="ghost tiny" class:spin={reloading} onclick={reload} title={t("Check the team for new projects")} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
         {#if current && overview.teamError}
@@ -772,7 +772,8 @@
   .row-h { display: flex; align-items: center; justify-content: space-between; }
   .tiny { padding: 0 var(--sp-6); font-size: var(--fs-md); line-height: 18px; color: var(--faint); }
   .tiny:hover { color: var(--text); }
-  .spin { animation: spin .8s linear infinite; }
+  .ico-s { width: 13px; height: 13px; display: block; }
+  .spin .ico-s { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .meta.busy { color: var(--accent); }
   .size { margin: 0 0 var(--sp-12); font-size: var(--fs-md); }
