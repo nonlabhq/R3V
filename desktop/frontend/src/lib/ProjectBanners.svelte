@@ -12,7 +12,7 @@
   // versions, missing samples, broken rules. Each says what to do; the page
   // does it.
   let { st, busy, progress, restorable, missingSamples, onshare, onrecover, onpreset, onbranchhere, onlatest,
-    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue }: {
+    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, loadError = "" }: {
     st: State;
     busy: string;
     progress: Progress | null;
@@ -31,6 +31,7 @@
     onrestore: () => void; // the missing samples
     onopenrules: () => void;
     onqueue?: () => void; // the upload queue (a click on a step under way)
+    loadError?: string; // the project couldn't be read again just now (what is shown is from before)
   } = $props();
 
   // The warning about OneDrive & co., once understood, stays away (per project).
@@ -73,6 +74,21 @@
   <div class="banner info">
     <div>{t("Not shared with {team} yet: its versions are on this computer only.", { team: st.teamName || t("the team") })}</div>
     <button class="primary" onclick={onshare}>{t("Share now")}</button>
+  </div>
+{/if}
+
+{#if loadError}
+  <div class="banner warn">
+    <div>⚠ {t("R3V can't read the project right now, so what you see may be out of date: {error}", { error: loadError })}</div>
+  </div>
+{/if}
+
+{#if st.inUse?.length}
+  {@const first = st.inUse[0].slice(st.inUse[0].lastIndexOf("/") + 1)}
+  <div class="banner info" title={st.inUse.join("\n")}>
+    <div>{tn(st.inUse.length, "{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.",
+      "{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.",
+      { file: first, n: st.inUse.length - 1 })}</div>
   </div>
 {/if}
 

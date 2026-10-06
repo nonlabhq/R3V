@@ -116,7 +116,10 @@ type State struct {
 	// (OneDrive, Dropbox…); "" when none.
 	CloudFolder string `json:"cloudFolder"`
 
-	Changes  []Change            `json:"changes"`
+	Changes []Change `json:"changes"`
+	// InUse: files another program holds (Live writing a Freeze), read once
+	// they are free; until then they count as in the version you are on.
+	InUse    []string            `json:"inUse"`
 	MyEdits  []project.TrackEdit `json:"myEdits"`
 	Incoming []Version           `json:"incoming"`
 	// TakenBack: versions here a teammate took back (Update takes them out).

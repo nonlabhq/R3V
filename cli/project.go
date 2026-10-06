@@ -110,6 +110,9 @@ type statusJSON struct {
 	Latest         string       `json:"latest,omitempty"`
 	Team           *teamJSON    `json:"team"` // null when not in a team
 	Changes        []changeJSON `json:"changes"`
+	// InUse: files another program holds (Live writing a Freeze): read once
+	// they are free, counted as in the version you are on until then.
+	InUse []string `json:"in_use"`
 	// Suggestions: projects of tools found in folders the rules don't name.
 	Suggestions []suggestionJSON `json:"suggestions"`
 }
@@ -167,6 +170,7 @@ func cmdStatus(args []string) error {
 		}
 		out.Changes = append(out.Changes, ch)
 	}
+	out.InUse = nonNil(r.InUse())
 	result("status", out, func() { printStatus(r, out) })
 	return nil
 }
@@ -190,6 +194,9 @@ func printStatus(r *project.Repo, s statusJSON) {
 		fmt.Println("team: up to date")
 	}
 	printSuggestions(r)
+	for _, p := range s.InUse {
+		fmt.Printf("in use by another program, read once it's free: %s\n", p)
+	}
 	if len(s.Changes) == 0 {
 		fmt.Println("nothing changed")
 		return

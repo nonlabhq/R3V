@@ -1066,5 +1066,8 @@
 "Nothing is going up right now.": "Al momento non si carica nulla.",
 "in the background": "in background",
 "waiting": "in attesa",
-"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "I file grandi vengono caricati in background quando smettono di cambiare, così il commit dopo è rapido. Si ferma se il file viene eliminato, modificato o escluso."
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "I file grandi vengono caricati in background quando smettono di cambiare, così il commit dopo è rapido. Si ferma se il file viene eliminato, modificato o escluso.",
+"R3V can't read the project right now, so what you see may be out of date: {error}": "R3V non riesce a leggere il progetto ora, ciò che vedi potrebbe non essere aggiornato: {error}",
+"{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.": "{file} è in uso da un altro programma (Live che scrive un file Freeze, per esempio): R3V lo leggerà appena sarà libero.",
+"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} e altri {n} file sono in uso da un altro programma (Live che scrive file Freeze, per esempio): R3V li leggerà appena saranno liberi."
 }

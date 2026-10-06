@@ -77,6 +77,7 @@ when a field changes meaning; new fields may appear any time.
 | `team` | `null` without a team, else `reachable`, `incoming` (others saved versions: update), `error` |
 | `changes` | `path`, `status` (`added`, `modified`, `deleted`, `renamed` with `from`, `untracked`: still on disk but the rules leave it out), `set_changes` (for Live sets: tracks, devices, clips changed, one line each), `weight` (for Live sets, the biggest kind of change: `noise` a plugin re-saving its own state, `tidy` names/colors/order/groups, `mix`, `sound` devices, `arrangement` clips/notes/tracks/tempo) |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v profile preset <folder> <preset>` |
+| `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
 
 `log` (`-n N` for the newest N): `versions`, newest first: `id`, `time`
 (RFC 3339), `author`, `message`, `parents`, `branches` (team branches at

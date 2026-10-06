@@ -1066,5 +1066,8 @@
 "Nothing is going up right now.": "目前没有在上传的东西。",
 "in the background": "后台",
 "waiting": "排队中",
-"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "大文件停止变动后会在后台先上传，之后提交只需片刻。文件被删除、修改或被排除时，上传会停止。"
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "大文件停止变动后会在后台先上传，之后提交只需片刻。文件被删除、修改或被排除时，上传会停止。",
+"R3V can't read the project right now, so what you see may be out of date: {error}": "R3V 目前读不到这个项目，画面上的内容可能不是最新的：{error}",
+"{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.": "{file} 正被其他程序使用中（例如 Live 正在写入 Freeze 文件）：等它被释放后 R3V 就会读入。",
+"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 和另外 {n} 个文件正被其他程序使用中（例如 Live 正在写入 Freeze 文件）：等它们被释放后 R3V 就会读入。"
 }

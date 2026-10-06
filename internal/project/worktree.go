@@ -240,7 +240,11 @@ func (r *Repo) workingFiles(ix *index) ([]FileEntry, error) {
 }
 
 // hashScanned hashes scanned files (those not hashed since they changed).
+// A file another program holds (Live writing a Freeze) is skipped, not an
+// error: it counts as it is in the version you are on (absent if it is new)
+// until it can be read, and InUse lists it.
 func (r *Repo) hashScanned(ix *index, files []scanned) ([]FileEntry, error) {
+	r.inUse = nil
 	out := make([]FileEntry, len(files))
 	var todo []int
 	for i, f := range files {
@@ -281,7 +285,9 @@ func (r *Repo) hashScanned(ix *index, files []scanned) ([]FileEntry, error) {
 					h, n, err = store.HashFile(abs)
 				}
 				mu.Lock()
-				if err != nil {
+				if err != nil && inUse(err) {
+					r.inUse = append(r.inUse, files[i].rel)
+				} else if err != nil {
 					if first == nil {
 						first = err
 					}
@@ -300,5 +306,39 @@ func (r *Repo) hashScanned(ix *index, files []scanned) ([]FileEntry, error) {
 		}()
 	}
 	wg.Wait()
-	return out, first
+	if first != nil || len(r.inUse) == 0 {
+		return out, first
+	}
+	return r.withoutInUse(out)
 }
+
+// withoutInUse puts the files in use as they are in the version you are on,
+// and leaves out those it doesn't have.
+func (r *Repo) withoutInUse(files []FileEntry) ([]FileEntry, error) {
+	sort.Strings(r.inUse)
+	var head map[string]FileEntry
+	if id := r.Head(); id != "" {
+		m, err := r.Load(id)
+		if err != nil {
+			return nil, err
+		}
+		head = m.FileMap()
+	}
+	skip := map[string]bool{}
+	for _, p := range r.inUse {
+		skip[p] = true
+	}
+	out := files[:0]
+	for _, f := range files {
+		if !skip[f.Path] {
+			out = append(out, f)
+		} else if h, ok := head[f.Path]; ok {
+			out = append(out, h)
+		}
+	}
+	return out, nil
+}
+
+// InUse lists the files the last look at the folder couldn't read because
+// another program holds them (relative, sorted).
+func (r *Repo) InUse() []string { return append([]string(nil), r.inUse...) }
