@@ -4,31 +4,6 @@
   font-weight: 400 700;
 }
 
-:root {
-  --bg: #18191d;
-  --panel: #202227;
-  --panel-2: #272a30;
-  --line: #34373e;
-  --text: #e6e7ea;
-  --muted: #9a9ea8;
-  --faint: #6c707a;
-  --accent: #3fc3a9;
-  --accent-ink: #0d2b25;
-  --warn: #e8b04b;
-  --warn-bg: #3a2f1a;
-  --danger: #e5675f;
-  --add: #6fcf7f;
-  --del: #e5675f;
-  --mod: #6ab0f3;
-  --radius: 8px;
-  --lane-0: #3fc3a9;
-  --lane-1: #6ab0f3;
-  --lane-2: #c792ea;
-  --lane-3: #e8b04b;
-  --lane-4: #f07178;
-  color-scheme: dark;
-}
-
 * { box-sizing: border-box; }
 
 html, body {
@@ -36,7 +11,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.45 "Inter", "Segoe UI", system-ui, sans-serif;
+  font: var(--fs-base)/1.45 var(--font-sans);
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }
@@ -48,14 +23,14 @@ button {
   color: var(--text);
   background: var(--panel-2);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 6px 12px;
   cursor: pointer;
 }
-button:hover:not(:disabled) { border-color: #4a4e57; background: #2e3138; }
+button:hover:not(:disabled) { border-color: var(--line-strong); background: var(--hover-soft); }
 button:disabled { opacity: .45; cursor: default; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-button.primary:hover:not(:disabled) { background: #52d4ba; border-color: #52d4ba; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: var(--fw-semibold); }
+button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
 button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
 button.ghost:hover:not(:disabled) { background: var(--panel-2); color: var(--text); }
 button.danger { color: var(--danger); }
@@ -65,7 +40,7 @@ input, textarea {
   color: var(--text);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius);
   padding: 7px 10px;
   width: 100%;
   user-select: text;
@@ -73,22 +48,22 @@ input, textarea {
 input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 textarea { resize: vertical; }
 
-label { display: block; color: var(--muted); font-size: 12px; margin: 10px 0 4px; }
+label { display: block; color: var(--muted); font-size: var(--fs-sm); margin: 10px 0 4px; }
 
 .muted { color: var(--muted); }
 .faint { color: var(--faint); }
-.mono { font-family: "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+.mono { font-family: var(--font-mono); font-size: var(--fs-md); }
 .row { display: flex; align-items: center; gap: 8px; }
 .spacer { flex: 1; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #33363d; border-radius: 5px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 5px; border: 2px solid var(--bg); }
 
 /* The splash while R3V starts (index.html, then App until the first
    overview): the logo, and a band of colour running under it. */
 .splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; background: var(--bg); }
-.splash-logo { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 700; letter-spacing: .01em; }
+.splash-logo { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: var(--fw-bold); letter-spacing: .01em; }
 .splash-logo img { width: 48px; height: 48px; }
 .splash-band { width: 220px; height: 4px; border-radius: 2px; overflow: hidden; background: var(--line); position: relative; }
 /* A band of colour running without end: the gradient starts and ends on the

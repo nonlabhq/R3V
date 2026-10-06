@@ -37,10 +37,10 @@
 </button>
 
 <style>
-  .small { font-size: 12px; margin: 10px 0 0; }
+  .small { font-size: var(--fs-sm); margin: 10px 0 0; }
   .older { margin: 6px 0 0; }
   .commit-btn { width: 100%; margin-top: 8px; padding: 8px 14px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-  .commit-btn kbd { font: inherit; font-size: 11px; opacity: .75; padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor; }
+  .commit-btn kbd { font: inherit; font-size: var(--fs-xs); opacity: .75; padding: 1px 5px; border-radius: var(--radius-sm); border: 1px solid currentColor; }
   /* nothing to commit yet (no message, no changes): outlined, still easy to see */
   .commit-btn:disabled { background: transparent; border: 1px solid var(--accent); color: var(--accent); opacity: .7; }
 </style>

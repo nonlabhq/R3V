@@ -144,12 +144,12 @@
 </div>
 
 <style>
-  .wave { position: relative; height: 100%; min-width: 0; --wave: #5b5f68; }
+  .wave { position: relative; height: 100%; min-width: 0; --wave: var(--dim); }
   canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
   .head { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; pointer-events: none;
     box-shadow: 0 0 6px rgba(255, 255, 255, .5); }
   .hover { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, .45); pointer-events: none; }
-  .hover span { position: absolute; top: 2px; left: 5px; font-size: 10.5px; color: var(--text); background: rgba(0, 0, 0, .6);
-    padding: 0 4px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .note { font-size: 12px; color: var(--faint); height: 100%; display: flex; align-items: center; padding: 0 10px; }
+  .hover span { position: absolute; top: 2px; left: 5px; font-size: var(--fs-xs); color: var(--text); background: rgba(0, 0, 0, .6);
+    padding: 0 4px; border-radius: var(--radius-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .note { font-size: var(--fs-sm); color: var(--faint); height: 100%; display: flex; align-items: center; padding: 0 10px; }
 </style>

@@ -80,11 +80,11 @@
 
 <style>
   .members { list-style: none; padding: 0; margin: 8px 0 14px; display: flex; flex-direction: column; gap: 6px; }
-  .members label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text); font-size: 14px; }
+  .members label { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--text); font-size: var(--fs-base); }
   .members input { width: auto; }
-  .small { font-size: 12px; margin: 6px 0 0; }
+  .small { font-size: var(--fs-sm); margin: 6px 0 0; }
   .error { color: var(--danger); }
-  .share { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--text); font-size: 14px; }
+  .share { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--text); font-size: var(--fs-base); }
   .share input { width: auto; }
   .actions { margin-top: 14px; }
 </style>

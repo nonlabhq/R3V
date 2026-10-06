@@ -104,14 +104,14 @@
 <style>
   .ab { display: flex; flex-direction: column; gap: 12px; }
   .take { display: flex; flex-direction: column; gap: 6px; }
-  .label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; text-transform: uppercase;
+  .label { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); text-transform: uppercase;
     letter-spacing: .06em; color: var(--muted); }
   .label .faint { text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
   .strip {
     display: flex; align-items: center; gap: 12px; height: 72px; padding: 0 12px 0 10px;
-    background: var(--bg); border: 1px solid var(--line); border-radius: 10px; transition: border-color .15s;
+    background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-lg); transition: border-color .15s;
   }
-  .take.active .strip { border-color: #3a5a52; }
+  .take.active .strip { border-color: var(--accent-line); }
   .play {
     flex: none; width: 40px; height: 40px; border-radius: 50%; padding: 0; display: grid; place-items: center;
     background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
@@ -121,6 +121,6 @@
   .play svg { width: 16px; height: 16px; fill: currentColor; }
   .lane { flex: 1; min-width: 0; height: 56px; }
   .fill { height: 100%; }
-  .time { flex: none; width: 52px; text-align: right; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .small { font-size: 12px; margin: 0; }
+  .time { flex: none; width: 52px; text-align: right; font-size: var(--fs-md); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .small { font-size: var(--fs-sm); margin: 0; }
 </style>

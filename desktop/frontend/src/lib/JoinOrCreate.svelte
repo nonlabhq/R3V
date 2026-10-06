@@ -28,8 +28,8 @@
 <style>
   .seg { display: flex; margin: 0 0 14px; }
   .seg button { flex: 1; border-radius: 0; padding: 7px 12px; }
-  .seg button:first-child { border-radius: 8px 0 0 8px; }
-  .seg button:last-child { border-radius: 0 8px 8px 0; margin-left: -1px; }
+  .seg button:first-child { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+  .seg button:last-child { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; margin-left: -1px; }
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .link { border: none; background: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: inherit; }
 </style>

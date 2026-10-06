@@ -44,6 +44,10 @@ cd desktop/frontend && npx svelte-check && npm test   # after any UI change
   locales`, English text is the key: `node scripts/i18n-check.mjs` in
   `desktop/frontend` lists what is missing).
 - What users see follows [docs/ux-principles.md](docs/ux-principles.md).
+- Styles use the design tokens in `desktop/frontend/src/tokens.css`
+  (colours by role, type sizes, corners, shadows, layers), not raw values;
+  a new colour is a new token there. `npm test` fails on a raw colour or an
+  undefined token.
 - Match the surrounding code: short doc comments that say why, no
   boilerplate.
 - `go vet` and `gofmt` clean.

@@ -21,10 +21,10 @@
 {/if}
 
 <style>
-  .summary { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 12px; }
+  .summary { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: var(--fs-sm); }
   .part { display: inline-flex; align-items: center; gap: 5px; color: var(--text); }
   .part.small { color: var(--faint); }
-  .pill { font-size: 10.5px; font-weight: 600; padding: 0 6px; border-radius: 7px; line-height: 15px; }
+  .pill { font-size: var(--fs-xs); font-weight: var(--fw-semibold); padding: 0 6px; border-radius: var(--radius-pill); line-height: 15px; }
   .pill.arrangement { background: rgba(240, 113, 120, .2); color: #f4a3a8; }
   .pill.sound { background: rgba(199, 146, 234, .2); color: #d9b5f1; }
   .pill.mix { background: rgba(106, 176, 243, .18); color: #9ccbf7; }

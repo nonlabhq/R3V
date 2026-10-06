@@ -133,7 +133,7 @@
   .grid { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: center; margin-bottom: 10px; }
   .grid label { margin: 0; }
   select { width: 100%; }
-  .small { font-size: 12.5px; }
+  .small { font-size: var(--fs-md); }
   .result { color: var(--muted); margin: 10px 0 4px; }
   .note { color: var(--warn); margin: 2px 0; }
   .error { color: var(--danger); }

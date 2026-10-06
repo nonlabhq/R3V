@@ -164,11 +164,11 @@
 {/if}
 
 <style>
-  .small { font-size: 12.5px; }
+  .small { font-size: var(--fs-md); }
   p { margin: 0 0 8px; }
-  .folder { font-family: var(--mono, monospace); user-select: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder { font-family: var(--font-mono); user-select: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .btns { gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-  .btns button { padding: 5px 10px; font-size: 13px; }
+  .btns button { padding: 5px 10px; font-size: var(--fs-md); }
   .warn { color: var(--warn); }
   .error { color: var(--danger); user-select: text; }
 </style>

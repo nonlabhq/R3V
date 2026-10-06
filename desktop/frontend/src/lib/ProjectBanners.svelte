@@ -168,13 +168,13 @@
 {/if}
 
 <style>
-  .banner { display: flex; align-items: center; gap: 10px; margin: 6px 24px; padding: 10px 14px; border-radius: 8px; }
+  .banner { display: flex; align-items: center; gap: 10px; margin: 6px 24px; padding: 10px 14px; border-radius: var(--radius-lg); }
   .banner > div, .rule > :global(div) { flex: 1; }
-  .banner.info { background: #1d2c38; border: 1px solid #2c4557; }
-  .banner.older { background: #2a2536; border: 1px solid #463c5c; }
-  .banner.warn { background: var(--warn-bg); border: 1px solid #5a4623; color: #f0d9a8; }
+  .banner.info { background: var(--info-bg); border: 1px solid var(--info-line); }
+  .banner.older { background: var(--past-bg); border: 1px solid var(--past-line); }
+  .banner.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text); }
   .col { display: flex; flex-direction: column; gap: 6px; }
-  .go { font-size: 12.5px; color: var(--accent); }
-  .hold { font-size: 12.5px; color: var(--faint); }
-  .keep { display: block; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .go { font-size: var(--fs-md); color: var(--accent); }
+  .hold { font-size: var(--fs-md); color: var(--faint); }
+  .keep { display: block; font-size: var(--fs-sm); color: var(--faint); margin-top: 2px; }
 </style>

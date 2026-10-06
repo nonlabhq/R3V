@@ -34,16 +34,16 @@
 
 <style>
   .backdrop {
-    position: fixed; inset: 0; background: rgba(8, 9, 11, .62);
-    display: flex; align-items: center; justify-content: center; z-index: 50;
+    position: fixed; inset: 0; background: var(--scrim);
+    display: flex; align-items: center; justify-content: center; z-index: var(--z-dialog);
   }
   .modal {
     max-width: calc(100vw - 48px); max-height: calc(100vh - 48px);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-    display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-xl);
+    display: flex; flex-direction: column; box-shadow: var(--shadow-dialog);
   }
   header { display: flex; align-items: center; padding: 16px 18px 8px; }
-  h2 { margin: 0; font-size: 16px; font-weight: 600; flex: 1; }
+  h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); flex: 1; }
   .close { padding: 2px 8px; }
   .body { padding: 6px 18px 12px; overflow: auto; }
   footer {

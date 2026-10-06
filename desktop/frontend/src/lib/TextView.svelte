@@ -138,13 +138,13 @@
 {/if}
 
 <style>
-  .small { font-size: 12px; }
+  .small { font-size: var(--fs-sm); }
   .bar { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
   .whole { margin: 0 0 0 auto; display: flex; align-items: center; gap: 5px; color: var(--muted); cursor: pointer; }
   .whole input { width: auto; margin: 0; padding: 0; }
   .add { color: var(--add); }
   .del { color: var(--del); }
-  .code { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; overflow: auto;
+  .code { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto;
     max-height: 70vh; padding: 4px 0; line-height: 1.55; user-select: text; }
   .row { display: flex; min-width: max-content; }
   .row.add { background: rgba(111, 207, 127, .10); }
@@ -157,18 +157,18 @@
   .txt { white-space: pre; padding: 0 12px 0 6px; tab-size: 4; }
   .gap { color: var(--faint); padding: 0 0 0 100px; user-select: none; }
   /* Syntax colors (highlight.js classes), for the app's dark look. */
-  .code :global(.hljs-comment), .code :global(.hljs-quote) { color: #6f7685; font-style: italic; }
-  .code :global(.hljs-keyword), .code :global(.hljs-selector-tag), .code :global(.hljs-doctag) { color: #c792ea; }
-  .code :global(.hljs-string), .code :global(.hljs-regexp), .code :global(.hljs-addition) { color: #c3e88d; }
-  .code :global(.hljs-number), .code :global(.hljs-literal), .code :global(.hljs-symbol) { color: #f78c6c; }
-  .code :global(.hljs-title), .code :global(.hljs-section), .code :global(.hljs-title.function_) { color: #82aaff; }
+  .code :global(.hljs-comment), .code :global(.hljs-quote) { color: var(--syntax-comment); font-style: italic; }
+  .code :global(.hljs-keyword), .code :global(.hljs-selector-tag), .code :global(.hljs-doctag) { color: var(--syntax-keyword); }
+  .code :global(.hljs-string), .code :global(.hljs-regexp), .code :global(.hljs-addition) { color: var(--syntax-string); }
+  .code :global(.hljs-number), .code :global(.hljs-literal), .code :global(.hljs-symbol) { color: var(--syntax-number); }
+  .code :global(.hljs-title), .code :global(.hljs-section), .code :global(.hljs-title.function_) { color: var(--syntax-name); }
   .code :global(.hljs-type), .code :global(.hljs-title.class_), .code :global(.hljs-attr),
-  .code :global(.hljs-attribute) { color: #ffcb6b; }
+  .code :global(.hljs-attribute) { color: var(--syntax-type); }
   .code :global(.hljs-built_in), .code :global(.hljs-meta), .code :global(.hljs-selector-class),
-  .code :global(.hljs-selector-id) { color: #89ddff; }
-  .code :global(.hljs-name), .code :global(.hljs-tag), .code :global(.hljs-deletion) { color: #f07178; }
-  .code :global(.hljs-variable), .code :global(.hljs-template-variable), .code :global(.hljs-params) { color: #e6e7ea; }
-  .code :global(.hljs-bullet), .code :global(.hljs-link) { color: #89ddff; }
+  .code :global(.hljs-selector-id) { color: var(--syntax-punct); }
+  .code :global(.hljs-name), .code :global(.hljs-tag), .code :global(.hljs-deletion) { color: var(--syntax-tag); }
+  .code :global(.hljs-variable), .code :global(.hljs-template-variable), .code :global(.hljs-params) { color: var(--text); }
+  .code :global(.hljs-bullet), .code :global(.hljs-link) { color: var(--syntax-punct); }
   .code :global(.hljs-emphasis) { font-style: italic; }
-  .code :global(.hljs-strong) { font-weight: 700; }
+  .code :global(.hljs-strong) { font-weight: var(--fw-bold); }
 </style>
