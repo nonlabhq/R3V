@@ -186,7 +186,7 @@
   {/if}
 
   {#snippet footer()}
-    <button class="ghost" onclick={() => api.OpenURL("https://github.com/nonlabhq/r3v/blob/main/docs/profiles.md")}>{t("Guide ↗")}</button>
+    <button class="ghost" onclick={() => api.OpenURL("https://github.com/nonlabhq/R3V/blob/main/docs/profiles.md")}>{t("Guide ↗")}</button>
     <button onclick={editText}>{t("Edit as text")}</button>
     <button class="primary" onclick={onclose}>{t("Done")}</button>
   {/snippet}

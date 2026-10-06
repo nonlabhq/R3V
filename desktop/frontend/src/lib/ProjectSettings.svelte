@@ -108,7 +108,7 @@
       <div class="line">
         <button class="primary" onclick={() => (rulesOpen = true)}>{t("Rules…")}</button>
         <button onclick={openRules}>{t("Edit as text")}</button>
-        <button class="ghost" onclick={() => api.OpenURL("https://github.com/nonlabhq/r3v/blob/main/docs/profiles.md")}>{t("Guide ↗")}</button>
+        <button class="ghost" onclick={() => api.OpenURL("https://github.com/nonlabhq/R3V/blob/main/docs/profiles.md")}>{t("Guide ↗")}</button>
       </div>
     </section>
 

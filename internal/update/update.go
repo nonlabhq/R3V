@@ -26,7 +26,7 @@ import (
 var PublicKey = "Rgz1YWaSAuhOt7wmdk+urDdK4Z7eB139p1VOQjXJRs8="
 
 // Repo is where releases are published.
-const Repo = "nonlabhq/r3v"
+const Repo = "nonlabhq/R3V"
 
 // ReleasesAPI lists the repository's releases, previews included (the
 // "latest" endpoint skips them).

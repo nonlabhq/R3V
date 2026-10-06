@@ -15,13 +15,13 @@ import (
 )
 
 const releases = `[
-  {"tag_name": "v0.4.0", "html_url": "https://github.com/nonlabhq/r3v/releases/tag/v0.4.0", "draft": true, "assets": []},
-  {"tag_name": "v0.3.10", "html_url": "https://github.com/nonlabhq/r3v/releases/tag/v0.3.10", "prerelease": true,
-   "assets": [{"name": "R3V-0.3.10-setup.exe", "browser_download_url": "https://github.com/nonlabhq/r3v/releases/download/v0.3.10/R3V-0.3.10-setup.exe"}]},
-  {"tag_name": "v0.3.9", "html_url": "https://github.com/nonlabhq/r3v/releases/tag/v0.3.9", "assets": []},
-  {"tag_name": "v0.3.1", "html_url": "https://github.com/nonlabhq/r3v/releases/tag/v0.3.1", "assets": []},
+  {"tag_name": "v0.4.0", "html_url": "https://github.com/nonlabhq/R3V/releases/tag/v0.4.0", "draft": true, "assets": []},
+  {"tag_name": "v0.3.10", "html_url": "https://github.com/nonlabhq/R3V/releases/tag/v0.3.10", "prerelease": true,
+   "assets": [{"name": "R3V-0.3.10-setup.exe", "browser_download_url": "https://github.com/nonlabhq/R3V/releases/download/v0.3.10/R3V-0.3.10-setup.exe"}]},
+  {"tag_name": "v0.3.9", "html_url": "https://github.com/nonlabhq/R3V/releases/tag/v0.3.9", "assets": []},
+  {"tag_name": "v0.3.1", "html_url": "https://github.com/nonlabhq/R3V/releases/tag/v0.3.1", "assets": []},
   {"tag_name": "v9.9.9", "html_url": "https://example.com/elsewhere", "assets": []},
-  {"tag_name": "nightly", "html_url": "https://github.com/nonlabhq/r3v/releases/tag/nightly", "assets": []}
+  {"tag_name": "nightly", "html_url": "https://github.com/nonlabhq/R3V/releases/tag/nightly", "assets": []}
 ]`
 
 func serve(t *testing.T) string {
@@ -40,7 +40,7 @@ func TestNewer(t *testing.T) {
 	}
 	// Drafts, foreign links and odd tags are skipped; 0.3.10 > 0.3.9 numerically.
 	if r == nil || r.Version != "0.3.10" ||
-		r.DownloadURL != "https://github.com/nonlabhq/r3v/releases/download/v0.3.10/R3V-0.3.10-setup.exe" {
+		r.DownloadURL != "https://github.com/nonlabhq/R3V/releases/download/v0.3.10/R3V-0.3.10-setup.exe" {
 		t.Fatalf("newer = %+v", r)
 	}
 	if r, err := Newer(url, "0.3.10"); err != nil || r != nil {

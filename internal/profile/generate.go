@@ -24,7 +24,7 @@ func Generate(root string) string {
 	var b strings.Builder
 	b.WriteString(`# R3V's rules for this project: which files are left out of versions.
 # Committed with the project, so the whole team uses the same rules.
-# Guide: https://github.com/nonlabhq/r3v/blob/main/docs/profiles.md
+# Guide: https://github.com/nonlabhq/R3V/blob/main/docs/profiles.md
 requires: "` + PresetsVersion + `"
 # Which preset applies to which folder: Live's, Unity's... own files left out.
 # "none": no preset there.

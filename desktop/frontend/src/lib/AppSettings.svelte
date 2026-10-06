@@ -49,7 +49,7 @@
     }
   }
 
-  const repo = "https://github.com/nonlabhq/r3v";
+  const repo = "https://github.com/nonlabhq/R3V";
   // A new issue with what helps to look into it filled in (nothing about the
   // user or their projects).
   function reportIssue() {
