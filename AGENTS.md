@@ -51,6 +51,27 @@ cd desktop/frontend && npx svelte-check && npm test   # after any UI change
   `cli/output.go` and docs/agents.md): add fields freely, don't rename or
   remove them, and keep the codes stable.
 
+## Working in the repository
+
+Several sessions may work at once (in other worktrees or the same checkout),
+so:
+
+- **Branches.** Work on a branch (`feat/…`, `fix/…`, `ui/…`) and merge it
+  into `main` with `--no-ff`. Merge `main` into a long branch often, so
+  conflicts stay small.
+- **Stage only your own files**, by name. Never `git add -A` a folder:
+  someone else's uncommitted changes may be in it.
+- **Commit messages** in plain English, with no AI co-author or "Generated
+  with" lines: the README says once how R3V is built.
+- **The version** (`internal/version/version.go`) changes only when a
+  release is made, on `main`, never on a branch.
+- **Translations:** add keys to every locale; don't reorder or rewrite
+  others' keys (`node scripts/i18n-check.mjs` must report nothing missing).
+- **Bindings:** commit only the generated files with real changes (see
+  above).
+- Pushing, tagging and releasing are the maintainer's call: do them only
+  when asked.
+
 ## Things that must not break
 
 - **Stored data is forever.** Content hashes, the blob header
