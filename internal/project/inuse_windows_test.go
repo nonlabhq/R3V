@@ -1,6 +1,8 @@
 package project
 
 import (
+	"errors"
+	"os"
 	"syscall"
 	"testing"
 )
@@ -46,5 +48,32 @@ func TestFilesInUse(t *testing.T) {
 	changes, err = r.Status()
 	if err != nil || len(changes) != 2 || len(r.InUse()) != 0 {
 		t.Fatalf("once free: %+v %v %v", changes, r.InUse(), err)
+	}
+}
+
+// Steps that rewrite files refuse while one is held: whether it has changes
+// can't be told, so it must not be replaced or deleted.
+func TestFilesInUseStopRewrites(t *testing.T) {
+	dir := newProject(t)
+	r, _ := Init(dir, "yi")
+	write(t, dir, "take.wav", "one")
+	v1, err := r.Snapshot("v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, dir, "take.wav", "two")
+	if _, err := r.Snapshot("v2"); err != nil {
+		t.Fatal(err)
+	}
+	write(t, dir, "take.wav", "three, not committed")
+	release := hold(t, r.Abs("take.wav"))
+	_, _, err = r.GoTo(v1.ID[:8], false)
+	release()
+	var inUse *FilesInUseError
+	if !errors.As(err, &inUse) || len(inUse.Paths) != 1 || inUse.Paths[0] != "take.wav" {
+		t.Fatalf("go to with a file in use: %v", err)
+	}
+	if b, _ := os.ReadFile(r.Abs("take.wav")); string(b) != "three, not committed" {
+		t.Fatalf("the file became %q", b)
 	}
 }

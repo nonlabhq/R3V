@@ -59,6 +59,11 @@ func (r *Repo) putFiles(m *Manifest, head, switching string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A file another program holds can't be read, so whether it has changes
+	// isn't known: rewriting files now could replace or delete them.
+	if inUse := r.InUse(); len(inUse) > 0 {
+		return nil, &FilesInUseError{Paths: inUse}
+	}
 	have := map[string]string{}
 	for _, f := range working {
 		have[f.Path] = f.Hash
