@@ -260,6 +260,10 @@
     else { selected = {}; tabsClosed = true; }
   }
   let addOpen = $state(false); // the + menu: projects not open
+  // The sidebar folds to the logo and a button to open it again (remembered).
+  const SIDEBAR_KEY = "r3v.sidebar";
+  let folded = $state(recall(SIDEBAR_KEY) === "folded");
+  function fold(on: boolean) { folded = on; remember(SIDEBAR_KEY, on ? "folded" : ""); }
   // The window's own controls (no Windows title bar): in the browser
   // (server mode) they do nothing.
   const win = (f: () => Promise<unknown>) => f().catch(() => {});
@@ -450,14 +454,23 @@
     if (root) selected = { root };
   }} />
 {:else}
-  <div class="shell">
+  <div class="shell" class:folded>
     <aside>
+      {#if folded}
+      <div class="aside-top folded-top">
+        <button class="logo" onclick={() => (appSettings = true)} title={t("R3V settings")} aria-label={t("R3V settings")}>
+          <img src="/icon.png" alt="" />
+        </button>
+        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar")} aria-label={t("Show the sidebar")}>»</button>
+      </div>
+      {:else}
       <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
         <img src="/icon.png" alt="" /> R3V
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
         {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
+      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar")} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       {#if update}
         {@const u = update}
@@ -501,6 +514,7 @@
           <span class="hint">{t("Select project folder")}</span>
         </button>
       </div>
+      {/if}
 
     </aside>
 
@@ -738,6 +752,16 @@
 
 <style>
   .shell { display: grid; grid-template-columns: 250px 1fr; height: 100%; }
+  .shell.folded { grid-template-columns: 52px 1fr; }
+  .shell.folded aside { padding-left: var(--sp-6); padding-right: var(--sp-6); }
+  .aside-top { display: flex; align-items: center; gap: var(--sp-4); }
+  .aside-top .brand { flex: 1; min-width: 0; }
+  .fold { flex: none; padding: var(--sp-2) var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; margin-bottom: var(--sp-8); }
+  .fold:hover:not(:disabled) { color: var(--text); }
+  .folded-top { flex-direction: column; margin-left: calc(var(--sp-6) * -1); margin-right: calc(var(--sp-6) * -1); }
+  .folded-top .fold { margin: 0; }
+  .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
+  .logo img { width: 22px; height: 22px; display: block; }
   aside { background: var(--bg-sunken); border-right: var(--border-width) solid var(--line); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }

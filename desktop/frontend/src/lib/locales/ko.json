@@ -1031,5 +1031,11 @@
 "In this version": "이 버전",
 "Before": "이전",
 "{count} file changed": "파일 {count}개 변경",
-"{count} files changed": "파일 {count}개 변경"
+"{count} files changed": "파일 {count}개 변경",
+"Show the sidebar": "사이드바 보이기",
+"Hide the sidebar": "사이드바 숨기기",
+"You are on this version": "지금 이 버전에 있습니다",
+"Get updates first": "먼저 업데이트를 받으세요",
+"Already in the branch you are on": "현재 브랜치에 이미 있습니다",
+"Start a branch from this version": "이 버전에서 브랜치 시작"
 }
