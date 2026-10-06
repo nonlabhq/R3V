@@ -18,6 +18,7 @@
   import ProgressBar from "./ProgressBar.svelte";
   import History from "./History.svelte";
   import HistoryGraph from "./HistoryGraph.svelte";
+  import BranchMenu from "./BranchMenu.svelte";
   import VersionDetail from "./VersionDetail.svelte";
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
@@ -628,24 +629,20 @@
   </div>
 {:else}
   <div class="view">
-    <ProjectHeader {st} {refreshing} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
-      onsettings={settings ? () => (tab = "settings") : onsettings} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
+    <ProjectHeader {st} {refreshing} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
 
-    <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
-      onrecover={() => run({ name: "goto", message: "",
-        call: (_res, force) => api.RecoverSwitch(root, force),
-        done: () => toast(t("Files put back as they were"), "ok") })}
-      onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
-      oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
-      onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
-      onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules} />
 
     <nav>
       <button class:on={tab === "overview"} onclick={() => (tab = "overview")}>
         {t("Overview")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
       </button>
       <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
-      {#if settings}<button class:on={tab === "settings"} onclick={() => (tab = "settings")}>{t("Settings")}</button>{/if}
+      {#if settings}
+        <button class:on={tab === "settings"} onclick={() => (tab = "settings")}
+          title={st.rules.error ? `⚠ ${st.rules.error}` : undefined}>{t("Settings")}{#if st.rules.error} <span class="bad">⚠</span>{/if}</button>
+      {:else}
+        <button onclick={onsettings}>{t("Settings")}</button>
+      {/if}
       <span class="sep" aria-hidden="true"></span>
       <button class:on={tab === "changes"} onclick={() => (tab = "changes")}>
         {t("Changes")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
@@ -681,7 +678,11 @@
       {#if tab === "overview"}
         <div class="overview">
           <div class="graph-pane">
-            <HistoryGraph versions={st.history} head={st.head} latest={st.latest} incoming={incomingIds}
+            <div class="graph-bar">
+              <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")} />
+            </div>
+            <HistoryGraph versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
+              branch={st.branch} head={st.head} incoming={incomingIds}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)} />
           </div>
           <div class="detail-pane">
@@ -713,6 +714,17 @@
           onmerge={st.remoteUrl && !st.olderVersion ? openVersionMerge : undefined} />
       {/if}
     </main>
+
+    <div class="banner-dock">
+      <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
+        onrecover={() => run({ name: "goto", message: "",
+          call: (_res, force) => api.RecoverSwitch(root, force),
+          done: () => toast(t("Files put back as they were"), "ok") })}
+        onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
+        oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
+        onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
+        onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules} />
+      </div>
 
   </div>
 
@@ -858,8 +870,17 @@
   main.flush { padding: 0; overflow: hidden; min-height: 0; }
   nav .sep { width: var(--border-width); align-self: stretch; margin: var(--sp-6) var(--sp-8); background: var(--line); }
   /* Overview: the graph, then the picked version (or your changes) and its files. */
-  .overview { display: grid; grid-template-columns: minmax(260px, 30%) 1fr; height: 100%; min-height: 0; }
-  .graph-pane { border-right: var(--border-width) solid var(--line); min-height: 0; padding: var(--sp-8) 0 var(--sp-8) var(--sp-8); }
+  .overview { display: grid; grid-template-columns: minmax(320px, 36%) 1fr; height: 100%; min-height: 0; }
+  .graph-pane { border-right: var(--border-width) solid var(--line); min-height: 0; display: flex; flex-direction: column; }
+  .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
+  .graph-bar { flex: none; padding: var(--sp-10) var(--sp-12) 0; }
+  nav .bad { color: var(--warn); }
+  /* Banners (new versions, problems) float at the bottom right, clear of
+     the changes and the commit box. */
+  .view { position: relative; }
+  .banner-dock { position: absolute; right: var(--sp-16); bottom: var(--sp-16); z-index: var(--z-dropdown);
+    width: min(560px, 42%); display: flex; flex-direction: column; gap: var(--sp-8); pointer-events: none; }
+  .banner-dock > :global(*) { pointer-events: auto; margin: 0 !important; box-shadow: var(--shadow-pop); }
   .detail-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .pending-h { display: flex; align-items: baseline; gap: var(--sp-10); padding: var(--sp-10) var(--sp-16);
     border-bottom: var(--border-width) solid var(--line); background: var(--accent-bg); }

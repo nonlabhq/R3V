@@ -1,24 +1,19 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { api, ago, errorText, type State } from "./api";
+  import { api, errorText, type State } from "./api";
   import { toast } from "./notify.svelte";
   import PreuploadIcon from "./PreuploadIcon.svelte";
   import { preuploads } from "./preupload.svelte";
 
-  // The top of a project's page: its name, the branch menu (switch, merge,
-  // new branch), the team it's shared with, and opening it in its tool.
-  let { st, refreshing, onswitch, onmerge, onnewbranch, onsettings, oncheck, onrefresh }: {
+  // The top of a project's page: its name, and opening it in its tool.
+  // (Branches are above the Overview's graph; settings are a tab.)
+  let { st, refreshing, oncheck, onrefresh }: {
     st: State;
     refreshing: boolean;
-    onswitch: (branch: string) => void;
-    onmerge: (branch: string) => void; // into the current one
-    onnewbranch: () => void;
-    onsettings: () => void;
     oncheck: () => void;
     onrefresh: () => void;
   } = $props();
 
-  let branchMenu = $state(false);
   let setMenu = $state(false);
   let isLive = $derived(st.tool === "Ableton Live");
   const label = (rel: string) => (rel === "." ? st.name ?? t("the project") : rel);
@@ -28,51 +23,12 @@
 
 <svelte:window onclick={(e) => {
   const el = e.target as HTMLElement;
-  if (branchMenu && !el.closest(".branch-wrap")) branchMenu = false;
   if (setMenu && !el.closest(".open-wrap")) setMenu = false;
 }} />
 
 <header>
   <div class="title">
-    <h1>{st.name}</h1>
-    <div class="sub">
-      <div class="branch-wrap">
-        <button class="branch" onclick={() => (branchMenu = !branchMenu)} disabled={!st.remoteUrl}
-          title={st.remoteUrl ? t("Branches") : t("Share the project with a team to use branches")}>
-          ⑂ {st.branch} ▾
-        </button>
-        {#if branchMenu}
-          <div class="menu surface-menu" role="menu">
-            <div class="menu-h">{t("Switch to")}</div>
-            {#each st.branches as b (b.name)}
-              <button class="item" disabled={b.current} onclick={() => { branchMenu = false; onswitch(b.name); }}>
-                <span>{b.name}</span>
-                <span class="faint">{b.current ? t("current") : b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
-              </button>
-            {/each}
-            <div class="sep"></div>
-            <div class="menu-h">{t("Merge into {branch}", { branch: st.branch })}</div>
-            {#each st.branches.filter((b) => !b.current) as b (b.name)}
-              <button class="item" onclick={() => { branchMenu = false; onmerge(b.name); }}>{b.name}</button>
-            {:else}
-              <div class="item faint">{t("no other branches")}</div>
-            {/each}
-            <div class="sep"></div>
-            <button class="item" onclick={() => { branchMenu = false; onnewbranch(); }}>{t("New branch from here…")}</button>
-          </div>
-        {/if}
-      </div>
-      {#if st.remoteUrl}
-        <span class="dot" class:on={st.online} class:checking={!st.teamChecked}></span>
-        <span class="faint" title={st.online ? st.remoteUrl : st.offline}>
-          {st.teamName || st.remoteUrl}{!st.teamChecked ? ` · ${t("checking…")}` : st.online ? "" : ` · ${t("not reachable")}`}
-        </span>
-        {#if preuploads[st.root]}<PreuploadIcon p={preuploads[st.root]} />{/if}
-      {/if}
-      <button class="ghost gear" class:bad={!!st.rules.error} onclick={onsettings}
-        title={st.rules.error ? `${t("Project settings")} — ⚠ ${st.rules.error}` : t("Project settings: name, rules, …")}
-        aria-label={t("Project settings")}>{st.rules.error ? "⚠" : ""}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
-    </div>
+    <h1>{st.name}{#if preuploads[st.root]} <PreuploadIcon p={preuploads[st.root]} />{/if}</h1>
   </div>
   <div class="actions">
     {#if st.openable.length === 1}
@@ -100,29 +56,17 @@
   header { display: flex; align-items: flex-start; padding: var(--sp-18) var(--sp-24) var(--sp-10); gap: var(--sp-16); }
   .title { flex: 1; min-width: 0; }
   h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  h1 { margin: 0 0 var(--sp-6); font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
-  .sub { display: flex; align-items: center; gap: var(--sp-10); }
+  h1 { margin: 0; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
   .actions { display: flex; gap: var(--sp-8); flex: none; }
   .refresh.spin { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .open-wrap { position: relative; }
   .menu.right { left: auto; right: 0; min-width: 220px; max-height: 50vh; overflow: auto; }
-  .branch { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
-  .branch-wrap { position: relative; }
   .menu {
     position: absolute; top: 32px; left: 0; z-index: var(--z-dropdown); min-width: 260px; padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg);
     box-shadow: var(--shadow-pop);
   }
-  .menu-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-6) var(--sp-8) var(--sp-2); }
   .item { display: flex; justify-content: space-between; width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; gap: var(--sp-12); }
   .item:hover:not(:disabled) { background: var(--hover); }
-  .sep { height: 1px; background: var(--line); margin: var(--sp-6) 0; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
-  .dot.on { background: var(--accent); }
-  .dot.checking { background: var(--faint); }
-  .gear { display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); font-size: var(--fs-md); color: var(--faint); }
-  .gear svg { width: 15px; height: 15px; }
-  .gear:hover { color: var(--text); }
-  .gear.bad { color: var(--warn); }
 </style>
