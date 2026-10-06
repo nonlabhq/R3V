@@ -9,6 +9,8 @@
   // and its title; every other version is a dot with its author's initial
   // (its title on hover). Your changes not committed yet are a dashed dot
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
+  // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
+  // zoom, double-click the background to put it back.
   let { versions, branches, branch, head, incoming, pending, selected, onselect, actions }: {
     versions: Version[];
     branches: { name: string; latest: string }[];
@@ -62,8 +64,8 @@
     }
     return out;
   });
-  let center = $derived(Math.max(width / 2, PAD - Math.min(-g.left * COL - 12, ...labels.map((l) => l.dx))));
-  let full = $derived(Math.max(width, center + Math.max(g.right * COL + 12, ...labels.map((l) => l.dx + l.w)) + PAD));
+  let center = $derived(PAD - Math.min(-g.left * COL - 12, ...labels.map((l) => l.dx)));
+  let full = $derived(center + Math.max(g.right * COL + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
   const x = (col: number) => center + col * COL;
   // Room at the top for the labels.
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
@@ -99,10 +101,87 @@
     const v = hovered ? byID.get(hovered) : undefined;
     if (!v) return null;
     const c = g.chainOf.get(v.id)!;
-    const nx = x(c.col);
-    const right = nx + 22 + CARD_W <= full;
-    return { v, branch: c.name, left: right ? nx + 22 : Math.max(4, nx - 22 - CARD_W), top: Math.max(4, y(v.id) - 28) };
+    const nx = panX + x(c.col) * zoom, ny = panY + y(v.id) * zoom, r = 12 * zoom + 10;
+    const right = nx + r + CARD_W <= width - 4;
+    return { v, branch: c.name, left: right ? nx + r : Math.max(4, nx - r - CARD_W), top: Math.min(Math.max(4, ny - 28), Math.max(4, boxHeight - 150)) };
   });
+
+  // The view: pan (px on the screen) and zoom.
+  let panX = $state(0), panY = $state(0), zoom = $state(1);
+  const ZOOM_MIN = 0.4, ZOOM_MAX = 2.5;
+  // At first (and on double-click): main in the middle, a short history in
+  // the middle too, a long one from the top.
+  function resetView() {
+    zoom = 1;
+    panX = width / 2 - center;
+    panY = Math.max(0, (boxHeight - height) / 2);
+  }
+  let viewed = false;
+  $effect(() => {
+    if (!viewed && width && boxHeight && (versions.length || pending)) { resetView(); viewed = true; }
+  });
+  // Some of the graph always stays in sight.
+  function clamp() {
+    const w = full * zoom, h = height * zoom, mx = Math.min(80, width / 3), my = Math.min(80, boxHeight / 3);
+    panX = Math.min(Math.max(panX, mx - w), width - mx);
+    panY = Math.min(Math.max(panY, my - h), boxHeight - my);
+  }
+
+  // Drag to pan (from anywhere but the card); a drag isn't a click.
+  let drag: { x: number; y: number; px: number; py: number; moved: boolean; id: number } | null = null;
+  let dragging = $state(false);
+  function onpointerdown(e: PointerEvent) {
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".card")) return;
+    drag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false, id: e.pointerId };
+  }
+  function onpointermove(e: PointerEvent) {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    if (!drag.moved) { drag.moved = true; dragging = true; hovered = null; box?.setPointerCapture(drag.id); }
+    panX = drag.px + dx;
+    panY = drag.py + dy;
+    clamp();
+  }
+  function onpointerup() {
+    if (drag?.moved) setTimeout(() => (dragging = false));
+    drag = null;
+  }
+  function onclickcapture(e: MouseEvent) {
+    if (dragging) { e.stopPropagation(); e.preventDefault(); dragging = false; }
+  }
+  function ondblclick(e: MouseEvent) {
+    if (!(e.target as HTMLElement).closest("button, .card")) resetView();
+  }
+  // Scroll: up and down (sideways with a trackpad or Shift); Ctrl+scroll
+  // zooms around the pointer. (Not passive: the page mustn't scroll.)
+  $effect(() => {
+    const el = box;
+    if (!el) return;
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      hovered = null;
+      if (e.ctrlKey) {
+        const r = el.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+        const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * Math.exp(-e.deltaY * 0.0015)));
+        panX = mx - ((mx - panX) / zoom) * z;
+        panY = my - ((my - panY) / zoom) * z;
+        zoom = z;
+      } else {
+        panX -= e.deltaX;
+        panY -= e.deltaY;
+      }
+      clamp();
+    };
+    el.addEventListener("wheel", wheel, { passive: false });
+    return () => el.removeEventListener("wheel", wheel);
+  });
+  // Keep the picked version in sight (↑ ↓).
+  function reveal(id: string) {
+    const yy = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
+    if (yy < 40) panY += 40 - yy;
+    else if (yy > boxHeight - 40) panY -= yy - (boxHeight - 40);
+  }
 
   let ids = $derived([...(pending ? ["pending"] : []), ...versions.map((v) => v.id)]);
   let box = $state<HTMLElement>();
@@ -113,17 +192,19 @@
     const i = ids.indexOf(selected) + (e.key === "ArrowDown" ? 1 : -1);
     if (i < 0 || i >= ids.length) return;
     onselect(ids[i]);
-    box?.querySelector<HTMLElement>(`[data-id="${ids[i]}"]`)?.focus();
+    reveal(ids[i]);
+    box?.querySelector<HTMLElement>(`[data-id="${ids[i]}"]`)?.focus({ preventScroll: true });
   }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={width} bind:clientHeight={boxHeight} {onkeydown}>
+<div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={width} bind:clientHeight={boxHeight} {onkeydown}
+  {onpointerdown} {onpointermove} {onpointerup} onpointercancel={onpointerup} {ondblclick} {onclickcapture}
+  class:dragging>
   {#if versions.length === 0 && !pending}
     <p class="muted empty">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
   {:else}
-    <!-- a short history sits in the middle of the column -->
-    <div class="canvas" style:width="{full}px" style:height="{height}px" style:margin-top="{Math.max(0, (boxHeight - height) / 2)}px">
+    <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px) scale({zoom})">
       <svg width={full} height={height} aria-hidden="true">
         {#each g.edges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
@@ -159,28 +240,30 @@
           onclick={() => onselect(v.id)}>{initial(v.author)}</button>
       {/each}
 
-      {#if card}
-        {@const v = card.v}
-        <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")}
-          style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px"
-          onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
-          <div class="card-h">
-            <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
-            <div class="card-t">
-              <div class="card-msg">{v.message || t("(no description)")}</div>
-              <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {card.branch}{/if} · <span class="mono">{v.short}</span></div>
-            </div>
-          </div>
-          {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}
-        </div>
-      {/if}
     </div>
+    {#if card}
+      {@const v = card.v}
+      <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")}
+        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px"
+        onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
+        <div class="card-h">
+          <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
+          <div class="card-t">
+            <div class="card-msg">{v.message || t("(no description)")}</div>
+            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {card.branch}{/if} · <span class="mono">{v.short}</span></div>
+          </div>
+        </div>
+        {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}
+      </div>
+    {/if}
   {/if}
 </div>
 
 <style>
-  .graph-col { height: 100%; overflow: auto; outline: none; }
-  .canvas { position: relative; }
+  .graph-col { position: relative; height: 100%; overflow: hidden; outline: none; cursor: grab; touch-action: none; }
+  .graph-col.dragging { cursor: grabbing; }
+  .graph-col.dragging * { cursor: grabbing; }
+  .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   svg { position: absolute; left: 0; top: 0; }
   .empty { padding: var(--sp-16); }
   .node { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border-radius: 50%;
