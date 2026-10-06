@@ -97,6 +97,47 @@ func main() {
 	tone(nd, "Samples/Recorded/Vox Take 2.wav", 330, 2.5)
 	write(nd, "Lyrics.txt", "Headlights on the overpass\n")
 
+	// Moonrise: you work on your own branch (right of main), Alex on his
+	// (left), merged into main by Mia; you have unsaved work.
+	you.use()
+	mr := filepath.Join(you.projects, "Moonrise Project")
+	set(mr, "Moonrise.als", "SampleAbletonProject.als")
+	write(mr, "notes.txt", "Moonrise\n")
+	rm, err := project.Init(mr, "Robin")
+	must(err)
+	must(rm.SetRemote(code))
+	run(mr, "save", "-m", "Sketch")
+	set(mr, "Moonrise.als", "SampleAbletonProject_v2.als")
+	run(mr, "save", "-m", "Chords and pads")
+	moon := rm.Config.Name
+
+	alex.use()
+	mrA := filepath.Join(alex.projects, "Moonrise Project")
+	_, _, err = project.Clone(code, moon, mrA, "Alex")
+	must(err)
+	run(mrA, "branch", "new", "alex-drums")
+	tone(mrA, "Samples/Recorded/Snare.wav", 180, 0.5)
+	run(mrA, "save", "-m", "Live drums")
+	write(mrA, "notes.txt", "Moonrise\n- drums: brushes in the verse\n")
+	run(mrA, "save", "-m", "Brushes in the verse")
+
+	mia.use()
+	mrM := filepath.Join(mia.projects, "Moonrise Project")
+	_, _, err = project.Clone(code, moon, mrM, "Mia")
+	must(err)
+	set(mrM, "Moonrise.als", "SampleAbletonProject_v3.als")
+	run(mrM, "save", "-m", "Arrangement")
+	run(mrM, "merge", "alex-drums")
+
+	you.use()
+	run(mr, "update")
+	run(mr, "branch", "new", "robin-vocals")
+	tone(mr, "Samples/Recorded/Vox Lead.wav", 392, 3)
+	run(mr, "save", "-m", "Lead vocal take")
+	write(mr, "Lyrics.txt", "Moon over the harbour\n")
+	run(mr, "save", "-m", "Lyrics, first verse")
+	tone(mr, "Samples/Recorded/Vox Double.wav", 392, 3)
+
 	// Field Recordings: on the team, not on this computer.
 	alex.use()
 	fr := filepath.Join(alex.projects, "Field Recordings Project")
