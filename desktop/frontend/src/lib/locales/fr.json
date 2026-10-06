@@ -1037,5 +1037,21 @@
 "You are on this version": "Vous êtes sur cette version",
 "Get updates first": "Récupérez d'abord les mises à jour",
 "Already in the branch you are on": "Déjà dans votre branche",
-"Start a branch from this version": "Créer une branche depuis cette version"
+"Start a branch from this version": "Créer une branche depuis cette version",
+"Drag to resize": "Faites glisser pour redimensionner",
+"Date modified": "Date de modification",
+"Size": "Taille",
+"Type": "Type",
+"Project": "Projet",
+"Sort": "Trier",
+"Show only some kinds of file": "N'afficher que certains types de fichiers",
+"{count} kinds": "{count} types",
+"All kinds": "Tous les types",
+"Show all": "Tout afficher",
+"Columns": "Colonnes",
+"Display": "Affichage",
+"List": "Liste",
+"Grid": "Grille",
+"No files of these kinds here.": "Aucun fichier de ces types ici.",
+"{count} kind": "{count} type"
 }

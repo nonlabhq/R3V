@@ -1037,5 +1037,21 @@
 "You are on this version": "你目前就在這個版本",
 "Get updates first": "請先取得更新",
 "Already in the branch you are on": "你所在的分支已經包含它",
-"Start a branch from this version": "從這個版本開一個分支"
+"Start a branch from this version": "從這個版本開一個分支",
+"Drag to resize": "拖曳調整寬度",
+"Date modified": "修改日期",
+"Size": "大小",
+"Type": "類型",
+"Project": "專案",
+"Sort": "排序",
+"Show only some kinds of file": "只顯示某些類型的檔案",
+"{count} kinds": "{count} 種類型",
+"All kinds": "所有類型",
+"Show all": "全部顯示",
+"Columns": "欄位",
+"Display": "顯示方式",
+"List": "清單",
+"Grid": "格狀",
+"No files of these kinds here.": "這裡沒有這些類型的檔案。",
+"{count} kind": "{count} 種類型"
 }

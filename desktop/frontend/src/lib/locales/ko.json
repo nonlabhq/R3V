@@ -1037,5 +1037,21 @@
 "You are on this version": "지금 이 버전에 있습니다",
 "Get updates first": "먼저 업데이트를 받으세요",
 "Already in the branch you are on": "현재 브랜치에 이미 있습니다",
-"Start a branch from this version": "이 버전에서 브랜치 시작"
+"Start a branch from this version": "이 버전에서 브랜치 시작",
+"Drag to resize": "드래그하여 너비 조절",
+"Date modified": "수정한 날짜",
+"Size": "크기",
+"Type": "유형",
+"Project": "프로젝트",
+"Sort": "정렬",
+"Show only some kinds of file": "일부 유형의 파일만 보기",
+"{count} kinds": "{count}개 유형",
+"All kinds": "모든 유형",
+"Show all": "모두 보기",
+"Columns": "열",
+"Display": "보기",
+"List": "목록",
+"Grid": "격자",
+"No files of these kinds here.": "여기에 이 유형의 파일이 없습니다.",
+"{count} kind": "{count}개 유형"
 }
