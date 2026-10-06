@@ -6,11 +6,10 @@
   // The Files tab's list, like a file explorer: one folder at a time (the
   // path above goes back up), as a list with columns or as a grid, sorted
   // and filtered by kind of file. How it looks is remembered.
-  let { root, files, selected, stamp = 0, onselect, onmenu }: {
+  let { root, files, selected, onselect, onmenu }: {
     root: string;
     files: ProjectFile[];
     selected: string;
-    stamp?: number; // changes when the folder may have changed (thumbnails)
     onselect: (path: string) => void;
     onmenu?: (e: MouseEvent, path: string, dir: boolean) => void;
   } = $props();
@@ -80,7 +79,10 @@
     if (cwd && !shown.some((f) => f.path.startsWith(cwd + "/"))) cwd = cwd.includes("/") ? cwd.slice(0, cwd.lastIndexOf("/")) : "";
   });
 
-  function open(e: Entry) {
+  // (a double click's second click lands on the folder entered by the first:
+  // only the first opens)
+  function open(e: Entry, ev?: MouseEvent) {
+    if (ev && ev.detail > 1) return;
     if (e.dir) cwd = e.path;
     else onselect(e.path);
   }
@@ -166,12 +168,12 @@
       </div>
       {#each entries as e (e.path)}
         <button class="row" role="row" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
-          style:grid-template-columns={cols} style:min-width="{rowMin}px" onclick={() => open(e)} ondblclick={() => open(e)}
+          style:grid-template-columns={cols} style:min-width="{rowMin}px" onclick={(ev) => open(e, ev)}
           oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="cell name"><FileIcon kind={e.kind} open={false} /><span class="nm">{e.name}</span>
             {#if e.file && sym[e.file.status]}<span class="st {e.file.status}">{sym[e.file.status]}</span>{/if}</span>
           {#if look.cols.modified}<span class="cell faint">{when(e.modified)}</span>{/if}
-          {#if look.cols.size}<span class="cell num faint">{e.dir ? t("{count} files", { count: e.count }) : formatBytes(e.size)}</span>{/if}
+          {#if look.cols.size}<span class="cell num faint">{e.dir ? tn(e.count, "{count} file", "{count} files", { count: e.count }) : formatBytes(e.size)}</span>{/if}
           {#if look.cols.type}<span class="cell faint">{e.dir ? t("Folder") : `${kindName(e.kind)}${ext(e.path) ? ` · ${ext(e.path)}` : ""}`}</span>{/if}
         </button>
       {:else}
@@ -182,10 +184,10 @@
     <div class="grid" aria-label={t("Files")}>
       {#each entries as e (e.path)}
         <button class="tile" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
-          onclick={() => open(e)} oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
+          onclick={(ev) => open(e, ev)} oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="thumb">
             {#if e.file?.preview && e.file.status !== "deleted"}
-              <img src="{previewURL(root, e.path, '', 256)}&t={stamp}" alt="" loading="lazy" />
+              <img src="{previewURL(root, e.path, '', 256)}&t={e.modified}" alt="" loading="lazy" />
             {:else}
               <span class="big-icon"><FileIcon kind={e.kind} /></span>
             {/if}

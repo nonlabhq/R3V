@@ -1074,5 +1074,10 @@
 "Zoom in": "拡大",
 "Back to 100%": "100% に戻す",
 "View pending changes": "未コミットの変更を見る",
-"View latest version": "最新バージョンを見る"
+"View latest version": "最新バージョンを見る",
+"Open the sidebar to see what's new": "サイドバーを開いて新着を見る",
+"{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（Live が Freeze ファイルを書き込み中など）。解放されたら R3V が読み込みます。",
+"in {folder}": "{folder} 内",
+"the project folder": "プロジェクトフォルダー",
+"detected": "検出"
 }

@@ -1074,5 +1074,10 @@
 "Zoom in": "Acercar",
 "Back to 100%": "Volver al 100 %",
 "View pending changes": "Ver cambios pendientes",
-"View latest version": "Ver la última versión"
+"View latest version": "Ver la última versión",
+"Open the sidebar to see what's new": "Abre la barra lateral para ver las novedades",
+"{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} y {n} archivo más están en uso por otro programa (Live escribiendo archivos Freeze, por ejemplo): R3V los leerá cuando queden libres.",
+"in {folder}": "en {folder}",
+"the project folder": "la carpeta del proyecto",
+"detected": "detectado"
 }

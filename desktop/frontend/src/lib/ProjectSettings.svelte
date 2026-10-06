@@ -100,7 +100,7 @@
       <ul class="applied">
         {#each info.rules.applied as a}
           <li><strong>{presetName(a.preset)}</strong>
-            <span class="faint">{a.folder ? `in ${a.folder}/` : "the project folder"}{a.detected ? " · detected" : ""}</span></li>
+            <span class="faint">{a.folder ? t("in {folder}", { folder: `${a.folder}/` }) : t("the project folder")}{a.detected ? ` · ${t("detected")}` : ""}</span></li>
         {:else}
           <li class="faint">{t("No preset: every file is tracked.")}</li>
         {/each}

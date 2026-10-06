@@ -1074,5 +1074,10 @@
 "Zoom in": "확대",
 "Back to 100%": "100%로",
 "View pending changes": "커밋 안 된 변경 보기",
-"View latest version": "최신 버전 보기"
+"View latest version": "최신 버전 보기",
+"Open the sidebar to see what's new": "사이드바를 열어 새 소식 보기",
+"{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 외 {n}개 파일을 다른 프로그램이 사용 중입니다(Live가 Freeze 파일을 쓰는 중 등). 풀리면 R3V가 읽습니다.",
+"in {folder}": "{folder} 안",
+"the project folder": "프로젝트 폴더",
+"detected": "감지됨"
 }
