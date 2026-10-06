@@ -183,6 +183,7 @@
   watchProject(() => root, () => !!busy, load, (p) => (progress = p));
 
   async function refresh() {
+    if (refreshing) return;
     refreshing = true;
     await load();
     refreshing = false;
@@ -627,7 +628,8 @@
   let folderName = $derived(root.split(/[\\/]/).pop()?.replace(/ Project$/, "") ?? root);
 </script>
 
-<svelte:window onfocus={() => { if (!busy) load(); }} />
+<svelte:window onfocus={() => { if (!busy) load(); }}
+  onkeydown={(e) => { if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) refresh(); }} />
 
 {#if loadError && !st && !busy}
   <div class="pad"><p class="error">{loadError}</p></div>
