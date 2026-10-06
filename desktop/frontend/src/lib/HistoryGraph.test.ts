@@ -48,6 +48,16 @@ describe("HistoryGraph", () => {
     expect(dot.style.left).not.toBe(top.style.left); // its own column, not main's
   });
 
+  it("shows your changes before the first version (a project just added), with the branch over them", async () => {
+    const { onselect } = show({ versions: [], branches: [], head: "", pending: 5, selected: "pending" });
+    expect(screen.getByRole("option", { name: "Your changes" })).toBeTruthy();
+    await fireEvent.click(screen.getByText("main"));
+    expect(onselect).toHaveBeenLastCalledWith("pending");
+    cleanup();
+    show({ versions: [], branches: [], head: "", pending: 0, selected: "" });
+    expect(screen.getByText(/No versions yet/)).toBeTruthy();
+  });
+
   it("moves through your changes and the versions with ↑ ↓", async () => {
     const { onselect } = show({ pending: 1, selected: "pending" });
     await fireEvent.keyDown(screen.getByRole("listbox"), { key: "ArrowDown" });
