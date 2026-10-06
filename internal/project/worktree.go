@@ -5,11 +5,13 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -337,6 +339,14 @@ func (r *Repo) withoutInUse(files []FileEntry) ([]FileEntry, error) {
 		}
 	}
 	return out, nil
+}
+
+// FilesInUseError: files another program holds stop a step that rewrites
+// the project's files (it can't tell whether they have changes).
+type FilesInUseError struct{ Paths []string }
+
+func (e *FilesInUseError) Error() string {
+	return fmt.Sprintf("%s is in use by another program (Live writing a Freeze file?): close it, or wait until it is free, and try again", strings.Join(e.Paths, ", "))
 }
 
 // InUse lists the files the last look at the folder couldn't read because
