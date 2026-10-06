@@ -155,6 +155,29 @@
     if (!moved && width && boxHeight && (versions.length || pending)) resetView();
   });
   // Some of the graph always stays in sight.
+  let toolbarWidth = $state(0); // (kept inside the card when the graph is narrow)
+  // The toolbar's zoom: around the middle of what can be seen.
+  function zoomBy(f: number) {
+    const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * f));
+    const mx = width / 2, my = boxHeight / 2;
+    panX = mx - ((mx - panX) / zoom) * z;
+    panY = my - ((my - panY) / zoom) * z;
+    zoom = z;
+    moved = true;
+    clamp();
+  }
+  function zoomReset() {
+    if (zoom === 1) { moved = false; resetView(); return; }
+    zoomBy(1 / zoom);
+  }
+  // Back to what matters now: your changes when you have some, else the
+  // version you are on (the toolbar offers it when something else is picked).
+  let backTo = $derived(pending ? (selected !== "pending" ? "pending" : "") : head && selected !== head ? head : "");
+  function goBack() {
+    onselect(backTo);
+    reveal(backTo);
+  }
+
   function clamp() {
     const w = full * zoom, h = height * zoom, mx = Math.min(80, width / 3), my = Math.min(80, boxHeight / 3);
     panX = Math.min(Math.max(panX, mx - w), width - mx);
@@ -165,7 +188,7 @@
   let drag: { x: number; y: number; px: number; py: number; moved: boolean; id: number } | null = null;
   let dragging = $state(false);
   function onpointerdown(e: PointerEvent) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".card")) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".card, .toolbar")) return;
     drag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false, id: e.pointerId };
   }
   function onpointermove(e: PointerEvent) {
@@ -185,7 +208,7 @@
     if (dragging) { e.stopPropagation(); e.preventDefault(); dragging = false; }
   }
   function ondblclick(e: MouseEvent) {
-    if (!(e.target as HTMLElement).closest("button, .card")) { moved = false; resetView(); }
+    if (!(e.target as HTMLElement).closest("button, .card, .toolbar")) { moved = false; resetView(); }
   }
   // Scroll: up and down (sideways with a trackpad or Shift); Ctrl+scroll
   // zooms around the pointer. (Not passive: the page mustn't scroll.)
@@ -290,6 +313,18 @@
       {/each}
 
     </div>
+    <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
+      <button class="ghost zoom" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out")}>−</button>
+      <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>
+      <button class="ghost zoom" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in")}>+</button>
+      {#if backTo === "pending"}
+        <span class="sep" aria-hidden="true"></span>
+        <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
+      {:else if backTo}
+        <span class="sep" aria-hidden="true"></span>
+        <button class="back light" onclick={goBack}>{t("View latest version")}</button>
+      {/if}
+    </div>
     {#if link}
       <svg class="link" aria-hidden="true">
         <path d="M {link.x1} {link.y1} C {(link.x1 + link.x2) / 2} {link.y1}, {(link.x1 + link.x2) / 2} {link.y2}, {link.x2} {link.y2}"
@@ -319,6 +354,17 @@
   .graph-col { position: relative; height: 100%; overflow: hidden; outline: none; cursor: grab; touch-action: none; }
   .graph-col.dragging { cursor: grabbing; }
   .graph-col.dragging * { cursor: grabbing; }
+  /* The toolbar floats at the bottom, in the middle of what the details leave. */
+  .toolbar { position: absolute; bottom: var(--sp-20); transform: translateX(-50%); z-index: 3; display: flex; align-items: center;
+    gap: var(--sp-2); padding: var(--sp-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-pop); white-space: nowrap; cursor: default; }
+  .toolbar button { border-radius: var(--radius-pill); padding: var(--sp-6) var(--sp-12); font-size: var(--fs-md); }
+  .toolbar .zoom { padding: var(--sp-6) var(--sp-10); color: var(--muted); }
+  .toolbar .pct { min-width: 56px; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text); }
+  .toolbar .sep { width: var(--border-width); height: 20px; margin: 0 var(--sp-6); background: var(--line-strong); }
+  .toolbar .back { font-weight: var(--fw-semibold); }
+  .toolbar .light { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .toolbar .light:hover:not(:disabled) { background: var(--switch-knob); border-color: var(--switch-knob); }
   .link { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   svg { position: absolute; left: 0; top: 0; }

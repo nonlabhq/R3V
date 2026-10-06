@@ -1069,5 +1069,10 @@
 "Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "큰 파일은 변경이 멈추면 백그라운드에서 먼저 올라가서, 나중에 커밋이 금방 끝납니다. 파일이 삭제·변경·제외되면 멈춥니다.",
 "R3V can't read the project right now, so what you see may be out of date: {error}": "R3V가 지금 이 프로젝트를 읽을 수 없어 보이는 내용이 오래되었을 수 있습니다: {error}",
 "{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.": "{file}을(를) 다른 프로그램이 사용 중입니다(Live가 Freeze 파일을 쓰는 중 등). 풀리면 R3V가 읽습니다.",
-"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 외 {n}개 파일을 다른 프로그램이 사용 중입니다(Live가 Freeze 파일을 쓰는 중 등). 풀리면 R3V가 읽습니다."
+"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 외 {n}개 파일을 다른 프로그램이 사용 중입니다(Live가 Freeze 파일을 쓰는 중 등). 풀리면 R3V가 읽습니다.",
+"Zoom out": "축소",
+"Zoom in": "확대",
+"Back to 100%": "100%로",
+"View pending changes": "커밋 안 된 변경 보기",
+"View latest version": "최신 버전 보기"
 }

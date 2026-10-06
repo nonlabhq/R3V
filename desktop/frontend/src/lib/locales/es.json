@@ -1069,5 +1069,10 @@
 "Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "Los archivos grandes se suben en segundo plano cuando dejan de cambiar, así el commit luego es rápido. Se detiene si el archivo se borra, cambia o se excluye.",
 "R3V can't read the project right now, so what you see may be out of date: {error}": "R3V no puede leer el proyecto ahora; lo que ves puede no estar al día: {error}",
 "{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.": "{file} está en uso por otro programa (Live escribiendo un archivo Freeze, por ejemplo): R3V lo leerá cuando quede libre.",
-"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} y {n} archivos más están en uso por otro programa (Live escribiendo archivos Freeze, por ejemplo): R3V los leerá cuando queden libres."
+"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} y {n} archivos más están en uso por otro programa (Live escribiendo archivos Freeze, por ejemplo): R3V los leerá cuando queden libres.",
+"Zoom out": "Alejar",
+"Zoom in": "Acercar",
+"Back to 100%": "Volver al 100 %",
+"View pending changes": "Ver cambios pendientes",
+"View latest version": "Ver la última versión"
 }

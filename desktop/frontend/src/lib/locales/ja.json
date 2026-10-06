@@ -1069,5 +1069,10 @@
 "Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "大きなファイルは変更が止まるとバックグラウンドで先にアップロードされ、後のコミットはすぐ終わります。ファイルが削除・変更・除外されると止まります。",
 "R3V can't read the project right now, so what you see may be out of date: {error}": "R3V は今このプロジェクトを読めません。表示が古いかもしれません：{error}",
 "{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.": "{file} は別のプログラムが使用中です（Live が Freeze ファイルを書き込み中など）。解放されたら R3V が読み込みます。",
-"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（Live が Freeze ファイルを書き込み中など）。解放されたら R3V が読み込みます。"
+"{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（Live が Freeze ファイルを書き込み中など）。解放されたら R3V が読み込みます。",
+"Zoom out": "縮小",
+"Zoom in": "拡大",
+"Back to 100%": "100% に戻す",
+"View pending changes": "未コミットの変更を見る",
+"View latest version": "最新バージョンを見る"
 }
