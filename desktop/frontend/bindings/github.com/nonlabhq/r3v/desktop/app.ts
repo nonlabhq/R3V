@@ -1028,6 +1028,16 @@ export function VersionChanges(root: string, id: string): $CancellablePromise<$m
 }
 
 /**
+ * VersionFiles lists the files a version changed as the file viewers take
+ * them (kind, previewable), for comparing each with the version before.
+ */
+export function VersionFiles(root: string, id: string): $CancellablePromise<$models.ProjectFile[]> {
+    return $Call.ByID(2020744434, root, id).then(($result: any) => {
+        return $$createType36($result);
+    });
+}
+
+/**
  * WatchFiles sends "files" events when files in the project change, so new
  * or edited samples show up without waiting for the next poll. Sets are left
  * to Signature (it waits for Live to finish writing). It returns false when

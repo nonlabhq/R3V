@@ -14,8 +14,9 @@
   // (Preview), against the version you're on (Changes) or through its
   // versions (History), shown by its kind's viewer (viewers/). "All files"
   // lists the whole project folder. Each file has a menu (⋯ or right click).
-  let { root, st, summary, commitBox, excluded = $bindable({}), ondiscard, ondiscardall, ondiscardsome, onrestore, onrules }: {
+  let { root, st, summary, commitBox, scope, excluded = $bindable({}), ondiscard, ondiscardall, ondiscardsome, onrestore, onrules }: {
     root: string;
+    scope?: "changes" | "all"; // the list fixed to the changes or every file (no All files switch)
     st: State;
     excluded?: Record<string, boolean>; // changes unticked: left out of the next commit
     summary: Snippet; // shown when no file is selected (tracks you changed)
@@ -31,6 +32,7 @@
   let all = $state(false);
   $effect.pre(() => {
     const key = `r3v.allFiles:${root}`;
+    if (scope) { all = scope === "all"; return; }
     try { all = localStorage.getItem(key) === "1"; } catch { all = false; }
   });
   function rememberAll() {
@@ -293,9 +295,11 @@
           aria-label={t("Discard the ticked changes")}
           onclick={() => (ticked.length === changedPaths.length ? ondiscardall() : ondiscardsome(ticked))}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
       {/if}
-      <label class="all h-all" title={t("List every file in the project folder")}>
-        {t("All files")} <input type="checkbox" class="switch" role="switch" bind:checked={all} onchange={rememberAll} />
-      </label>
+      {#if !scope}
+        <label class="all h-all" title={t("List every file in the project folder")}>
+          {t("All files")} <input type="checkbox" class="switch" role="switch" bind:checked={all} onchange={rememberAll} />
+        </label>
+      {/if}
     </div>
     {#if files.length === 0}
       <p class="muted empty">{all ? t("The project folder is empty.") : (st.tool === "Ableton Live" ? t("No uncommitted changes. Work in Live and press Ctrl+S — your changes show up here.") : t("No uncommitted changes. Work in {tool} and save — your changes show up here.", { tool: st.tool ? t(st.tool) : t("your app") }))}</p>

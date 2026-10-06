@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Events } from "@wailsio/runtime";
+  import { Events, Window } from "@wailsio/runtime";
   import { api, errorText, formatBytes, progressShort, type Overview, type Progress, type ProjectInfo, type TeamProject } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
@@ -228,11 +228,45 @@
   function select(p: TeamProject) {
     selected = p.root ? { root: p.root } : { id: p.id };
     if (p.root) remember(SELECTED_KEY, p.root);
+    openTab(p);
   }
+
+  // Projects open as tabs at the top (per team, remembered). The sidebar
+  // opens one, or goes to it when it is open already.
+  const tabsKey = () => `r3v.tabs:${overview?.currentTeam ?? ""}`;
+  let tabKeys = $state<string[]>([]);
+  let tabsClosed = $state(false); // every tab closed: nothing is picked for you
+  $effect.pre(() => {
+    overview?.currentTeam; // the team's tabs
+    try { tabKeys = JSON.parse(localStorage.getItem(tabsKey()) ?? "[]"); } catch { tabKeys = []; }
+    tabsClosed = false;
+  });
+  let tabEntries = $derived(tabKeys.map((k) => entries.find((p) => rowKey(p) === k)).filter((p): p is TeamProject => !!p));
+  function saveTabs() { remember(tabsKey(), JSON.stringify(tabKeys)); }
+  function openTab(p: TeamProject) {
+    tabsClosed = false;
+    if (tabKeys.includes(rowKey(p))) return;
+    tabKeys = [...tabKeys, rowKey(p)];
+    saveTabs();
+  }
+  function closeTab(p: TeamProject) {
+    const at = tabEntries.indexOf(p);
+    tabKeys = tabKeys.filter((k) => k !== rowKey(p));
+    saveTabs();
+    if (selectedEntry !== p) return;
+    const rest = tabEntries.filter((e) => e !== p);
+    const next = rest[Math.min(at, rest.length - 1)];
+    if (next) select(next);
+    else { selected = {}; tabsClosed = true; }
+  }
+  let addOpen = $state(false); // the + menu: projects not open
+  // The window's own controls (no Windows title bar): in the browser
+  // (server mode) they do nothing.
+  const win = (f: () => Promise<unknown>) => f().catch(() => {});
 
   // Keep a valid selection when the team or the list changes.
   $effect(() => {
-    if (!overview || selectedEntry) return;
+    if (!overview || selectedEntry || tabsClosed) return;
     const last = recall(SELECTED_KEY);
     const pick = entries.find((p) => p.root && p.root === last) ??
       entries.find((p) => p.status === "downloaded") ?? entries[0];
@@ -394,8 +428,14 @@
 </script>
 
 <svelte:window onfocus={reloadIfStale}
-  onclick={(e) => { if (rowMenu && !(e.target as HTMLElement).closest(".row-menu, .more")) rowMenu = ""; }} />
+  onclick={(e) => {
+    if (rowMenu && !(e.target as HTMLElement).closest(".row-menu, .more")) rowMenu = "";
+    if (addOpen && !(e.target as HTMLElement).closest(".tab-add-wrap")) addOpen = false;
+  }} />
 
+{#if !overview || onboarding}
+  <div class="bare-bar">{@render winControls()}</div>
+{/if}
 {#if !overview}
   <div class="splash" role="status" aria-label={t("Loading")}>
     <div class="splash-logo"><img src="/icon.png" alt="" />R3V</div>
@@ -412,11 +452,13 @@
 {:else}
   <div class="shell">
     <aside>
+      <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
         <img src="/icon.png" alt="" /> R3V
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
         {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
+      </div>
       {#if update}
         {@const u = update}
         <div class="update">
@@ -463,10 +505,40 @@
     </aside>
 
     <section class="content">
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="titlebar" ondblclick={(e) => { if (e.target === e.currentTarget) win(() => Window.ToggleMaximise()); }}>
+        <div class="tabs" role="tablist" aria-label={t("Open projects")}>
+          {#each tabEntries as p (rowKey(p))}
+            <div class="tab" class:on={selectedEntry === p}>
+              <button class="tab-name" role="tab" aria-selected={selectedEntry === p} onclick={() => select(p)} title={p.root || p.name}>
+                <span class="tab-icon" aria-hidden="true">{statusIcon[p.status]}</span>{p.name}
+              </button>
+              <button class="tab-x" onclick={() => closeTab(p)} aria-label={t("Close {name}", { name: p.name })}>×</button>
+            </div>
+          {/each}
+          <div class="tab-add-wrap">
+            <button class="tab-add" onclick={() => (addOpen = !addOpen)} aria-label={t("Open a project")} title={t("Open a project")}>+</button>
+            {#if addOpen}
+              <div class="add-menu surface-menu" role="menu">
+                {#each entries.filter((p) => !tabEntries.includes(p)) as p (rowKey(p))}
+                  <button class="item" onclick={() => { addOpen = false; select(p); }}>
+                    <span class="tab-icon" aria-hidden="true">{statusIcon[p.status]}</span>{p.name}
+                  </button>
+                {:else}
+                  <div class="item faint">{t("Every project is open.")}</div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </div>
+        {@render winControls()}
+      </div>
+      <div class="content-body">
       {#if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
             onsettings={() => (settingsFor = selectedEntry ?? null)}
+            settings={settingsTab}
             firstShare={firstShare === selectedEntry.root} onfirstshared={() => (firstShare = "")}
             downloaded={justDownloaded === selectedEntry.root} ondownloadseen={() => (justDownloaded = "")} />
         {/key}
@@ -512,9 +584,24 @@
           <p class="muted">{t("Pick a project on the left, or add one to share it with the team.")}</p>
         </div>
       {/if}
+      </div>
     </section>
   </div>
 {/if}
+
+{#snippet winControls()}
+  <div class="win">
+    <button onclick={() => win(() => Window.Minimise())} aria-label={t("Minimize")} title={t("Minimize")}>
+      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 5.5h8" /></svg>
+    </button>
+    <button onclick={() => win(() => Window.ToggleMaximise())} aria-label={t("Maximize")} title={t("Maximize")}>
+      <svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" /></svg>
+    </button>
+    <button class="close" onclick={() => win(() => Window.Close())} aria-label={t("Close")} title={t("Close (R3V keeps running in the tray)")}>
+      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" /></svg>
+    </button>
+  </div>
+{/snippet}
 
 {#snippet updateActions(u: UpdateInfo)}
   <div class="update-a">
@@ -594,15 +681,19 @@
     ondownloaddir={changeDownloadDir} onupdate={(u) => (update = u)} onclose={() => (appSettings = false)} />
 {/if}
 
-{#if settingsFor}
-  {@const p = settingsFor}
-  <ProjectSettings {p} team={current}
+{#snippet projectSettings(p: TeamProject, inline: boolean)}
+  <ProjectSettings {p} team={current} {inline}
     onclose={() => (settingsFor = null)}
-    onrenamed={async () => { const key = rowKey(p); await reload(); refreshKey++; settingsFor = entries.find((e) => rowKey(e) === key) ?? null; }}
-    oncheck={() => { checking = closeSettings(); }}
-    ondelete={() => { const q = closeSettings(); deleteWord = ""; confirmDelete = q; }}
-    onunlink={() => { const q = closeSettings(); leaving = { roots: [q.root], go: () => forget(q) }; }}
-    onlocate={() => locate(closeSettings())} />
+    onrenamed={async () => { const key = rowKey(p); await reload(); refreshKey++; if (settingsFor) settingsFor = entries.find((e) => rowKey(e) === key) ?? null; }}
+    oncheck={() => { settingsFor = null; checking = p; }}
+    ondelete={() => { settingsFor = null; deleteWord = ""; confirmDelete = p; }}
+    onunlink={() => { settingsFor = null; leaving = { roots: [p.root], go: () => forget(p) }; }}
+    onlocate={() => { settingsFor = null; locate(p); }} />
+{/snippet}
+{#snippet settingsTab()}{#if selectedEntry}{@render projectSettings(selectedEntry, true)}{/if}{/snippet}
+
+{#if settingsFor}
+  {@render projectSettings(settingsFor, false)}
 {/if}
 
 {#if checking}
@@ -729,7 +820,43 @@
   .must-card .update-a button { padding: var(--sp-6) var(--sp-14); font-size: var(--fs-base); }
   .x { padding: 0 var(--sp-4); line-height: 16px; color: var(--muted); }
   .small { font-size: var(--fs-md); }
-  .content { min-width: 0; overflow: hidden; }
+  .content { min-width: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .content-body { flex: 1; min-height: 0; overflow: hidden; }
+  /* The title bar (the window has no Windows one): open projects as tabs,
+     and the window's buttons. Empty space drags the window. */
+  .titlebar, .aside-top { --wails-draggable: drag; }
+  .titlebar button, .aside-top button, .add-menu { --wails-draggable: no-drag; }
+  .titlebar { display: flex; align-items: flex-end; height: 40px; flex: none; background: var(--bg-sunken);
+    border-bottom: var(--border-width) solid var(--line); }
+  .tabs { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0 var(--sp-8); height: 100%; }
+  .tab { display: flex; align-items: center; min-width: 0; max-width: 220px; height: 32px; border: var(--border-width) solid transparent;
+    border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; color: var(--muted); }
+  .tab:hover { background: var(--panel); }
+  .tab.on { background: var(--bg); border-color: var(--line); color: var(--text); margin-bottom: calc(var(--border-width) * -1); height: calc(32px + var(--border-width)); }
+  .tab-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
+    padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
+  .tab-name:hover:not(:disabled) { background: transparent; }
+  .tab-icon { color: var(--accent); font-size: var(--fs-sm); }
+  .tab-x { border: none; background: transparent; padding: 0 var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; visibility: hidden; }
+  .tab:hover .tab-x, .tab.on .tab-x { visibility: visible; }
+  .tab-x:hover:not(:disabled) { background: transparent; color: var(--text); }
+  .tab-add-wrap { position: relative; align-self: center; }
+  .tab-add { border: none; background: transparent; padding: 0 var(--sp-10); font-size: var(--fs-lg); color: var(--muted); }
+  .add-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);
+    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .add-menu .item { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent;
+    padding: var(--sp-6) var(--sp-8); text-align: left; }
+  .add-menu button.item:hover { background: var(--hover); }
+  .win { display: flex; align-self: stretch; }
+  .win button { width: 46px; border: none; border-radius: 0; background: transparent; padding: 0; display: flex;
+    align-items: center; justify-content: center; color: var(--muted); }
+  .win button:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+  .win button.close:hover:not(:disabled) { background: var(--danger); color: var(--text); }
+  .win svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1; }
+  .bare-bar { position: fixed; top: 0; left: 0; right: 0; height: 32px; display: flex; justify-content: flex-end;
+    z-index: var(--z-menu); --wails-draggable: drag; }
+  .bare-bar button { --wails-draggable: no-drag; }
+  .aside-top { margin: calc(var(--sp-12) * -1) calc(var(--sp-10) * -1) 0; padding: var(--sp-8) var(--sp-10) 0; }
   .placeholder { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: var(--sp-40); }
   .placeholder h1 { margin: var(--sp-6) 0; }
   .big { font-size: 44px; color: var(--faint); }
