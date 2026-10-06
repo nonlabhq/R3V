@@ -39,6 +39,11 @@ For the app's look, `go run ./desktop/cmd/r3v-demo` (from the repository
 root, after building `bin/R3V-server.exe`) runs that build on a made-up team
 instead: teammates, a branch, a version to get and unsaved changes, made
 afresh each time in a temporary folder, with the team's storage in memory.
+Build it with `-tags server,nightly` to get the Style lab (Ctrl+Alt+L, in
+every Nightly build): looks to try (`src/lib/themes.ts`) and knobs for
+spacing, corners, borders, shadows, see-through surfaces, accent and font.
+"Copy as CSS" gives the tokens of what is on screen, to make it the default
+in `src/tokens.css`.
 
 ## Layout
 

@@ -12,6 +12,7 @@
   import VerifyDialog from "./lib/VerifyDialog.svelte";
   import Modal from "./lib/Modal.svelte";
   import Toasts from "./lib/Toasts.svelte";
+  import StyleLab from "./lib/StyleLab.svelte";
   import ProjectSettings from "./lib/ProjectSettings.svelte";
   import AppSettings from "./lib/AppSettings.svelte";
   import { t, tn } from "./lib/i18n.svelte";
@@ -136,6 +137,7 @@
   let justDownloaded = $state(""); // show its check when it opens
   let appVersion = $state("");
   let edition = $state(""); // a build with extensions, e.g. "Pro"
+  let nightly = $state(false); // the Style lab is there to try looks
 
   // A newer release: offered until the user hides that version (unless it's
   // required: then the app can't be used before updating). A signed one is
@@ -366,6 +368,7 @@
     api.Autostart().then((on) => (autostart = on)).catch(() => {});
     api.Version().then((v) => (appVersion = v)).catch(() => {});
     api.Edition().then((e) => (edition = e)).catch(() => {});
+    api.Channel().then((c) => (nightly = c.build === "nightly")).catch(() => {});
     checkUpdate();
     const offProgress = Events.On("progress", (ev: { data: Progress }) => onProgress(ev.data));
     const offUpdate = Events.On("update", (ev: { data: UpdateState }) => onUpdateState(ev.data));
@@ -640,6 +643,7 @@
 {/if}
 
 <Toasts />
+{#if nightly}<StyleLab />{/if}
 
 <style>
   .shell { display: grid; grid-template-columns: 250px 1fr; height: 100%; }
