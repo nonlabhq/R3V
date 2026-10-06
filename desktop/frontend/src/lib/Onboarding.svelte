@@ -94,7 +94,7 @@
 
 <div class="onboarding">
   <div class="card" class:wide={step === 1}>
-    <div class="brand"><img src="/icon.png" alt="" /> R3V</div>
+    <div class="brand"><img src="/brand/r3v-icon-small.svg" alt="" /><img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" /></div>
     <ol class="steps">
       <li class:on={step === 1} class:done={step > 1}>{t("Team")}</li>
       <li class:on={step === 2} class:done={step > 2}>{t("Your name")}</li>
@@ -176,6 +176,7 @@
   .card.wide { width: 660px; }
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); margin-bottom: var(--sp-14); }
   .brand img { width: 24px; height: 24px; }
+  .brand img.wordmark { width: auto; height: 18px; }
   .steps { list-style: none; display: flex; gap: var(--sp-8); padding: 0; margin: 0 0 var(--sp-18); font-size: var(--fs-sm); }
   .steps li { padding: var(--sp-4) var(--sp-10); border-radius: var(--radius-pill); background: var(--bg); color: var(--faint); }
   .steps li.on { background: var(--accent-bg); color: var(--accent); }
