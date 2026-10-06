@@ -306,3 +306,26 @@ describe("ProjectView: Overview", () => {
     await screen.findByText("Go to an older version");
   });
 });
+
+describe("ProjectView: reloading", () => {
+  it("keeps what the team said while it reads the project again (no blinking banner)", async () => {
+    api.TeamState.mockResolvedValue({ online: true, offline: "", branches: [], incoming: [], takenBack: [],
+      history: [version("h1", "v1", { parents: [] })], olderVersion: null, unshared: true, capabilities: {} });
+    await show({ unshared: false });
+    const banner = /its versions are on this computer only/;
+    await screen.findByText(banner);
+    // The window gets focus again (e.g. while being resized): the project is
+    // read again, and the team is slow to answer this time.
+    api.TeamState.mockReturnValue(new Promise(() => {}));
+    const now = Date.now;
+    Date.now = () => now() + 10_000;
+    try {
+      await fireEvent(window, new Event("focus"));
+      await waitFor(() => expect(api.State).toHaveBeenCalledTimes(2));
+      await new Promise((r) => setTimeout(r));
+      expect(screen.queryByText(banner)).not.toBeNull();
+    } finally {
+      Date.now = now;
+    }
+  });
+});
