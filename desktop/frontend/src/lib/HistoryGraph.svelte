@@ -26,34 +26,48 @@
   let headChain = $derived(g.chainOf.get(head));
 
   let width = $state(0); // of the column
-  let center = $derived(Math.max(width / 2, PAD + LABEL_W / 2 + g.left * COL));
-  let full = $derived(Math.max(width, center + g.right * COL + PAD + LABEL_W / 2));
-  const x = (col: number) => center + col * COL;
+  let boxHeight = $state(0);
 
   // Labels: one per branch, with its newest version's title, above its top
-  // dot (your changes, on your branch); moved up when two would meet.
-  type Label = { id: string; name: string; title: string; col: number; color: number; y: number; w: number; dim: boolean };
+  // dot (your changes, on your branch). Placed clear of the dots and of each
+  // other: centred, else leaning to the branch's side, else a row higher.
+  // Positions are from the middle column (dx) and the first row (y).
+  type Label = { id: string; name: string; title: string; color: number; dx: number; y: number; w: number; h: number };
   let labels = $derived.by(() => {
     const out: Label[] = [];
+    const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
+      ...(pending && headChain ? [{ col: headChain.col, row: 0 }] : [])];
+    const clear = (dx: number, y: number, w: number, h: number) =>
+      dots.every((d) => d.col * COL + 12 < dx || d.col * COL - 12 > dx + w || d.row * ROW + ROW / 2 + 12 < y || d.row * ROW + ROW / 2 - 12 > y + h) &&
+      out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
     for (const c of g.chains) {
       if (!c.name) continue;
       const atPending = pending && c === headChain;
       const tip = byID.get(c.tip)!;
-      const title = short(tip.message || t("(no description)"), TITLE);
+      // On your branch with changes not committed: just its name.
+      const title = atPending ? "" : short(tip.message || t("(no description)"), TITLE);
       const rowY = atPending ? 0 : g.row.get(c.tip)! + off;
       const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
-      let y = rowY * ROW - LABEL_H + 6; // bottom just above the dot
-      const meets = (l: Label) => Math.abs(x(l.col) - x(c.col)) < (l.w + w) / 2 + 4 && Math.abs(l.y - y) < LABEL_H;
-      while (out.some(meets)) y -= LABEL_H;
-      out.push({ id: c.tip, name: c.name, title, col: c.col, color: c.color, y, w, dim: false });
+      const h = title ? 32 : 24;
+      const at = c.col * COL;
+      const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
+      let place = { dx: lean[0], y: rowY * ROW + ROW / 2 - 16 - h };
+      search: for (let k = 0; k < 30; k++) {
+        const y = rowY * ROW + ROW / 2 - 16 - h - k * (LABEL_H - 4);
+        for (const dx of lean) if (clear(dx, y, w, h)) { place = { dx, y }; break search; }
+      }
+      out.push({ id: c.tip, name: c.name, title, color: c.color, ...place, w, h });
     }
     return out;
   });
+  let center = $derived(Math.max(width / 2, PAD - Math.min(-g.left * COL - 12, ...labels.map((l) => l.dx))));
+  let full = $derived(Math.max(width, center + Math.max(g.right * COL + 12, ...labels.map((l) => l.dx + l.w)) + PAD));
+  const x = (col: number) => center + col * COL;
   // Room at the top for the labels.
-  let top = $derived(Math.max(LABEL_H, 8 - Math.min(0, ...labels.map((l) => l.y))));
+  let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
   const yRow = (r: number) => top + r * ROW + ROW / 2;
   const y = (id: string) => yRow(g.row.get(id)! + off);
-  let height = $derived(yRow(versions.length + off - 1) + ROW);
+  let height = $derived(yRow(versions.length + off - 1) + ROW / 2 + 16);
 
   function path(e: { from: string; to: string; kind: string }) {
     const a = g.chainOf.get(e.from)!, b = g.chainOf.get(e.to)!;
@@ -86,11 +100,12 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={width} {onkeydown}>
+<div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={width} bind:clientHeight={boxHeight} {onkeydown}>
   {#if versions.length === 0 && !pending}
     <p class="muted empty">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
   {:else}
-    <div class="canvas" style:width="{full}px" style:height="{height}px">
+    <!-- a short history sits in the middle of the column -->
+    <div class="canvas" style:width="{full}px" style:height="{height}px" style:margin-top="{Math.max(0, (boxHeight - height) / 2)}px">
       <svg width={full} height={height} aria-hidden="true">
         {#each g.edges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
@@ -103,10 +118,10 @@
       </svg>
 
       {#each labels as l (l.id)}
-        <button class="label" style:left="{x(l.col)}px" style:top="{top + l.y}px" style:width="{l.w}px" style:--c="var(--lane-{l.color})"
+        <button class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})"
           tabindex="-1" onclick={() => onselect(l.id)}>
           <span class="bname">{l.name}</span>
-          <span class="btitle">{l.title}</span>
+          {#if l.title}<span class="btitle">{l.title}</span>{/if}
         </button>
       {/each}
 
@@ -140,11 +155,11 @@
   .node.here { background: var(--c); color: var(--bg); }
   .node.incoming { border-style: dashed; color: var(--muted); }
   .node.side { opacity: .75; }
-  .node.pending { border-style: dashed; border-color: var(--muted); color: var(--muted); background: var(--bg); font-size: var(--fs-md); }
-  .node.on { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--c); }
-  .node.pending.on { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--muted); }
+  .node.pending { border-style: dashed; border-color: var(--muted); color: var(--muted); background: var(--bg); }
+  .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
+  .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--muted); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-  .label { position: absolute; transform: translateX(-50%); height: 32px; padding: var(--sp-2) var(--sp-8);
+  .label { position: absolute; height: auto; padding: var(--sp-2) var(--sp-8);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
     border: var(--border-width) solid var(--line); border-radius: var(--radius); background: var(--panel); line-height: 1.2; }
   .label:hover:not(:disabled) { border-color: var(--c); background: var(--panel); }
