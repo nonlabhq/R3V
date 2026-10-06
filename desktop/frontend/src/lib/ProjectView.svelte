@@ -651,6 +651,15 @@
   <div class="view">
     <ProjectHeader {st} {refreshing} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
 
+    <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
+      onrecover={() => run({ name: "goto", message: "",
+        call: (_res, force) => api.RecoverSwitch(root, force),
+        done: () => toast(t("Files put back as they were"), "ok") })}
+      onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
+      oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
+      onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
+      onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules} />
+
 
     <nav>
       <button class:on={tab === "overview"} onclick={() => (tab = "overview")}>
@@ -749,18 +758,6 @@
       {/if}
     </main>
 
-    <!-- in the Overview: over the graph's card, clear of the details -->
-    <div class="banner-dock" class:over-graph={tab === "overview"}
-      style:max-width={tab === "overview" ? `${Math.max(280, graphWidth - 64)}px` : undefined}>
-      <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
-        onrecover={() => run({ name: "goto", message: "",
-          call: (_res, force) => api.RecoverSwitch(root, force),
-          done: () => toast(t("Files put back as they were"), "ok") })}
-        onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
-        oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
-        onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
-        onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules} />
-      </div>
 
   </div>
 
@@ -914,13 +911,6 @@
   .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
   .graph-bar { position: absolute; top: var(--sp-14); left: var(--sp-16); z-index: 2; }
   nav .bad { color: var(--warn); }
-  /* Banners (new versions, problems) float at the bottom right, clear of
-     the changes and the commit box. */
-  .view { position: relative; }
-  .banner-dock { position: absolute; right: var(--sp-16); bottom: var(--sp-16); z-index: var(--z-dropdown);
-    width: min(560px, 42%); display: flex; flex-direction: column; gap: var(--sp-8); pointer-events: none; }
-  .banner-dock.over-graph { right: auto; left: var(--sp-32); bottom: var(--sp-32); width: 460px; }
-  .banner-dock > :global(*) { pointer-events: auto; margin: 0 !important; box-shadow: var(--shadow-pop); }
   /* The details float over the card: one see-through colour for all of it,
      parts set apart by lines, no frame. */
   .detail-pane { position: absolute; z-index: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
