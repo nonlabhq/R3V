@@ -47,7 +47,7 @@ func TestPreupload(t *testing.T) {
 	}
 	c, _ := r.Client()
 	var done, total int64
-	if err := r.Preupload(c, cands[0], func(d, tt int64) { done, total = d, tt }); err != nil {
+	if err := r.Preupload(c, cands[0], func(d, tt int64) { done, total = d, tt }, nil); err != nil {
 		t.Fatal(err)
 	}
 	if done == 0 || done != total {
@@ -98,7 +98,7 @@ func TestPreuploadChangedMeanwhile(t *testing.T) {
 	}
 	write(t, r.Root, "take.mov", strings.Repeat("b", 5000))
 	c, _ := r.Client()
-	if err := r.Preupload(c, cands[0], nil); !errors.Is(err, ErrChangedSince) {
+	if err := r.Preupload(c, cands[0], nil, nil); !errors.Is(err, ErrChangedSince) {
 		t.Fatalf("preupload: %v", err)
 	}
 	if missing, _ := c.MissingObjects([]string{cands[0].Hash}); len(missing) != 1 {
@@ -121,7 +121,7 @@ func TestPreuploadChunked(t *testing.T) {
 		t.Fatalf("candidates: %+v %v", cands, err)
 	}
 	c, _ := r.Client()
-	if err := r.Preupload(c, cands[0], nil); err != nil {
+	if err := r.Preupload(c, cands[0], nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	r.NotePreuploaded(cands[0].Hash)
@@ -130,5 +130,53 @@ func TestPreuploadChunked(t *testing.T) {
 	}
 	if got := cloneFiles(t, code, r.Config.Name); got["Video/long.mov"] != string(big) {
 		t.Errorf("a teammate gets %d bytes", len(got["Video/long.mov"]))
+	}
+}
+
+// An upload stops when its file is no longer to go up (deleted, left out
+// by the rules, a folder it is in left out), and nothing is left behind.
+func TestPreuploadStops(t *testing.T) {
+	r, _ := preuploadTeam(t)
+	defer func(m int64, s time.Duration) { PreuploadMin, PreuploadStable = m, s }(PreuploadMin, PreuploadStable)
+	PreuploadMin, PreuploadStable = 1000, time.Minute
+	write(t, r.Root, "Renders/take.mov", strings.Repeat("frame ", 2000))
+	cands, _ := r.PreuploadCandidates(time.Now().Add(2 * time.Minute))
+	if len(cands) != 1 {
+		t.Fatalf("candidates: %+v", cands)
+	}
+	fi, _ := os.Stat(r.Abs(cands[0].Path))
+	mod := fi.ModTime()
+	if err := r.StillWanted(cands[0], mod); err != nil {
+		t.Fatalf("wanted: %v", err)
+	}
+	// The folder it is in left out.
+	write(t, r.Root, ".r3v.yaml", "rules:\n  - ignore: \"Renders/\"\n")
+	if err := r.StillWanted(cands[0], mod); !errors.Is(err, ErrPreuploadStopped) {
+		t.Fatalf("folder left out: %v", err)
+	}
+	os.Remove(filepath.Join(r.Root, ".r3v.yaml"))
+	// Deleted.
+	os.Remove(r.Abs(cands[0].Path))
+	if err := r.StillWanted(cands[0], mod); !errors.Is(err, ErrPreuploadStopped) {
+		t.Fatalf("deleted: %v", err)
+	}
+	// While it goes: the check says stop, and it stops, nothing kept.
+	write(t, r.Root, "Renders/take.mov", strings.Repeat("frame ", 2000))
+	asked := 0
+	c, _ := r.Client()
+	err := r.Preupload(c, cands[0], nil, func() error {
+		if asked++; asked > 1 {
+			return ErrPreuploadStopped
+		}
+		return nil
+	})
+	if !errors.Is(err, ErrPreuploadStopped) {
+		t.Fatalf("preupload: %v (asked %d)", err, asked)
+	}
+	if missing, _ := c.MissingObjects([]string{cands[0].Hash}); len(missing) != 1 {
+		t.Error("went up all the same")
+	}
+	if entries, _ := os.ReadDir(filepath.Join(r.Dir, preuploadDir)); len(entries) != 0 {
+		t.Errorf("copy left: %v", entries)
 	}
 }

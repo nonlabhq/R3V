@@ -7,10 +7,14 @@ import (
 	"time"
 )
 
+// ErrStopped: the transfer was stopped on purpose (its data isn't wanted
+// any more); trying again won't help.
+var ErrStopped = errors.New("stopped")
+
 // Transient: the request may work if made again (storage busy or briefly
 // failing, the connection dropped), not refused for good.
 func Transient(err error) bool {
-	if err == nil {
+	if err == nil || errors.Is(err, ErrStopped) {
 		return false
 	}
 	var s3 *errS3

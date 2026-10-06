@@ -5,6 +5,7 @@
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot } from "./api";
   import { toast } from "./notify.svelte";
   import { watchProject } from "./projectWatch.svelte";
+  import { queue } from "./preupload.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
   import CommitBox from "./CommitBox.svelte";
@@ -669,7 +670,8 @@
       onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
-      onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules} />
+      onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules}
+      onqueue={() => (queue.open = true)} />
 
 
     <nav>

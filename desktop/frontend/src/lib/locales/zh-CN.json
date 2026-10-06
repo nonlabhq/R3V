@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "新标签页（Ctrl+T）",
 "Folder not found": "找不到文件夹",
 "open": "已打开",
-"Preferences": "偏好设置"
+"Preferences": "偏好设置",
+"Uploading in the background": "正在后台上传",
+"{count} more waiting": "还有 {count} 个排队中",
+"Click to see the upload queue": "点击查看上传队列",
+"Uploads": "上传",
+"Nothing is going up right now.": "目前没有在上传的东西。",
+"in the background": "后台",
+"waiting": "排队中",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "大文件停止变动后会在后台先上传，之后提交只需片刻。文件被删除、修改或被排除时，上传会停止。"
 }

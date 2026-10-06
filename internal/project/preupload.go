@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/store"
 )
@@ -101,11 +103,58 @@ func (r *Repo) PreuploadCandidates(now time.Time) ([]PreuploadCandidate, error) 
 // ErrChangedSince: the file changed after it was found (it goes up later).
 var ErrChangedSince = errors.New("the file changed: it goes up once it stops changing")
 
+// ErrPreuploadStopped: the file isn't to go up any more (deleted, left out
+// by the rules, changed) while it was going up.
+var ErrPreuploadStopped = fmt.Errorf("the file is no longer to be uploaded (%w)", remote.ErrStopped)
+
+// StillWanted says whether path should still go up early: it is there as
+// it was found (size, time) and the project's rules, read again, don't leave
+// it or a folder it is in out.
+func (r *Repo) StillWanted(cand PreuploadCandidate, modTime time.Time) error {
+	fi, err := os.Stat(r.Abs(cand.Path))
+	if err != nil || fi.Size() != cand.Size || !fi.ModTime().Equal(modTime) {
+		return ErrPreuploadStopped
+	}
+	rules, err := profile.Load(r.Root)
+	if err != nil {
+		return nil // broken rules: nothing new is left out by them
+	}
+	if rules.Ignored(cand.Path, false) {
+		return ErrPreuploadStopped
+	}
+	for dir := path.Dir(cand.Path); dir != "." && dir != "/"; dir = path.Dir(dir) {
+		if rules.Ignored(dir, true) {
+			return ErrPreuploadStopped
+		}
+	}
+	return nil
+}
+
 // Preupload puts a candidate in the team's storage (see the top of this
-// file); progress gets bytes done and total. It needs no lock: it reads the
-// file and writes only in .r3v/preupload. NotePreuploaded then records
-// it, under the project's lock.
-func (r *Repo) Preupload(c remote.Backend, cand PreuploadCandidate, progress func(done, total int64)) error {
+// file); progress gets bytes done and total. still (when set) is asked every
+// couple of seconds while it goes: an error stops it (see StillWanted). It
+// needs no lock: it reads the file and writes only in .r3v/preupload.
+// NotePreuploaded then records it, under the project's lock.
+func (r *Repo) Preupload(c remote.Backend, cand PreuploadCandidate, progress func(done, total int64), still func() error) error {
+	if still != nil {
+		if err := still(); err != nil {
+			return err
+		}
+		var mu sync.Mutex
+		var checked time.Time
+		var stopped error // once stopped, stopped
+		r.stop = func() error {
+			mu.Lock()
+			defer mu.Unlock()
+			if stopped != nil || time.Since(checked) < 2*time.Second {
+				return stopped
+			}
+			checked = time.Now()
+			stopped = still()
+			return stopped
+		}
+		defer func() { r.stop = nil }()
+	}
 	dir := filepath.Join(r.Dir, preuploadDir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err

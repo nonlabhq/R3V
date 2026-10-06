@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "Neuer Tab (Strg+T)",
 "Folder not found": "Ordner nicht gefunden",
 "open": "offen",
-"Preferences": "Einstellungen"
+"Preferences": "Einstellungen",
+"Uploading in the background": "Wird im Hintergrund hochgeladen",
+"{count} more waiting": "{count} weitere warten",
+"Click to see the upload queue": "Klicken für die Upload-Warteschlange",
+"Uploads": "Uploads",
+"Nothing is going up right now.": "Gerade wird nichts hochgeladen.",
+"in the background": "im Hintergrund",
+"waiting": "wartet",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "Große Dateien werden im Hintergrund hochgeladen, sobald sie sich nicht mehr ändern; der Commit geht danach schnell. Wird die Datei gelöscht, geändert oder ausgeschlossen, stoppt der Upload."
 }

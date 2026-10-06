@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "Nuova scheda (Ctrl+T)",
 "Folder not found": "Cartella non trovata",
 "open": "aperto",
-"Preferences": "Preferenze"
+"Preferences": "Preferenze",
+"Uploading in the background": "Caricamento in background",
+"{count} more waiting": "Altri {count} in attesa",
+"Click to see the upload queue": "Clicca per vedere la coda di caricamento",
+"Uploads": "Caricamenti",
+"Nothing is going up right now.": "Al momento non si carica nulla.",
+"in the background": "in background",
+"waiting": "in attesa",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "I file grandi vengono caricati in background quando smettono di cambiare, così il commit dopo è rapido. Si ferma se il file viene eliminato, modificato o escluso."
 }

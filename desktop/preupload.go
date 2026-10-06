@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -19,13 +20,21 @@ import (
 const preuploadCheck = time.Minute
 
 // Preupload is a file going up in the background (event "preupload": Done
-// false while it goes, true once it's up or stopped).
+// false while it goes, true once it's up or stopped), and the project's big
+// files waiting to go after it.
 type Preupload struct {
-	Root  string `json:"root"`
-	Path  string `json:"path"`
-	Bytes int64  `json:"bytes"`
-	Total int64  `json:"total"`
-	Done  bool   `json:"done"`
+	Root    string          `json:"root"`
+	Path    string          `json:"path"`
+	Bytes   int64           `json:"bytes"`
+	Total   int64           `json:"total"`
+	Done    bool            `json:"done"`
+	Waiting []PreuploadFile `json:"waiting"`
+}
+
+// PreuploadFile is a big file waiting to go up.
+type PreuploadFile struct {
+	Path string `json:"path"`
+	Size int64  `json:"size"`
 }
 
 var (
@@ -131,12 +140,28 @@ func (a *App) preuploadProject(ctx context.Context, root string) {
 	if err != nil {
 		return
 	}
-	for _, cand := range cands {
+	for i, cand := range cands {
 		if ctx.Err() != nil || a.busy(root) {
 			return
 		}
-		p := Preupload{Root: root, Path: cand.Path, Total: cand.Size}
+		waiting := []PreuploadFile{}
+		for _, w := range cands[i+1:] {
+			waiting = append(waiting, PreuploadFile{Path: w.Path, Size: w.Size})
+		}
+		p := Preupload{Root: root, Path: cand.Path, Total: cand.Size, Waiting: waiting}
 		a.notePreupload(p)
+		// It stops when the file goes away, is left out (by the rules, or a
+		// folder it is in) or changes, or the app closes.
+		var mod time.Time
+		if fi, err := os.Stat(r.Abs(cand.Path)); err == nil {
+			mod = fi.ModTime()
+		}
+		still := func() error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			return r.StillWanted(cand, mod)
+		}
 		var last time.Time
 		err := r.Preupload(c, cand, func(done, total int64) {
 			if time.Since(last) > 500*time.Millisecond {
@@ -144,13 +169,13 @@ func (a *App) preuploadProject(ctx context.Context, root string) {
 				p.Bytes, p.Total = done, total
 				a.notePreupload(p)
 			}
-		})
+		}, still)
 		if err == nil {
 			err = a.recordPreupload(root, cand.Hash)
 		}
 		p.Done = true
 		a.notePreupload(p)
-		if err != nil && !errors.Is(err, project.ErrChangedSince) {
+		if err != nil && !errors.Is(err, project.ErrChangedSince) && !errors.Is(err, project.ErrPreuploadStopped) {
 			log.Printf("preupload %s %s: %v", root, cand.Path, err)
 			return // tried again next time
 		}

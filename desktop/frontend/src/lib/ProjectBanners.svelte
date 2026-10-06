@@ -12,7 +12,7 @@
   // versions, missing samples, broken rules. Each says what to do; the page
   // does it.
   let { st, busy, progress, restorable, missingSamples, onshare, onrecover, onpreset, onbranchhere, onlatest,
-    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules }: {
+    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue }: {
     st: State;
     busy: string;
     progress: Progress | null;
@@ -30,6 +30,7 @@
     onpreview: () => void; // what an update brings
     onrestore: () => void; // the missing samples
     onopenrules: () => void;
+    onqueue?: () => void; // the upload queue (a click on a step under way)
   } = $props();
 
   // The warning about OneDrive & co., once understood, stays away (per project).
@@ -47,7 +48,10 @@
 </script>
 
 {#if progress}
-  <div class="banner info">
+  <!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
+  <div class="banner info" class:clickable={!!onqueue} role={onqueue ? "button" : undefined} tabindex={onqueue ? 0 : undefined}
+    title={onqueue ? t("Click to see the upload queue") : undefined} onclick={onqueue}
+    onkeydown={(e) => { if (onqueue && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onqueue(); } }}>
     <div class="col">
       <ProgressBar p={progress} team={st.teamName || undefined} />
       {#if progress.stage === "scanning" || progress.stage === "storing"}
@@ -168,6 +172,8 @@
 {/if}
 
 <style>
+  .banner.clickable { cursor: pointer; }
+  .banner.clickable:hover { border-color: var(--line-strong); }
   .banner { display: flex; align-items: center; gap: var(--sp-10); margin: var(--sp-6) var(--sp-24); padding: var(--sp-10) var(--sp-14); border-radius: var(--radius-lg); }
   .banner > div, .rule > :global(div) { flex: 1; }
   .banner.info { background: var(--info-bg); border: var(--border-width) solid var(--info-line); }
