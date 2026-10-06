@@ -62,3 +62,59 @@ func TestPreuploadInTheBackground(t *testing.T) {
 		t.Errorf("not recorded: %+v", c)
 	}
 }
+
+// A project just added is looked at for big files at once, not at the next
+// round a minute later; only files still changing wait.
+func TestPreuploadStartsWhenAdded(t *testing.T) {
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	defer func(m int64, s time.Duration) { project.PreuploadMin, project.PreuploadStable = m, s }(project.PreuploadMin, project.PreuploadStable)
+	project.PreuploadMin, project.PreuploadStable = 1000, 2*time.Minute
+	fake := s3test.New("band")
+	defer fake.Close()
+	t.Cleanup(waitTidy)
+	a := NewApp()
+	started := make(chan string, 16)
+	a.emit = func(name string, data any) {
+		if p, ok := data.(Preupload); ok && name == "preupload" && !p.Done {
+			started <- p.Path
+		}
+	}
+	team, err := a.CreateStorageTeam(remote.Storage{Endpoint: fake.URL, Bucket: "band", AccessKey: "k", SecretKey: "s"}, "Band")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { a.preuploadOnSchedule(ctx); close(done) }()
+	defer func() { cancel(); <-done }()
+
+	root := newSong(t)
+	old := time.Now().Add(-time.Hour)
+	os.MkdirAll(filepath.Join(root, "Video"), 0o755)
+	os.WriteFile(filepath.Join(root, "Video", "old.mov"), []byte(strings.Repeat("frame ", 1000)), 0o644)
+	os.Chtimes(filepath.Join(root, "Video", "old.mov"), old, old)
+	os.WriteFile(filepath.Join(root, "Video", "rendering.mov"), []byte(strings.Repeat("still ", 1000)), 0o644)
+	if _, err := a.AddProjectToTeam(team.ID, root); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case p := <-started:
+		if p != "Video/old.mov" {
+			t.Fatalf("went up first: %s", p)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("nothing went up after adding the project (waiting for the next round?)")
+	}
+	// (more news of old.mov as it goes; nothing of the file still changing)
+	for wait := time.After(time.Second); ; {
+		select {
+		case p := <-started:
+			if p != "Video/old.mov" {
+				t.Fatalf("a file still changing went up: %s", p)
+			}
+			continue
+		case <-wait:
+		}
+		break
+	}
+}

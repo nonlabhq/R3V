@@ -19,6 +19,10 @@ import (
 
 const preuploadCheck = time.Minute
 
+// preuploadRetry: how soon a project asked for at once is tried again when
+// it was busy.
+var preuploadRetry = 3 * time.Second
+
 // Preupload is a file going up in the background (event "preupload": Done
 // false while it goes, true once it's up or stopped), and the project's big
 // files waiting to go after it.
@@ -91,8 +95,10 @@ func (a *App) busy(root string) bool {
 	return true
 }
 
-// preuploadOnSchedule looks for big files to put up early, every minute
-// while the app runs.
+// preuploadOnSchedule looks for big files to put up early: when the app
+// starts, every minute after, and at once for a project just added
+// (preuploadSoon). Files still changing wait (PreuploadStable), the rest
+// needn't.
 func (a *App) preuploadOnSchedule(ctx context.Context) {
 	if store, err := teams.Load(); err == nil {
 		for _, root := range store.Roots() {
@@ -101,48 +107,64 @@ func (a *App) preuploadOnSchedule(ctx context.Context) {
 			}
 		}
 	}
+	only := "" // a project to look at now ("" all of them)
 	for {
+		store, err := teams.Load()
+		if err == nil {
+			for _, t := range store.Teams {
+				if t.NoPreupload || !t.Remote.IsStorage() {
+					continue
+				}
+				for key, root := range store.Projects {
+					if strings.HasPrefix(key, t.ID+"/") && (only == "" || root == only) && ctx.Err() == nil {
+						if !a.preuploadProject(ctx, root) && root == only {
+							// Busy (its team watch reads it as it is added): again
+							// in a moment rather than at the next round.
+							time.AfterFunc(preuploadRetry, func() { a.preuploadSoon(root) })
+						}
+					}
+				}
+			}
+		}
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(preuploadCheck):
-		}
-		store, err := teams.Load()
-		if err != nil {
-			continue
-		}
-		for _, t := range store.Teams {
-			if t.NoPreupload || !t.Remote.IsStorage() {
-				continue
-			}
-			for key, root := range store.Projects {
-				if strings.HasPrefix(key, t.ID+"/") && ctx.Err() == nil {
-					a.preuploadProject(ctx, root)
-				}
-			}
+			only = ""
+		case only = <-a.preuploadNow:
 		}
 	}
 }
 
-func (a *App) preuploadProject(ctx context.Context, root string) {
+// preuploadSoon asks for root's big files to be looked at now.
+func (a *App) preuploadSoon(root string) {
+	select {
+	case a.preuploadNow <- root:
+	default: // the next round looks anyway
+	}
+}
+
+// preuploadProject puts root's big files up; false when the project was
+// busy and nothing was looked at.
+func (a *App) preuploadProject(ctx context.Context, root string) bool {
 	if a.busy(root) {
-		return
+		return false
 	}
 	r, err := project.Open(root)
 	if err != nil || r.Config.Remote == nil {
-		return
+		return true
 	}
 	cands, err := r.PreuploadCandidates(time.Now())
 	if err != nil || len(cands) == 0 {
-		return
+		return true
 	}
 	c, err := r.Client()
 	if err != nil {
-		return
+		return true
 	}
 	for i, cand := range cands {
 		if ctx.Err() != nil || a.busy(root) {
-			return
+			return true
 		}
 		waiting := []PreuploadFile{}
 		for _, w := range cands[i+1:] {
@@ -177,9 +199,10 @@ func (a *App) preuploadProject(ctx context.Context, root string) {
 		a.notePreupload(p)
 		if err != nil && !errors.Is(err, project.ErrChangedSince) && !errors.Is(err, project.ErrPreuploadStopped) {
 			log.Printf("preupload %s %s: %v", root, cand.Path, err)
-			return // tried again next time
+			return true // tried again next time
 		}
 	}
+	return true
 }
 
 // recordPreupload notes the upload, with the project locked.
