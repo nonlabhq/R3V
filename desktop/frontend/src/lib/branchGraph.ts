@@ -48,12 +48,25 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
     }
     chains.push(c);
   }
-  const tipOf = (name: string) => branches.find((b) => b.name === name)?.latest ?? "";
+  // Your branch's line starts at the version you are on when that is newer
+  // than what the team has of it (versions not shared yet).
+  const descends = (from: string, to: string) => {
+    for (let id: string | undefined = from, n = 0; id && byID.has(id) && n <= versions.length; id = byID.get(id)!.parents[0], n++) {
+      if (id === to) return true;
+    }
+    return false;
+  };
+  const tipOf = (name: string) => {
+    const t = branches.find((b) => b.name === name)?.latest ?? "";
+    return name === current && head && t !== head && (!t || descends(head, t)) ? head : t;
+  };
   const mainBranch = branches.some((b) => b.name === mainName) ? mainName : current;
   walk(mainBranch, tipOf(mainBranch), true);
   if (current !== mainBranch) walk(current, tipOf(current), false);
-  if (head && !chainOf.has(head)) walk(current, head, current === mainBranch);
   for (const b of branches) walk(b.name, b.latest, false);
+  // Where you are, if no branch has it: a line of its own, unnamed (not
+  // your branch's: gone to a version of another branch, it is on that one).
+  if (head && !chainOf.has(head)) walk("", head, false);
   // Branches whose newest version is another's (just made, nothing committed
   // on them yet): drawn too, starting from that version.
   for (const b of branches) {
