@@ -1053,5 +1053,9 @@
 "List": "リスト",
 "Grid": "グリッド",
 "No files of these kinds here.": "この種類のファイルはここにありません。",
-"{count} kind": "{count} 種類"
+"{count} kind": "{count} 種類",
+"New tab": "新しいタブ",
+"New tab (Ctrl+T)": "新しいタブ（Ctrl+T）",
+"Folder not found": "フォルダーが見つかりません",
+"open": "開いています"
 }

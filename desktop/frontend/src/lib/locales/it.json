@@ -1053,5 +1053,9 @@
 "List": "Elenco",
 "Grid": "Griglia",
 "No files of these kinds here.": "Nessun file di questi tipi qui.",
-"{count} kind": "{count} tipo"
+"{count} kind": "{count} tipo",
+"New tab": "Nuova scheda",
+"New tab (Ctrl+T)": "Nuova scheda (Ctrl+T)",
+"Folder not found": "Cartella non trovata",
+"open": "aperto"
 }

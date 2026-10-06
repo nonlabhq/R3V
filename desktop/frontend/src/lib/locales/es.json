@@ -1053,5 +1053,9 @@
 "List": "Lista",
 "Grid": "Cuadrícula",
 "No files of these kinds here.": "No hay archivos de estos tipos aquí.",
-"{count} kind": "{count} tipo"
+"{count} kind": "{count} tipo",
+"New tab": "Pestaña nueva",
+"New tab (Ctrl+T)": "Pestaña nueva (Ctrl+T)",
+"Folder not found": "Carpeta no encontrada",
+"open": "abierto"
 }

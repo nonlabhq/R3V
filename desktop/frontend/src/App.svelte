@@ -6,6 +6,8 @@
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
   import ProjectView from "./lib/ProjectView.svelte";
+  import NewTab from "./lib/NewTab.svelte";
+  import { untrack } from "svelte";
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
   import TeamMenu from "./lib/TeamMenu.svelte";
@@ -228,38 +230,98 @@
   function select(p: TeamProject) {
     selected = p.root ? { root: p.root } : { id: p.id };
     if (p.root) remember(SELECTED_KEY, p.root);
+    blank = "";
     openTab(p);
   }
 
-  // Projects open as tabs at the top (per team, remembered). The sidebar
-  // opens one, or goes to it when it is open already.
+  // Projects open as tabs at the top (per team, remembered; drag one to
+  // move it). The sidebar opens one, or goes to it when it is open already.
+  // A new tab ("new:…", Ctrl+T or +) picks a team and a project to open in
+  // it; new tabs aren't remembered, and stay when the team changes.
   const tabsKey = () => `r3v.tabs:${overview?.currentTeam ?? ""}`;
+  const isBlank = (k: string) => k.startsWith("new:");
   let tabKeys = $state<string[]>([]);
+  let blank = $state(""); // the new tab shown ("" a project's)
   let tabsClosed = $state(false); // every tab closed: nothing is picked for you
   $effect.pre(() => {
     overview?.currentTeam; // the team's tabs
-    try { tabKeys = JSON.parse(localStorage.getItem(tabsKey()) ?? "[]"); } catch { tabKeys = []; }
+    let saved: string[] = [];
+    try { saved = JSON.parse(localStorage.getItem(tabsKey()) ?? "[]"); } catch { /* none */ }
+    tabKeys = [...saved, ...untrack(() => tabKeys).filter(isBlank)];
     tabsClosed = false;
   });
-  let tabEntries = $derived(tabKeys.map((k) => entries.find((p) => rowKey(p) === k)).filter((p): p is TeamProject => !!p));
-  function saveTabs() { remember(tabsKey(), JSON.stringify(tabKeys)); }
+  type Tab = { key: string; p?: TeamProject };
+  let tabItems = $derived(tabKeys.map((k): Tab | null => {
+    if (isBlank(k)) return { key: k };
+    const p = entries.find((e) => rowKey(e) === k);
+    return p ? { key: k, p } : null;
+  }).filter((x): x is Tab => !!x));
+  let tabEntries = $derived(tabItems.flatMap((x) => (x.p ? [x.p] : [])));
+  const activeTab = (x: Tab) => (x.p ? !blank && selectedEntry === x.p : blank === x.key);
+  function saveTabs() { remember(tabsKey(), JSON.stringify(tabKeys.filter((k) => !isBlank(k)))); }
   function openTab(p: TeamProject) {
     tabsClosed = false;
     if (tabKeys.includes(rowKey(p))) return;
     tabKeys = [...tabKeys, rowKey(p)];
     saveTabs();
   }
-  function closeTab(p: TeamProject) {
-    const at = tabEntries.indexOf(p);
-    tabKeys = tabKeys.filter((k) => k !== rowKey(p));
-    saveTabs();
-    if (selectedEntry !== p) return;
-    const rest = tabEntries.filter((e) => e !== p);
-    const next = rest[Math.min(at, rest.length - 1)];
-    if (next) select(next);
-    else { selected = {}; tabsClosed = true; }
+  function newTab() {
+    const key = `new:${Date.now()}`;
+    tabKeys = [...tabKeys, key];
+    blank = key;
+    tabsClosed = false;
   }
-  let addOpen = $state(false); // the + menu: projects not open
+  // From a new tab: the project takes its place (or its own tab, if open).
+  function openHere(p: TeamProject) {
+    const here = blank;
+    if (tabKeys.includes(rowKey(p))) tabKeys = tabKeys.filter((k) => k !== here);
+    else tabKeys = tabKeys.map((k) => (k === here ? rowKey(p) : k));
+    saveTabs();
+    select(p);
+  }
+  function closeTab(x: Tab) {
+    const at = tabItems.findIndex((y) => y.key === x.key);
+    const wasActive = activeTab(x);
+    tabKeys = tabKeys.filter((k) => k !== x.key);
+    saveTabs();
+    if (!wasActive) return;
+    const rest = tabItems.filter((y) => y.key !== x.key);
+    const next = rest[Math.min(at, rest.length - 1)];
+    if (next?.p) select(next.p);
+    else if (next) blank = next.key;
+    else { selected = {}; blank = ""; tabsClosed = true; }
+  }
+  // Dragging a tab moves it among the others (a drag isn't a click).
+  let tabDrag: { key: string; x: number; moved: boolean } | null = null;
+  let tabDragged = false;
+  let tabsEl = $state<HTMLElement>();
+  function tabDown(e: PointerEvent, key: string) {
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".tab-x")) return;
+    tabDrag = { key, x: e.clientX, moved: false };
+    const move = (m: PointerEvent) => {
+      if (!tabDrag) return;
+      if (!tabDrag.moved && Math.abs(m.clientX - tabDrag.x) < 5) return;
+      tabDrag.moved = true;
+      const els = [...(tabsEl?.querySelectorAll<HTMLElement>(".tab") ?? [])];
+      let to = els.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientX < r.left + r.width / 2; });
+      if (to < 0) to = els.length;
+      const from = tabKeys.indexOf(tabDrag.key);
+      if (to > from) to--;
+      if (to !== from) {
+        const keys = tabKeys.filter((k) => k !== tabDrag!.key);
+        keys.splice(to, 0, tabDrag.key);
+        tabKeys = keys;
+      }
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (tabDrag?.moved) { tabDragged = true; saveTabs(); setTimeout(() => (tabDragged = false)); }
+      tabDrag = null;
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
   // The sidebar folds to the logo and a button to open it again (remembered).
   const SIDEBAR_KEY = "r3v.sidebar";
   let folded = $state(recall(SIDEBAR_KEY) === "folded");
@@ -270,7 +332,7 @@
 
   // Keep a valid selection when the team or the list changes.
   $effect(() => {
-    if (!overview || selectedEntry || tabsClosed) return;
+    if (!overview || selectedEntry || tabsClosed || blank) return;
     const last = recall(SELECTED_KEY);
     const pick = entries.find((p) => p.root && p.root === last) ??
       entries.find((p) => p.status === "downloaded") ?? entries[0];
@@ -432,9 +494,14 @@
 </script>
 
 <svelte:window onfocus={reloadIfStale}
+  onkeydown={(e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "t" && overview && !onboarding) {
+      e.preventDefault();
+      newTab();
+    }
+  }}
   onclick={(e) => {
     if (rowMenu && !(e.target as HTMLElement).closest(".row-menu, .more")) rowMenu = "";
-    if (addOpen && !(e.target as HTMLElement).closest(".tab-add-wrap")) addOpen = false;
   }} />
 
 {#if !overview || onboarding}
@@ -521,34 +588,28 @@
     <section class="content">
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="titlebar" ondblclick={(e) => { if (e.target === e.currentTarget) win(() => Window.ToggleMaximise()); }}>
-        <div class="tabs" role="tablist" aria-label={t("Open projects")}>
-          {#each tabEntries as p (rowKey(p))}
-            <div class="tab" class:on={selectedEntry === p}>
-              <button class="tab-name" role="tab" aria-selected={selectedEntry === p} onclick={() => select(p)} title={p.root || p.name}>
-                <span class="tab-icon" aria-hidden="true">{statusIcon[p.status]}</span>{p.name}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div class="tabs" role="tablist" tabindex="-1" aria-label={t("Open projects")} bind:this={tabsEl}
+          onclickcapture={(e) => { if (tabDragged) { e.stopPropagation(); e.preventDefault(); } }}>
+          {#each tabItems as x (x.key)}
+            {@const name = x.p ? x.p.name : t("New tab")}
+            <div class="tab" class:on={activeTab(x)} onpointerdown={(e) => tabDown(e, x.key)}>
+              <button class="tab-name" role="tab" aria-selected={activeTab(x)} title={x.p ? x.p.root || x.p.name : name}
+                onclick={() => (x.p ? select(x.p) : (blank = x.key))}>
+                <span class="tab-icon" aria-hidden="true">{x.p ? statusIcon[x.p.status] : "+"}</span>{name}
               </button>
-              <button class="tab-x" onclick={() => closeTab(p)} aria-label={t("Close {name}", { name: p.name })}>×</button>
+              <button class="tab-x" onclick={() => closeTab(x)} aria-label={t("Close {name}", { name })}>×</button>
             </div>
           {/each}
-          <div class="tab-add-wrap">
-            <button class="tab-add" onclick={() => (addOpen = !addOpen)} aria-label={t("Open a project")} title={t("Open a project")}>+</button>
-            {#if addOpen}
-              <div class="add-menu surface-menu" role="menu">
-                {#each entries.filter((p) => !tabEntries.includes(p)) as p (rowKey(p))}
-                  <button class="item" onclick={() => { addOpen = false; select(p); }}>
-                    <span class="tab-icon" aria-hidden="true">{statusIcon[p.status]}</span>{p.name}
-                  </button>
-                {:else}
-                  <div class="item faint">{t("Every project is open.")}</div>
-                {/each}
-              </div>
-            {/if}
-          </div>
+          <button class="tab-add" onclick={newTab} aria-label={t("New tab")} title={t("New tab (Ctrl+T)")}>+</button>
         </div>
         {@render winControls()}
       </div>
       <div class="content-body">
-      {#if selectedEntry && selectedEntry.status === "downloaded"}
+      {#if blank}
+        <NewTab {overview} projects={entries} open={(p) => tabKeys.includes(rowKey(p))} {reload} onopen={openHere}
+          onadd={addToTeam} adding={busy === "add"} />
+      {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
             onsettings={() => (settingsFor = selectedEntry ?? null)}
@@ -850,7 +911,7 @@
   /* The title bar (the window has no Windows one): open projects as tabs,
      and the window's buttons. Empty space drags the window. */
   .titlebar, .aside-top { --wails-draggable: drag; }
-  .titlebar button, .aside-top button, .add-menu { --wails-draggable: no-drag; }
+  .titlebar button, .titlebar .tab, .aside-top button { --wails-draggable: no-drag; }
   .titlebar { display: flex; align-items: flex-end; height: 40px; flex: none; background: var(--bg-sunken);
     border-bottom: var(--border-width) solid var(--line); }
   .tabs { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0 var(--sp-8); height: 100%; }
@@ -865,13 +926,8 @@
   .tab-x { border: none; background: transparent; padding: 0 var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; visibility: hidden; }
   .tab:hover .tab-x, .tab.on .tab-x { visibility: visible; }
   .tab-x:hover:not(:disabled) { background: transparent; color: var(--text); }
-  .tab-add-wrap { position: relative; align-self: center; }
-  .tab-add { border: none; background: transparent; padding: 0 var(--sp-10); font-size: var(--fs-lg); color: var(--muted); }
-  .add-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);
-    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
-  .add-menu .item { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent;
-    padding: var(--sp-6) var(--sp-8); text-align: left; }
-  .add-menu button.item:hover { background: var(--hover); }
+  .tab-add { align-self: center; border: none; background: transparent; padding: 0 var(--sp-10); font-size: var(--fs-lg); color: var(--muted); }
+  .tab { user-select: none; }
   .win { display: flex; align-self: stretch; }
   .win button { width: 46px; border: none; border-radius: 0; background: transparent; padding: 0; display: flex;
     align-items: center; justify-content: center; color: var(--muted); }

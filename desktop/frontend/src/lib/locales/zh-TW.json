@@ -1053,5 +1053,9 @@
 "List": "清單",
 "Grid": "格狀",
 "No files of these kinds here.": "這裡沒有這些類型的檔案。",
-"{count} kind": "{count} 種類型"
+"{count} kind": "{count} 種類型",
+"New tab": "新分頁",
+"New tab (Ctrl+T)": "新分頁（Ctrl+T）",
+"Folder not found": "找不到資料夾",
+"open": "已開啟"
 }
