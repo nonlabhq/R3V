@@ -37,6 +37,15 @@ describe("branch graph", () => {
     expect(g2.chainOf.get("c1")!.col).toBe(-1);
   });
 
+  it("draws a branch just made, with no versions of its own, from where it starts", () => {
+    // idea: made from m2 (on main), nothing committed on it yet; you are on it.
+    const g3 = branchGraph(versions, [...branches, { name: "idea", latest: "m2" }], "idea", "main", "m2");
+    const idea = g3.chains.find((c) => c.name === "idea")!;
+    expect(idea).toMatchObject({ empty: true, tip: "m2", ids: [], mine: true });
+    expect(idea.col).toBeGreaterThan(0);
+    expect(g3.chainOf.get("m2")!.main).toBe(true); // m2 stays on main
+  });
+
   it("cuts long titles", () => {
     expect(short("Arrangement: intro and breakdown", 16)).toBe("Arrangement: in…");
     expect(short("Short")).toBe("Short");
