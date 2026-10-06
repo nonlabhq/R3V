@@ -46,6 +46,40 @@ describe("branch graph", () => {
     expect(g3.chainOf.get("m2")!.main).toBe(true); // m2 stays on main
   });
 
+  it("keeps a version of another branch on that branch when you go to it", () => {
+    // x: x2 - x1 from m1; you are on main and went to x1.
+    const g4 = branchGraph([
+      { id: "x2", parents: ["x1"] }, { id: "m2", parents: ["m1"] }, { id: "x1", parents: ["m1"] }, { id: "m1", parents: [] },
+    ], [{ name: "main", latest: "m2" }, { name: "x", latest: "x2" }], "main", "main", "x1");
+    expect(g4.chainOf.get("x1")!.name).toBe("x");
+    expect(g4.chainOf.get("x1")!.col).not.toBe(0);
+    expect(g4.chains.filter((c) => c.name === "main")).toHaveLength(1);
+  });
+
+  it("puts your versions not shared yet on your branch's line", () => {
+    // main on the team is m1; you committed m2 and m3 here.
+    const g5 = branchGraph([{ id: "m3", parents: ["m2"] }, { id: "m2", parents: ["m1"] }, { id: "m1", parents: [] }],
+      [{ name: "main", latest: "m1" }], "main", "main", "m3");
+    expect(g5.chains).toHaveLength(1);
+    expect(g5.chains[0].ids).toEqual(["m3", "m2", "m1"]);
+  });
+
+  it("draws two branches on the same newest version, each once", () => {
+    const g6 = branchGraph(versions, [...branches, { name: "idea", latest: "m3" }], "idea", "main", "m3");
+    expect(g6.chains.filter((c) => c.name === "main")).toHaveLength(1);
+    expect(g6.chains.filter((c) => c.name === "idea")).toHaveLength(1);
+    expect(g6.chainOf.get("m3")!.name).toBe("main");
+  });
+
+  it("copes with a branch the team doesn't list yet, an empty history, loops and missing parents", () => {
+    const g7 = branchGraph(versions, branches.filter((b) => b.name !== "mine"), "mine", "main", "y1");
+    expect(g7.chainOf.get("y1")).toBeDefined();
+    expect(branchGraph([], [], "main").chains).toEqual([]);
+    const loop = branchGraph([{ id: "a", parents: ["b"] }, { id: "b", parents: ["a"] }, { id: "c", parents: ["gone"] }],
+      [{ name: "main", latest: "a" }], "main", "main", "a");
+    expect(loop.chainOf.size).toBe(3);
+  });
+
   it("cuts long titles", () => {
     expect(short("Arrangement: intro and breakdown", 16)).toBe("Arrangement: in…");
     expect(short("Short")).toBe("Short");

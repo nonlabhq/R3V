@@ -193,9 +193,11 @@
   }
   function onpointermove(e: PointerEvent) {
     if (!drag) return;
+    // The button let go outside (where its release wasn't seen): no drag.
+    if (!(e.buttons & 1)) { onpointerup(); return; }
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
-    if (!drag.moved) { drag.moved = true; dragging = true; moved = true; hovered = null; box?.setPointerCapture(drag.id); }
+    if (!drag.moved) { drag.moved = true; dragging = true; moved = true; hovered = null; try { box?.setPointerCapture(drag.id); } catch { /* not where it can be captured */ } }
     panX = drag.px + dx;
     panY = drag.py + dy;
     clamp();
@@ -288,7 +290,7 @@
         {/each}
       </svg>
 
-      {#each labels as l (l.id)}
+      {#each labels as l (l.name + "@" + l.id)}
         <button class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})"
           tabindex="-1" onclick={() => onselect(l.id)}>
           <span class="bname">{l.name}</span>
