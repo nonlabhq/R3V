@@ -585,6 +585,7 @@ func (a *App) AddProjectToTeam(teamID, folder string) (TeamProject, error) {
 		return TeamProject{}, err
 	}
 	a.startWatch(r.Root)
+	a.preuploadSoon(r.Root) // its big files can start going up now
 	return folderProject(r.Root, "downloaded"), nil
 }
 

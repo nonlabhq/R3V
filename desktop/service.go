@@ -40,10 +40,14 @@ type App struct {
 	// lastProgress: when a long step (save, upload, download) last said how
 	// it was going (UnixNano).
 	lastProgress atomic.Int64
+	// preuploadNow: projects to look at for big files at once (one just
+	// added), not at the next round.
+	preuploadNow chan string
 }
 
 func NewApp() *App {
-	return &App{locks: map[string]*sync.Mutex{}, teamWatches: map[string]context.CancelFunc{}, watches: map[string]*folderWatch{}}
+	return &App{locks: map[string]*sync.Mutex{}, teamWatches: map[string]context.CancelFunc{}, watches: map[string]*folderWatch{},
+		preuploadNow: make(chan string, 8)}
 }
 
 func (a *App) ServiceName() string { return "App" }
