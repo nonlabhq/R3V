@@ -138,6 +138,15 @@ func main() {
 	run(mr, "save", "-m", "Lyrics, first verse")
 	tone(mr, "Samples/Recorded/Vox Double.wav", 392, 3)
 
+	// Fresh Idea: just added to the team, nothing committed yet.
+	you.use()
+	fi := filepath.Join(you.projects, "Fresh Idea Project")
+	set(fi, "Fresh Idea.als", "Split-B.als")
+	tone(fi, "Samples/Recorded/Hum.wav", 196, 2)
+	rf, err := project.Init(fi, "Robin")
+	must(err)
+	must(rf.SetRemote(code))
+
 	// Field Recordings: on the team, not on this computer.
 	alex.use()
 	fr := filepath.Join(alex.projects, "Field Recordings Project")

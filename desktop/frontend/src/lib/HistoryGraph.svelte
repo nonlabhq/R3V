@@ -32,6 +32,9 @@
   // Where your changes go: the branch you are on (its own column even when it
   // has no versions yet), else the line of the version you are on.
   let headChain = $derived(g.chains.find((c) => c.empty && c.name === branch) ?? g.chainOf.get(head));
+  // Where your changes' dot goes: on that line, or in the middle before the
+  // first version (a project just added: everything in it is your changes).
+  let pendAt = $derived(headChain ? { col: headChain.col, color: headChain.color } : { col: 0, color: 0 });
   // Branches with no versions yet, other than yours with changes: a short
   // line out of where they start, ending in a hollow dot (row: a little above).
   let stubs = $derived(g.chains.filter((c) => c.empty && !(pending && c === headChain))
@@ -52,17 +55,19 @@
   let labels = $derived.by(() => {
     const out: Label[] = [];
     const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
-      ...(pending && headChain ? [{ col: headChain.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
+      ...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
     const clear = (dx: number, y: number, w: number, h: number) =>
       dots.every((d) => d.col * COL + 12 < dx || d.col * COL - 12 > dx + w || d.row * ROW + ROW / 2 + 12 < y || d.row * ROW + ROW / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
-    for (const c of g.chains) {
+    // (before the first version: your branch's name over your changes)
+    const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: 0, empty: true }] : [];
+    for (const c of [...g.chains, ...first]) {
       if (!c.name) continue;
-      const atPending = pending && c === headChain;
-      const tip = byID.get(c.tip)!;
+      const atPending = pending && (c === headChain || !c.tip);
+      const tip = byID.get(c.tip);
       // On your branch with changes not committed: just its name.
       // (an empty branch: just its name too; its newest version is another's)
-      const title = atPending || c.empty ? "" : short(tip.message || t("(no description)"), TITLE);
+      const title = atPending || c.empty || !tip ? "" : short(tip.message || t("(no description)"), TITLE);
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
       const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
       const h = title ? 32 : 24;
@@ -73,7 +78,7 @@
         const y = rowY * ROW + ROW / 2 - 16 - h - k * (LABEL_H - 4);
         for (const dx of lean) if (clear(dx, y, w, h)) { place = { dx, y }; break search; }
       }
-      out.push({ id: c.tip, name: c.name, title, color: c.color, ...place, w, h });
+      out.push({ id: c.tip || "pending", name: c.name, title, color: c.color, ...place, w, h });
     }
     return out;
   });
@@ -246,7 +251,7 @@
   let link = $derived.by(() => {
     if (!reserve || !selected) return null;
     const id = selected;
-    const c = id === "pending" ? headChain : g.chainOf.get(id);
+    const c = id === "pending" ? (pending ? pendAt : undefined) : g.chainOf.get(id);
     if (!c || (id !== "pending" && !byID.has(id))) return null;
     const x1 = panX + x(c.col) * zoom + 12 * zoom, y1 = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
     const x2 = width, y2 = Math.min(Math.max(y1, panelInset + 24), boxHeight - panelInset - 24);
@@ -298,10 +303,10 @@
         </button>
       {/each}
 
-      {#if pending && headChain}
+      {#if pending}
         <button class="node pending" class:on={selected === "pending"} data-id="pending" role="option"
-          aria-selected={selected === "pending"} style:left="{x(headChain.col)}px" style:top="{yRow(0)}px"
-          style:--c="var(--lane-{headChain.color})" title={t("Your changes")} aria-label={t("Your changes")}
+          aria-selected={selected === "pending"} style:left="{x(pendAt.col)}px" style:top="{yRow(0)}px"
+          style:--c="var(--lane-{pendAt.color})" title={t("Your changes")} aria-label={t("Your changes")}
           onclick={() => onselect("pending")}>+</button>
       {/if}
       {#each versions as v (v.id)}
