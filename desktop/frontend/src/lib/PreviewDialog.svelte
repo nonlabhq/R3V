@@ -80,15 +80,15 @@
 </Modal>
 
 <style>
-  .effects { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--panel); border: 1px solid var(--line); }
-  .effects ul { margin: 6px 0 0; padding-left: 20px; }
+  .effects { margin-top: var(--sp-14); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); border: var(--border-width) solid var(--line); }
+  .effects ul { margin: var(--sp-6) 0 0; padding-left: var(--sp-20); }
   .conflicts {
-    margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg);
-    background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text);
+    margin-top: var(--sp-14); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg);
+    background: var(--warn-bg); border: var(--border-width) solid var(--warn-line); color: var(--warn-text);
   }
-  .conflicts ul { margin: 6px 0 0; padding-left: 20px; }
-  .ok { color: var(--accent); margin-top: 14px; }
-  label[for="merge-msg"] { margin-top: 16px; }
+  .conflicts ul { margin: var(--sp-6) 0 0; padding-left: var(--sp-20); }
+  .ok { color: var(--accent); margin-top: var(--sp-14); }
+  label[for="merge-msg"] { margin-top: var(--sp-16); }
   textarea { width: 100%; resize: vertical; }
-  .blocked { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--info-bg); border: 1px solid var(--info-line); }
+  .blocked { margin-top: var(--sp-14); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--info-bg); border: var(--border-width) solid var(--info-line); }
 </style>

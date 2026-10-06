@@ -26,8 +26,8 @@
 {/if}
 
 <style>
-  .seg { display: flex; margin: 0 0 14px; }
-  .seg button { flex: 1; border-radius: 0; padding: 7px 12px; }
+  .seg { display: flex; margin: 0 0 var(--sp-14); }
+  .seg button { flex: 1; border-radius: 0; padding: var(--sp-6) var(--sp-12); }
   .seg button:first-child { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
   .seg button:last-child { border-radius: 0 var(--radius-lg) var(--radius-lg) 0; margin-left: -1px; }
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

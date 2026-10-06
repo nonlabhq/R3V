@@ -65,27 +65,27 @@
 </div>
 
 <style>
-  .ic { display: flex; flex-direction: column; gap: 10px; }
-  .bar { display: flex; align-items: center; gap: 12px; }
+  .ic { display: flex; flex-direction: column; gap: var(--sp-10); }
+  .bar { display: flex; align-items: center; gap: var(--sp-12); }
   .modes { display: flex; }
-  .modes button { padding: 3px 9px; font-size: var(--fs-sm); border-radius: 0; }
+  .modes button { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); border-radius: 0; }
   .modes button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
   .modes button:last-child { border-radius: 0 var(--radius) var(--radius) 0; margin-left: -1px; }
   .modes button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  figure { margin: 0; display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; }
   figcaption, .labels { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .labels { display: flex; justify-content: space-between; }
   /* A checkerboard shows transparency. */
-  .frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; line-height: 0;
+  .frame { position: relative; border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); overflow: hidden; line-height: 0;
     background: repeating-conic-gradient(#2a2c31 0% 25%, #222428 0% 50%) 50% / 16px 16px; }
   /* At its own size (small previews stay sharp), smaller when it doesn't fit. */
   .frame img { display: block; margin: 0 auto; max-width: 100%; max-height: 62vh; user-select: none; }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-10); }
   .slider { cursor: ew-resize; touch-action: none; }
   .over { position: absolute; inset: 0; }
 
   .handle { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff;
     box-shadow: 0 0 6px rgba(0, 0, 0, .6); pointer-events: none; }
-  .none { padding: 30px; text-align: center; color: var(--faint); font-size: var(--fs-md); line-height: 1.4; }
-  .none.small { width: 48px; height: 32px; padding: 2px; font-size: 8px; }
+  .none { padding: var(--sp-32); text-align: center; color: var(--faint); font-size: var(--fs-md); line-height: 1.4; }
+  .none.small { width: 48px; height: 32px; padding: var(--sp-2); font-size: 8px; }
 </style>

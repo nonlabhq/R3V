@@ -20,7 +20,7 @@
 <svelte:window {onkeydown} />
 
 <div class="backdrop" role="presentation" onclick={(e) => { if (backdropCloses && e.target === e.currentTarget) onclose(); }}>
-  <div class="modal" style:width="{width}px" role="dialog" aria-modal="true" aria-label={title}>
+  <div class="modal surface-dialog" style:width="{width}px" role="dialog" aria-modal="true" aria-label={title}>
     <header>
       <h2>{title}</h2>
       <button class="ghost close" onclick={onclose} aria-label={t("Close")}>✕</button>
@@ -34,20 +34,20 @@
 
 <style>
   .backdrop {
-    position: fixed; inset: 0; background: var(--scrim);
+    position: fixed; inset: 0; background: var(--scrim); backdrop-filter: var(--scrim-filter);
     display: flex; align-items: center; justify-content: center; z-index: var(--z-dialog);
   }
   .modal {
     max-width: calc(100vw - 48px); max-height: calc(100vh - 48px);
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-xl);
+    position: relative; border: var(--border-width) solid var(--line); border-radius: var(--radius-xl);
     display: flex; flex-direction: column; box-shadow: var(--shadow-dialog);
   }
-  header { display: flex; align-items: center; padding: 16px 18px 8px; }
+  header { display: flex; align-items: center; padding: var(--sp-16) var(--sp-18) var(--sp-8); }
   h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); flex: 1; }
-  .close { padding: 2px 8px; }
-  .body { padding: 6px 18px 12px; overflow: auto; }
+  .close { padding: var(--sp-2) var(--sp-8); }
+  .body { padding: var(--sp-6) var(--sp-18) var(--sp-12); overflow: auto; }
   footer {
-    display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px;
-    border-top: 1px solid var(--line);
+    display: flex; justify-content: flex-end; gap: var(--sp-8); padding: var(--sp-12) var(--sp-18);
+    border-top: var(--border-width) solid var(--line);
   }
 </style>

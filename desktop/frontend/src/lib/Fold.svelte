@@ -24,13 +24,13 @@
 </section>
 
 <style>
-  .fold { margin-bottom: 18px; }
+  .fold { margin-bottom: var(--sp-18); }
   .head {
-    width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 8px 10px; margin: 0;
-    background: var(--panel); border: 1px solid transparent; border-radius: var(--radius-lg); text-align: left; cursor: pointer;
+    width: 100%; display: flex; align-items: baseline; gap: var(--sp-10); padding: var(--sp-8) var(--sp-10); margin: 0;
+    background: var(--panel); border: var(--border-width) solid transparent; border-radius: var(--radius-lg); text-align: left; cursor: pointer;
   }
   .head:hover { border-color: var(--line-strong); }
-  .open .head { background: none; padding: 0 0 8px; }
+  .open .head { background: none; padding: 0 0 var(--sp-8); }
   .title { flex: none; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .summary { flex: 1; min-width: 0; font-size: var(--fs-md); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .summary.warn { color: var(--warn); }

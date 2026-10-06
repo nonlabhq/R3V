@@ -129,12 +129,12 @@
 </Modal>
 
 <style>
-  .orig { margin: 0 0 12px; }
-  .grid { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: center; margin-bottom: 10px; }
+  .orig { margin: 0 0 var(--sp-12); }
+  .grid { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-10) var(--sp-14); align-items: center; margin-bottom: var(--sp-10); }
   .grid label { margin: 0; }
   select { width: 100%; }
   .small { font-size: var(--fs-md); }
-  .result { color: var(--muted); margin: 10px 0 4px; }
-  .note { color: var(--warn); margin: 2px 0; }
+  .result { color: var(--muted); margin: var(--sp-10) 0 var(--sp-4); }
+  .note { color: var(--warn); margin: var(--sp-2) 0; }
   .error { color: var(--danger); }
 </style>

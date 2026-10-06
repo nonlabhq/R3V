@@ -102,19 +102,19 @@
 </div>
 
 <style>
-  .ab { display: flex; flex-direction: column; gap: 12px; }
-  .take { display: flex; flex-direction: column; gap: 6px; }
-  .label { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); text-transform: uppercase;
+  .ab { display: flex; flex-direction: column; gap: var(--sp-12); }
+  .take { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .label { display: flex; justify-content: space-between; gap: var(--sp-8); font-size: var(--fs-sm); text-transform: uppercase;
     letter-spacing: .06em; color: var(--muted); }
   .label .faint { text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
   .strip {
-    display: flex; align-items: center; gap: 12px; height: 72px; padding: 0 12px 0 10px;
-    background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-lg); transition: border-color .15s;
+    display: flex; align-items: center; gap: var(--sp-12); height: 72px; padding: 0 var(--sp-12) 0 var(--sp-10);
+    background: var(--bg); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); transition: border-color .15s;
   }
   .take.active .strip { border-color: var(--accent-line); }
   .play {
     flex: none; width: 40px; height: 40px; border-radius: 50%; padding: 0; display: grid; place-items: center;
-    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    background: var(--panel-2); border: var(--border-width) solid var(--line); color: var(--text);
   }
   .play:hover { border-color: var(--accent); color: var(--accent); }
   .play.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }

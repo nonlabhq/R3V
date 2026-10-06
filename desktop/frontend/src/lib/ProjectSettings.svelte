@@ -151,22 +151,22 @@
 {/if}
 
 <style>
-  section { padding: 12px 0; border-top: 1px solid var(--line); }
+  section { padding: var(--sp-12) 0; border-top: var(--border-width) solid var(--line); }
   section:first-child { border-top: none; padding-top: 0; }
-  h3 { margin: 0 0 8px; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
-  .line { display: flex; gap: 8px; align-items: center; }
+  h3 { margin: 0 0 var(--sp-8); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
+  .line { display: flex; gap: var(--sp-8); align-items: center; }
   .line input { flex: 1; }
-  .hint { margin: 6px 0 0; font-size: var(--fs-md); color: var(--muted); }
-  .action .hint { margin-top: 2px; }
-  dl { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: var(--fs-base); align-items: center; }
+  .hint { margin: var(--sp-6) 0 0; font-size: var(--fs-md); color: var(--muted); }
+  .action .hint { margin-top: var(--sp-2); }
+  dl { display: grid; grid-template-columns: 90px 1fr; gap: var(--sp-6) var(--sp-10); margin: 0; font-size: var(--fs-base); align-items: center; }
   dt { color: var(--muted); }
   dd { margin: 0; min-width: 0; }
-  .folder { display: flex; gap: 8px; align-items: center; }
+  .folder { display: flex; gap: var(--sp-8); align-items: center; }
   .path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: var(--fs-md); }
-  .small { padding: 2px 10px; font-size: var(--fs-md); flex: none; }
-  .applied { margin: 8px 0; padding-left: 18px; font-size: var(--fs-base); }
-  .error { color: var(--warn); font-size: var(--fs-md); margin: 6px 0; }
-  .action { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0; }
+  .small { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-md); flex: none; }
+  .applied { margin: var(--sp-8) 0; padding-left: var(--sp-18); font-size: var(--fs-base); }
+  .error { color: var(--warn); font-size: var(--fs-md); margin: var(--sp-6) 0; }
+  .action { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-16); padding: var(--sp-6) 0; }
   .action strong { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
   .action button { flex: none; }
   .danger-zone h3 { color: var(--danger); }

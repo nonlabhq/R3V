@@ -771,22 +771,22 @@
 
 <style>
   .view { display: flex; flex-direction: column; height: 100%; }
-  .pad { padding: 24px; }
+  .pad { padding: var(--sp-24); }
   /* Same place as the loaded header's title, so nothing jumps. */
-  .preparing { padding: 18px 24px; max-width: 600px; }
+  .preparing { padding: var(--sp-18) var(--sp-24); max-width: 600px; }
   .error { color: var(--danger); }
   h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  h1 { margin: 0 0 6px; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
+  h1 { margin: 0 0 var(--sp-6); font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
 
-  .suggestion { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .suggestion { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-10) 0; border-top: var(--border-width) solid var(--line); }
   .suggestion > :global(div:first-child) { flex: 1; }
 
-  nav { display: flex; gap: 4px; padding: 10px 24px 0; border-bottom: 1px solid var(--line); }
-  nav button { border: none; background: transparent; border-radius: var(--radius) var(--radius) 0 0; padding: 8px 14px; color: var(--muted); border-bottom: 2px solid transparent; }
+  nav { display: flex; gap: var(--sp-4); padding: var(--sp-10) var(--sp-24) 0; border-bottom: var(--border-width) solid var(--line); }
+  nav button { border: none; background: transparent; border-radius: var(--radius) var(--radius) 0 0; padding: var(--sp-8) var(--sp-14); color: var(--muted); border-bottom: 2px solid transparent; }
   nav button.on { color: var(--text); border-bottom-color: var(--accent); }
-  .count { margin-left: 4px; font-size: var(--fs-xs); padding: 0 6px; border-radius: var(--radius-lg); background: var(--hover); }
+  .count { margin-left: var(--sp-4); font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); }
 
-  main { flex: 1; overflow: auto; padding: 16px 24px 32px; }
+  main { flex: 1; overflow: auto; padding: var(--sp-16) var(--sp-24) var(--sp-32); }
   main.reading { opacity: .45; transition: opacity .2s; }
   main.flush { padding: 0; overflow: hidden; min-height: 0; }
 

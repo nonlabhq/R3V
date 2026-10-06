@@ -86,18 +86,18 @@
 </div>
 
 <style>
-  .vc { display: flex; flex-direction: column; gap: 10px; }
-  .bar { display: flex; align-items: center; gap: 12px; }
-  figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .vc { display: flex; flex-direction: column; gap: var(--sp-10); }
+  .bar { display: flex; align-items: center; gap: var(--sp-12); }
+  figure { margin: 0; display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; }
   figcaption { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .frame { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: #000; line-height: 0; }
+  .frame { border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: #000; line-height: 0; }
   .frame video { display: block; width: 100%; max-height: 58vh; background: #000; }
-  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .controls { display: flex; align-items: center; gap: 10px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-10); }
+  .controls { display: flex; align-items: center; gap: var(--sp-10); }
   .controls input { flex: 1; }
-  .play { width: 34px; padding: 4px 0; }
+  .play { width: 34px; padding: var(--sp-4) 0; }
   .time { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
-  .none { padding: 30px; text-align: center; color: var(--faint); font-size: var(--fs-md); line-height: 1.6; background: var(--bg);
-    display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .none.small { width: 56px; height: 32px; padding: 2px; font-size: 8px; }
+  .none { padding: var(--sp-32); text-align: center; color: var(--faint); font-size: var(--fs-md); line-height: 1.6; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; gap: var(--sp-4); }
+  .none.small { width: 56px; height: 32px; padding: var(--sp-2); font-size: 8px; }
 </style>

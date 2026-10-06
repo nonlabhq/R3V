@@ -98,20 +98,20 @@
 {/if}
 
 <style>
-  .versions { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-  .v { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: var(--radius);
-    border: 1px solid transparent; background: transparent; }
+  .versions { list-style: none; margin: 0 0 var(--sp-12); padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  .v { width: 100%; text-align: left; display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-6) var(--sp-10); border-radius: var(--radius);
+    border: var(--border-width) solid transparent; background: transparent; }
   .v:hover { background: var(--panel); }
   .v.on { background: var(--panel-2); border-color: var(--line); }
-  .line { display: flex; gap: 10px; width: 100%; }
+  .line { display: flex; gap: var(--sp-10); width: 100%; }
   .msg { flex: 1; }
-  .what { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+  .what { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-12); align-items: center; }
   .small { font-size: var(--fs-sm); }
-  .set { margin: 0 0 10px; }
-  .sethead { display: flex; align-items: center; gap: 6px; width: 100%; padding: 4px 2px; border: none; background: transparent;
+  .set { margin: 0 0 var(--sp-10); }
+  .sethead { display: flex; align-items: center; gap: var(--sp-6); width: 100%; padding: var(--sp-4) var(--sp-2); border: none; background: transparent;
     text-align: left; font-size: var(--fs-md); }
   .chev { display: inline-block; color: var(--muted); transition: transform .12s; }
   .chev.open { transform: rotate(90deg); }
   .name { font-weight: var(--fw-semibold); }
-  .others summary { cursor: pointer; color: var(--muted); font-size: var(--fs-md); margin: 4px 0; }
+  .others summary { cursor: pointer; color: var(--muted); font-size: var(--fs-md); margin: var(--sp-4) 0; }
 </style>

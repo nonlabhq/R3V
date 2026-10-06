@@ -21,7 +21,7 @@
 </div>
 
 <style>
-  .code { display: flex; gap: 8px; margin: 0 0 10px; }
+  .code { display: flex; gap: var(--sp-8); margin: 0 0 var(--sp-10); }
   input { flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--muted); }
   button { flex: none; min-width: 84px; }
 </style>

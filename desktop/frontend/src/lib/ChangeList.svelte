@@ -99,10 +99,10 @@
 {/if}
 
 <style>
-  .wsum { margin: 2px 0 2px; }
+  .wsum { margin: var(--sp-2) 0 var(--sp-2); }
   .changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-  .row { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 26px; padding-top: 2px; padding-bottom: 2px;
-    padding-right: 6px; border: none; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--fs-md); }
+  .row { display: flex; align-items: center; gap: var(--sp-6); width: 100%; min-height: 26px; padding-top: var(--sp-2); padding-bottom: var(--sp-2);
+    padding-right: var(--sp-6); border: none; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--fs-md); }
   button.row:hover { background: var(--panel); }
   .chev { width: 12px; height: 12px; flex: none; color: var(--muted); transition: transform .12s; }
   .chev.open { transform: rotate(90deg); }
@@ -110,7 +110,7 @@
   .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file.deleted .fname { text-decoration: line-through; color: var(--muted); }
   .right { margin-left: auto; display: flex; align-items: center; flex: none; }
-  .count { font-size: var(--fs-xs); padding: 0 6px; border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
+  .count { font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
   .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
     font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
   .file.added .sym { color: var(--add); background: var(--add-soft); }
@@ -121,7 +121,7 @@
   .from { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: var(--fs-sm); color: var(--faint); }
   .details {
-    margin: 4px 0 6px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line);
+    margin: var(--sp-4) 0 var(--sp-6); padding: var(--sp-8) var(--sp-10); background: var(--bg); border: var(--border-width) solid var(--line);
     border-radius: var(--radius); line-height: 1.6; user-select: text;
   }
   .add { color: var(--add); }

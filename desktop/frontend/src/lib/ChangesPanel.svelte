@@ -456,7 +456,7 @@
 {#if menu}
   {@const m = menu}
   {@const f = m.dir ? undefined : files.find((x) => x.path === m.path)}
-  <div class="ctx" role="menu" style:left="{Math.min(m.x, window.innerWidth - 240)}px" style:top="{Math.min(m.y, window.innerHeight - 260)}px">
+  <div class="ctx surface-menu" role="menu" style:left="{Math.min(m.x, window.innerWidth - 240)}px" style:top="{Math.min(m.y, window.innerHeight - 260)}px">
     {#if !m.dir && f && f.status !== "deleted"}
       <button class="item" onclick={() => openFile(m.path)}>{f.kind === "set" ? t("Open in {tool}", { tool: "Live" }) : f.kind === "audio" ? t("Open in default player") : t("Open")}</button>
     {/if}
@@ -479,7 +479,7 @@
           {t("Ignore")}<span class="arrow">›</span>
         </button>
         {#if ignoreOpen}
-          <div class="ctx submenu" role="menu" class:left={m.x > window.innerWidth - 480}>
+          <div class="ctx submenu surface-menu" role="menu" class:left={m.x > window.innerWidth - 480}>
             {#each m.ignore as o}
               <button class="item" onclick={() => ignore(o.pattern)}>{o.label}<span class="faint pat mono">{o.pattern}</span></button>
             {/each}
@@ -498,37 +498,37 @@
 
 <style>
   .panel { display: grid; grid-template-columns: minmax(240px, 34%) 1fr; height: 100%; min-height: 0; }
-  .side { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
-  .files { flex: 1; overflow: auto; min-height: 0; padding: 0 8px 16px 0; }
+  .side { display: flex; flex-direction: column; min-height: 0; border-right: var(--border-width) solid var(--line); }
+  .files { flex: 1; overflow: auto; min-height: 0; padding: 0 var(--sp-8) var(--sp-16) 0; }
   /* the header stays at the top, set apart from the tree */
   /* the header stays at the top, set apart from the tree; its columns are the rows' (box, then icon) */
   .files { container-type: inline-size; }
   /* under the files: the message and the button, apart from the list */
-  .commit { flex: none; border-top: 1px solid var(--line); background: var(--panel); padding: 12px 14px 14px; }
+  .commit { flex: none; border-top: var(--border-width) solid var(--line); background: var(--panel); padding: var(--sp-12) var(--sp-14) var(--sp-14); }
   .commit :global(textarea) { width: 100%; resize: vertical; min-height: 54px; }
-  .head { position: sticky; top: 0; z-index: var(--z-sticky); margin: 0 -8px 6px 0; padding: 8px 8px 6px 0;
-    background: var(--panel); border-bottom: 1px solid var(--line); font-size: var(--fs-sm); color: var(--muted);
-    display: grid; align-items: center; row-gap: 3px;
+  .head { position: sticky; top: 0; z-index: var(--z-sticky); margin: 0 calc(var(--sp-8) * -1) var(--sp-6) 0; padding: var(--sp-8) var(--sp-8) var(--sp-6) 0;
+    background: var(--panel); border-bottom: var(--border-width) solid var(--line); font-size: var(--fs-sm); color: var(--muted);
+    display: grid; align-items: center; row-gap: var(--sp-4);
     grid-template-columns: 22px 20px minmax(0, 1fr) auto auto;
     grid-template-areas: "chev pick title title title" ". . total discard all"; }
   @container (min-width: 380px) {
     .head { grid-template-columns: 22px 20px auto minmax(0, 1fr) auto auto;
       grid-template-areas: "chev pick title total discard all"; }
-    .h-total { padding-left: 10px; }
-    .h-revert { margin-right: 10px; }
+    .h-total { padding-left: var(--sp-10); }
+    .h-revert { margin-right: var(--sp-10); }
   }
-  .h-chev { grid-area: chev; margin-left: 4px; }
+  .h-chev { grid-area: chev; margin-left: var(--sp-4); }
   .h-pick { grid-area: pick; }
-  .h-title { grid-area: title; padding-left: 4px; text-transform: uppercase; letter-spacing: .06em;
+  .h-title { grid-area: title; padding-left: var(--sp-4); text-transform: uppercase; letter-spacing: .06em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .h-total { grid-area: total; padding-left: 4px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .h-total { grid-area: total; padding-left: var(--sp-4); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .h-revert { grid-area: discard; justify-self: end; } /* (not "revert": a CSS keyword) */
   .h-all { grid-area: all; justify-self: end; }
-  .revert { flex: none; display: inline-flex; padding: 3px; border-radius: var(--radius-sm); color: var(--muted); }
+  .revert { flex: none; display: inline-flex; padding: var(--sp-4); border-radius: var(--radius-sm); color: var(--muted); }
   .revert svg { width: 14px; height: 14px; }
   .revert:hover:not(:disabled) { color: var(--danger); background: var(--hover); }
   .revert:disabled { opacity: .35; }
-  .all { display: flex; align-items: center; gap: 5px; margin: 0; text-transform: none; letter-spacing: 0; cursor: pointer; }
+  .all { display: flex; align-items: center; gap: var(--sp-4); margin: 0; text-transform: none; letter-spacing: 0; cursor: pointer; }
   /* iOS-style switch */
   .switch { appearance: none; position: relative; width: 26px; height: 15px; margin: 0; flex: none; cursor: pointer;
     border: none; padding: 0; border-radius: var(--radius-lg); background: var(--hover-strong); transition: background .15s; }
@@ -537,16 +537,16 @@
   .switch:checked { background: var(--accent); }
   .switch:checked::after { transform: translateX(11px); background: #fff; }
   .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .empty { padding: 0 8px; font-size: var(--fs-md); }
+  .empty { padding: 0 var(--sp-8); font-size: var(--fs-md); }
   ul { list-style: none; margin: 0; padding: 0; }
   li { position: relative; display: flex; align-items: center; height: 30px; }
   .indent { flex: none; }
-  .chevbtn { flex: none; width: 18px; height: 22px; padding: 0; margin-left: 4px; display: flex; align-items: center;
+  .chevbtn { flex: none; width: 18px; height: 22px; padding: 0; margin-left: var(--sp-4); display: flex; align-items: center;
     justify-content: center; border: none; background: transparent; }
   /* The commit box: ticked, unticked, or some of a folder (gray with a dash). */
   /* (padding 0: inputs have padding everywhere, which made the box wide) */
   .pick { appearance: none; position: relative; flex: none; width: 14px; min-width: 14px; height: 14px; padding: 0;
-    margin: 0 4px 0 2px; border: 1.5px solid var(--muted); border-radius: var(--radius-xs); background: transparent; cursor: pointer; }
+    margin: 0 var(--sp-4) 0 var(--sp-2); border: 1.5px solid var(--muted); border-radius: var(--radius-xs); background: transparent; cursor: pointer; }
   .pick:checked { background: var(--accent); border-color: var(--accent); }
   .pick:checked::after { content: ""; position: absolute; left: 3.5px; top: 0.5px; width: 3.5px; height: 7.5px;
     border: solid var(--accent-ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
@@ -562,13 +562,13 @@
   .dir .fname { color: var(--muted); }
   .dir.changed .fname { color: var(--text); }
   .dir.untracked .fname { color: var(--faint); }
-  .count { font-size: var(--fs-xs); padding: 0 6px; border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
-  .file { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; border: none; background: transparent;
-    padding: 5px 30px 5px 4px; border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
+  .count { font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
+  .file { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
+    padding: var(--sp-4) var(--sp-32) var(--sp-4) var(--sp-4); border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
   .file:hover { background: var(--panel); }
   .file.on { background: var(--panel-2); }
   /* What changed, at the end of the row: a small colored square. */
-  .right { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }
+  .right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-6); flex: none; }
   .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
     font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
   .file.added .sym { background: var(--add-soft); }
@@ -586,29 +586,29 @@
     font-size: var(--fs-sm); color: var(--faint); }
   .file.renamed .sym { color: var(--warn); background: var(--warn-soft); }
   .vsym.renamed { color: var(--warn); }
-  .live { font-size: var(--fs-xs); padding: 0 5px; border-radius: var(--radius-pill); background: var(--hover); color: var(--muted);
+  .live { font-size: var(--fs-xs); padding: 0 var(--sp-4); border-radius: var(--radius-pill); background: var(--hover); color: var(--muted);
     font-variant-numeric: tabular-nums; flex: none; }
   .live.odd { background: var(--warn-bg); color: var(--warn); }
-  .more { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 6px; }
+  .more { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 var(--sp-6); }
   li:hover .more { visibility: visible; }
 
-  .detail { overflow: auto; min-height: 0; padding: 12px 4px 16px 20px; }
-  .detail-h { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 12px; margin-bottom: 10px; }
+  .detail { overflow: auto; min-height: 0; padding: var(--sp-12) var(--sp-4) var(--sp-16) var(--sp-20); }
+  .detail-h { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--sp-8) var(--sp-12); margin-bottom: var(--sp-10); }
   .title { flex: 1 1 180px; min-width: 0; }
-  .dname { display: flex; align-items: center; gap: 6px; font-weight: var(--fw-semibold); font-size: var(--fs-lg); }
+  .dname { display: flex; align-items: center; gap: var(--sp-6); font-weight: var(--fw-semibold); font-size: var(--fs-lg); }
   .small { font-size: var(--fs-sm); }
   .modes { display: flex; }
-  .modes button { padding: 4px 10px; font-size: var(--fs-md); border-radius: 0; }
+  .modes button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); border-radius: 0; }
   .modes button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
   .modes button:last-child { border-radius: 0 var(--radius) var(--radius) 0; margin-left: -1px; }
   .modes button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  .lines { padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); line-height: 1.6; user-select: text; }
+  .lines { padding: var(--sp-8) var(--sp-10); background: var(--bg); border: var(--border-width) solid var(--line); border-radius: var(--radius); line-height: 1.6; user-select: text; }
   .add { color: var(--add); }
   .del { color: var(--del); }
   .mod { color: var(--mod); }
-  .versions { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
-  .versions button { width: 100%; display: flex; align-items: center; gap: 8px; border: none; background: transparent;
-    padding: 6px 8px; border-radius: var(--radius); text-align: left; }
+  .versions { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-14); }
+  .versions button { width: 100%; display: flex; align-items: center; gap: var(--sp-8); border: none; background: transparent;
+    padding: var(--sp-6) var(--sp-8); border-radius: var(--radius); text-align: left; }
   .versions button:hover { background: var(--panel); }
   .versions button.on { background: var(--panel-2); }
   .vsym { width: 12px; text-align: center; font-weight: var(--fw-bold); }
@@ -616,13 +616,13 @@
   .vsym.deleted { color: var(--del); }
   .vsym.modified { color: var(--mod); }
   .vmsg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .picked { border-top: 1px solid var(--line); padding-top: 14px; }
-  .restore { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .restore button { padding: 5px 12px; font-size: var(--fs-md); }
+  .picked { border-top: var(--border-width) solid var(--line); padding-top: var(--sp-14); }
+  .restore { display: flex; align-items: center; gap: var(--sp-10); margin-bottom: var(--sp-14); }
+  .restore button { padding: var(--sp-4) var(--sp-12); font-size: var(--fs-md); }
 
-  .ctx { position: fixed; z-index: var(--z-submenu); min-width: 210px; padding: 6px; background: var(--panel-2);
-    border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
-  .ctx .item { display: block; width: 100%; border: none; background: transparent; padding: 6px 8px; text-align: left; }
+  .ctx { position: fixed; z-index: var(--z-submenu); min-width: 210px; padding: var(--sp-6);
+    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .ctx .item { display: block; width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; }
   .ctx .item:hover:not(:disabled) { background: var(--hover); }
   .sub { position: relative; }
   .has-sub { display: flex !important; align-items: center; }
@@ -631,7 +631,7 @@
   .submenu.left { left: auto; right: calc(100% + 2px); }
   .submenu .item { display: flex; flex-direction: column; gap: 1px; }
   .pat { font-size: var(--fs-xs); }
-  .note { margin: 6px 8px 2px; font-size: var(--fs-xs); line-height: 1.4; }
+  .note { margin: var(--sp-6) var(--sp-8) var(--sp-2); font-size: var(--fs-xs); line-height: 1.4; }
   .danger-text { color: var(--danger); }
-  .sep { height: 1px; background: var(--line); margin: 6px 0; }
+  .sep { height: 1px; background: var(--line); margin: var(--sp-6) 0; }
 </style>

@@ -191,10 +191,10 @@
 </div>
 
 <style>
-  .check { margin: 6px 0 10px; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; }
-  .tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px 8px; min-width: 0;
-    border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--panel); color: var(--muted); font: inherit; text-align: center; }
+  .check { margin: var(--sp-6) 0 var(--sp-10); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: var(--sp-6); }
+  .tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-10) var(--sp-4) var(--sp-8); min-width: 0;
+    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); background: var(--panel); color: var(--muted); font: inherit; text-align: center; }
   button.tile { cursor: pointer; }
   button.tile:disabled { cursor: default; }
   button.tile:not(:disabled):hover, .tile.on { border-color: var(--muted); }
@@ -208,26 +208,26 @@
   .badge.ok { background: var(--accent-soft); color: var(--accent); }
   .badge.warn { background: var(--warn); color: var(--warn-ink); }
   .badge.note { background: var(--note-soft); color: var(--note); }
-  .chips { display: flex; gap: 6px; font-size: var(--fs-xs); color: var(--faint); }
-  .chips span { display: inline-flex; align-items: center; gap: 2px; }
+  .chips { display: flex; gap: var(--sp-6); font-size: var(--fs-xs); color: var(--faint); }
+  .chips span { display: inline-flex; align-items: center; gap: var(--sp-2); }
   .chips .note { color: var(--note); }
-  .faces { display: flex; margin: 1px 0 2px; }
-  .face { width: 22px; height: 22px; border-radius: 50%; margin-left: -4px; border: 2px solid var(--panel); background: var(--accent-line);
+  .faces { display: flex; margin: 1px 0 var(--sp-2); }
+  .face { width: 22px; height: 22px; border-radius: 50%; margin-left: calc(var(--sp-4) * -1); border: 2px solid var(--panel); background: var(--accent-line);
     color: var(--accent-text); font-size: var(--fs-2xs); font-weight: var(--fw-bold); display: flex; align-items: center; justify-content: center; }
   .face:first-child { margin-left: 0; }
   .face.bad { background: var(--warn-strong); color: var(--warn-text); }
-  .issues { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-md); }
-  .issues li { display: flex; align-items: center; gap: 6px; color: var(--warn-text); }
+  .issues { list-style: none; margin: var(--sp-10) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-4); font-size: var(--fs-md); }
+  .issues li { display: flex; align-items: center; gap: var(--sp-6); color: var(--warn-text); }
   .issues li :global(svg) { color: var(--warn); flex: none; }
   .issues li.soft, .issues li.soft :global(svg) { color: var(--faint); }
   .issues li.note { color: var(--text); }
   .issues li.note :global(svg) { color: var(--note); }
   .link.strong { font-weight: var(--fw-semibold); }
   .issues .link { white-space: nowrap; flex: none; }
-  .link { border: none; background: transparent; color: var(--accent); padding: 0 0 0 4px; font-size: var(--fs-sm); cursor: pointer; }
-  .list { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-lg);
-    background: var(--bg); border: 1px solid var(--line); font-size: var(--fs-md); }
-  .list span { display: flex; align-items: center; gap: 6px; }
+  .link { border: none; background: transparent; color: var(--accent); padding: 0 0 0 var(--sp-4); font-size: var(--fs-sm); cursor: pointer; }
+  .list { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-8); padding: var(--sp-8) var(--sp-10); border-radius: var(--radius-lg);
+    background: var(--bg); border: var(--border-width) solid var(--line); font-size: var(--fs-md); }
+  .list span { display: flex; align-items: center; gap: var(--sp-6); }
   code { font-size: var(--fs-sm); color: var(--muted); word-break: break-all; }
   .plugin.yes :global(svg), .pack.yes :global(svg) { color: var(--accent); }
   .plugin.no :global(svg), .pack.no :global(svg) { color: var(--warn); }

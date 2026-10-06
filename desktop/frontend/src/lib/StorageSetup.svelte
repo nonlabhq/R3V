@@ -220,31 +220,31 @@
 {/if}
 
 <style>
-  .intro { margin: 0 0 12px; }
-  .provider { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .provider label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 9px 12px;
-    border: 1px solid var(--line); border-radius: var(--radius-lg); cursor: pointer; color: var(--text); font-size: var(--fs-base); }
+  .intro { margin: 0 0 var(--sp-12); }
+  .provider { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-8); margin-bottom: var(--sp-12); }
+  .provider label { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-8); margin: 0; padding: var(--sp-8) var(--sp-12);
+    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); cursor: pointer; color: var(--text); font-size: var(--fs-base); }
   .provider label.on { border-color: var(--accent); background: var(--accent-bg); }
   .provider input { width: auto; margin: 0; }
-  .provider .faint { flex-basis: 100%; padding-left: 21px; font-size: var(--fs-sm); }
-  .guide { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-  .guide li, .plain { display: flex; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
+  .provider .faint { flex-basis: 100%; padding-left: var(--sp-20); font-size: var(--fs-sm); }
+  .guide { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-10); }
+  .guide li, .plain { display: flex; gap: var(--sp-12); padding: var(--sp-12) var(--sp-14); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
   .plain { flex-direction: column; gap: 0; }
-  .plain > p { margin: 0 0 4px; }
+  .plain > p { margin: 0 0 var(--sp-4); }
   .n { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
     background: var(--accent-bg); color: var(--accent); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
   .body { flex: 1; min-width: 0; }
-  h3 { margin: 1px 0 4px; font-size: var(--fs-base); }
-  .body p { margin: 0 0 8px; font-size: var(--fs-md); color: var(--muted); user-select: text; }
+  h3 { margin: 1px 0 var(--sp-4); font-size: var(--fs-base); }
+  .body p { margin: 0 0 var(--sp-8); font-size: var(--fs-md); color: var(--muted); user-select: text; }
   .body p :global(strong), .body p :global(em) { color: var(--text); }
-  label { margin-top: 8px; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .actions { margin-top: 14px; align-items: center; }
-  .error { color: var(--danger); margin: 12px 0 0; user-select: text; }
+  label { margin-top: var(--sp-8); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-10); }
+  .actions { margin-top: var(--sp-14); align-items: center; }
+  .error { color: var(--danger); margin: var(--sp-12) 0 0; user-select: text; }
   .small { font-size: var(--fs-sm); }
   .ok { color: var(--accent); font-weight: var(--fw-semibold); margin-top: 0; }
-  .done p { margin: 0 0 10px; }
-  .step-h { margin: 0 0 10px; font-size: var(--fs-lg); }
+  .done p { margin: 0 0 var(--sp-10); }
+  .step-h { margin: 0 0 var(--sp-10); font-size: var(--fs-lg); }
   .done .small { font-size: var(--fs-md); }
   .link { border: none; background: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: inherit; }
 </style>

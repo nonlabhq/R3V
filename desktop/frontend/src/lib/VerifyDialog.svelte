@@ -83,9 +83,9 @@
   .ok { color: var(--add); }
   .error { color: var(--danger); }
   .small { font-size: var(--fs-sm); }
-  .problems { list-style: none; margin: 10px 0; padding: 0; max-height: 50vh; overflow: auto; display: flex;
-    flex-direction: column; gap: 8px; }
-  .problems li { display: flex; gap: 8px; align-items: flex-start; }
+  .problems { list-style: none; margin: var(--sp-10) 0; padding: 0; max-height: 50vh; overflow: auto; display: flex;
+    flex-direction: column; gap: var(--sp-8); }
+  .problems li { display: flex; gap: var(--sp-8); align-items: flex-start; }
   .mark { width: 16px; flex: none; text-align: center; font-weight: var(--fw-bold); color: var(--warn); }
   .fixed .mark { color: var(--add); }
   .kind { font-weight: var(--fw-semibold); }

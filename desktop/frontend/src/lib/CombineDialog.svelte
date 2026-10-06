@@ -64,13 +64,13 @@
 </Modal>
 
 <style>
-  h3 { font-size: var(--fs-md); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 8px; }
+  h3 { font-size: var(--fs-md); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: var(--sp-14) 0 var(--sp-8); }
   .conflicts {
-    margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg);
-    background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text);
+    margin-top: var(--sp-14); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg);
+    background: var(--warn-bg); border: var(--border-width) solid var(--warn-line); color: var(--warn-text);
   }
-  .conflicts ul { margin: 6px 0 0; padding-left: 20px; }
-  .note { margin-top: 14px; color: var(--muted); font-size: var(--fs-md); }
-  label { display: block; margin-top: 16px; }
+  .conflicts ul { margin: var(--sp-6) 0 0; padding-left: var(--sp-20); }
+  .note { margin-top: var(--sp-14); color: var(--muted); font-size: var(--fs-md); }
+  label { display: block; margin-top: var(--sp-16); }
   input { width: 100%; }
 </style>

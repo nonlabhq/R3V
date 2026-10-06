@@ -146,15 +146,15 @@
   .history { position: relative; }
   .graph { position: absolute; left: 0; top: 0; overflow: visible; }
   ul { list-style: none; margin: 0; }
-  li { border-bottom: 1px solid var(--line-soft); }
-  .row { position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  li { border-bottom: var(--border-width) solid var(--line-soft); }
+  .row { position: relative; display: flex; align-items: center; gap: var(--sp-12); cursor: pointer; }
   .row:hover, li.open .row { background: rgba(255, 255, 255, .025); }
   .acts {
-    position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: none; gap: 6px;
-    padding-left: 24px; background: linear-gradient(to right, transparent, var(--bg) 20px);
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: none; gap: var(--sp-6);
+    padding-left: var(--sp-24); background: linear-gradient(to right, transparent, var(--bg) 20px);
   }
   .row:hover .acts { display: flex; }
-  .acts button { padding: 3px 10px; font-size: var(--fs-md); }
+  .acts button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   li.incoming .msg { color: var(--muted); }
   li.automerge .msg { color: var(--faint); font-style: italic; }
   .msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -162,16 +162,16 @@
   .when { width: 110px; text-align: right; }
   .id { width: 80px; text-align: right; }
   .tag {
-    display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: var(--radius-pill); font-size: var(--fs-sm);
+    display: inline-block; margin-left: var(--sp-8); padding: 0 var(--sp-6); border-radius: var(--radius-pill); font-size: var(--fs-sm);
     background: var(--info-chip); color: var(--info-text); vertical-align: 1px;
   }
   .tag.here { background: var(--accent-bg); color: var(--accent); }
   .tag.new { background: var(--warn-bg); color: var(--warn); }
   .tag.away { background: var(--panel-3); color: var(--faint); }
   /* Details: a pixel-exact height (the graph follows it), so no collapsing margins. */
-  .details { padding: 4px 0 14px; font-size: var(--fs-md); display: flow-root; }
-  .full { white-space: pre-wrap; margin-bottom: 4px !important; user-select: text; }
-  .meta { font-size: var(--fs-sm); margin-bottom: 10px; }
+  .details { padding: var(--sp-4) 0 var(--sp-14); font-size: var(--fs-md); display: flow-root; }
+  .full { white-space: pre-wrap; margin-bottom: var(--sp-4) !important; user-select: text; }
+  .meta { font-size: var(--fs-sm); margin-bottom: var(--sp-10); }
   .details p { margin: 0; }
   .error { color: var(--danger); }
   .ring { animation: pulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }

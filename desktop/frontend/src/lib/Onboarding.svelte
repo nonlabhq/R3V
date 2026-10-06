@@ -171,26 +171,26 @@
 </div>
 
 <style>
-  .onboarding { height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
-  .card { width: 560px; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-xl); padding: 26px 30px; }
+  .onboarding { height: 100%; display: flex; align-items: center; justify-content: center; padding: var(--sp-24); overflow: auto; }
+  .card { width: 560px; max-width: 100%; background: var(--panel); border: var(--border-width) solid var(--line); border-radius: var(--radius-xl); padding: var(--sp-24) var(--sp-32); }
   .card.wide { width: 660px; }
-  .brand { display: flex; align-items: center; gap: 8px; font-weight: var(--fw-bold); margin-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); margin-bottom: var(--sp-14); }
   .brand img { width: 24px; height: 24px; }
-  .steps { list-style: none; display: flex; gap: 8px; padding: 0; margin: 0 0 18px; font-size: var(--fs-sm); }
-  .steps li { padding: 3px 10px; border-radius: var(--radius-pill); background: var(--bg); color: var(--faint); }
+  .steps { list-style: none; display: flex; gap: var(--sp-8); padding: 0; margin: 0 0 var(--sp-18); font-size: var(--fs-sm); }
+  .steps li { padding: var(--sp-4) var(--sp-10); border-radius: var(--radius-pill); background: var(--bg); color: var(--faint); }
   .steps li.on { background: var(--accent-bg); color: var(--accent); }
   .steps li.done { color: var(--muted); }
   .steps li.done::before { content: "✓ "; }
-  h1 { font-size: var(--fs-2xl); margin: 0 0 6px; }
-  .actions { margin-top: 18px; }
+  h1 { font-size: var(--fs-2xl); margin: 0 0 var(--sp-6); }
+  .actions { margin-top: var(--sp-18); }
   .error { color: var(--danger); }
-  .parent { margin: 12px 0 8px; }
+  .parent { margin: var(--sp-12) 0 var(--sp-8); }
   .path { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .projects { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow: auto; }
-  .projects li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
+  .projects { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-6); max-height: 240px; overflow: auto; }
+  .projects li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-10); padding: var(--sp-8) var(--sp-12); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
   .name { flex: 1; font-weight: var(--fw-semibold); }
   .ok { color: var(--accent); font-size: var(--fs-md); }
   .projects li.active { border-color: var(--info-line); }
   .progress { flex-basis: 100%; display: flex; }
-  .tip { font-size: var(--fs-md); margin: 14px 0 0; }
+  .tip { font-size: var(--fs-md); margin: var(--sp-14) 0 0; }
 </style>
