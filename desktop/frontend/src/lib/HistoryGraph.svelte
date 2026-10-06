@@ -29,7 +29,13 @@
   let g = $derived(branchGraph(versions, branches, branch, "main", head));
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
-  let headChain = $derived(g.chainOf.get(head));
+  // Where your changes go: the branch you are on (its own column even when it
+  // has no versions yet), else the line of the version you are on.
+  let headChain = $derived(g.chains.find((c) => c.empty && c.name === branch) ?? g.chainOf.get(head));
+  // Branches with no versions yet, other than yours with changes: a short
+  // line out of where they start, ending in a hollow dot (row: a little above).
+  let stubs = $derived(g.chains.filter((c) => c.empty && !(pending && c === headChain))
+    .map((c) => ({ c, from: g.chainOf.get(c.tip)!, row: g.row.get(c.tip)! + off - 0.8 })));
   // Branches merged into another: quieter.
   let merged = $derived(new Set(g.edges.filter((e) => e.kind === "merge").map((e) => g.chainOf.get(e.to)!)));
 
@@ -46,7 +52,7 @@
   let labels = $derived.by(() => {
     const out: Label[] = [];
     const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
-      ...(pending && headChain ? [{ col: headChain.col, row: 0 }] : [])];
+      ...(pending && headChain ? [{ col: headChain.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
     const clear = (dx: number, y: number, w: number, h: number) =>
       dots.every((d) => d.col * COL + 12 < dx || d.col * COL - 12 > dx + w || d.row * ROW + ROW / 2 + 12 < y || d.row * ROW + ROW / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
@@ -55,8 +61,9 @@
       const atPending = pending && c === headChain;
       const tip = byID.get(c.tip)!;
       // On your branch with changes not committed: just its name.
-      const title = atPending ? "" : short(tip.message || t("(no description)"), TITLE);
-      const rowY = atPending ? 0 : g.row.get(c.tip)! + off;
+      // (an empty branch: just its name too; its newest version is another's)
+      const title = atPending || c.empty ? "" : short(tip.message || t("(no description)"), TITLE);
+      const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
       const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
       const h = title ? 32 : 24;
       const at = c.col * COL;
@@ -90,6 +97,18 @@
     // merge: over to the branch merged in, then down its column
     const turn = Math.min(yb, ya + ROW);
     return `M ${xa} ${ya} C ${xa} ${ya + ROW / 2}, ${xb} ${ya + ROW / 2}, ${xb} ${turn} L ${xb} ${yb}`;
+  }
+  // Your changes down to the version you are on (over to it when your
+  // branch has no versions yet).
+  function pendingPath() {
+    const c = headChain!;
+    const hx = x(g.chainOf.get(head)?.col ?? c.col), px = x(c.col), turn = Math.max(yRow(0), y(head) - ROW);
+    return hx === px ? `M ${px} ${yRow(0)} L ${px} ${y(head)}`
+      : `M ${px} ${yRow(0)} L ${px} ${turn} C ${px} ${turn + ROW / 2}, ${hx} ${turn + ROW / 2}, ${hx} ${y(head)}`;
+  }
+  function stubPath(st: { c: { tip: string; col: number }; from: { col: number }; row: number }) {
+    const fx = x(st.from.col), fy = y(st.c.tip), sx = x(st.c.col), sy = yRow(st.row);
+    return `M ${fx} ${fy} C ${fx} ${fy - ROW * 0.5}, ${sx} ${sy + ROW * 0.4}, ${sx} ${sy}`;
   }
   const lineChain = (e: { from: string; to: string; kind: string }) =>
     e.kind === "merge" ? g.chainOf.get(e.to)! : g.chainOf.get(e.from)!;
@@ -238,9 +257,12 @@
             opacity={!c.name ? 0.55 : merged.has(c) ? 0.75 : 1} />
         {/each}
         {#if pending && headChain}
-          <path d="M {x(headChain.col)} {yRow(0)} L {x(headChain.col)} {y(head)}" stroke="var(--lane-{headChain.color})" stroke-width="2"
-            stroke-dasharray="3 4" fill="none" />
+          <path d={pendingPath()} stroke="var(--lane-{headChain.color})" stroke-width="2" stroke-dasharray="3 4" fill="none" />
         {/if}
+        {#each stubs as st (st.c.name)}
+          <path d={stubPath(st)} stroke="var(--lane-{st.c.color})" stroke-width="3" fill="none" stroke-linecap="round" />
+          <circle cx={x(st.c.col)} cy={yRow(st.row)} r="5" fill="var(--panel)" stroke="var(--lane-{st.c.color})" stroke-width="2" />
+        {/each}
       </svg>
 
       {#each labels as l (l.id)}

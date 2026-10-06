@@ -14,6 +14,9 @@ export type Chain = {
   main: boolean;
   mine: boolean;  // the branch you are on (when it isn't main)
   color: number;  // lane colour index
+  // A branch with no versions of its own yet (just made): it starts at tip,
+  // a version of another branch, and has no versions here (ids is empty).
+  empty?: boolean;
 };
 
 export type Edge = { from: string; to: string; kind: "line" | "fork" | "merge" };
@@ -51,6 +54,13 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
   if (current !== mainBranch) walk(current, tipOf(current), false);
   if (head && !chainOf.has(head)) walk(current, head, current === mainBranch);
   for (const b of branches) walk(b.name, b.latest, false);
+  // Branches whose newest version is another's (just made, nothing committed
+  // on them yet): drawn too, starting from that version.
+  for (const b of branches) {
+    const tip = b.latest || (b.name === current ? head : "");
+    if (!b.name || !byID.has(tip) || chains.some((c) => c.name === b.name)) continue;
+    chains.push({ name: b.name, tip, ids: [], col: 0, main: false, mine: b.name === current && b.name !== mainBranch, color: 0, empty: true });
+  }
   // Whatever is left came in through merges: its own lines.
   for (const v of versions) walk("", v.id, false);
   // No main branch in this history: the first line is the middle.
@@ -59,6 +69,9 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
   // Columns, side by side: from the earliest split, the nearest free column
   // (free from a row above the branch's top, for its label, to where it split).
   const span = (c: Chain) => {
+    // (an empty branch: from where it starts up to its label; the one you
+    // are on, up to the top, where your changes are)
+    if (c.empty) return { top: c.name === current ? -2 : row.get(c.tip)! - 2, bottom: row.get(c.tip)! };
     const top = row.get(c.tip)!;
     const oldest = byID.get(c.ids[c.ids.length - 1])!;
     const from = oldest.parents[0] !== undefined && row.has(oldest.parents[0]) ? row.get(oldest.parents[0])! : versions.length;
