@@ -20,7 +20,7 @@
 </div>
 
 <style>
-  .progress { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; min-width: 0; }
+  .progress { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-md); min-width: 0; }
   .text { display: flex; flex-wrap: wrap; gap: 4px 12px; }
   .detail { font-variant-numeric: tabular-nums; }
   .bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }

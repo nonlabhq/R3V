@@ -223,28 +223,28 @@
   .intro { margin: 0 0 12px; }
   .provider { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
   .provider label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 9px 12px;
-    border: 1px solid var(--line); border-radius: 8px; cursor: pointer; color: var(--text); font-size: 13.5px; }
-  .provider label.on { border-color: var(--accent); background: #1f3b35; }
+    border: 1px solid var(--line); border-radius: var(--radius-lg); cursor: pointer; color: var(--text); font-size: var(--fs-base); }
+  .provider label.on { border-color: var(--accent); background: var(--accent-bg); }
   .provider input { width: auto; margin: 0; }
-  .provider .faint { flex-basis: 100%; padding-left: 21px; font-size: 12px; }
+  .provider .faint { flex-basis: 100%; padding-left: 21px; font-size: var(--fs-sm); }
   .guide { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-  .guide li, .plain { display: flex; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+  .guide li, .plain { display: flex; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
   .plain { flex-direction: column; gap: 0; }
   .plain > p { margin: 0 0 4px; }
   .n { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
-    background: #1f3b35; color: var(--accent); font-size: 12px; font-weight: 700; }
+    background: var(--accent-bg); color: var(--accent); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
   .body { flex: 1; min-width: 0; }
-  h3 { margin: 1px 0 4px; font-size: 14px; }
-  .body p { margin: 0 0 8px; font-size: 13px; color: var(--muted); user-select: text; }
+  h3 { margin: 1px 0 4px; font-size: var(--fs-base); }
+  .body p { margin: 0 0 8px; font-size: var(--fs-md); color: var(--muted); user-select: text; }
   .body p :global(strong), .body p :global(em) { color: var(--text); }
   label { margin-top: 8px; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .actions { margin-top: 14px; align-items: center; }
   .error { color: var(--danger); margin: 12px 0 0; user-select: text; }
-  .small { font-size: 12px; }
-  .ok { color: var(--accent); font-weight: 600; margin-top: 0; }
+  .small { font-size: var(--fs-sm); }
+  .ok { color: var(--accent); font-weight: var(--fw-semibold); margin-top: 0; }
   .done p { margin: 0 0 10px; }
-  .step-h { margin: 0 0 10px; font-size: 15px; }
-  .done .small { font-size: 12.5px; }
+  .step-h { margin: 0 0 10px; font-size: var(--fs-lg); }
+  .done .small { font-size: var(--fs-md); }
   .link { border: none; background: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: inherit; }
 </style>

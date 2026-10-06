@@ -80,15 +80,15 @@
 </Modal>
 
 <style>
-  .effects { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+  .effects { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--panel); border: 1px solid var(--line); }
   .effects ul { margin: 6px 0 0; padding-left: 20px; }
   .conflicts {
-    margin-top: 14px; padding: 10px 12px; border-radius: 8px;
-    background: var(--warn-bg); border: 1px solid #5a4623; color: #f0d9a8;
+    margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg);
+    background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--warn-text);
   }
   .conflicts ul { margin: 6px 0 0; padding-left: 20px; }
   .ok { color: var(--accent); margin-top: 14px; }
   label[for="merge-msg"] { margin-top: 16px; }
   textarea { width: 100%; resize: vertical; }
-  .blocked { margin-top: 14px; padding: 10px 12px; border-radius: 8px; background: #1d2c38; border: 1px solid #2c4557; }
+  .blocked { margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--info-bg); border: 1px solid var(--info-line); }
 </style>

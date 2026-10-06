@@ -150,25 +150,25 @@
 <style>
   section { padding: 12px 0; border-bottom: 1px solid var(--line); }
   section:last-of-type { border-bottom: 0; }
-  h3 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
+  h3 { margin: 0 0 10px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
   .line { display: flex; align-items: center; gap: 10px; margin: 8px 0; min-height: 28px; }
-  .label { width: 130px; flex: none; color: var(--muted); font-size: 13px; }
+  .label { width: 130px; flex: none; color: var(--muted); font-size: var(--fs-md); }
   .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spacer { flex: 1; }
-  .new { color: var(--accent); font-size: 12.5px; }
-  select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px;
+  .new { color: var(--accent); font-size: var(--fs-md); }
+  select { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 5px 8px; min-width: 200px; }
-  label.check { display: flex; align-items: flex-start; gap: 10px; margin: 10px 0; color: var(--text); font-size: 13.5px;
+  label.check { display: flex; align-items: flex-start; gap: 10px; margin: 10px 0; color: var(--text); font-size: var(--fs-base);
     cursor: pointer; }
   label.check input { margin-top: 3px; width: auto; flex: none; }
   label.check > span { flex: 1; }
-  .hint { display: block; color: var(--faint); font-size: 12px; margin-top: 2px; }
+  .hint { display: block; color: var(--faint); font-size: var(--fs-sm); margin-top: 2px; }
   .links { display: flex; flex-wrap: wrap; gap: 8px; }
-  button.small { padding: 4px 10px; font-size: 12.5px; }
+  button.small { padding: 4px 10px; font-size: var(--fs-md); }
   .seg { display: flex; }
-  .seg button { padding: 4px 12px; font-size: 13px; border-radius: 0; }
-  .seg button:first-child { border-radius: 6px 0 0 6px; }
-  .seg button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+  .seg button { padding: 4px 12px; font-size: var(--fs-md); border-radius: 0; }
+  .seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; margin-left: -1px; }
   .seg button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   p.hint { margin: 4px 0 10px; }
   .err { color: var(--danger); }

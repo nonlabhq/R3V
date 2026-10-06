@@ -48,9 +48,9 @@
 </Modal>
 
 <style>
-  .untracked { list-style: none; padding: 8px 12px; margin: 10px 0 0; background: var(--bg); border-radius: 8px;
-    font-size: 12.5px; max-height: 220px; overflow: auto; }
+  .untracked { list-style: none; padding: 8px 12px; margin: 10px 0 0; background: var(--bg); border-radius: var(--radius-lg);
+    font-size: var(--fs-md); max-height: 220px; overflow: auto; }
   .warnings { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px;
-    color: var(--warn); font-size: 13.5px; user-select: text; }
-  .restore-note { color: #f0d9a8; }
+    color: var(--warn); font-size: var(--fs-base); user-select: text; }
+  .restore-note { color: var(--warn-text); }
 </style>

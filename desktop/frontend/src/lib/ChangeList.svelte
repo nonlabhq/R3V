@@ -102,7 +102,7 @@
   .wsum { margin: 2px 0 2px; }
   .changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
   .row { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 26px; padding-top: 2px; padding-bottom: 2px;
-    padding-right: 6px; border: none; border-radius: 5px; background: transparent; text-align: left; font-size: 13px; }
+    padding-right: 6px; border: none; border-radius: var(--radius-sm); background: transparent; text-align: left; font-size: var(--fs-md); }
   button.row:hover { background: var(--panel); }
   .chev { width: 12px; height: 12px; flex: none; color: var(--muted); transition: transform .12s; }
   .chev.open { transform: rotate(90deg); }
@@ -110,19 +110,19 @@
   .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file.deleted .fname { text-decoration: line-through; color: var(--muted); }
   .right { margin-left: auto; display: flex; align-items: center; flex: none; }
-  .count { font-size: 11px; padding: 0 6px; border-radius: 8px; background: #33363d; color: var(--mod); }
-  .sym { width: 16px; height: 16px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; line-height: 1; }
-  .file.added .sym { color: var(--add); background: rgba(111, 207, 127, .16); }
-  .file.deleted .sym { color: var(--del); background: rgba(229, 103, 95, .16); }
-  .file.modified .sym { color: var(--mod); background: rgba(106, 176, 243, .16); }
+  .count { font-size: var(--fs-xs); padding: 0 6px; border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
+  .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
+    font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
+  .file.added .sym { color: var(--add); background: var(--add-soft); }
+  .file.deleted .sym { color: var(--del); background: var(--del-soft); }
+  .file.modified .sym { color: var(--mod); background: var(--mod-soft); }
   .file.untracked .sym { color: var(--muted); }
-  .file.renamed .sym { color: var(--warn); background: rgba(232, 176, 75, .16); }
+  .file.renamed .sym { color: var(--warn); background: var(--warn-soft); }
   .from { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-size: 11.5px; color: var(--faint); }
+    font-size: var(--fs-sm); color: var(--faint); }
   .details {
     margin: 4px 0 6px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line);
-    border-radius: 6px; line-height: 1.6; user-select: text;
+    border-radius: var(--radius); line-height: 1.6; user-select: text;
   }
   .add { color: var(--add); }
   .del { color: var(--del); }

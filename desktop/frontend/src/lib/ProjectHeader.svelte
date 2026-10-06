@@ -100,28 +100,28 @@
   header { display: flex; align-items: flex-start; padding: 18px 24px 10px; gap: 16px; }
   .title { flex: 1; min-width: 0; }
   h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  h1 { margin: 0 0 6px; font-size: 22px; font-weight: 650; }
+  h1 { margin: 0 0 6px; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
   .sub { display: flex; align-items: center; gap: 10px; }
   .actions { display: flex; gap: 8px; flex: none; }
   .refresh.spin { animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .open-wrap { position: relative; }
   .menu.right { left: auto; right: 0; min-width: 220px; max-height: 50vh; overflow: auto; }
-  .branch { padding: 3px 10px; font-size: 13px; }
+  .branch { padding: 3px 10px; font-size: var(--fs-md); }
   .branch-wrap { position: relative; }
   .menu {
-    position: absolute; top: 32px; left: 0; z-index: 20; min-width: 260px; padding: 6px;
-    background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+    position: absolute; top: 32px; left: 0; z-index: var(--z-dropdown); min-width: 260px; padding: 6px;
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
   }
-  .menu-h { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: 6px 8px 2px; }
+  .menu-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: 6px 8px 2px; }
   .item { display: flex; justify-content: space-between; width: 100%; border: none; background: transparent; padding: 6px 8px; text-align: left; gap: 12px; }
-  .item:hover:not(:disabled) { background: #33363d; }
+  .item:hover:not(:disabled) { background: var(--hover); }
   .sep { height: 1px; background: var(--line); margin: 6px 0; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
   .dot.on { background: var(--accent); }
   .dot.checking { background: var(--faint); }
-  .gear { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; font-size: 12.5px; color: var(--faint); }
+  .gear { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; font-size: var(--fs-md); color: var(--faint); }
   .gear svg { width: 15px; height: 15px; }
   .gear:hover { color: var(--text); }
   .gear.bad { color: var(--warn); }

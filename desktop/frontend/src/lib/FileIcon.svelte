@@ -94,7 +94,7 @@
 <style>
   .icon { width: 16px; height: 16px; flex: none; }
   .fill { fill: currentColor; }
-  .ink { fill: var(--bg, #18191d); }
+  .ink { fill: var(--bg); }
   .line { fill: none; stroke: currentColor; stroke-width: 1.3; }
   .solid { fill: currentColor; }
   .soft { opacity: .7; }

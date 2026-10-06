@@ -9,5 +9,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.ts"],
+    // CSS is emptied in tests, except tokens.css: tokens.test.ts reads it.
+    css: { include: [/tokens\.css/] },
   },
 });

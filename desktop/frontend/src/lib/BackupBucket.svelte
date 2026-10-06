@@ -51,6 +51,6 @@
 </Modal>
 
 <style>
-  .small { font-size: 12.5px; }
+  .small { font-size: var(--fs-md); }
   .error { color: var(--danger); user-select: text; }
 </style>

@@ -146,7 +146,7 @@
   .history { position: relative; }
   .graph { position: absolute; left: 0; top: 0; overflow: visible; }
   ul { list-style: none; margin: 0; }
-  li { border-bottom: 1px solid #25272c; }
+  li { border-bottom: 1px solid var(--line-soft); }
   .row { position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .row:hover, li.open .row { background: rgba(255, 255, 255, .025); }
   .acts {
@@ -154,7 +154,7 @@
     padding-left: 24px; background: linear-gradient(to right, transparent, var(--bg) 20px);
   }
   .row:hover .acts { display: flex; }
-  .acts button { padding: 3px 10px; font-size: 12.5px; }
+  .acts button { padding: 3px 10px; font-size: var(--fs-md); }
   li.incoming .msg { color: var(--muted); }
   li.automerge .msg { color: var(--faint); font-style: italic; }
   .msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -162,16 +162,16 @@
   .when { width: 110px; text-align: right; }
   .id { width: 80px; text-align: right; }
   .tag {
-    display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 10px; font-size: 11.5px;
-    background: #2b3a45; color: #9fd0f5; vertical-align: 1px;
+    display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: var(--radius-pill); font-size: var(--fs-sm);
+    background: var(--info-chip); color: var(--info-text); vertical-align: 1px;
   }
-  .tag.here { background: #1f3b35; color: var(--accent); }
+  .tag.here { background: var(--accent-bg); color: var(--accent); }
   .tag.new { background: var(--warn-bg); color: var(--warn); }
-  .tag.away { background: #2a2c31; color: var(--faint); }
+  .tag.away { background: var(--panel-3); color: var(--faint); }
   /* Details: a pixel-exact height (the graph follows it), so no collapsing margins. */
-  .details { padding: 4px 0 14px; font-size: 13px; display: flow-root; }
+  .details { padding: 4px 0 14px; font-size: var(--fs-md); display: flow-root; }
   .full { white-space: pre-wrap; margin-bottom: 4px !important; user-select: text; }
-  .meta { font-size: 12px; margin-bottom: 10px; }
+  .meta { font-size: var(--fs-sm); margin-bottom: 10px; }
   .details p { margin: 0; }
   .error { color: var(--danger); }
   .ring { animation: pulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }

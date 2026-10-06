@@ -27,8 +27,8 @@
 </section>
 
 <style>
-  h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 6px 0 10px; }
-  .small { font-size: 12px; margin: 10px 0 0; }
+  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 6px 0 10px; }
+  .small { font-size: var(--fs-sm); margin: 10px 0 0; }
   .tracks { list-style: none; padding: 0; margin: 0 0 18px; display: flex; flex-direction: column; gap: 4px; }
   .tracks li { display: flex; align-items: center; gap: 10px; }
   .chg { width: 8px; height: 8px; border-radius: 2px; background: var(--mod); }

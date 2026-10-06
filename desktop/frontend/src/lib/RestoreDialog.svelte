@@ -151,19 +151,19 @@
 </Modal>
 
 <style>
-  .small { font-size: 12.5px; }
+  .small { font-size: var(--fs-md); }
   .src { gap: 10px; align-items: center; margin: 10px 0; }
-  .label { flex: none; width: 70px; font-size: 13px; color: var(--muted); margin: 0; }
-  .where { flex: 1; min-width: 0; font-family: var(--mono, monospace); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
-  select { flex: 1; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font: inherit; font-size: 13px; }
-  .plan { margin: 12px 0; padding: 10px 12px; border-radius: 8px; background: var(--panel); }
+  .label { flex: none; width: 70px; font-size: var(--fs-md); color: var(--muted); margin: 0; }
+  .where { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
+  select { flex: 1; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 5px 8px; font: inherit; font-size: var(--fs-md); }
+  .plan { margin: 12px 0; padding: 10px 12px; border-radius: var(--radius-lg); background: var(--panel); }
   .plan p { margin: 0 0 6px; }
-  .plan ul { margin: 0 0 8px; padding-left: 18px; font-size: 13px; }
+  .plan ul { margin: 0 0 8px; padding-left: 18px; font-size: var(--fs-md); }
   .ok { color: var(--accent); }
   .bar { height: 4px; border-radius: 2px; background: var(--panel); overflow: hidden; margin: 10px 0 4px; }
   .bar div { height: 100%; background: var(--accent); transition: width .3s; }
   .error { color: var(--danger); user-select: text; }
-  .bucket { margin: 4px 0 12px; padding: 4px 12px 12px; border-radius: 8px; background: var(--panel); }
+  .bucket { margin: 4px 0 12px; padding: 4px 12px 12px; border-radius: var(--radius-lg); background: var(--panel); }
   .bucket p { margin: 0 0 8px; }
   button.on { color: var(--accent); }
 </style>

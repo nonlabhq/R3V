@@ -10,12 +10,12 @@
 
 <style>
   .toasts {
-    position: fixed; right: 18px; bottom: 18px; z-index: 60;
+    position: fixed; right: 18px; bottom: 18px; z-index: var(--z-toast);
     display: flex; flex-direction: column; gap: 8px; max-width: 380px;
   }
   .toast {
-    text-align: left; white-space: pre-line; padding: 10px 14px; border-radius: 8px;
-    background: var(--panel-2); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+    text-align: left; white-space: pre-line; padding: 10px 14px; border-radius: var(--radius-lg);
+    background: var(--panel-2); border: 1px solid var(--line); box-shadow: var(--shadow-pop);
   }
   .ok { border-left: 3px solid var(--accent); }
   .warn { border-left: 3px solid var(--warn); }

@@ -506,8 +506,8 @@
   /* under the files: the message and the button, apart from the list */
   .commit { flex: none; border-top: 1px solid var(--line); background: var(--panel); padding: 12px 14px 14px; }
   .commit :global(textarea) { width: 100%; resize: vertical; min-height: 54px; }
-  .head { position: sticky; top: 0; z-index: 3; margin: 0 -8px 6px 0; padding: 8px 8px 6px 0;
-    background: var(--panel); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted);
+  .head { position: sticky; top: 0; z-index: var(--z-sticky); margin: 0 -8px 6px 0; padding: 8px 8px 6px 0;
+    background: var(--panel); border-bottom: 1px solid var(--line); font-size: var(--fs-sm); color: var(--muted);
     display: grid; align-items: center; row-gap: 3px;
     grid-template-columns: 22px 20px minmax(0, 1fr) auto auto;
     grid-template-areas: "chev pick title title title" ". . total discard all"; }
@@ -524,20 +524,20 @@
   .h-total { grid-area: total; padding-left: 4px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .h-revert { grid-area: discard; justify-self: end; } /* (not "revert": a CSS keyword) */
   .h-all { grid-area: all; justify-self: end; }
-  .revert { flex: none; display: inline-flex; padding: 3px; border-radius: 5px; color: var(--muted); }
+  .revert { flex: none; display: inline-flex; padding: 3px; border-radius: var(--radius-sm); color: var(--muted); }
   .revert svg { width: 14px; height: 14px; }
-  .revert:hover:not(:disabled) { color: var(--danger); background: #33363d; }
+  .revert:hover:not(:disabled) { color: var(--danger); background: var(--hover); }
   .revert:disabled { opacity: .35; }
   .all { display: flex; align-items: center; gap: 5px; margin: 0; text-transform: none; letter-spacing: 0; cursor: pointer; }
   /* iOS-style switch */
   .switch { appearance: none; position: relative; width: 26px; height: 15px; margin: 0; flex: none; cursor: pointer;
-    border: none; padding: 0; border-radius: 8px; background: #3a3d45; transition: background .15s; }
+    border: none; padding: 0; border-radius: var(--radius-lg); background: var(--hover-strong); transition: background .15s; }
   .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
-    background: #d8dae0; transition: transform .15s; }
+    background: var(--switch-knob); transition: transform .15s; }
   .switch:checked { background: var(--accent); }
   .switch:checked::after { transform: translateX(11px); background: #fff; }
   .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .empty { padding: 0 8px; font-size: 13px; }
+  .empty { padding: 0 8px; font-size: var(--fs-md); }
   ul { list-style: none; margin: 0; padding: 0; }
   li { position: relative; display: flex; align-items: center; height: 30px; }
   .indent { flex: none; }
@@ -546,11 +546,11 @@
   /* The commit box: ticked, unticked, or some of a folder (gray with a dash). */
   /* (padding 0: inputs have padding everywhere, which made the box wide) */
   .pick { appearance: none; position: relative; flex: none; width: 14px; min-width: 14px; height: 14px; padding: 0;
-    margin: 0 4px 0 2px; border: 1.5px solid var(--muted); border-radius: 3px; background: transparent; cursor: pointer; }
+    margin: 0 4px 0 2px; border: 1.5px solid var(--muted); border-radius: var(--radius-xs); background: transparent; cursor: pointer; }
   .pick:checked { background: var(--accent); border-color: var(--accent); }
   .pick:checked::after { content: ""; position: absolute; left: 3.5px; top: 0.5px; width: 3.5px; height: 7.5px;
     border: solid var(--accent-ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
-  .pick:indeterminate { background: #5b606b; border-color: #5b606b; }
+  .pick:indeterminate { background: var(--dim); border-color: var(--dim); }
   .pick:indeterminate::after { content: ""; position: absolute; left: 2px; right: 2px; top: 4.5px; height: 2px;
     border-radius: 1px; background: #fff; }
   .pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -562,18 +562,18 @@
   .dir .fname { color: var(--muted); }
   .dir.changed .fname { color: var(--text); }
   .dir.untracked .fname { color: var(--faint); }
-  .count { font-size: 11px; padding: 0 6px; border-radius: 8px; background: #33363d; color: var(--mod); }
+  .count { font-size: var(--fs-xs); padding: 0 6px; border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
   .file { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; border: none; background: transparent;
-    padding: 5px 30px 5px 4px; border-radius: 6px; text-align: left; font-size: 13.5px; }
+    padding: 5px 30px 5px 4px; border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
   .file:hover { background: var(--panel); }
   .file.on { background: var(--panel-2); }
   /* What changed, at the end of the row: a small colored square. */
   .right { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: none; }
-  .sym { width: 16px; height: 16px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; line-height: 1; }
-  .file.added .sym { background: rgba(111, 207, 127, .16); }
-  .file.deleted .sym { background: rgba(229, 103, 95, .16); }
-  .file.modified .sym { background: rgba(106, 176, 243, .16); }
+  .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
+    font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
+  .file.added .sym { background: var(--add-soft); }
+  .file.deleted .sym { background: var(--del-soft); }
+  .file.modified .sym { background: var(--mod-soft); }
   .file.added .sym { color: var(--add); }
   .file.deleted .sym { color: var(--del); }
   .file.modified .sym { color: var(--mod); }
@@ -583,10 +583,10 @@
   .file.ignored .fname { color: var(--faint); }
   .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .from { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-size: 11.5px; color: var(--faint); }
-  .file.renamed .sym { color: var(--warn); background: rgba(232, 176, 75, .16); }
+    font-size: var(--fs-sm); color: var(--faint); }
+  .file.renamed .sym { color: var(--warn); background: var(--warn-soft); }
   .vsym.renamed { color: var(--warn); }
-  .live { font-size: 10.5px; padding: 0 5px; border-radius: 7px; background: #33363d; color: var(--muted);
+  .live { font-size: var(--fs-xs); padding: 0 5px; border-radius: var(--radius-pill); background: var(--hover); color: var(--muted);
     font-variant-numeric: tabular-nums; flex: none; }
   .live.odd { background: var(--warn-bg); color: var(--warn); }
   .more { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 6px; }
@@ -595,43 +595,43 @@
   .detail { overflow: auto; min-height: 0; padding: 12px 4px 16px 20px; }
   .detail-h { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 12px; margin-bottom: 10px; }
   .title { flex: 1 1 180px; min-width: 0; }
-  .dname { display: flex; align-items: center; gap: 6px; font-weight: 650; font-size: 15px; }
-  .small { font-size: 12px; }
+  .dname { display: flex; align-items: center; gap: 6px; font-weight: var(--fw-semibold); font-size: var(--fs-lg); }
+  .small { font-size: var(--fs-sm); }
   .modes { display: flex; }
-  .modes button { padding: 4px 10px; font-size: 12.5px; border-radius: 0; }
-  .modes button:first-child { border-radius: 6px 0 0 6px; }
-  .modes button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
+  .modes button { padding: 4px 10px; font-size: var(--fs-md); border-radius: 0; }
+  .modes button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .modes button:last-child { border-radius: 0 var(--radius) var(--radius) 0; margin-left: -1px; }
   .modes button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  .lines { padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; line-height: 1.6; user-select: text; }
+  .lines { padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); line-height: 1.6; user-select: text; }
   .add { color: var(--add); }
   .del { color: var(--del); }
   .mod { color: var(--mod); }
   .versions { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
   .versions button { width: 100%; display: flex; align-items: center; gap: 8px; border: none; background: transparent;
-    padding: 6px 8px; border-radius: 6px; text-align: left; }
+    padding: 6px 8px; border-radius: var(--radius); text-align: left; }
   .versions button:hover { background: var(--panel); }
   .versions button.on { background: var(--panel-2); }
-  .vsym { width: 12px; text-align: center; font-weight: 700; }
+  .vsym { width: 12px; text-align: center; font-weight: var(--fw-bold); }
   .vsym.added { color: var(--add); }
   .vsym.deleted { color: var(--del); }
   .vsym.modified { color: var(--mod); }
   .vmsg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .picked { border-top: 1px solid var(--line); padding-top: 14px; }
   .restore { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .restore button { padding: 5px 12px; font-size: 13px; }
+  .restore button { padding: 5px 12px; font-size: var(--fs-md); }
 
-  .ctx { position: fixed; z-index: 40; min-width: 210px; padding: 6px; background: var(--panel-2);
-    border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 30px rgba(0, 0, 0, .45); }
+  .ctx { position: fixed; z-index: var(--z-submenu); min-width: 210px; padding: 6px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .ctx .item { display: block; width: 100%; border: none; background: transparent; padding: 6px 8px; text-align: left; }
-  .ctx .item:hover:not(:disabled) { background: #33363d; }
+  .ctx .item:hover:not(:disabled) { background: var(--hover); }
   .sub { position: relative; }
   .has-sub { display: flex !important; align-items: center; }
   .arrow { margin-left: auto; color: var(--muted); }
   .submenu { position: absolute; left: calc(100% + 2px); top: -6px; min-width: 250px; }
   .submenu.left { left: auto; right: calc(100% + 2px); }
   .submenu .item { display: flex; flex-direction: column; gap: 1px; }
-  .pat { font-size: 11px; }
-  .note { margin: 6px 8px 2px; font-size: 11px; line-height: 1.4; }
+  .pat { font-size: var(--fs-xs); }
+  .note { margin: 6px 8px 2px; font-size: var(--fs-xs); line-height: 1.4; }
   .danger-text { color: var(--danger); }
   .sep { height: 1px; background: var(--line); margin: 6px 0; }
 </style>

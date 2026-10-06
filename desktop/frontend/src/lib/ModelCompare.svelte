@@ -80,16 +80,16 @@
 <style>
   .mc { display: flex; flex-direction: column; gap: 10px; }
   .bar { display: flex; align-items: center; gap: 12px; }
-  .hint { margin-left: auto; font-size: 11.5px; }
+  .hint { margin-left: auto; font-size: var(--fs-sm); }
   figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  figcaption { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; text-transform: uppercase;
+  figcaption { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); text-transform: uppercase;
     letter-spacing: .06em; color: var(--muted); }
   .stats { text-transform: none; letter-spacing: 0; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .frame { position: relative; height: 52vh; min-height: 260px; border: 1px solid var(--line); border-radius: 8px;
+  .frame { position: relative; height: 52vh; min-height: 260px; border: 1px solid var(--line); border-radius: var(--radius-lg);
     overflow: hidden; background: radial-gradient(circle at 50% 40%, #2a2d34, #17181c); }
   canvas { display: block; width: 100%; height: 100%; touch-action: none; }
   .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .pair .frame { height: 44vh; }
   .none { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px;
-    text-align: center; font-size: 13px; color: var(--faint); pointer-events: none; }
+    text-align: center; font-size: var(--fs-md); color: var(--faint); pointer-events: none; }
 </style>

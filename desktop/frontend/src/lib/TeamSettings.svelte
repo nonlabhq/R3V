@@ -334,23 +334,23 @@
 
 <style>
   section { margin-bottom: 18px; }
-  h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
-  .small { font-size: 12.5px; }
+  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .small { font-size: var(--fs-md); }
   section > p { margin: 0 0 8px; }
   .btns { gap: 6px; margin-top: 8px; }
-  .btns button { padding: 5px 10px; font-size: 13px; }
+  .btns button { padding: 5px 10px; font-size: var(--fs-md); }
   .grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; align-items: center; }
-  .grid label { margin: 0; font-size: 13px; }
+  .grid label { margin: 0; font-size: var(--fs-md); }
   .secret { gap: 6px; }
   .secret input { flex: 1; min-width: 0; }
   .error { color: var(--danger); user-select: text; }
-  .share { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 14px; }
+  .share { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: var(--fs-base); }
   .share input { width: auto; }
   .danger-text { color: var(--danger); }
   .me { gap: 10px; align-items: center; margin-bottom: 4px; }
-  .me button { padding: 4px 10px; font-size: 13px; }
-  .myname { font-weight: 600; }
-  .keep { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; color: var(--text); font-size: 14px; }
+  .me button { padding: 4px 10px; font-size: var(--fs-md); }
+  .myname { font-weight: var(--fw-semibold); }
+  .keep { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 0; color: var(--text); font-size: var(--fs-base); }
   .keep input { width: auto; margin-top: 3px; }
   .keep .faint { display: block; margin-top: 2px; }
   .keep.sub { margin-left: 24px; }

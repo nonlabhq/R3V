@@ -91,11 +91,11 @@
 </Modal>
 
 <style>
-  .small { font-size: 12.5px; }
-  .files { margin: 4px 0 10px; padding-left: 18px; font-size: 12.5px; max-height: 220px; overflow: auto; user-select: text; }
-  .mono { font-family: var(--mono, monospace); }
+  .small { font-size: var(--fs-md); }
+  .files { margin: 4px 0 10px; padding-left: 18px; font-size: var(--fs-md); max-height: 220px; overflow: auto; user-select: text; }
+  .mono { font-family: var(--font-mono); }
   .warn { color: var(--warn); }
   .error { color: var(--danger); user-select: text; }
-  .msg { display: flex; flex-direction: column; gap: 4px; font-size: 13px; margin-top: 10px; }
+  .msg { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-md); margin-top: 10px; }
   .link { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; }
 </style>
