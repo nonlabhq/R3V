@@ -62,6 +62,9 @@ type Repo struct {
 
 	// OnProgress, when set, hears about long steps (see Progress).
 	OnProgress func(Progress)
+	// stop, when set, is asked as data goes up or down: an error stops the
+	// transfer with it (a background upload whose file went away).
+	stop func() error
 
 	// Only, when not nil, limits the next commits to the changes of these
 	// paths (from Status); other changes stay uncommitted.

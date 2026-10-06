@@ -109,6 +109,11 @@ func (c *countingReader) undo() {
 }
 
 func (c *countingReader) Read(p []byte) (int, error) {
+	if stop := c.t.r.stop; stop != nil {
+		if err := stop(); err != nil {
+			return 0, err
+		}
+	}
 	n, err := c.rd.Read(p)
 	if n > 0 {
 		c.t.mu.Lock()

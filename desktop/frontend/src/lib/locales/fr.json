@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "Nouvel onglet (Ctrl+T)",
 "Folder not found": "Dossier introuvable",
 "open": "ouvert",
-"Preferences": "Préférences"
+"Preferences": "Préférences",
+"Uploading in the background": "Envoi en arrière-plan",
+"{count} more waiting": "{count} autres en attente",
+"Click to see the upload queue": "Cliquez pour voir la file d'envoi",
+"Uploads": "Envois",
+"Nothing is going up right now.": "Rien n'est envoyé pour le moment.",
+"in the background": "en arrière-plan",
+"waiting": "en attente",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "Les gros fichiers partent en arrière-plan dès qu'ils ne changent plus, le commit est ensuite rapide. L'envoi s'arrête si le fichier est supprimé, modifié ou exclu."
 }

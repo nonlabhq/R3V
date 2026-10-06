@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "新分頁（Ctrl+T）",
 "Folder not found": "找不到資料夾",
 "open": "已開啟",
-"Preferences": "偏好設定"
+"Preferences": "偏好設定",
+"Uploading in the background": "正在背景上傳",
+"{count} more waiting": "還有 {count} 個排隊中",
+"Click to see the upload queue": "點一下查看上傳佇列",
+"Uploads": "上傳",
+"Nothing is going up right now.": "目前沒有在上傳的東西。",
+"in the background": "背景",
+"waiting": "排隊中",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "大檔案停止變動後會在背景先上傳，之後提交就只要一下子。檔案被刪除、修改或被排除時，上傳會停止。"
 }

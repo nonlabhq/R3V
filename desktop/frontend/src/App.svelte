@@ -21,7 +21,8 @@
   import AppSettings from "./lib/AppSettings.svelte";
   import { t, tn } from "./lib/i18n.svelte";
   import PreuploadIcon from "./lib/PreuploadIcon.svelte";
-  import { preuploads, watchPreuploads } from "./lib/preupload.svelte";
+  import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
+  import UploadQueue from "./lib/UploadQueue.svelte";
 
   let overview = $state<Overview | null>(null);
   let onboarding = $state(false);
@@ -773,6 +774,10 @@
   </li>
 {/snippet}
 
+
+{#if queue.open}
+  <UploadQueue names={Object.fromEntries(entries.filter((p) => p.root).map((p) => [p.root, p.name]))} onclose={() => (queue.open = false)} />
+{/if}
 
 {#if appSettings}
   <AppSettings version={appVersion} {edition} {autostart} autoUpdate={updState.auto} {downloadDir} {update}

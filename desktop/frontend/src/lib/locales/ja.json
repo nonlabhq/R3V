@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "新しいタブ（Ctrl+T）",
 "Folder not found": "フォルダーが見つかりません",
 "open": "開いています",
-"Preferences": "環境設定"
+"Preferences": "環境設定",
+"Uploading in the background": "バックグラウンドでアップロード中",
+"{count} more waiting": "あと {count} 件待機中",
+"Click to see the upload queue": "クリックでアップロードキューを表示",
+"Uploads": "アップロード",
+"Nothing is going up right now.": "今アップロード中のものはありません。",
+"in the background": "バックグラウンド",
+"waiting": "待機中",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "大きなファイルは変更が止まるとバックグラウンドで先にアップロードされ、後のコミットはすぐ終わります。ファイルが削除・変更・除外されると止まります。"
 }

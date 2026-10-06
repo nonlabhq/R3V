@@ -1058,5 +1058,13 @@
 "New tab (Ctrl+T)": "Nova aba (Ctrl+T)",
 "Folder not found": "Pasta não encontrada",
 "open": "aberto",
-"Preferences": "Preferências"
+"Preferences": "Preferências",
+"Uploading in the background": "Enviando em segundo plano",
+"{count} more waiting": "Mais {count} na fila",
+"Click to see the upload queue": "Clique para ver a fila de envio",
+"Uploads": "Envios",
+"Nothing is going up right now.": "Nada está sendo enviado agora.",
+"in the background": "em segundo plano",
+"waiting": "na fila",
+"Big files go up in the background once they stop changing, so committing them later takes a moment. They stop if the file is deleted, changed or left out.": "Arquivos grandes sobem em segundo plano quando param de mudar, e o commit depois é rápido. Para se o arquivo for apagado, alterado ou excluído."
 }

@@ -22,6 +22,7 @@ export {
     Overview,
     PresetOption,
     Preupload,
+    PreuploadFile,
     Preview,
     ProjectFile,
     ProjectInfo,
