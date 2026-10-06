@@ -9,7 +9,8 @@
 
   const initial = (name: string) => ([...name.trim()][0] ?? "?").toUpperCase();
   // A lane colour picked from the name.
-  let hue = $derived([...p.name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) >>> 0, 7) % 5);
+  // (not lane 0: that is the main branch's colour, the brand's)
+  let hue = $derived(1 + ([...p.name].reduce((h, c) => (h * 31 + c.codePointAt(0)!) >>> 0, 7) % 4));
 </script>
 
 <span class="pi {p.status}" style:--c="var(--lane-{hue})" style:--s="{size}px" aria-hidden="true">

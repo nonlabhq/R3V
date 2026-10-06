@@ -18,7 +18,7 @@
 </span>
 
 <style>
-  .pre { display: inline-flex; margin-left: var(--sp-4); color: var(--accent); vertical-align: middle; }
+  .pre { display: inline-flex; margin-left: var(--sp-4); color: var(--ok); vertical-align: middle; }
   svg { width: 14px; height: 14px; overflow: visible; }
   .arrow { animation: rise 1.4s ease-in-out infinite; }
   @keyframes rise {

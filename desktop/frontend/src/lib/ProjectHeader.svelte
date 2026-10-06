@@ -34,11 +34,11 @@
   </div>
   <div class="actions">
     {#if st.openable.length === 1}
-      <button onclick={() => open(st.openable[0])}
+      <button class="primary" onclick={() => open(st.openable[0])}
         title={t("Open {file} in {tool}", { file: label(st.openable[0]), tool: (st.tool ? t(st.tool) : t("its program")) })}>▶ {t("Open in {tool}", { tool: toolName })}</button>
     {:else if st.openable.length > 1}
       <div class="open-wrap">
-        <button onclick={() => (setMenu = !setMenu)} title={t("Open in {tool}", { tool: (st.tool ? t(st.tool) : t("its program")) })}>▶ {t("Open in {tool}", { tool: toolName })} ▾</button>
+        <button class="primary" onclick={() => (setMenu = !setMenu)} title={t("Open in {tool}", { tool: (st.tool ? t(st.tool) : t("its program")) })}>▶ {t("Open in {tool}", { tool: toolName })} ▾</button>
         {#if setMenu}
           <div class="menu right surface-menu" role="menu">
             {#each st.openable as s}

@@ -5,7 +5,7 @@
   import { themes, fonts, tokens, css, load, save, apply, type Knobs } from "./themes";
 
   const saved = load();
-  let themeId = $state(saved?.theme ?? "current");
+  let themeId = $state(saved?.theme ?? "r3v");
   let knobs = $state<Knobs>(saved?.knobs ?? { ...themes[0].knobs });
   let open = $state(saved?.open ?? false);
   let used = $state(saved !== null); // nothing is put on the page until the lab is used
@@ -109,7 +109,7 @@
   .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .hint { color: var(--faint); flex: 1; }
   .x { padding: 0 6px; }
-  .themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .themes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
   .themes button { padding: 4px 0; font-size: 12px; border-radius: 6px; }
   .themes button.on { border-color: var(--accent); color: var(--accent); }
   .note { margin: 6px 0 10px; color: var(--muted); }

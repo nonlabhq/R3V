@@ -516,7 +516,7 @@
 {/if}
 {#if !overview}
   <div class="splash" role="status" aria-label={t("Loading")}>
-    <div class="splash-logo"><img src="/icon.png" alt="" />R3V</div>
+    <div class="splash-logo"><img src="/brand/r3v-icon-small.svg" alt="" /><img class="word" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" /></div>
     <div class="splash-band"></div>
   </div>
 {:else if onboarding}
@@ -533,7 +533,7 @@
       {#if folded}
       <div class="aside-top folded-top">
         <button class="logo" onclick={() => (appSettings = true)} title={t("R3V settings")} aria-label={t("R3V settings")}>
-          <img src="/icon.png" alt="" />
+          <img src="/brand/r3v-icon-small.svg" alt="" />
         </button>
         <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar")} aria-label={t("Show the sidebar")}>»</button>
       </div>
@@ -549,7 +549,7 @@
       {:else}
       <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
-        <img src="/icon.png" alt="" /> R3V
+        <img src="/brand/r3v-icon-small.svg" alt="" /><img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
         {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
@@ -596,6 +596,14 @@
           <span>+ {t("Add project")}</span>
           <span class="hint">{t("Select project folder")}</span>
         </button>
+      </div>
+      <!-- who you are in this team, and the app's settings -->
+      <div class="user">
+        {#if current?.memberName}
+          <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
+          <span class="user-name">{current.memberName}</span>
+        {/if}
+        <button class="ghost prefs" onclick={() => (appSettings = true)}>{t("Preferences")}</button>
       </div>
       {/if}
 
@@ -830,6 +838,12 @@
 <style>
   .shell { display: grid; grid-template-columns: 250px 1fr; height: 100%; }
   .shell.folded { grid-template-columns: 52px 1fr; }
+  .user { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-8) calc(var(--sp-10) * -1) calc(var(--sp-12) * -1);
+    padding: var(--sp-10) var(--sp-14); border-top: var(--border-width) solid var(--line); }
+  .user .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
+  .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
+  .prefs { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-sm); color: var(--faint); }
   .shell.folded aside { padding-left: var(--sp-6); padding-right: var(--sp-6); }
   .aside-top { display: flex; align-items: center; gap: var(--sp-4); }
   .aside-top .brand { flex: 1; min-width: 0; }
@@ -849,7 +863,8 @@
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }
   .brand:hover { background: var(--panel-2); }
-  .brand img { width: 20px; height: 20px; }
+  .brand img { width: 24px; height: 24px; }
+  .brand img.wordmark { width: auto; height: 18px; }
   .list { flex: 1; overflow: auto; min-height: 0; }
   .section { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-8) var(--sp-8) var(--sp-4); }
   .row-h { display: flex; align-items: center; justify-content: space-between; }

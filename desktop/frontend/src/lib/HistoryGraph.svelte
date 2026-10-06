@@ -11,7 +11,7 @@
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions }: {
+  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0 }: {
     versions: Version[];
     branches: { name: string; latest: string }[];
     branch: string;    // the branch you are on
@@ -21,6 +21,8 @@
     selected: string;  // a version id, or "pending"
     onselect: (id: string) => void;
     actions?: Snippet<[Version]>; // the hover card's buttons for a version
+    reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
+    panelInset?: number; // the details' distance from the top and bottom
   } = $props();
 
   const ROW = 40, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
@@ -28,8 +30,12 @@
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
   let headChain = $derived(g.chainOf.get(head));
+  // Branches merged into another: quieter.
+  let merged = $derived(new Set(g.edges.filter((e) => e.kind === "merge").map((e) => g.chainOf.get(e.to)!)));
 
-  let width = $state(0); // of the column
+  let fullWidth = $state(0); // of the column
+  // What can be seen: the column less the part under the details.
+  let width = $derived(Math.max(120, fullWidth - reserve));
   let boxHeight = $state(0);
 
   // Labels: one per branch, with its newest version's title, above its top
@@ -193,6 +199,16 @@
     else if (yy > boxHeight - 40) panY -= yy - (boxHeight - 40);
   }
 
+  let link = $derived.by(() => {
+    if (!reserve || !selected) return null;
+    const id = selected;
+    const c = id === "pending" ? headChain : g.chainOf.get(id);
+    if (!c || (id !== "pending" && !byID.has(id))) return null;
+    const x1 = panX + x(c.col) * zoom + 12 * zoom, y1 = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
+    const x2 = width, y2 = Math.min(Math.max(y1, panelInset + 24), boxHeight - panelInset - 24);
+    return x1 < x2 - 8 ? { x1, y1, x2, y2 } : null;
+  });
+
   let ids = $derived([...(pending ? ["pending"] : []), ...versions.map((v) => v.id)]);
   let box = $state<HTMLElement>();
   function onkeydown(e: KeyboardEvent) {
@@ -208,7 +224,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={width} bind:clientHeight={boxHeight} {onkeydown}
+<div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={fullWidth} bind:clientHeight={boxHeight} {onkeydown}
   {onpointerdown} {onpointermove} {onpointerup} onpointercancel={onpointerup} {ondblclick} {onclickcapture}
   class:dragging>
   {#if versions.length === 0 && !pending}
@@ -218,10 +234,11 @@
       <svg width={full} height={height} aria-hidden="true">
         {#each g.edges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
-          <path d={path(e)} stroke="var(--lane-{c.color})" stroke-width={c.main ? 3 : 2} fill="none" opacity={c.name ? 1 : 0.55} />
+          <path d={path(e)} stroke="var(--lane-{c.color})" stroke-width={c.main ? 4 : 3} fill="none" stroke-linecap="round"
+            opacity={!c.name ? 0.55 : merged.has(c) ? 0.75 : 1} />
         {/each}
         {#if pending && headChain}
-          <path d="M {x(headChain.col)} {yRow(0)} L {x(headChain.col)} {y(head)}" stroke="var(--muted)" stroke-width="1.5"
+          <path d="M {x(headChain.col)} {yRow(0)} L {x(headChain.col)} {y(head)}" stroke="var(--lane-{headChain.color})" stroke-width="2"
             stroke-dasharray="3 4" fill="none" />
         {/if}
       </svg>
@@ -251,6 +268,12 @@
       {/each}
 
     </div>
+    {#if link}
+      <svg class="link" aria-hidden="true">
+        <path d="M {link.x1} {link.y1} C {(link.x1 + link.x2) / 2} {link.y1}, {(link.x1 + link.x2) / 2} {link.y2}, {link.x2} {link.y2}"
+          stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 4" fill="none" />
+      </svg>
+    {/if}
     {#if card}
       {@const v = card.v}
       <div class="card surface-menu" class:above={!card.below} role="group" aria-label={v.message || t("(no description)")}
@@ -274,6 +297,7 @@
   .graph-col { position: relative; height: 100%; overflow: hidden; outline: none; cursor: grab; touch-action: none; }
   .graph-col.dragging { cursor: grabbing; }
   .graph-col.dragging * { cursor: grabbing; }
+  .link { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   svg { position: absolute; left: 0; top: 0; }
   .empty { padding: var(--sp-16); }
@@ -284,9 +308,9 @@
   .node.here { background: var(--c); color: var(--bg); }
   .node.incoming { border-style: dashed; color: var(--muted); }
   .node.side { opacity: .75; }
-  .node.pending { border-style: dashed; border-color: var(--muted); color: var(--muted); background: var(--bg); }
+  .node.pending { border-style: dashed; color: var(--c); background: var(--panel); }
   .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
-  .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--muted); }
+  .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   .card { position: absolute; z-index: 2; padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }

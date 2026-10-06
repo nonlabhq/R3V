@@ -242,7 +242,7 @@
   .actions { margin-top: var(--sp-14); align-items: center; }
   .error { color: var(--danger); margin: var(--sp-12) 0 0; user-select: text; }
   .small { font-size: var(--fs-sm); }
-  .ok { color: var(--accent); font-weight: var(--fw-semibold); margin-top: 0; }
+  .ok { color: var(--ok); font-weight: var(--fw-semibold); margin-top: 0; }
   .done p { margin: 0 0 var(--sp-10); }
   .step-h { margin: 0 0 var(--sp-10); font-size: var(--fs-lg); }
   .done .small { font-size: var(--fs-md); }

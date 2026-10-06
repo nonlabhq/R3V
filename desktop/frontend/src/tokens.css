@@ -1,4 +1,4 @@
-/* R3V's design tokens: every colour, type size, radius, shadow and layer the
+/* R3V's design tokens (the R3V look, "01b": dark Bento, brand orange): every colour, type size, radius, shadow and layer the
    app uses. Components refer to these by role (var(--warn-line)), never by
    value, so the look can change here in one place.
 
@@ -11,80 +11,84 @@
   color-scheme: dark;
 
   /* Surfaces, from the deepest to the highest. */
-  --bg-sunken: #141518;   /* the side bar */
-  --bg: #18191d;          /* the window, and fields */
-  --panel: #202227;
-  --panel-2: #272a30;     /* buttons, menus, cards on a panel */
-  --panel-3: #2a2c31;     /* chips and tags on a panel */
-  --hover-soft: #2e3138;  /* a button under the pointer */
-  --hover: #33363d;       /* a row or menu item under the pointer */
-  --hover-strong: #3a3d45;
+  --bg-sunken: #0b0b0c;   /* the side bar */
+  --bg: #070707;          /* the window, and fields */
+  --panel: #121212;
+  --panel-2: #1a1a1a;     /* buttons, menus, cards on a panel */
+  --panel-3: #1e1e1e;     /* chips and tags on a panel */
+  --hover-soft: #1e1e1e;  /* a button under the pointer */
+  --hover: #242424;       /* a row or menu item under the pointer */
+  --hover-strong: #2c2c2c;
 
   /* Lines. */
-  --line-soft: #25272c;   /* between rows of a list */
-  --line: #34373e;
-  --line-strong: #4a4e57; /* a border under the pointer */
+  --line-soft: rgba(255, 255, 255, .06);   /* between rows of a list */
+  --line: rgba(255, 255, 255, .09);
+  --line-strong: rgba(255, 255, 255, .14); /* a border under the pointer */
 
   /* Text. */
-  --text: #e6e7ea;
-  --muted: #9a9ea8;
-  --faint: #6c707a;
-  --dim: #5b606b;         /* marks that are switched off */
-  --switch-knob: #d8dae0; /* a switch that is off (white when on) */
+  --text: #ededed;
+  --muted: #a1a1a1;
+  --faint: #767676;
+  --dim: #5a5a5a;         /* marks that are switched off */
+  --switch-knob: #d0d0d0; /* a switch that is off (white when on) */
 
   /* The accent: R3V's green, for what to do next and what is done. */
-  --accent: #3fc3a9;
-  --accent-hover: #52d4ba;
-  --accent-ink: #0d2b25;  /* text on the accent */
-  --accent-text: #d9f3ec; /* text on accent-line */
-  --accent-bg: #1f3b35;
-  --accent-line: #2c5a4e;
-  --accent-soft: rgba(63, 195, 169, .18);
+  --accent: #ff4a1c;
+  --accent-hover: #ff6237;
+  --accent-ink: #140600;  /* text on the accent */
+  --accent-text: #ffd9cc; /* text on accent-line */
+  --accent-bg: #2a1610;
+  --accent-line: #6b2a17;
+  --accent-soft: rgba(255, 74, 28, .14);
+
+  /* Done, fine, found: a calm colour of its own (the accent is for what to
+     do and what is picked). */
+  --ok: #3fd4c0;
 
   /* Kinds of message: each has a colour, a background, a line and a text
      colour to use on that background. */
-  --warn: #e8b04b;
-  --warn-bg: #3a2f1a;
-  --warn-line: #5a4623;
-  --warn-strong: #6b5426;
-  --warn-text: #f0d9a8;
-  --warn-ink: #1b1407;
-  --warn-soft: rgba(232, 176, 75, .16);
+  --warn: #f5b83d;
+  --warn-bg: #322918;
+  --warn-line: #614c21;
+  --warn-strong: #7a5f28;
+  --warn-text: #f8d58e;
+  --warn-ink: #1a1203;
+  --warn-soft: rgba(245, 184, 61, .16);
 
-  --danger: #e5675f;
-  --danger-bg: #3a1f1f;
-  --danger-line: #6a3030;
-  --danger-text: #f3c0bc;
-  --danger-soft: rgba(229, 103, 95, .16);
+  --danger: #f0565a;
+  --danger-bg: #311c1c;
+  --danger-line: #6a2e2f;
+  --danger-text: #f7b4b5;
+  --danger-soft: rgba(240, 86, 90, .16);
 
-  --info: #6ab0f3;
-  --info-bg: #1d2c38;
-  --info-line: #2c4557;
-  --info-chip: #2b3a45;
-  --info-text: #9fd0f5;
+  --info: #6fa8ff;
+  --info-bg: #1f2733;
+  --info-line: #304666;
+  --info-chip: #22324a;
+  --info-text: #b9d3ff;
 
   /* Looking at an older version. */
-  --past-bg: #2a2536;
-  --past-line: #463c5c;
+  --past-bg: #241f33;
+  --past-line: #3f3566;
 
   /* Worth knowing, nothing to fix (a missing sample). */
   --note: #f0d65c;
   --note-soft: rgba(240, 214, 92, .2);
 
   /* Changes: added, removed, modified. */
-  --add: #6fcf7f;
-  --del: #e5675f;
-  --mod: #6ab0f3;
-  --add-soft: rgba(111, 207, 127, .16);
-  --del-soft: rgba(229, 103, 95, .16);
-  --mod-soft: rgba(106, 176, 243, .16);
+  --add: #52a8ff;
+  --del: #d9541a;
+  --mod: #f5b83d;
+  --add-soft: rgba(82, 168, 255, .18);
+  --del-soft: rgba(217, 84, 26, .18);
+  --mod-soft: rgba(245, 184, 61, .16);
 
   /* The lanes of the history graph, in order. */
-  --lane-0: #3fc3a9;
-  --lane-1: #6ab0f3;
-  --lane-2: #c792ea;
-  --lane-3: #e8b04b;
-  --lane-4: #f07178;
+  --lane-0: #ff4a1c;
+  --lane-1: #a98bff;
+  --lane-2: #3fd4c0;
+  --lane-3: #6fa8ff;
+  --lane-4: #ff7ac6;
 
   /* Syntax colours in text files. */
   --syntax-comment: #6f7685;
@@ -97,8 +101,9 @@
   --syntax-tag: #f07178;
 
   /* Type. */
-  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Geist Variable", "Noto Sans TC", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Cascadia Mono", Consolas, monospace;
+  --font-brand: "Space Grotesk Variable", "Geist Variable", sans-serif; /* tool badges */
   --fs-2xs: 10px;   /* badges */
   --fs-xs: 11px;    /* section heads, hints */
   --fs-sm: 12px;    /* details under a line */
@@ -133,24 +138,31 @@
   --border-width: 1px;
 
   /* Corners. */
-  --radius-xs: 3px;  /* tick boxes, thin bars */
-  --radius-sm: 4px;  /* chips */
-  --radius: 6px;     /* buttons, fields, menu items */
-  --radius-lg: 8px;  /* cards, menus, banners */
-  --radius-xl: 12px; /* dialogs */
+  --radius-xs: 4px;  /* tick boxes, thin bars */
+  --radius-sm: 6px;  /* chips */
+  --radius: 8px;     /* buttons, fields, menu items */
+  --radius-lg: 10px;  /* cards, menus, banners */
+  --radius-xl: 16px; /* dialogs */
   --radius-pill: 999px;
+  --radius-card: 22px; /* the big cards (the Overview's graph) */
 
   /* Depth. */
-  --shadow-pop: 0 12px 30px rgba(0, 0, 0, .45);   /* menus */
-  --shadow-dialog: 0 20px 60px rgba(0, 0, 0, .5);
-  --scrim: rgba(8, 9, 11, .62);                   /* behind a dialog */
-  --scrim-strong: rgba(8, 9, 11, .82);            /* behind what blocks the app */
+  --shadow-pop: 0 24px 60px rgba(0, 0, 0, .6);   /* menus */
+  --shadow-dialog: 0 1px 0 rgba(255, 255, 255, .08) inset, 0 18px 40px -8px rgba(0, 0, 0, .65), 0 48px 110px -20px rgba(0, 0, 0, .9);
+  --scrim: rgba(0, 0, 0, .55);                   /* behind a dialog */
+  --scrim-strong: rgba(0, 0, 0, .8);            /* behind what blocks the app */
   --scrim-filter: none;                           /* e.g. blur(6px) */
   /* Menus, toasts and dialogs: a theme can make these see-through and blur
      what is behind (--surface-filter: blur(16px) saturate(1.3)). */
-  --surface-menu: var(--panel-2);
-  --surface-dialog: var(--panel);
-  --surface-filter: none;
+  --surface-menu: rgba(28, 28, 28, .92);
+  --surface-dialog: rgba(28, 28, 28, .94);
+  --surface-filter: blur(18px);
+  /* Panels that float over a card (the Overview's details), and the card. */
+  --surface-float: rgba(28, 28, 28, .86);
+  --float-filter: blur(18px);
+  --shadow-float: 0 1px 0 rgba(255, 255, 255, .08) inset, 0 2px 6px rgba(0, 0, 0, .35), 0 18px 40px -8px rgba(0, 0, 0, .65), 0 48px 110px -20px rgba(0, 0, 0, .9);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 24px 60px -14px rgba(0, 0, 0, .8);
+  --dot-grid: rgba(255, 255, 255, .07); /* the dots on a card, 18px apart */
 
   /* Layers. */
   --z-sticky: 3;
