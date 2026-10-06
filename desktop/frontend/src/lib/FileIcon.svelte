@@ -101,7 +101,7 @@
   .bars rect { fill: currentColor; }
   .set { color: #f0b44c; }
   .live { color: #e59b5f; }
-  .audio { color: var(--accent); }
+  .audio { color: var(--ok); }
   .midi { color: #a78bfa; }
   .folder { color: #7c8490; }
   .other { color: var(--muted); }

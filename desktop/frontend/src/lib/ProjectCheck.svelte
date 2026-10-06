@@ -205,7 +205,7 @@
   .tile.warn .sub { color: var(--warn); }
   .badge { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 50%; display: flex;
     align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-bold); }
-  .badge.ok { background: var(--accent-soft); color: var(--accent); }
+  .badge.ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
   .badge.warn { background: var(--warn); color: var(--warn-ink); }
   .badge.note { background: var(--note-soft); color: var(--note); }
   .chips { display: flex; gap: var(--sp-6); font-size: var(--fs-xs); color: var(--faint); }
@@ -229,7 +229,7 @@
     background: var(--bg); border: var(--border-width) solid var(--line); font-size: var(--fs-md); }
   .list span { display: flex; align-items: center; gap: var(--sp-6); }
   code { font-size: var(--fs-sm); color: var(--muted); word-break: break-all; }
-  .plugin.yes :global(svg), .pack.yes :global(svg) { color: var(--accent); }
+  .plugin.yes :global(svg), .pack.yes :global(svg) { color: var(--ok); }
   .plugin.no :global(svg), .pack.no :global(svg) { color: var(--warn); }
   .plugin.unknown :global(svg) { color: var(--faint); }
 </style>

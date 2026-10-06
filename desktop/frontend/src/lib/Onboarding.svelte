@@ -189,7 +189,7 @@
   .projects { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-6); max-height: 240px; overflow: auto; }
   .projects li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-10); padding: var(--sp-8) var(--sp-12); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
   .name { flex: 1; font-weight: var(--fw-semibold); }
-  .ok { color: var(--accent); font-size: var(--fs-md); }
+  .ok { color: var(--ok); font-size: var(--fs-md); }
   .projects li.active { border-color: var(--info-line); }
   .progress { flex-basis: 100%; display: flex; }
   .tip { font-size: var(--fs-md); margin: var(--sp-14) 0 0; }

@@ -87,7 +87,7 @@
     background: var(--warn-bg); border: var(--border-width) solid var(--warn-line); color: var(--warn-text);
   }
   .conflicts ul { margin: var(--sp-6) 0 0; padding-left: var(--sp-20); }
-  .ok { color: var(--accent); margin-top: var(--sp-14); }
+  .ok { color: var(--ok); margin-top: var(--sp-14); }
   label[for="merge-msg"] { margin-top: var(--sp-16); }
   textarea { width: 100%; resize: vertical; }
   .blocked { margin-top: var(--sp-14); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--info-bg); border: var(--border-width) solid var(--info-line); }

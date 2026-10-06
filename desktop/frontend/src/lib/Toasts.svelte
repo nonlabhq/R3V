@@ -17,7 +17,7 @@
     text-align: left; white-space: pre-line; padding: var(--sp-10) var(--sp-14); border-radius: var(--radius-lg);
     position: relative; border: var(--border-width) solid var(--line); box-shadow: var(--shadow-pop);
   }
-  .ok { border-left: 3px solid var(--accent); }
+  .ok { border-left: 3px solid var(--ok); }
   .warn { border-left: 3px solid var(--warn); }
   .error { border-left: 3px solid var(--danger); }
   .info { border-left: 3px solid var(--mod); }

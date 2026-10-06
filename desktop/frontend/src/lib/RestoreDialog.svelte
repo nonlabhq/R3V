@@ -159,7 +159,7 @@
   .plan { margin: var(--sp-12) 0; padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); }
   .plan p { margin: 0 0 var(--sp-6); }
   .plan ul { margin: 0 0 var(--sp-8); padding-left: var(--sp-18); font-size: var(--fs-md); }
-  .ok { color: var(--accent); }
+  .ok { color: var(--ok); }
   .bar { height: 4px; border-radius: 2px; background: var(--panel); overflow: hidden; margin: var(--sp-10) 0 var(--sp-4); }
   .bar div { height: 100%; background: var(--accent); transition: width .3s; }
   .error { color: var(--danger); user-select: text; }

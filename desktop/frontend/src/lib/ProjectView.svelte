@@ -201,6 +201,9 @@
   let shownVersion = $derived(st?.history.find((v) => v.id === shown));
   let overviewWidth = $state(0);
   let graphWidth = $derived(splitPx("graph", 0.36, overviewWidth, 280, 520));
+  // The graph's card fills the tab (inset); the details float over its right
+  // part, from graphWidth to the card's edge less GAP.
+  const INSET = 16, GAP = 20;
 
   // Runs an action; handles conflicts (ask, retry with decisions) and a
   // running Live (ask, retry with force).
@@ -667,10 +670,10 @@
       <button class:on={tab === "history"} onclick={() => (tab = "history")}>{t("History")}</button>
     </nav>
 
-    {#snippet changesPanel(scope: "changes" | "all" | undefined)}
+    {#snippet changesPanel(scope: "changes" | "all" | undefined, footer = false)}
       {#snippet summary()}<EditsSummary st={st!} />{/snippet}
       {#snippet commitBox()}<CommitBox st={st!} bind:message {busy} {leftOut} oncommit={() => commit()} />{/snippet}
-      <ChangesPanel {root} st={st!} {summary} commitBox={scope === "all" ? undefined : commitBox} {scope} bind:excluded
+      <ChangesPanel {root} st={st!} {summary} commitBox={scope === "all" || footer ? undefined : commitBox} {scope} bind:excluded
         onrules={() => load()} ondiscard={(p) => (discardFile = p)}
         ondiscardall={() => (discardAllOpen = true)} ondiscardsome={(paths) => (discardSome = paths)}
         onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
@@ -693,8 +696,7 @@
 
     <main class:flush={tab !== "history" && tab !== "settings"} class:reading inert={reading}>
       {#if tab === "overview"}
-        <div class="overview" bind:clientWidth={overviewWidth} style:grid-template-columns="{graphWidth}px 1fr">
-          {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
+        <div class="overview" bind:clientWidth={overviewWidth}>
           <div class="graph-pane">
             <div class="graph-bar">
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")} />
@@ -712,15 +714,18 @@
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
               branch={st.branch} head={st.head} incoming={incomingIds}
-              pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)} />
+              pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
+              reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
-          <div class="detail-pane">
+          {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
+          <div class="detail-pane" style:left="{graphWidth}px" style:top="{INSET + GAP}px" style:right="{INSET + GAP}px" style:bottom="{INSET + GAP}px">
             {#if shown === "pending"}
               <div class="pending-h">
                 <strong>{t("Your changes")}</strong>
                 <span class="faint">{t("not committed yet · on {branch}", { branch: st.branch })}</span>
               </div>
-              <div class="pending-body">{@render changesPanel("changes")}</div>
+              <div class="pending-body">{@render changesPanel("changes", true)}</div>
+              <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
             {:else if shownVersion}
               {@const v = shownVersion}
               {#snippet acts()}{@render versionActions(v)}{/snippet}
@@ -744,7 +749,9 @@
       {/if}
     </main>
 
-    <div class="banner-dock">
+    <!-- in the Overview: over the graph's card, clear of the details -->
+    <div class="banner-dock" class:over-graph={tab === "overview"}
+      style:max-width={tab === "overview" ? `${Math.max(280, graphWidth - 64)}px` : undefined}>
       <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
         onrecover={() => run({ name: "goto", message: "",
           call: (_res, force) => api.RecoverSwitch(root, force),
@@ -899,21 +906,32 @@
   main.flush { padding: 0; overflow: hidden; min-height: 0; }
   nav .sep { width: var(--border-width); align-self: stretch; margin: var(--sp-6) var(--sp-8); background: var(--line); }
   /* Overview: the graph, then the picked version (or your changes) and its files. */
-  .overview { position: relative; display: grid; grid-template-columns: minmax(320px, 36%) 1fr; height: 100%; min-height: 0; }
-  .graph-pane { border-right: var(--border-width) solid var(--line); min-height: 0; display: flex; flex-direction: column; }
+  .overview { position: relative; height: 100%; min-height: 0; }
+  /* The graph: one big card (dots 18px apart) filling the tab. */
+  .graph-pane { position: absolute; inset: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    border-radius: var(--radius-card); background-color: var(--panel); box-shadow: var(--shadow-card);
+    background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.4px); background-size: 18px 18px; }
   .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
-  .graph-bar { flex: none; padding: var(--sp-10) var(--sp-12) 0; }
+  .graph-bar { position: absolute; top: var(--sp-14); left: var(--sp-16); z-index: 2; }
   nav .bad { color: var(--warn); }
   /* Banners (new versions, problems) float at the bottom right, clear of
      the changes and the commit box. */
   .view { position: relative; }
   .banner-dock { position: absolute; right: var(--sp-16); bottom: var(--sp-16); z-index: var(--z-dropdown);
     width: min(560px, 42%); display: flex; flex-direction: column; gap: var(--sp-8); pointer-events: none; }
+  .banner-dock.over-graph { right: auto; left: var(--sp-32); bottom: var(--sp-32); width: 460px; }
   .banner-dock > :global(*) { pointer-events: auto; margin: 0 !important; box-shadow: var(--shadow-pop); }
-  .detail-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .pending-h { display: flex; align-items: baseline; gap: var(--sp-10); padding: var(--sp-10) var(--sp-16);
-    border-bottom: var(--border-width) solid var(--line); background: var(--accent-bg); }
-  .pending-h strong { color: var(--accent); }
+  /* The details float over the card: one see-through colour for all of it,
+     parts set apart by lines, no frame. */
+  .detail-pane { position: absolute; z-index: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
+    border-radius: var(--radius-xl); background: var(--surface-float); backdrop-filter: var(--float-filter); box-shadow: var(--shadow-float); }
+  .detail-pane :global(.side), .detail-pane :global(.commit), .detail-pane :global(.head), .detail-pane :global(.detail-h) { background: transparent; }
+  .detail-pane :global(.head) { position: static; }
+  .detail-pane :global(.side), .detail-pane :global(aside) { border-color: var(--line-strong); }
+  .pending-h { display: flex; align-items: baseline; gap: var(--sp-10); padding: var(--sp-14) var(--sp-16);
+    border-bottom: var(--border-width) solid var(--line-strong); }
+  .pending-h strong { color: var(--accent); font-style: italic; font-size: var(--fs-lg); }
+  .panel-foot { flex: none; padding: var(--sp-12) var(--sp-14); border-top: var(--border-width) solid var(--line-strong); }
   .pending-h .faint { font-size: var(--fs-sm); }
   .pending-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .pending-body > :global(*) { flex: 1; min-height: 0; }

@@ -234,7 +234,7 @@
   .team-row .item { flex: 1; min-width: 0; }
   .gear { flex: none; border: none; background: transparent; color: var(--faint); padding: var(--sp-4) var(--sp-8); border-radius: var(--radius); }
   .gear:hover { color: var(--text); background: var(--hover); }
-  .check { width: 14px; color: var(--accent); }
+  .check { width: 14px; color: var(--ok); }
   .tname { flex: 1; }
   .small { font-size: var(--fs-sm); }
   .who {
