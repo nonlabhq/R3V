@@ -396,6 +396,7 @@ func (a *App) State(root string) (*State, error) {
 		st.Changes = append(st.Changes, toChange(c.Path, c.Status, c.From, c.Edited, c.SetDiff))
 	}
 	st.MyEdits = nonNil(project.EditsIn(changes))
+	st.InUse = nonNil(r.InUse())
 	sw.lap("edits")
 
 	// The team's side comes from the last TeamState (no network here); the

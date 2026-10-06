@@ -1719,6 +1719,12 @@ export class State {
      */
     "cloudFolder": string;
     "changes": Change[];
+
+    /**
+     * InUse: files another program holds (Live writing a Freeze), read once
+     * they are free; until then they count as in the version you are on.
+     */
+    "inUse": string[];
     "myEdits": project$0.TrackEdit[];
     "incoming": Version[];
 
@@ -1794,6 +1800,9 @@ export class State {
         if (!("changes" in $$source)) {
             this["changes"] = [];
         }
+        if (!("inUse" in $$source)) {
+            this["inUse"] = [];
+        }
         if (!("myEdits" in $$source)) {
             this["myEdits"] = [];
         }
@@ -1822,11 +1831,12 @@ export class State {
         const $$createField16_0 = $$createType3;
         const $$createField18_0 = $$createType3;
         const $$createField20_0 = $$createType16;
-        const $$createField21_0 = $$createType39;
-        const $$createField22_0 = $$createType14;
+        const $$createField21_0 = $$createType4;
+        const $$createField22_0 = $$createType39;
         const $$createField23_0 = $$createType14;
         const $$createField24_0 = $$createType14;
-        const $$createField25_0 = $$createType41;
+        const $$createField25_0 = $$createType14;
+        const $$createField26_0 = $$createType41;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rules" in $$parsedSource) {
             $$parsedSource["rules"] = $$createField0_0($$parsedSource["rules"]);
@@ -1843,20 +1853,23 @@ export class State {
         if ("changes" in $$parsedSource) {
             $$parsedSource["changes"] = $$createField20_0($$parsedSource["changes"]);
         }
+        if ("inUse" in $$parsedSource) {
+            $$parsedSource["inUse"] = $$createField21_0($$parsedSource["inUse"]);
+        }
         if ("myEdits" in $$parsedSource) {
-            $$parsedSource["myEdits"] = $$createField21_0($$parsedSource["myEdits"]);
+            $$parsedSource["myEdits"] = $$createField22_0($$parsedSource["myEdits"]);
         }
         if ("incoming" in $$parsedSource) {
-            $$parsedSource["incoming"] = $$createField22_0($$parsedSource["incoming"]);
+            $$parsedSource["incoming"] = $$createField23_0($$parsedSource["incoming"]);
         }
         if ("takenBack" in $$parsedSource) {
-            $$parsedSource["takenBack"] = $$createField23_0($$parsedSource["takenBack"]);
+            $$parsedSource["takenBack"] = $$createField24_0($$parsedSource["takenBack"]);
         }
         if ("history" in $$parsedSource) {
-            $$parsedSource["history"] = $$createField24_0($$parsedSource["history"]);
+            $$parsedSource["history"] = $$createField25_0($$parsedSource["history"]);
         }
         if ("branches" in $$parsedSource) {
-            $$parsedSource["branches"] = $$createField25_0($$parsedSource["branches"]);
+            $$parsedSource["branches"] = $$createField26_0($$parsedSource["branches"]);
         }
         return new State($$parsedSource as Partial<State>);
     }

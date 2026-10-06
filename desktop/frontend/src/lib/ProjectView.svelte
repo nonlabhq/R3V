@@ -671,7 +671,7 @@
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
       onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules}
-      onqueue={() => (queue.open = true)} />
+      onqueue={() => (queue.open = true)} {loadError} />
 
 
     <nav>

@@ -333,3 +333,24 @@ describe("ProjectView: reloading", () => {
     }
   });
 });
+
+describe("ProjectView: files it can't read", () => {
+  it("says which files another program holds", async () => {
+    await show({ inUse: ["Samples/Processed/Freeze/Freeze 1.wav"] });
+    await screen.findByText(/Freeze 1\.wav is in use by another program/);
+  });
+
+  it("says when the project can't be read again, keeping what it showed", async () => {
+    await show({ changes: [change("Song.als")] });
+    api.State.mockRejectedValue(new Error("open Song.als: in use"));
+    const now = Date.now;
+    Date.now = () => now() + 10_000;
+    try {
+      await fireEvent(window, new Event("focus"));
+      await screen.findByText(/can't read the project right now.*open Song\.als: in use/);
+      expect(commitButton()).toBeTruthy(); // the changes are still shown
+    } finally {
+      Date.now = now;
+    }
+  });
+});
