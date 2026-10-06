@@ -93,7 +93,10 @@ func Run() {
 		MinWidth:         900,
 		MinHeight:        560,
 		BackgroundColour: application.NewRGB(24, 25, 29),
-		URL:              "/",
+		// No Windows title bar: the app draws its own, with the open projects
+		// as tabs and the window's buttons (it drags the window too).
+		Frameless: true,
+		URL:       "/",
 		// Started by Windows at sign-in: stay in the tray.
 		Hidden: slices.Contains(os.Args[1:], backgroundFlag),
 	})

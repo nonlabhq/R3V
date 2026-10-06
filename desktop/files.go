@@ -76,6 +76,25 @@ func (a *App) ProjectFiles(root string, all bool) ([]ProjectFile, error) {
 	return out, nil
 }
 
+// VersionFiles lists the files a version changed as the file viewers take
+// them (kind, previewable), for comparing each with the version before.
+func (a *App) VersionFiles(root, id string) ([]ProjectFile, error) {
+	changes, err := a.VersionChanges(root, id)
+	if err != nil {
+		return nil, err
+	}
+	r, err := project.Open(root)
+	if err != nil {
+		return nil, err
+	}
+	out := []ProjectFile{}
+	for _, c := range changes {
+		out = append(out, ProjectFile{Path: c.Path, Status: c.Status, Kind: fileKind(r, c.Path), From: c.From, Edited: c.Edited,
+			Preview: preview.Supported(c.Path), Video: preview.IsVideo(c.Path), Model: preview.IsModel(c.Path)})
+	}
+	return out, nil
+}
+
 // FileVersion is a version that changed a file.
 type FileVersion struct {
 	Version Version `json:"version"`

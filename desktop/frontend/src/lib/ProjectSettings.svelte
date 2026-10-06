@@ -9,8 +9,9 @@
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
   // need a confirmation of their own are the caller's.
-  let { p, team, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate }: {
+  let { p, team, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate }: {
     p: TeamProject;
+    inline?: boolean;       // in the project's Settings tab, not a dialog
     team?: TeamSummary;     // the project's team (none: on this computer only)
     onclose: () => void;
     onrenamed: () => void;
@@ -61,7 +62,7 @@
 {#if rulesOpen}
   <RulesWindow root={p.root} onclose={() => { rulesOpen = false; api.ProjectInfo(p.root).then((i) => (info = i)).catch(() => {}); }} />
 {:else}
-<Modal title={t("Project settings")} {onclose} width={600}>
+{#snippet body()}
   <section>
     <h3>{t("Name")}</h3>
     <div class="line">
@@ -144,13 +145,21 @@
     {/if}
   </section>
 
+{/snippet}
+{#if inline}
+  <div class="inline">{@render body()}</div>
+{:else}
+<Modal title={t("Project settings")} {onclose} width={600}>
+  {@render body()}
   {#snippet footer()}
     <button onclick={onclose}>{t("Close")}</button>
   {/snippet}
 </Modal>
 {/if}
+{/if}
 
 <style>
+  .inline { padding-top: var(--sp-4); }
   section { padding: var(--sp-12) 0; border-top: var(--border-width) solid var(--line); }
   section:first-child { border-top: none; padding-top: 0; }
   h3 { margin: 0 0 var(--sp-8); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }

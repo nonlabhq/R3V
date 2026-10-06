@@ -2173,8 +2173,7 @@ export class TeamSummary {
     "preupload": boolean;
 
     /**
-     * AskShareSetup: the app should ask whether to share it (not chosen yet,
-     * e.g. a member from before the option).
+     * AskShareSetup: the app should ask whether to share it (not chosen yet).
      */
     "askShareSetup": boolean;
 

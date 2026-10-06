@@ -290,3 +290,19 @@ describe("ProjectView: discarding", () => {
     await waitFor(() => expect(api.DiscardAll).toHaveBeenCalledWith(ROOT, false));
   });
 });
+
+describe("ProjectView: Overview", () => {
+  it("starts on your changes, and shows a version picked in the graph", async () => {
+    await show({ changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    expect(screen.getByRole("option", { name: /Your changes/ }).getAttribute("aria-selected")).toBe("true");
+    commitButton(); // your changes, with the commit box
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
+    await screen.findByRole("heading", { name: "v1" });
+    await waitFor(() => expect(api.VersionFiles).toHaveBeenCalledWith(ROOT, "h0"));
+    await screen.findByText("No file changes.");
+    api.GoToVersion.mockResolvedValue(result("moved"));
+    await fireEvent.click(screen.getByRole("button", { name: "Go to" }));
+    await screen.findByText("Go to an older version");
+  });
+});

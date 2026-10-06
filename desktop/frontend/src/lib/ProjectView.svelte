@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import { untrack } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type Conflict, type TeamSummary,
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot } from "./api";
   import { toast } from "./notify.svelte";
@@ -17,6 +17,8 @@
   import CombineDialog from "./CombineDialog.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import History from "./History.svelte";
+  import HistoryGraph from "./HistoryGraph.svelte";
+  import VersionDetail from "./VersionDetail.svelte";
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
@@ -33,25 +35,29 @@
   // With no versions yet, it asks whether to commit (and share) a first one
   // now or after a look through the files; a project with versions shares
   // them right away.
-  let { root, refreshKey, teams, firstShare = false, downloaded = false, onchanged, onfirstshared, ondownloadseen, onsettings }: {
+  let { root, refreshKey, teams, firstShare = false, downloaded = false, onchanged, onfirstshared, ondownloadseen, onsettings, settings }: {
     root: string; refreshKey: number; teams: TeamSummary[]; firstShare?: boolean;
     downloaded?: boolean; // just downloaded: show the project's check
     ondownloadseen?: () => void;
     onchanged: () => void; onfirstshared?: () => void;
     onsettings: () => void; // the project's settings (name, rules, …)
+    settings?: Snippet; // the Settings tab (without it, onsettings opens them)
   } = $props();
 
   let st = $state<State | null>(cachedState(untrack(() => root)));
   let loadError = $state("");
-  // The tab is remembered per project.
-  type Tab = "changes" | "history";
+  // The tab is remembered per project. Overview: the history graph, then the
+  // picked version (or your changes) and its files; Changes and History are
+  // the earlier layout, kept for now.
+  type Tab = "overview" | "files" | "settings" | "changes" | "history";
+  const tabs: Tab[] = ["overview", "files", "settings", "changes", "history"];
   const tabKey = `r3v.tab:${untrack(() => root)}`;
   let tab = $state<Tab>((() => {
     try {
       const t = localStorage.getItem(tabKey);
-      return t === "history" ? t : "changes";
+      return tabs.includes(t as Tab) ? (t as Tab) : "overview";
     } catch {
-      return "changes";
+      return "overview";
     }
   })());
   $effect(() => {
@@ -180,6 +186,15 @@
   }
 
   let incomingIds = $derived(new Set(st?.incoming.map((v) => v.id) ?? []));
+  // Overview: what is picked in the graph ("pending": your changes); by
+  // default your changes when there are some, else the version you're on.
+  let graphPick = $state("");
+  let shown = $derived.by(() => {
+    if (!st) return "";
+    if (graphPick === "pending" ? st.changes.length > 0 : st.history.some((v) => v.id === graphPick)) return graphPick;
+    return st.changes.length ? "pending" : st.head || st.history[0]?.id || "";
+  });
+  let shownVersion = $derived(st?.history.find((v) => v.id === shown));
 
   // Runs an action; handles conflicts (ask, retry with decisions) and a
   // running Live (ask, retry with force).
@@ -614,7 +629,7 @@
 {:else}
   <div class="view">
     <ProjectHeader {st} {refreshing} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
-      {onsettings} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
+      onsettings={settings ? () => (tab = "settings") : onsettings} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
 
     <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
       onrecover={() => run({ name: "goto", message: "",
@@ -626,19 +641,71 @@
       onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules} />
 
     <nav>
+      <button class:on={tab === "overview"} onclick={() => (tab = "overview")}>
+        {t("Overview")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
+      </button>
+      <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
+      {#if settings}<button class:on={tab === "settings"} onclick={() => (tab = "settings")}>{t("Settings")}</button>{/if}
+      <span class="sep" aria-hidden="true"></span>
       <button class:on={tab === "changes"} onclick={() => (tab = "changes")}>
         {t("Changes")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
       </button>
       <button class:on={tab === "history"} onclick={() => (tab = "history")}>{t("History")}</button>
     </nav>
 
-    <main class:flush={tab === "changes"} class:reading inert={reading}>
-      {#if tab === "changes"}
-        {#snippet summary()}<EditsSummary st={st!} />{/snippet}
-        {#snippet commitBox()}<CommitBox st={st!} bind:message {busy} {leftOut} oncommit={() => commit()} />{/snippet}
-        <ChangesPanel {root} st={st} {summary} {commitBox} bind:excluded onrules={() => load()} ondiscard={(p) => (discardFile = p)}
-          ondiscardall={() => (discardAllOpen = true)} ondiscardsome={(paths) => (discardSome = paths)}
-          onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
+    {#snippet changesPanel(scope: "changes" | "all" | undefined)}
+      {#snippet summary()}<EditsSummary st={st!} />{/snippet}
+      {#snippet commitBox()}<CommitBox st={st!} bind:message {busy} {leftOut} oncommit={() => commit()} />{/snippet}
+      <ChangesPanel {root} st={st!} {summary} commitBox={scope === "all" ? undefined : commitBox} {scope} bind:excluded
+        onrules={() => load()} ondiscard={(p) => (discardFile = p)}
+        ondiscardall={() => (discardAllOpen = true)} ondiscardsome={(paths) => (discardSome = paths)}
+        onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
+    {/snippet}
+
+    {#snippet versionActions(v: Version)}
+      {#if st!.remoteUrl && !st!.olderVersion && !v.inBranch && !incomingIds.has(v.id)}
+        <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}>{t("Merge")}</button>
+      {/if}
+      {#if v.id !== st!.head && !incomingIds.has(v.id) && !v.notHere}
+        <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}>{t("Go to")}</button>
+      {/if}
+      {#if !st!.olderVersion && v.inBranch && !incomingIds.has(v.id) && v.parents.length}
+        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+      {/if}
+      {#if !v.notHere}
+        <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}>{t("Export…")}</button>
+      {/if}
+    {/snippet}
+
+    <main class:flush={tab !== "history" && tab !== "settings"} class:reading inert={reading}>
+      {#if tab === "overview"}
+        <div class="overview">
+          <div class="graph-pane">
+            <HistoryGraph versions={st.history} head={st.head} latest={st.latest} incoming={incomingIds}
+              pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)} />
+          </div>
+          <div class="detail-pane">
+            {#if shown === "pending"}
+              <div class="pending-h">
+                <strong>{t("Your changes")}</strong>
+                <span class="faint">{t("not committed yet · on {branch}", { branch: st.branch })}</span>
+              </div>
+              <div class="pending-body">{@render changesPanel("changes")}</div>
+            {:else if shownVersion}
+              {@const v = shownVersion}
+              {#snippet acts()}{@render versionActions(v)}{/snippet}
+              <VersionDetail {root} {v} branch={v.inBranch ? st.branch : v.branches.join(", ")} actions={acts} />
+            {:else}
+              <p class="muted pad">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
+            {/if}
+          </div>
+        </div>
+      {:else if tab === "files"}
+        {@render changesPanel("all")}
+      {:else if tab === "settings" && settings}
+        <div class="settings">{@render settings()}</div>
+      {:else if tab === "changes"}
+        {@render changesPanel(undefined)}
       {:else if tab === "history"}
         <History {root} versions={st.history} head={st.head} incoming={incomingIds} latest={st.latest}
           ongoto={(v) => goTo(v)} onexport={exportVersion}
@@ -789,5 +856,18 @@
   main { flex: 1; overflow: auto; padding: var(--sp-16) var(--sp-24) var(--sp-32); }
   main.reading { opacity: .45; transition: opacity .2s; }
   main.flush { padding: 0; overflow: hidden; min-height: 0; }
+  nav .sep { width: var(--border-width); align-self: stretch; margin: var(--sp-6) var(--sp-8); background: var(--line); }
+  /* Overview: the graph, then the picked version (or your changes) and its files. */
+  .overview { display: grid; grid-template-columns: minmax(260px, 30%) 1fr; height: 100%; min-height: 0; }
+  .graph-pane { border-right: var(--border-width) solid var(--line); min-height: 0; padding: var(--sp-8) 0 var(--sp-8) var(--sp-8); }
+  .detail-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .pending-h { display: flex; align-items: baseline; gap: var(--sp-10); padding: var(--sp-10) var(--sp-16);
+    border-bottom: var(--border-width) solid var(--line); background: var(--accent-bg); }
+  .pending-h strong { color: var(--accent); }
+  .pending-h .faint { font-size: var(--fs-sm); }
+  .pending-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .pending-body > :global(*) { flex: 1; min-height: 0; }
+  .settings { max-width: 680px; }
+  .pad { padding: var(--sp-16); }
 
 </style>
