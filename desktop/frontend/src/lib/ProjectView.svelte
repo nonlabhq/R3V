@@ -96,11 +96,22 @@
   // Two steps: the project folder (fast), then the team's side (network),
   // so the page never waits for the team.
   let teamLoading = false;
+  let loadedAt = 0;
   async function load() {
     const r = root;
+    loadedAt = Date.now();
     let local: State;
     try {
       local = (await api.State(r))!;
+      // Until the team answers (TeamState), what it said last stays when
+      // nothing changed here (same version, same branch): otherwise banners
+      // that depend on it (not shared yet, new versions) would blink at each
+      // reload, e.g. on every focus while the window is resized.
+      const prev = st;
+      const same = !!prev && prev.root === r && prev.teamChecked && prev.head === local.head && prev.branch === local.branch;
+      if (same) local = { ...local, online: prev.online, offline: prev.offline, branches: prev.branches, incoming: prev.incoming,
+        takenBack: prev.takenBack, history: prev.history, olderVersion: prev.olderVersion, unshared: prev.unshared,
+        teamChecked: true } as State;
       st = local;
       rememberState(local);
       loadError = "";
@@ -631,7 +642,7 @@
   let folderName = $derived(root.split(/[\\/]/).pop()?.replace(/ Project$/, "") ?? root);
 </script>
 
-<svelte:window onfocus={() => { if (!busy) load(); }}
+<svelte:window onfocus={() => { if (!busy && Date.now() - loadedAt > 3000) load(); }}
   onkeydown={(e) => { if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) refresh(); }} />
 
 {#if loadError && !st && !busy}
