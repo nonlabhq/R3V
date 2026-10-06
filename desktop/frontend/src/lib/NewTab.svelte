@@ -2,6 +2,7 @@
   import { t } from "./i18n.svelte";
   import { api, errorText, type Overview, type TeamProject } from "./api";
   import { toast } from "./notify.svelte";
+  import ProjectIcon from "./ProjectIcon.svelte";
 
   // A new tab (Ctrl+T, or + by the tabs): pick a team, then a project to
   // open here, or add one.
@@ -25,7 +26,6 @@
     }
   }
   const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status] ?? `⑂ ${p.branch}`);
-  const icon: Record<string, string> = { remote: "☁", missing: "⚠", downloaded: "♪" };
 </script>
 
 <div class="new-tab">
@@ -44,7 +44,7 @@
   <div class="cards">
     {#each projects as p (p.root || p.id)}
       <button class="card {p.status}" onclick={() => onopen(p)} title={p.root || p.name}>
-        <span class="icon" aria-hidden="true">{icon[p.status]}</span>
+        <span class="icon"><ProjectIcon {p} size={32} /></span>
         <span class="name">{p.name}</span>
         <span class="meta">{status(p)}</span>
         {#if open(p)}<span class="open-tag">{t("open")}</span>{/if}

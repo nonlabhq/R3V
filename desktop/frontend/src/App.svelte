@@ -7,6 +7,7 @@
   import { toast } from "./lib/notify.svelte";
   import ProjectView from "./lib/ProjectView.svelte";
   import NewTab from "./lib/NewTab.svelte";
+  import ProjectIcon from "./lib/ProjectIcon.svelte";
   import { untrack } from "svelte";
   import { spinner } from "./lib/spin.svelte";
   import KeptSamples from "./lib/KeptSamples.svelte";
@@ -492,7 +493,6 @@
   });
 
   const statusText = (status: string) => ({ remote: t("not downloaded"), missing: t("folder not found") } as Record<string, string>)[status];
-  const statusIcon: Record<string, string> = { remote: "☁", missing: "⚠", downloaded: "♪" };
 </script>
 
 <svelte:window onfocus={reloadIfStale}
@@ -536,6 +536,15 @@
           <img src="/icon.png" alt="" />
         </button>
         <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar")} aria-label={t("Show the sidebar")}>»</button>
+      </div>
+      <!-- folded: the projects as their icons -->
+      <div class="folded-list">
+        {#each entries as p (p.root || p.id)}
+          <button class="folded-proj" class:on={!blank && selectedEntry === p} onclick={() => select(p)} title={p.name} aria-label={p.name}>
+            <ProjectIcon {p} size={28} />
+          </button>
+        {/each}
+        <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
       {:else}
       <div class="aside-top">
@@ -603,7 +612,7 @@
             <div class="tab" class:on={activeTab(x)} onpointerdown={(e) => tabDown(e, x.key)}>
               <button class="tab-name" role="tab" aria-selected={activeTab(x)} title={x.p ? x.p.root || x.p.name : name}
                 onclick={() => (x.p ? select(x.p) : (blank = x.key))}>
-                <span class="tab-icon" aria-hidden="true">{x.p ? statusIcon[x.p.status] : "+"}</span>{name}
+                {#if x.p}<ProjectIcon p={x.p} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
               </button>
               <button class="tab-x" onclick={() => closeTab(x)} aria-label={t("Close {name}", { name })}>×</button>
             </div>
@@ -716,7 +725,7 @@
     <button class="proj {p.status}" class:on={selectedEntry === p} onclick={() => select(p)}
       class:locked={p.status === "remote" && teamLocked}
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.root}>
-      <span class="icon" aria-hidden="true">{statusIcon[p.status]}</span>
+      <ProjectIcon {p} size={24} />
       <span class="text">
         <span class="name">{p.name}{#if pinned.includes(rowKey(p))}<svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label={t("Pinned")}><title>{t("Pinned")}</title><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>{/if}{#if p.root && preuploads[p.root]}<PreuploadIcon p={preuploads[p.root]} />{/if}</span>
         <span class="meta" class:busy={p.root && activity[p.root]}>
@@ -828,6 +837,12 @@
   .fold:hover:not(:disabled) { color: var(--text); }
   .folded-top { flex-direction: column; margin-left: calc(var(--sp-6) * -1); margin-right: calc(var(--sp-6) * -1); }
   .folded-top .fold { margin: 0; }
+  .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: var(--sp-6);
+    padding: var(--sp-10) 0; margin: 0 calc(var(--sp-6) * -1); }
+  .folded-proj { padding: var(--sp-4); border: var(--border-width) solid transparent; border-radius: var(--radius); background: transparent; line-height: 0; }
+  .folded-proj:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
+  .folded-proj.on { background: var(--panel-2); border-color: var(--line-strong); }
+  .add-icon { width: 38px; height: 38px; line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo img { width: 22px; height: 22px; display: block; }
   aside { background: var(--bg-sunken); border-right: var(--border-width) solid var(--line); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
