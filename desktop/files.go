@@ -43,6 +43,9 @@ type ProjectFile struct {
 	Preview bool `json:"preview"`
 	Video   bool `json:"video"`
 	Model   bool `json:"model"`
+	// Modified: when the file in the project folder last changed (RFC 3339;
+	// "" when it isn't there).
+	Modified string `json:"modified"`
 }
 
 // fileKind groups a file in the app (set, audio, …), as the project's rules
@@ -70,6 +73,9 @@ func (a *App) ProjectFiles(root string, all bool) ([]ProjectFile, error) {
 			Preview: preview.Supported(f.Path), Video: preview.IsVideo(f.Path), Model: preview.IsModel(f.Path)}
 		if pf.Kind == "set" && f.Status != "deleted" {
 			pf.Live = als.CreatorOf(r.Abs(f.Path))
+		}
+		if fi, err := os.Stat(r.Abs(f.Path)); err == nil {
+			pf.Modified = fi.ModTime().UTC().Format(time.RFC3339)
 		}
 		out = append(out, pf)
 	}

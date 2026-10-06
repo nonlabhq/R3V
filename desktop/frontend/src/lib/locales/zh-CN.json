@@ -1037,5 +1037,21 @@
 "You are on this version": "你当前就在这个版本",
 "Get updates first": "请先获取更新",
 "Already in the branch you are on": "你所在的分支已经包含它",
-"Start a branch from this version": "从这个版本开一个分支"
+"Start a branch from this version": "从这个版本开一个分支",
+"Drag to resize": "拖动调整宽度",
+"Date modified": "修改日期",
+"Size": "大小",
+"Type": "类型",
+"Project": "项目",
+"Sort": "排序",
+"Show only some kinds of file": "只显示某些类型的文件",
+"{count} kinds": "{count} 种类型",
+"All kinds": "所有类型",
+"Show all": "全部显示",
+"Columns": "列",
+"Display": "显示方式",
+"List": "列表",
+"Grid": "网格",
+"No files of these kinds here.": "这里没有这些类型的文件。",
+"{count} kind": "{count} 种类型"
 }

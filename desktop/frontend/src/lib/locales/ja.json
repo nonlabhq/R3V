@@ -1037,5 +1037,21 @@
 "You are on this version": "今このバージョンにいます",
 "Get updates first": "先に更新を取得してください",
 "Already in the branch you are on": "今のブランチに含まれています",
-"Start a branch from this version": "このバージョンからブランチを作る"
+"Start a branch from this version": "このバージョンからブランチを作る",
+"Drag to resize": "ドラッグで幅を変更",
+"Date modified": "更新日時",
+"Size": "サイズ",
+"Type": "種類",
+"Project": "プロジェクト",
+"Sort": "並べ替え",
+"Show only some kinds of file": "特定の種類のファイルだけ表示",
+"{count} kinds": "{count} 種類",
+"All kinds": "すべての種類",
+"Show all": "すべて表示",
+"Columns": "列",
+"Display": "表示",
+"List": "リスト",
+"Grid": "グリッド",
+"No files of these kinds here.": "この種類のファイルはここにありません。",
+"{count} kind": "{count} 種類"
 }

@@ -813,6 +813,12 @@ export class ProjectFile {
     "video": boolean;
     "model": boolean;
 
+    /**
+     * Modified: when the file in the project folder last changed (RFC 3339;
+     * "" when it isn't there).
+     */
+    "modified": string;
+
     /** Creates a new ProjectFile instance. */
     constructor($$source: Partial<ProjectFile> = {}) {
         if (!("path" in $$source)) {
@@ -844,6 +850,9 @@ export class ProjectFile {
         }
         if (!("model" in $$source)) {
             this["model"] = false;
+        }
+        if (!("modified" in $$source)) {
+            this["modified"] = "";
         }
 
         Object.assign(this, $$source);
