@@ -287,7 +287,7 @@
   {#if panelWidth}<Splitter key={splitKey} def={splitDef} width={panelWidth} minLeft={240} minRight={300} />{/if}
   {#if scope === "all"}
   <div class="side">
-    <FileExplorer {root} {files} {selected} stamp={loadedAt} onselect={select} onmenu={(e, p, dir) => openMenu(e, p, dir)} />
+    <FileExplorer {root} {files} {selected} onselect={select} onmenu={(e, p, dir) => openMenu(e, p, dir)} />
   </div>
   {:else}
   <div class="side">

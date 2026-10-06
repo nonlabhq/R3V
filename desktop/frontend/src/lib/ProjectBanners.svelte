@@ -86,9 +86,10 @@
 {#if st.inUse?.length}
   {@const first = st.inUse[0].slice(st.inUse[0].lastIndexOf("/") + 1)}
   <div class="banner info" title={st.inUse.join("\n")}>
-    <div>{tn(st.inUse.length, "{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.",
-      "{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.",
-      { file: first, n: st.inUse.length - 1 })}</div>
+    <div>{st.inUse.length === 1
+      ? t("{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.", { file: first })
+      : tn(st.inUse.length - 1, "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.",
+        "{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.", { file: first })}</div>
   </div>
 {/if}
 

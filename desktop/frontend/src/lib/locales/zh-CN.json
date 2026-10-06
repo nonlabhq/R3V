@@ -1074,5 +1074,10 @@
 "Zoom in": "放大",
 "Back to 100%": "回到 100%",
 "View pending changes": "查看未提交的更改",
-"View latest version": "查看最新版本"
+"View latest version": "查看最新版本",
+"Open the sidebar to see what's new": "展开侧栏查看新消息",
+"{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 和另外 {n} 个文件正被其他程序使用中（例如 Live 正在写入 Freeze 文件）：等它们被释放后 R3V 就会读入。",
+"in {folder}": "在 {folder}",
+"the project folder": "项目文件夹",
+"detected": "自动检测"
 }

@@ -557,6 +557,7 @@
       <div class="aside-top folded-top">
         <button class="logo" onclick={() => (appSettings = true)} title={t("R3V settings")} aria-label={t("R3V settings")}>
           <img src="/brand/r3v-icon-small.svg" alt="" />
+          {#if update || current?.keysUnreadable || overview.teamError}<span class="news" title={t("Open the sidebar to see what's new")}></span>{/if}
         </button>
         <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar")} aria-label={t("Show the sidebar")}>»</button>
       </div>
@@ -758,12 +759,13 @@
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.root}>
       <ProjectIcon {p} size={24} />
       <span class="text">
-        <span class="name">{p.name}{#if pinned.includes(rowKey(p))}<svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label={t("Pinned")}><title>{t("Pinned")}</title><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>{/if}{#if p.root && preuploads[p.root]}<PreuploadIcon p={preuploads[p.root]} />{/if}</span>
+        <span class="name">{p.name}{#if pinned.includes(rowKey(p))}<svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label={t("Pinned")}><title>{t("Pinned")}</title><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>{/if}</span>
         <span class="meta" class:busy={p.root && activity[p.root]}>
           {p.root && activity[p.root] ? progressShort(activity[p.root]) : statusText(p.status) ?? `⑂ ${p.branch}`}
         </span>
       </span>
     </button>
+    {#if p.root && preuploads[p.root]}<span class="pre-slot"><PreuploadIcon p={preuploads[p.root]} /></span>{/if}
     <button class="ghost more" class:open={rowMenu === rowKey(p)} title={t("More")}
       onclick={() => toggleMenu(p)}>⋯</button>
     {#if rowMenu === rowKey(p)}
@@ -885,7 +887,10 @@
   .folded-proj.on { background: var(--panel-2); border-color: var(--line-strong); }
   .add-icon { width: 38px; height: 38px; line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
+  .logo { position: relative; }
   .logo img { width: 22px; height: 22px; display: block; }
+  .logo .news { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn);
+    box-shadow: 0 0 0 2px var(--bg-sunken); }
   aside { background: var(--bg-sunken); border-right: var(--border-width) solid var(--line); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }
@@ -922,6 +927,9 @@
     font-size: var(--fs-lg); color: var(--muted); border-radius: var(--radius);
   }
   li:hover .more, .more.open { visibility: visible; }
+  /* (beside the project's button, not in it: a button of its own) */
+  .pre-slot { position: absolute; top: 9px; right: 28px; }
+  li:hover .pre-slot { right: 30px; }
   .more:hover, .more.open { background: var(--hover); color: var(--text); }
   .row-menu {
     position: absolute; top: 26px; right: 4px; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);

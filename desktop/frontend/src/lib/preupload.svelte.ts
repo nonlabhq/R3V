@@ -34,18 +34,23 @@ function speedOf(key: string, bytes: number): number {
 }
 
 let watching = false;
+// Ends heard before the first list came (root + path).
+const ended = new Set<string>();
+const stale: Record<string, ReturnType<typeof setTimeout>> = {};
+const uploadStages = new Set(["scanning", "storing", "checking", "uploading"]);
 
 // watchPreuploads follows them; once, from the app's start.
 export function watchPreuploads() {
   if (watching) return;
   watching = true;
   api.Preuploads().then((list) => {
-    for (const p of list ?? []) preuploads[p.root] = { ...p, waiting: p.waiting ?? [], speed: 0 };
+    for (const p of list ?? []) if (!ended.has(p.root + "\n" + p.path) && !preuploads[p.root]) preuploads[p.root] = { ...p, waiting: p.waiting ?? [], speed: 0 };
   }).catch(() => {});
   Events.On("preupload", (ev: { data: Omit<Preupload, "speed"> }) => {
     const p = ev.data;
     const key = `pre:${p.root}:${p.path}`;
     if (p.done) {
+      ended.add(p.root + "\n" + p.path);
       delete preuploads[p.root];
       delete seen[key];
     } else {
@@ -55,11 +60,14 @@ export function watchPreuploads() {
   Events.On("progress", (ev: { data: Progress }) => {
     const p = ev.data;
     const key = `step:${p.root}`;
-    if (p.stage === "done") {
+    clearTimeout(stale[p.root]);
+    if (p.stage === "done" || !uploadStages.has(p.stage)) {
       delete transfers[p.root];
       delete seen[key];
     } else {
       transfers[p.root] = { ...p, speed: p.bytes ? speedOf(key, p.bytes) : 0 };
+      // In case its end is missed.
+      stale[p.root] = setTimeout(() => delete transfers[p.root], 10 * 60000);
     }
   });
 }
