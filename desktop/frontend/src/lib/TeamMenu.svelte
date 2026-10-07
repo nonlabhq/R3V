@@ -4,14 +4,16 @@
   import { toast } from "./notify.svelte";
   import Modal from "./Modal.svelte";
   import JoinOrCreate from "./JoinOrCreate.svelte";
-  import TeamSettings from "./TeamSettings.svelte";
   import IdentityForm from "./IdentityForm.svelte";
 
-  let { overview, reload }: { overview: Overview; reload: () => Promise<void> } = $props();
+  // settingsFor: the team whose settings are open (the ⚙ of a team; the app
+  // shows them, so a project's header can open them too).
+  let { overview, reload, settingsFor = $bindable(null) }: {
+    overview: Overview; reload: () => Promise<void>; settingsFor?: TeamSummary | null;
+  } = $props();
 
   let open = $state(false);
   let connecting = $state(false);
-  let settingsFor = $state<TeamSummary | null>(null); // the ⚙ of a team
   // Who you are in a team (after connecting, or to rename yourself).
   let identityFor = $state<TeamSummary | null>(null);
 
@@ -241,13 +243,6 @@
         {reconnecting ? tr("Reconnecting…") : tr("Reconnect selected")}</button>
     {/snippet}
   </Modal>
-{/if}
-
-{#if settingsFor}
-  {@const t = overview.teams.find((x) => x.id === settingsFor!.id) ?? settingsFor}
-  <TeamSettings team={t} author={overview.author} {reload} onclose={() => (settingsFor = null)}
-    offline={t.id === overview.currentTeam && !!overview.teamError}
-    roots={t.id === overview.currentTeam ? overview.projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root) : []} />
 {/if}
 
 <style>
