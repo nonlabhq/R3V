@@ -27,6 +27,9 @@ import (
 type BucketBackend struct {
 	b     Bucket
 	actor string // who branch moves are by (SetActor)
+	// objs is where contents (objects/, chunked/) go: "" for the team's own
+	// folder, projects/<pid>/ when each project keeps its own (ForProject).
+	objs string
 }
 
 var _ Backend = (*BucketBackend)(nil)
@@ -46,6 +49,29 @@ func NewS3(endpoint, bucket, prefix, region, accessKey, secretKey string) (*Buck
 
 // Bucket is the storage underneath.
 func (s *BucketBackend) Bucket() Bucket { return s.b }
+
+// PerProject is implemented by storage that keeps each project's contents
+// apart (the hosted service: an upload can't be checked against its name,
+// so only a project's own writers may write its contents).
+type PerProject interface{ ContentsPerProject() bool }
+
+// ForProject is the backend for working on project pid: on storage that
+// keeps contents per project, its contents go under projects/<pid>/;
+// otherwise it is b itself.
+func ForProject(b Backend, pid string) Backend {
+	s, ok := b.(*BucketBackend)
+	if !ok {
+		return b
+	}
+	if pp, ok := s.b.(PerProject); !ok || !pp.ContentsPerProject() {
+		return b
+	}
+	c := *s
+	c.objs = projectDir(pid)
+	return &c
+}
+
+func (s *BucketBackend) objectKey(hash string) string { return s.objs + objectKey(hash) }
 
 // --- helpers ---
 
@@ -332,6 +358,9 @@ func (s *BucketBackend) MissingObjects(hashes []string) ([]string, error) {
 		}
 		shards[h[:2]] = append(shards[h[:2]], h)
 	}
+	if a, ok := s.b.(ContentsAsker); ok && s.objs != "" {
+		return askMissing(a, strings.TrimSuffix(strings.TrimPrefix(s.objs, "projects/"), "/"), dedupeHashes(hashes))
+	}
 	var mu sync.Mutex
 	present := map[string]bool{}
 	var ask []string // to ask about one by one
@@ -347,8 +376,8 @@ func (s *BucketBackend) MissingObjects(hashes []string) ([]string, error) {
 		want := slices.Clone(shards[shard])
 		slices.Sort(want)
 		// From just before the first wanted object.
-		first := objectKey(want[0])
-		return s.b.List("objects/"+shard+"/", first[:len(first)-1], func(page []Item) bool {
+		first := s.objectKey(want[0])
+		return s.b.List(s.objs+"objects/"+shard+"/", first[:len(first)-1], func(page []Item) bool {
 			mu.Lock()
 			for _, it := range page {
 				present[it.Key] = true
@@ -358,7 +387,7 @@ func (s *BucketBackend) MissingObjects(hashes []string) ([]string, error) {
 			last := page[len(page)-1].Key
 			var rest []string
 			for _, h := range want {
-				if objectKey(h) > last {
+				if s.objectKey(h) > last {
 					rest = append(rest, h)
 				}
 			}
@@ -377,7 +406,7 @@ func (s *BucketBackend) MissingObjects(hashes []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	asked, err := s.missing(ask, objectKey)
+	asked, err := s.missing(ask, s.objectKey)
 	if err != nil {
 		return nil, err
 	}
@@ -387,9 +416,30 @@ func (s *BucketBackend) MissingObjects(hashes []string) ([]string, error) {
 	}
 	missing := asked
 	for _, h := range dedupeHashes(hashes) {
-		if !notAsked[h] && !present[objectKey(h)] {
+		if !notAsked[h] && !present[s.objectKey(h)] {
 			missing = append(missing, h)
 		}
+	}
+	return missing, nil
+}
+
+// ContentsAsker is storage that says, for many objects at once, which a
+// project lacks (the hosted service answers from its index).
+type ContentsAsker interface {
+	MissingContents(pid string, hashes []string) ([]string, error)
+}
+
+// askBatch is how many hashes go in one question.
+const askBatch = 1000
+
+func askMissing(a ContentsAsker, pid string, hashes []string) ([]string, error) {
+	missing := []string{}
+	for i := 0; i < len(hashes); i += askBatch {
+		m, err := a.MissingContents(pid, hashes[i:min(i+askBatch, len(hashes))])
+		if err != nil {
+			return nil, err
+		}
+		missing = append(missing, m...)
 	}
 	return missing, nil
 }
@@ -442,14 +492,14 @@ func (s *BucketBackend) PutObjectBody(hash string, r io.Reader, size int64, body
 	if !validHex(hash, 64) || !validHex(bodySHA, 64) {
 		return fmt.Errorf("invalid object hash %q", hash)
 	}
-	return s.b.Put(objectKey(hash), r, size, bodySHA, "")
+	return s.b.Put(s.objectKey(hash), r, size, bodySHA, "")
 }
 
 func (s *BucketBackend) MarkChunked(hash string) error {
 	if !validHex(hash, 64) {
 		return fmt.Errorf("invalid object hash %q", hash)
 	}
-	return s.put(chunkedDir+hash, nil)
+	return s.put(s.objs+chunkedDir+hash, nil)
 }
 
 // GetObject reads a file's stored bytes; one a storage cleanup moved to the
@@ -458,9 +508,9 @@ func (s *BucketBackend) GetObject(hash string) (io.ReadCloser, error) {
 	if !validHex(hash, 64) {
 		return nil, ErrNotFound
 	}
-	r, err := s.b.Open(objectKey(hash))
-	if errors.Is(err, ErrNotFound) && s.fromTrash(objectKey(hash)) == nil {
-		return s.b.Open(objectKey(hash))
+	r, err := s.b.Open(s.objectKey(hash))
+	if errors.Is(err, ErrNotFound) && s.fromTrash(s.objectKey(hash)) == nil {
+		return s.b.Open(s.objectKey(hash))
 	}
 	return r, err
 }

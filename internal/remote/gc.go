@@ -284,7 +284,7 @@ func (s *BucketBackend) usedFiles(rep *GCReport) (map[string]bool, error) {
 		}
 		var next []string
 		err := parallelN(checks, todo, func(h string) error {
-			data, err := s.get(objectKey(h))
+			data, err := s.get(s.objectKey(h))
 			if err != nil {
 				return fmt.Errorf("a version's folder list %s can't be read (%w): storage not cleaned up", h[:10], err)
 			}
@@ -313,7 +313,7 @@ func (s *BucketBackend) usedFiles(rep *GCReport) (map[string]bool, error) {
 
 // chunkList reads the list of pieces stored for the file h.
 func (s *BucketBackend) chunkList(h string) (*chunk.List, error) {
-	data, err := s.get(objectKey(h))
+	data, err := s.get(s.objectKey(h))
 	if err != nil {
 		return nil, err
 	}

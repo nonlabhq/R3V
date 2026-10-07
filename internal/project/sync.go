@@ -47,7 +47,11 @@ func (r *Repo) Client() (remote.Backend, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t.Open()
+	b, err := t.Open()
+	if err != nil {
+		return nil, err
+	}
+	return remote.ForProject(b, r.Config.ProjectID), nil
 }
 
 // SetRemote connects the project to a team (its connection code).
