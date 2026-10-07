@@ -297,13 +297,14 @@ func (a *App) CloudSetAccess(teamID, projectID, userID, access string) error {
 
 // onRecord follows a record a hosted team's service wrote (live notices):
 // the team's name or projects, the team list again; a member's look, the
-// team's looks asked again; a lock, the project's page reads again.
+// team's looks asked again; a lock, a branch's record or a milestone, the
+// project's page reads again.
 func (a *App) onRecord(service, team string, r cloud.Record) {
 	switch r.Kind {
 	case "team", "project":
 		a.syncTeams(service)
 		return
-	case "member", "lock":
+	case "member", "lock", "branch", "milestone":
 	default:
 		return // a kind this build doesn't know
 	}

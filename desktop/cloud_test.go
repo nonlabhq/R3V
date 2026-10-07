@@ -202,7 +202,8 @@ func TestRenamingAHostedTeam(t *testing.T) {
 
 // Records a hosted team's service wrote: a member's look asks the team's
 // looks again on its projects' pages; a lock reads its project's page again;
-// a kind this build doesn't know does nothing.
+// a branch's record or a milestone, the same; a kind this build doesn't
+// know does nothing.
 func TestFollowingRecords(t *testing.T) {
 	team := hostedTeam(t, "https://cloud.example")
 	roots := map[string]string{"p1": t.TempDir(), "p2": t.TempDir()}
@@ -240,6 +241,13 @@ func TestFollowingRecords(t *testing.T) {
 	a.onRecord("https://cloud.example", id, cloud.Record{Kind: "lock", ID: "Song.als", Project: strings.Repeat("2", 32)})
 	if !slices.Equal(told, []string{roots["p2"]}) {
 		t.Errorf("lock: pages told %v", told)
+	}
+	for _, kind := range []string{"branch", "milestone"} {
+		told = nil
+		a.onRecord("https://cloud.example", id, cloud.Record{Kind: kind, ID: "x", Project: strings.Repeat("1", 32)})
+		if !slices.Equal(told, []string{roots["p1"]}) {
+			t.Errorf("%s: pages told %v", kind, told)
+		}
 	}
 	told = nil
 	a.onRecord("https://cloud.example", id, cloud.Record{Kind: "someday"})
