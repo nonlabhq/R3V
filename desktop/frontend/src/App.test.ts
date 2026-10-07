@@ -102,4 +102,16 @@ describe("App: tabs", () => {
     await fireEvent.keyDown(window, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
+
+  it("shows the version short, says Nightly, and copies it in full", async () => {
+    api.Version.mockResolvedValue("0.1.3-nightly.202610070525");
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    render(App);
+    const v = await screen.findByTitle(/0\.1\.3-nightly\.202610070525/);
+    expect(v.firstChild?.textContent?.trim()).toBe("v0.1.3");
+    expect(v.querySelector(".channel")?.textContent).toBe("Nightly");
+    await fireEvent.click(v);
+    expect(writeText).toHaveBeenCalledWith("0.1.3-nightly.202610070525");
+  });
 });

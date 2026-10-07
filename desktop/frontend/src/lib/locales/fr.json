@@ -1109,5 +1109,7 @@
 "Instrument: {name}": "Instrument : {name}",
 "View current version": "Voir la version actuelle",
 "Showing only: {kinds}": "Seulement : {kinds}",
-"Undo": "Annuler"
+"Undo": "Annuler",
+"R3V {version} — click to copy": "R3V {version} — cliquer pour copier",
+"Copied {version}": "{version} copié"
 }
