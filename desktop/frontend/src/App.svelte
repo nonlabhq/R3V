@@ -7,7 +7,9 @@
   import { toast } from "./lib/notify.svelte";
   import ProjectView from "./lib/ProjectView.svelte";
   import NewTab from "./lib/NewTab.svelte";
-  import { closeTab, isNew as isNewTab, loadTabs, moveTab, pruneTabs, renameTab, toSave } from "./lib/tabs";
+  import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
+    type TabRef, type TabSnap } from "./lib/tabs";
+  import { cssColor, initial, pickFor } from "./lib/palette";
   import ProjectIcon from "./lib/ProjectIcon.svelte";
   import { untrack } from "svelte";
   import { spinner } from "./lib/spin.svelte";
@@ -254,86 +256,135 @@
     openTab(p);
   }
 
-  // Projects open as tabs at the top (per team, remembered; drag one to
-  // move it). The sidebar opens one, or goes to it when it is open already.
-  // A new tab ("new:…", Ctrl+T or +) picks a team and a project to open in
-  // it; new tabs aren't remembered, and stay when the team changes.
-  const tabsKey = () => `r3v.tabs:${teamId}`;
-  let tabKeys = $state<string[]>([]);
+  // Projects open as tabs at the top: one list for every team (remembered;
+  // drag one to move it). The sidebar opens one of its team's, or goes to it
+  // when it is open already; a tab of another team switches the sidebar to
+  // that team first ("the sidebar follows the tab"). A new tab ("new:…",
+  // Ctrl+T or +) picks a team and a project to open in it; new tabs aren't
+  // remembered.
+  const TABS_KEY = "r3v.tabs";
+  const readJSON = (k: string): unknown => { try { return JSON.parse(localStorage.getItem(k) ?? "null"); } catch { return null; } };
+  const savedTabs = readJSON(TABS_KEY);
+  let tabs = $state<TabRef[]>(loadTabs(savedTabs, []));
+  // Before one list for all, each team had its own: the first team shown
+  // starts the list (the others' old lists are left as they were).
+  let migrateTabs = savedTabs === null;
   let blank = $state(""); // the new tab shown ("" a project's)
   let tabsClosed = $state(false); // every tab closed: nothing is picked for you
-  // The team's tabs, read when the team changes (not each time the
-  // overview is read again: that would undo a tab closed or moved).
+  let switching = $state(false); // going to another team's tab: nothing is picked for you
   let teamId = $derived(overview?.currentTeam ?? "");
   $effect.pre(() => {
-    teamId;
-    let saved: unknown = [];
-    try { saved = JSON.parse(localStorage.getItem(tabsKey()) ?? "[]"); } catch { /* none */ }
-    tabKeys = loadTabs(saved, untrack(() => tabKeys));
+    if (!teamId) return;
+    if (migrateTabs) {
+      migrateTabs = false;
+      tabs = loadTabs([...oldTabs(teamId, readJSON(`r3v.tabs:${teamId}`)), ...untrack(() => tabs)], untrack(() => tabs));
+      saveTabs();
+    }
     tabsClosed = false;
   });
-  // Tabs of projects the team no longer lists go (once it has answered, and
-  // was reachable: its list is whole).
+  // The shown team's tabs keep a picture of their projects, for when another
+  // team is shown.
   $effect(() => {
-    if (!overview?.teamChecked || overview.teamError) return;
-    const pruned = pruneTabs(untrack(() => tabKeys), new Set(entries.map(rowKey)));
-    if (pruned.length !== untrack(() => tabKeys).length) { tabKeys = pruned; saveTabs(); }
+    const got = refreshSnaps(untrack(() => tabs), teamId, new Map(entries.map((p) => [rowKey(p), snapOf(p)])));
+    if (got !== untrack(() => tabs)) { tabs = got; saveTabs(); }
   });
-  type Tab = { key: string; p?: TeamProject };
-  let tabItems = $derived(tabKeys.map((k): Tab | null => {
-    if (isNewTab(k)) return { key: k };
-    const p = entries.find((e) => rowKey(e) === k);
-    return p ? { key: k, p } : null;
+  // Tabs of teams no longer on this computer go, and of projects the shown
+  // team no longer lists (once it has answered, and was reachable: its list
+  // is whole).
+  $effect(() => {
+    if (!overview) return;
+    const whole = overview.teamChecked && !overview.teamError;
+    const pruned = pruneTabs(untrack(() => tabs), new Set(overview.teams.map((t) => t.id)), teamId, whole ? new Set(entries.map(rowKey)) : null);
+    if (pruned.length !== untrack(() => tabs).length) { tabs = pruned; saveTabs(); }
+  });
+  // A tab drawn: the shown team's are drawn from its list (only once it
+  // lists them), another team's from the picture kept.
+  type Tab = { id: string; key: string; team: string; p?: TeamProject; snap?: TabSnap };
+  let tabItems = $derived(tabs.map((x): Tab | null => {
+    const id = tabId(x);
+    if (isNewTab(x.key)) return { id, key: x.key, team: "" };
+    if (x.team !== teamId) return x.p ? { id, key: x.key, team: x.team, snap: x.p } : null;
+    const p = entries.find((e) => rowKey(e) === x.key);
+    return p ? { id, key: x.key, team: x.team, p } : null;
   }).filter((x): x is Tab => !!x));
-  let tabEntries = $derived(tabItems.flatMap((x) => (x.p ? [x.p] : [])));
+  // Which team a tab is on shows once tabs of more than one are open.
+  let manyTeams = $derived(teamsOf(tabItems) > 1);
+  const teamOf = (id: string) => overview?.teams.find((t) => t.id === id);
+  // "Team · Project", and its folder.
+  const tabTitle = (team: string, p: { name: string; root: string }) =>
+    [team ? `${team} · ${p.name}` : p.name, p.root].filter(Boolean).join("\n");
   // (by key: reading the overview again makes new project objects)
-  const activeTab = (x: Tab) => (x.p ? !blank && !!selectedEntry && rowKey(selectedEntry) === x.key : blank === x.key);
-  function saveTabs() { remember(tabsKey(), JSON.stringify(toSave(tabKeys))); }
+  const activeTab = (x: Tab) => (x.p ? !blank && !!selectedEntry && rowKey(selectedEntry) === x.key : !x.team && blank === x.key);
+  function saveTabs() { remember(TABS_KEY, JSON.stringify(toSave(tabs))); }
+  const isOpen = (p: TeamProject) => tabs.some((x) => x.team === teamId && x.key === rowKey(p));
   function openTab(p: TeamProject) {
     tabsClosed = false;
-    if (tabKeys.includes(rowKey(p))) return;
-    tabKeys = [...tabKeys, rowKey(p)];
+    if (!teamId || isOpen(p)) return;
+    tabs = [...tabs, { team: teamId, key: rowKey(p), p: snapOf(p) }];
     saveTabs();
   }
   // A project's key changed (downloaded, found elsewhere, unlinked): its tab
   // stays where it was.
   function renamed(from: string, to: string) {
-    tabKeys = renameTab(tabKeys, from, to);
+    tabs = renameTab(tabs, teamId, from, to);
     saveTabs();
   }
   function newTab() {
     const key = `new:${Date.now()}`;
-    tabKeys = [...tabKeys, key];
+    tabs = [...tabs, { team: "", key }];
     blank = key;
     tabsClosed = false;
   }
   // From a new tab: the project takes its place (or its own tab, if open).
   function openHere(p: TeamProject) {
     const here = blank;
-    tabKeys = tabKeys.includes(rowKey(p)) ? tabKeys.filter((k) => k !== here) : tabKeys.map((k) => (k === here ? rowKey(p) : k));
+    tabs = isOpen(p) ? tabs.filter((x) => x.key !== here)
+      : tabs.map((x) => (x.key === here ? { team: teamId, key: rowKey(p), p: snapOf(p) } : x));
     saveTabs();
     select(p);
   }
-  function goTab(x: Tab) {
-    if (x.p) select(x.p);
-    else blank = x.key;
-  }
-  // Tabs closed, newest last: Ctrl+Shift+T opens the last one again.
-  let closedTabs: string[] = [];
-  function reopenTab() {
-    const k = closedTabs.pop();
-    const p = k && entries.find((e) => rowKey(e) === k);
+  // Another team's tab: that team is shown (as the team menu does), then its
+  // project, once the team lists it.
+  async function goTab(x: Tab) {
+    if (x.p) return select(x.p);
+    if (!x.team) { blank = x.key; return; }
+    switching = true;
+    try {
+      await api.SelectTeam(x.team);
+      await reload();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      switching = false;
+    }
+    const p = teamId === x.team ? entries.find((e) => rowKey(e) === x.key) : undefined;
     if (p) select(p);
   }
+  // Tabs closed, newest last: Ctrl+Shift+T opens the last one again (on its
+  // team, while that team is still here).
+  let closedTabs: TabRef[] = [];
+  function reopenTab() {
+    const x = closedTabs.pop();
+    if (!x) return;
+    if (x.team === teamId) {
+      const p = entries.find((e) => rowKey(e) === x.key);
+      if (p) select(p);
+    } else if (teamOf(x.team) && x.p) {
+      if (!tabs.some((y) => tabId(y) === tabId(x))) { tabs = [...tabs, x]; saveTabs(); }
+      goTab({ id: tabId(x), key: x.key, team: x.team, snap: x.p });
+    }
+  }
   function closeTabOf(x: Tab) {
-    if (x.p) closedTabs = [...closedTabs.filter((k) => k !== x.key), x.key].slice(-20);
+    const ref = tabs.find((y) => tabId(y) === x.id);
+    if (ref && x.team) closedTabs = [...closedTabs.filter((y) => tabId(y) !== x.id), ref].slice(-20);
     const wasActive = activeTab(x);
-    const { next } = closeTab(tabItems.map((y) => y.key), x.key);
-    tabKeys = tabKeys.filter((k) => k !== x.key);
+    const { next } = closeTab(tabItems.map((y) => y.id), x.id);
+    const n = tabItems.find((y) => y.id === next);
+    tabs = tabs.filter((y) => tabId(y) !== x.id);
     saveTabs();
     if (!wasActive) return;
-    const n = tabItems.find((y) => y.key === next);
     if (n?.p) select(n.p);
+    else if (n?.team) { selected = {}; goTab(n); }
     else if (n) blank = n.key;
     else { selected = {}; blank = ""; tabsClosed = true; }
   }
@@ -353,8 +404,8 @@
       const els = [...(tabsEl?.querySelectorAll<HTMLElement>(".tab") ?? [])];
       let to = els.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientX < r.left + r.width / 2; });
       if (to < 0) to = els.length;
-      const moved = moveTab(tabKeys, tabItems.map((x) => x.key), tabDrag.key, to);
-      if (moved !== tabKeys) tabKeys = moved;
+      const moved = moveTab(tabs, tabItems.map((x) => x.id), tabDrag.key, to);
+      if (moved !== tabs) tabs = moved;
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -377,7 +428,7 @@
 
   // Keep a valid selection when the team or the list changes.
   $effect(() => {
-    if (!overview || selectedEntry || tabsClosed || blank) return;
+    if (!overview || selectedEntry || tabsClosed || blank || switching) return;
     const last = recall(SELECTED_KEY);
     const pick = untrack(() => tabItems).find((x) => x.p)?.p ?? entries.find((p) => p.root && p.root === last) ??
       entries.find((p) => p.status === "downloaded") ?? entries[0];
@@ -719,12 +770,16 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="tabs" role="tablist" tabindex="-1" aria-label={t("Open projects")} bind:this={tabsEl}
           onclickcapture={(e) => { if (tabDragged) { e.stopPropagation(); e.preventDefault(); } }}>
-          {#each tabItems as x (x.key)}
-            {@const name = x.p ? x.p.name : t("New tab")}
-            <div class="tab" class:on={activeTab(x)} onpointerdown={(e) => tabDown(e, x.key)}>
-              <button class="tab-name" role="tab" aria-selected={activeTab(x)} title={x.p ? x.p.root || x.p.name : name}
-                onclick={() => (x.p ? select(x.p) : (blank = x.key))}>
-                {#if x.p}<ProjectIcon p={x.p} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
+          {#each tabItems as x (x.id)}
+            {@const proj = x.p ?? x.snap}
+            {@const name = proj ? proj.name : t("New tab")}
+            {@const team = teamOf(x.team)}
+            <div class="tab" class:on={activeTab(x)} onpointerdown={(e) => tabDown(e, x.id)}>
+              <button class="tab-name" role="tab" aria-selected={activeTab(x)}
+                title={proj ? tabTitle(team?.name ?? "", proj) : name}
+                onclick={() => goTab(x)}>
+                {#if proj}<ProjectIcon p={proj} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
+                {#if manyTeams && team}<span class="tab-team" style:--c={cssColor(pickFor(team.id))} aria-hidden="true">{initial(team.name)}</span>{/if}
               </button>
               <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
                 title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
@@ -736,7 +791,7 @@
       </div>
       <div class="content-body">
       {#if blank}
-        <NewTab {overview} projects={entries} open={(p) => tabKeys.includes(rowKey(p))} {reload} onopen={openHere}
+        <NewTab {overview} projects={entries} open={isOpen} {reload} onopen={openHere}
           onadd={addToTeam} adding={busy === "add"} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
@@ -1094,6 +1149,9 @@
     padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .tab-name:hover:not(:disabled) { background: transparent; }
   .tab-icon { color: var(--accent); font-size: var(--fs-sm); }
+  /* Which team a tab is on, once tabs of more than one are open. */
+  .tab-team { flex: none; margin-left: auto; padding: 0 var(--sp-4); border-radius: var(--radius-pill); font-size: var(--fs-2xs);
+    font-weight: var(--fw-semibold); line-height: 1.4; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
   .tab-x { border: none; background: transparent; padding: 0 var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; visibility: hidden; }
   .tab:hover .tab-x, .tab.on .tab-x { visibility: visible; }
   .tab-x:hover:not(:disabled) { background: transparent; color: var(--text); }
