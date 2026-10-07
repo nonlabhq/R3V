@@ -95,11 +95,12 @@
       if (!c || row === undefined) continue;
       const text = names.join(" · ");
       // (wide scripts, CJK and the like, take about twice a Latin letter)
-      const w = Math.min(TAG_W, [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 13 : 7), 0) + 30);
+      const w = Math.min(TAG_W, [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 13 : 7), 0) + 18);
       const cols = [...(passing.get(row) ?? [])].filter((k) => k !== c.col);
       const right = cols.filter((k) => k > c.col).length, leftN = cols.filter((k) => k < c.col).length;
       const left = right > 0 && leftN < right;
-      out.push({ id, text, w, left, color: c.color, dx: left ? c.col * colW - 18 - w : c.col * colW + 18,
+      // (dx: the end at the dot; w only keeps labels clear, the tag sizes to its text)
+      out.push({ id, text, w, left, color: c.color, dx: left ? c.col * colW - 18 : c.col * colW + 18,
         y: (row + off) * rowH + rowH / 2 - TAG_H / 2 });
     }
     return out;
@@ -112,7 +113,8 @@
     const clear = (dx: number, y: number, w: number, h: number) =>
       dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4) &&
-      tags.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + TAG_H + 4 < y || l.y > y + h + 4);
+      tags.every((l) => { const x0 = l.left ? l.dx - l.w : l.dx;
+        return x0 + l.w + 4 < dx || x0 > dx + w + 4 || l.y + TAG_H + 4 < y || l.y > y + h + 4; });
     // (before the first version: your branch's name over your changes)
     const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: branchLane(branches, branch), empty: true }] : [];
     for (const c of [...g.chains, ...first]) {
@@ -136,8 +138,8 @@
     }
     return out;
   });
-  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx), ...tags.map((l) => l.dx - 8)));
-  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w), ...tags.map((l) => l.dx + l.w + 8)) + PAD);
+  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx), ...tags.map((l) => (l.left ? l.dx - l.w : l.dx) - 8)));
+  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w), ...tags.map((l) => (l.left ? l.dx : l.dx + l.w) + 8)) + PAD);
   const x = (col: number) => center + col * colW;
   // Room at the top for the labels.
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
@@ -375,9 +377,8 @@
       </svg>
 
       {#each tags as m (m.id)}
-        <button class="mtag" class:left={m.left} style:--c="var(--lane-{m.color})" style:left="{center + m.dx}px" style:top="{top + m.y}px" style:width="{m.w}px"
+        <button class="mtag" class:left={m.left} style:--c="var(--lane-{m.color})" style:left="{center + m.dx}px" style:top="{top + m.y}px" style:max-width="{TAG_W}px"
           tabindex="-1" title={m.text} onclick={() => onselect(m.id)}>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 14V2.5M3.5 3h8.5l-2 3 2 3H3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
           <span>{m.text}</span>
         </button>
       {/each}
@@ -517,7 +518,7 @@
   .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
   /* A milestone's tag: a pointed end towards its dot. */
   .mtag { position: absolute; height: 20px; display: inline-flex; align-items: center; gap: var(--sp-4);
-    padding: 0 var(--sp-8) 0 var(--sp-6); margin-left: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+    padding: 0 var(--sp-8) 0 var(--sp-4); margin-left: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
     --tint: color-mix(in srgb, var(--c) 18%, var(--panel)); /* (opaque: the lines stay under it) */
     color: var(--c); background: var(--tint); border: var(--border-width) solid var(--c);
     border-left: none; border-radius: 0 var(--radius) var(--radius) 0; white-space: nowrap; z-index: 1; }
@@ -525,12 +526,11 @@
     border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 7px solid var(--c); }
   .mtag::after { content: ""; position: absolute; left: -5px; top: 0; width: 0; height: 0;
     border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 6px solid var(--tint); }
-  .mtag.left { flex-direction: row-reverse; margin-left: -6px; padding: 0 var(--sp-6) 0 var(--sp-8);
+  .mtag.left { transform: translateX(-100%); margin-left: -6px; padding: 0 var(--sp-4) 0 var(--sp-8);
     border-left: var(--border-width) solid var(--c); border-right: none; border-radius: var(--radius) 0 0 var(--radius); }
   .mtag.left::before { left: auto; right: -7px; border-right: none; border-left: 7px solid var(--c); }
   .mtag.left::after { left: auto; right: -5px; border-right: none; border-left: 6px solid var(--tint); }
   .mtag:hover:not(:disabled) { background: var(--tint); border-color: var(--c); filter: brightness(1.15); }
-  .mtag svg { width: 11px; height: 11px; flex: none; }
   .mtag span { overflow: hidden; text-overflow: ellipsis; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
