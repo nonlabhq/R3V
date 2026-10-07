@@ -12,7 +12,7 @@
   // versions, missing samples, broken rules. Each says what to do; the page
   // does it.
   let { st, busy, progress, restorable, missingSamples, onshare, onrecover, onpreset, onbranchhere, onlatest,
-    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, loadError = "" }: {
+    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, oncancel, cancelling = false, loadError = "" }: {
     st: State;
     busy: string;
     progress: Progress | null;
@@ -31,6 +31,8 @@
     onrestore: () => void; // the missing samples
     onopenrules: () => void;
     onqueue?: () => void; // the upload queue (a click on a step under way)
+    oncancel?: () => void; // cancel the commit under way (progress.cancellable)
+    cancelling?: boolean;
     loadError?: string; // the project couldn't be read again just now (what is shown is from before)
   } = $props();
 
@@ -61,6 +63,11 @@
         <span class="go">✓ {t("It's in the history: you can keep working while it uploads.")}</span>
       {/if}
     </div>
+    {#if progress.cancellable && oncancel}
+      <button class="ghost" disabled={cancelling} title={t("Stop before the team gets it: your changes stay as they are")}
+        onclick={(e) => { e.stopPropagation(); oncancel(); }} onkeydown={(e) => e.stopPropagation()}>
+        {cancelling ? t("Cancelling…") : t("Cancel")}</button>
+    {/if}
   </div>
 {:else if busy === "first-share"}
   <div class="banner info"><div>{t("Sharing “{name}” with the team…", { name: st.name })}</div></div>

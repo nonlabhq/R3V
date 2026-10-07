@@ -1079,5 +1079,11 @@
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} y {n} archivo más están en uso por otro programa (Live escribiendo archivos Freeze, por ejemplo): R3V los leerá cuando queden libres.",
 "in {folder}": "en {folder}",
 "the project folder": "la carpeta del proyecto",
-"detected": "detectado"
+"detected": "detectado",
+"Stop before the team gets it: your changes stay as they are": "Detener antes de que el equipo lo reciba: tus cambios se quedan como están",
+"Cancelling…": "Cancelando…",
+"Commit cancelled: your changes are as they were": "Commit cancelado: tus cambios están como estaban",
+"Stopped before the team got it: the version is on this computer, not shared yet": "Detenido antes de que el equipo la recibiera: la versión está en este ordenador, aún sin compartir",
+"The team's versions were taken in before it stopped": "Las versiones del equipo se incorporaron antes de detenerse",
+"Stopped: your versions are on this computer, not shared yet": "Detenido: tus versiones están en este ordenador, aún sin compartir"
 }

@@ -282,6 +282,9 @@ func (r *Repo) Snapshot(message string) (*Manifest, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := r.stopped(); err != nil {
+		return nil, err
+	}
 	if err := r.save(m); err != nil {
 		return nil, err
 	}
@@ -348,7 +351,7 @@ func (r *Repo) workingManifest(message string) (*Manifest, *index, error) {
 	// file is what it is.
 	rehashed := map[string]FileEntry{}
 	if err := inParallel(paths, func(p string) error {
-		h, n, err := r.Store.PutFile(r.Abs(p))
+		h, n, err := r.storeFile(r.Abs(p))
 		if err != nil {
 			return err
 		}

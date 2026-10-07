@@ -5,7 +5,7 @@
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot } from "./api";
   import { toast } from "./notify.svelte";
   import { watchProject } from "./projectWatch.svelte";
-  import { queue } from "./preupload.svelte";
+  import { queue, cancelling, cancelSave } from "./preupload.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
   import CommitBox from "./CommitBox.svelte";
@@ -243,6 +243,7 @@
     } finally {
       busy = "";
       progress = null;
+      delete cancelling[root];
       await load();
       onchanged();
     }
@@ -255,10 +256,14 @@
         "fast-forward": t("Updated to the team's latest version: nothing of yours was left to commit"),
         "nothing": t("Nothing changed since your last version"),
         "taken-back": t("Nothing changed since your last version"),
+        "cancelled": t("Commit cancelled: your changes are as they were"),
+        "cancelled-kept": t("Stopped before the team got it: the version is on this computer, not shared yet"),
       };
-      toast(text[r.action] ?? t("Version committed"), r.action === "nothing" ? "info" : "ok");
+      const kind = r.action === "nothing" || r.action.startsWith("cancelled") ? "info" : "ok";
+      toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
-      if (r.action !== "nothing") message = "";
+      if (r.log.length && r.action.startsWith("cancelled")) toast(t("The team's versions were taken in before it stopped") + reopen(), "info", 9000);
+      if (r.action !== "nothing" && r.action !== "cancelled") message = "";
   };
 
   // Changes left out of the next commit (unticked in the Changes list),
@@ -285,7 +290,7 @@
       name: "save",
       message: msg,
       call: (res, force) => api.Save(root, msg, combineWithTeam, res, force, paths),
-      done: (r) => { excluded = {}; saveDone(r); },
+      done: (r) => { if (r.action !== "cancelled") excluded = {}; saveDone(r); },
     };
   };
 
@@ -638,8 +643,9 @@
     run({
       name: "first-share",
       call: () => api.ShareVersions(root),
-      done: () => {
-        toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
+      done: (r) => {
+        if (r.action === "cancelled-kept") toast(t("Stopped: your versions are on this computer, not shared yet"), "info");
+        else toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
       },
     });
   }
@@ -668,6 +674,7 @@
     <ProjectHeader {st} {refreshing} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
 
     <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
+      oncancel={() => cancelSave(root)} cancelling={!!cancelling[root]}
       onrecover={() => run({ name: "goto", message: "",
         call: (_res, force) => api.RecoverSwitch(root, force),
         done: () => toast(t("Files put back as they were"), "ok") })}

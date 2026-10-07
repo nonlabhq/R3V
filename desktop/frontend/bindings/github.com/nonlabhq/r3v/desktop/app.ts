@@ -126,6 +126,14 @@ export function Busy(): $CancellablePromise<boolean> {
 }
 
 /**
+ * CancelSave stops root's commit or share under way, if it can still stop
+ * (false when there is none).
+ */
+export function CancelSave(root: string): $CancellablePromise<boolean> {
+    return $Call.ByID(238831226, root);
+}
+
+/**
  * Channel says which release line this is and which one updates come from.
  */
 export function Channel(): $CancellablePromise<$models.ChannelInfo> {
