@@ -50,7 +50,82 @@ workspaces stay behind; names, colours, deleted branches and milestones go.
 
 # A team moves to R3V Cloud
 
-(Designed with the maintainer, 2026-10-08; not built.)
+(Designed with the maintainer, 2026-10-08; part 1 being built, part 2
+waits for pricing.)
+
+A team that used its own storage for a while moves to R3V Cloud, often
+the moment it starts paying. Decided:
+
+- **A trial, the move included** (part 2): during it the old storage is
+  kept (the app says not to delete it yet), so going back is always
+  possible; a trial that ends without paying leaves the hosted team
+  read-only (downloads and export always work), then deleted after a
+  grace period, said several times before.
+- **Pricing**: not decided. The estimate shows sizes, not prices, until it
+  is.
+- **No freeze while the bulk is copied**: copying can take hours; the team
+  keeps working meanwhile. Then a short freeze, a second pass for what was
+  shared since (the copy only sends what is missing: cheap), and the
+  switch.
+- **Choosing projects**: some can stay behind (archives), e.g. to fit a
+  plan.
+- **Leaving again**: back to a team's own storage, the same way backwards
+  (part 1, later in it).
+
+## Part 1 (now)
+
+1. **Estimate**, no account needed: per project, the size on R3V Cloud
+   (each project's contents apart: a sample used by three projects counts
+   three times, so it can be more than the bucket holds; said plainly),
+   versions, people; and, from AWS, roughly what the egress costs.
+2. **Sign in**, pick or make the hosted team, pick the projects.
+3. **Read-only key** for the bucket, made by the person (shown how for R2
+   and S3), given to the service; never the connection code's own key.
+4. **Bulk copy, not frozen**: the app sends the service each project's
+   plan (below); the service copies the contents in the background
+   (progress kept: the app can close; stopped, it resumes).
+5. **Short freeze**: `moving` in the old `team.json` stops every R3V's
+   sharing there; the app sends the plan again (only what changed since),
+   waits for it.
+6. **Records and branches**, by the app, through the hosted team's
+   normal API: each project's branch names and colours, milestones, its
+   members' looks, then its branches, then its record (only then listed).
+7. **Switch**: `movedTo` in the old `team.json`; the service forgets the
+   key. Teammates' apps say the team moved: sign in, accept, claim who
+   they were, and their projects reconnect in place.
+8. **Afterwards**: the app reminds, later, that the old storage can be
+   deleted (and how); it never deletes it.
+
+### What the service does (R3V-Cloud)
+
+Only the contents, the big part; the app writes everything else.
+
+| Call | What |
+|---|---|
+| `POST /v1/teams/:team/moves` `{source: {endpoint, region, bucket, prefix, accessKey, secretKey}}` | checks it can read (`team.json`), keeps the key encrypted: `{move}` |
+| `POST /v1/teams/:team/moves/:move/plan` `{project, items: [{src, dst, size}]}` | up to 1,000 items a call; `src` a key in the bucket (`r3v/objects/ab/…`), `dst` relative to the project (`objects/ab/…`, `chunked/…`, `snapshots/<id>.json`); items already there are skipped |
+| `POST …/moves/:move/start` | copies what the plans list, a Queue, in batches; a big file's pieces before its mark and list (the plan's order within a project is kept) |
+| `GET …/moves/:move` | `{state: copying \| done \| paused \| failed, items, itemsDone, bytes, bytesDone, failed: [{src, error}]}`; `paused` with `over_limit` when the plan's room runs out (resumes after an upgrade) |
+| `POST …/moves/:move/cancel`, `DELETE …/moves/:move` | stops; forgets the key (also on `done` + switch, and after a day idle) |
+| `POST /v1/teams/:team/members/import` `[{id, name, color, picture}]` | members to claim: an accepted invitation can claim one (`claim: id`), the account then being that member id in the team |
+
+Checked as it copies: sizes, and R2's checksum where the source gives a
+SHA-256 of what it stores. The key is never logged or returned.
+
+### What the app does (R3V)
+
+The wizard (Team settings › Move to R3V Cloud); the estimate; the plans
+(walking each project's versions, folder lists and chunk lists, the same
+walk as moving a project); `moving` and `movedTo` in `team.json`, and
+every R3V that knows them stopping its shares there; the records and
+branches at the end; the teammates' banner, reconnecting and claiming;
+reminding about the old storage. Leaving R3V Cloud the other way uses the
+same walk, the app copying (`MoveToTeam` per project, then the team's
+records).
+
+## Part 2 (with pricing)
+
+Plans and what the estimate maps to; the trial; Stripe; a trial ending.
 
 ## Why not through the app
 
@@ -82,44 +157,6 @@ A whole team, every project (moving one project between teams is later).
 | `setups/` | copied (names only) |
 | `backups/`, `gc/` | not moved (per computer; the service cleans its own) |
 
-## Steps
-
-1. **Start** (Team settings › Move to R3V Cloud, by someone with the team's
-   connection code): sign in, pick or create the hosted team. The app
-   counts what moves (sizes per project) and says so, with the plan's room
-   and, where the storage is AWS S3, roughly what its egress costs.
-2. **Read access**: the person makes a read-only key for the bucket (the
-   wizard shows how on R2 and S3) and gives it to the service. The
-   connection code's own key is never sent: it can write and delete.
-3. **Freeze**: the app writes `moving: {to, by, time}` into the old
-   `team.json`. Every R3V that knows it stops sharing to the team and says
-   it is moving (committing here still works: shared once on R3V Cloud).
-   There are no users of older versions to catch up with, so there is no
-   copy of what comes after (if that changes, a second pass copies the
-   versions added meanwhile before the switch).
-4. **Plan**: per project, the app walks every version's folder lists and
-   chunk lists (small reads) and sends the service the list of keys to
-   copy, source → destination, with sizes.
-5. **Copy** (the service, a Queue, in batches): each key read from the old
-   storage with the read-only key and written to R2, checked by its
-   SHA-256 where R2 can (`x-amz-checksum-sha256`) and by size; failures
-   retried; progress kept, so a stop resumes. The app shows the progress
-   and can be closed.
-6. **Per project, in order**: contents → folder lists → versions → small
-   keys (records, milestones, looks, log) → branches. A project's branches
-   are written only once all it needs is there, as in a share.
-7. **Switch**: the app writes `movedTo: <hosted team address>` into the old
-   `team.json` and the service forgets the read-only key. The old storage
-   is left as it was: R3V never deletes it; the person does, when happy.
-8. **Teammates**: their app reads `movedTo` and says the team moved to R3V
-   Cloud: sign in, accept the invitation, and their projects reconnect in
-   place (same project ids: nothing downloaded again; versions committed
-   while frozen are shared then).
-
-Going back before the switch: take `moving` out of `team.json` (the hosted
-team is deleted). After it, the old storage still has everything up to the
-freeze.
-
 ## Members
 
 Versions, the branch log and pictures name members by their id. The move
@@ -142,14 +179,15 @@ anywhere the new team can get them).
 
 | Stopped | Old team | Hosted team | The app shows | Next |
 |---|---|---|---|---|
-| before freeze | as it was | maybe created, empty | the wizard again | start over |
-| frozen, copying | read-only (by R3V) | contents in part, no branches | "Moving to R3V Cloud, n of m" | the copy resumes |
-| a project's branches written | read-only | that project usable | the same | the rest go on |
+| estimating, choosing | as it was | maybe made, empty | the wizard again | start over |
+| bulk copy | in use as before | contents in part, nothing listed | "Copying to R3V Cloud, n of m" | the copy resumes (also after the app closed) |
+| frozen, second pass | read-only for R3V | contents almost all | "Moving: the team can't share for a few minutes" | the pass resumes; or unfreeze (`moving` taken out) |
+| records and branches | read-only | projects listed one by one | the same | the app goes on (each write is safe to repeat) |
 | switched | `movedTo` | everything | "moved to R3V Cloud" | teammates join |
 
-Nothing is shown on the hosted team before its branches are there, so a
-half-copied project is never offered. The copy is idempotent (same keys,
-same bytes): resuming sends nothing twice that matters.
+A project is listed on the hosted team only once its branches are there,
+so a half-copied one is never offered. Every step is safe to repeat (same
+keys, same bytes; branches created only if absent).
 
 ## Security
 
@@ -157,18 +195,3 @@ The read-only key is held by the service, encrypted, only while the move
 runs, never logged or shown, deleted at the switch or when the move is
 given up. The app never sends the team's own connection code.
 
-## Work
-
-- **Core (R3V)**: the wizard; `moving` and `movedTo` in `team.json` (and
-  stopping shares when frozen); the plan (walking versions, folder lists,
-  chunk lists); the teammates' banner and reconnecting; claiming members
-  on accepting; refusing to leave without the whole history before a move.
-- **Cloud (R3V-Cloud)**: the move API (start, plan in batches, progress,
-  cancel), the Queue copy from S3-compatible storage with a read-only key,
-  keeping and forgetting the key, members to claim, branches written last.
-- **Tests**: the two layouts both, with the fake hosted service
-  (`internal/project/hostedfake_test.go`): a move stopped at each step and
-  resumed; then an end-to-end run from a real R2 bucket to api-dev.
-
-Later: the other way (R3V Cloud → a team's own storage), with the same
-plan read backwards, so nobody is held in.
