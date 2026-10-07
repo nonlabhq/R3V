@@ -1108,5 +1108,6 @@
 "{done}/{total} selected": "{done}/{total} 件を選択",
 "Instrument: {name}": "楽器：{name}",
 "View current version": "現在のバージョンを表示",
-"Showing only: {kinds}": "表示中：{kinds}"
+"Showing only: {kinds}": "表示中：{kinds}",
+"Undo": "元に戻す"
 }

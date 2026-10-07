@@ -112,7 +112,7 @@
                   <button onclick={() => ongoto(v)} title={t("Put the project in the state of this version")}>{t("Go to")}</button>
                 {/if}
                 {#if onundo && v.inBranch && !incoming.has(v.id) && v.parents.length}
-                  <button onclick={() => onundo(v)} title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+                  <button onclick={() => onundo(v)} title={t("Make a new version that takes back what this version changed")}>{t("Undo")}</button>
                 {/if}
                 {#if onexport && !v.notHere}
                   <button onclick={() => onexport(v)} title={t("Save this version as a separate project folder")}>{t("Export…")}</button>

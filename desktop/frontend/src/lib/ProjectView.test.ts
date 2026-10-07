@@ -280,7 +280,7 @@ describe("ProjectView: versions", () => {
       takeBack: { ok: true, why: "", haveIt: [], branches: [], shared: true, featureOff: false } });
     api.TakeBackVersion.mockResolvedValue(result("taken-back"));
     await fireEvent.click(screen.getByRole("button", { name: "History" }));
-    await fireEvent.click(await screen.findByRole("button", { name: "Undo commit" }));
+    await fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
     await screen.findByText(/Removes it from the history, yours and the team's/);
     await fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Undo commit" }));
     await waitFor(() => expect(api.TakeBackVersion).toHaveBeenCalledWith(ROOT, "h1", true));

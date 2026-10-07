@@ -725,7 +725,7 @@
         <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to")}</button>
       {/if}
       {#if !st!.olderVersion && v.inBranch && !incomingIds.has(v.id) && v.parents.length}
-        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo commit")}</button>
+        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
       {/if}
       {#if !v.notHere}
         <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}><ActionIcon name="export" />{t("Export…")}</button>
@@ -746,7 +746,7 @@
               <button disabled={!st!.remoteUrl || !!st!.olderVersion || v.inBranch || isNew} onclick={() => openVersionMerge(v)}
                 title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge")}</button>
               <button disabled={!!st!.olderVersion || !v.inBranch || isNew || !v.parents.length} onclick={() => (undoing = v)}
-                title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo commit")}</button>
+                title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
               <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
                 title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
             {/snippet}

@@ -1108,5 +1108,6 @@
 "{done}/{total} selected": "{done}/{total}개 선택",
 "Instrument: {name}": "악기: {name}",
 "View current version": "현재 버전 보기",
-"Showing only: {kinds}": "표시 중: {kinds}"
+"Showing only: {kinds}": "표시 중: {kinds}",
+"Undo": "되돌리기"
 }
