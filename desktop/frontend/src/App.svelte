@@ -592,7 +592,7 @@
 {/if}
 {#if !overview}
   <div class="splash" role="status" aria-label={t("Loading")}>
-    <div class="splash-logo"><img src="/brand/r3v-icon-small.svg" alt="" /><img class="word" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" /></div>
+    <div class="splash-logo"><img src="/brand/r3v-icon.svg" alt="" /><img class="word" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" /></div>
     <div class="splash-band"></div>
   </div>
 {:else if onboarding}
