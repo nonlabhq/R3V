@@ -83,6 +83,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 	go a.shareSetups(ctx)
 	go a.backUpOnSchedule(ctx)
 	go a.preuploadOnSchedule(ctx)
+	if remote.HostedTeams {
+		a.resumeTeamMoves() // (a move finishing when R3V closed goes on)
+	}
 	if remote.Looks {
 		go prunePictures()
 	}
