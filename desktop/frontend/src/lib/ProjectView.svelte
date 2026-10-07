@@ -731,7 +731,7 @@
       {/if}
     {/snippet}
 
-    <main class:flush={tab !== "history" && tab !== "settings"} class:reading inert={reading}>
+    <main class:flush={tab !== "history"} class:reading inert={reading}>
       {#if tab === "overview"}
         <div class="overview" bind:clientWidth={overviewWidth}>
           <div class="graph-pane">
@@ -773,9 +773,9 @@
           </div>
         </div>
       {:else if tab === "files"}
-        {@render changesPanel("all")}
+        <div class="pane">{@render changesPanel("all")}</div>
       {:else if tab === "settings" && settings}
-        <div class="settings">{@render settings()}</div>
+        <div class="pane scroll"><div class="settings">{@render settings()}</div></div>
       {:else if tab === "changes"}
         {@render changesPanel(undefined)}
       {:else if tab === "history"}
@@ -954,6 +954,11 @@
   .pending-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .pending-body > :global(*) { flex: 1; min-height: 0; }
   .settings { max-width: 680px; }
+  /* Files and Settings: in a card like the Overview's graph */
+  .pane { height: calc(100% - 32px); margin: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    border-radius: var(--radius-card); background-color: var(--panel); box-shadow: var(--shadow-card); }
+  .pane > :global(*) { flex: 1; min-height: 0; }
+  .pane.scroll { display: block; overflow: auto; padding: var(--sp-20) var(--sp-24) var(--sp-32); }
   .pad { padding: var(--sp-16); }
 
 </style>

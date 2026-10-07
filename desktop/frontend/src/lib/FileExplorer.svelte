@@ -159,8 +159,11 @@
     </nav>
     <div class="tools">
       <div class="tool-wrap">
-        <button class="tool" onclick={() => (menu = menu === "sort" ? "" : "sort")} title={t("Sort")}>
-          ⇅ {sortNames()[look.sort]}
+        <button class="tool icon" onclick={() => (menu = menu === "sort" ? "" : "sort")}
+          title={`${t("Sort")}: ${sortNames()[look.sort]} ${look.desc ? "↓" : "↑"}`} aria-label={t("Sort")}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 2.5v11M2.5 11 5 13.5 7.5 11M11 13.5v-11M8.5 5 11 2.5 13.5 5" />
+          </svg>
         </button>
         {#if menu === "sort"}
           <div class="menu surface-menu" role="menu">
@@ -173,8 +176,17 @@
         {/if}
       </div>
       <div class="tool-wrap">
-        <button class="tool" class:active={kinds.length > 0} onclick={() => (menu = menu === "filter" ? "" : "filter")} title={t("Show only some kinds of file")}>
-          ⏷ {kinds.length ? tn(kinds.length, "{count} kind", "{count} kinds", { count: kinds.length }) : t("All kinds")}
+        <!-- just the funnel; the kinds shown, when some are picked -->
+        <button class="tool icon" class:active={kinds.length > 0} onclick={() => (menu = menu === "filter" ? "" : "filter")}
+          title={kinds.length ? t("Showing only: {kinds}", { kinds: kinds.map(kindName).join(", ") }) : t("Show only some kinds of file")}
+          aria-label={t("Show only some kinds of file")}>
+          {#if kinds.length}
+            {#each kinds.slice(0, 3) as k (k)}<FileIcon kind={k} />{/each}{#if kinds.length > 3}<span class="more-kinds">+{kinds.length - 3}</span>{/if}
+          {:else}
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2.5 3h11L9.5 8.5v4l-3 1.5V8.5z" />
+            </svg>
+          {/if}
         </button>
         {#if menu === "filter"}
           <div class="menu surface-menu" role="menu">
@@ -262,6 +274,9 @@
   .tools { display: flex; align-items: center; gap: var(--sp-4); }
   .tool-wrap { position: relative; }
   .tool { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
+  .tool.icon { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 26px; padding: var(--sp-4) var(--sp-6); }
+  .tool.icon svg { width: 14px; height: 14px; }
+  .more-kinds { font-size: var(--fs-2xs); color: var(--muted); }
   .tool.active { border-color: var(--accent); color: var(--accent); }
   .modes { display: flex; }
   .modes button { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); border-radius: 0; color: var(--muted); }

@@ -71,7 +71,7 @@ describe("HistoryGraph", () => {
     cleanup();
     const b = show({ selected: "m1" });
     expect(screen.queryByRole("button", { name: "View pending changes" })).toBeNull();
-    await fireEvent.click(screen.getByRole("button", { name: "View latest version" }));
+    await fireEvent.click(screen.getByRole("button", { name: "View current version" }));
     expect(b.onselect).toHaveBeenLastCalledWith("m3");
     cleanup();
     show();

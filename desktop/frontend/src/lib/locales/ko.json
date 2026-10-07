@@ -1042,15 +1042,12 @@
 "Project": "프로젝트",
 "Sort": "정렬",
 "Show only some kinds of file": "일부 유형의 파일만 보기",
-"{count} kinds": "{count}개 유형",
-"All kinds": "모든 유형",
 "Show all": "모두 보기",
 "Columns": "열",
 "Display": "보기",
 "List": "목록",
 "Grid": "격자",
 "No files of these kinds here.": "여기에 이 유형의 파일이 없습니다.",
-"{count} kind": "{count}개 유형",
 "New tab": "새 탭",
 "New tab (Ctrl+T)": "새 탭 (Ctrl+T)",
 "Folder not found": "폴더를 찾을 수 없음",
@@ -1071,7 +1068,6 @@
 "Zoom in": "확대",
 "Back to 100%": "100%로",
 "View pending changes": "커밋 안 된 변경 보기",
-"View latest version": "최신 버전 보기",
 "Open the sidebar to see what's new": "사이드바를 열어 새 소식 보기",
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 외 {n}개 파일을 다른 프로그램이 사용 중입니다(Live가 Freeze 파일을 쓰는 중 등). 풀리면 R3V가 읽습니다.",
 "in {folder}": "{folder} 안",
@@ -1110,5 +1106,7 @@
 "Tree": "트리",
 "Project folder": "프로젝트 폴더",
 "{done}/{total} selected": "{done}/{total}개 선택",
-"Instrument: {name}": "악기: {name}"
+"Instrument: {name}": "악기: {name}",
+"View current version": "현재 버전 보기",
+"Showing only: {kinds}": "표시 중: {kinds}"
 }

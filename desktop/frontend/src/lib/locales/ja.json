@@ -1042,15 +1042,12 @@
 "Project": "プロジェクト",
 "Sort": "並べ替え",
 "Show only some kinds of file": "特定の種類のファイルだけ表示",
-"{count} kinds": "{count} 種類",
-"All kinds": "すべての種類",
 "Show all": "すべて表示",
 "Columns": "列",
 "Display": "表示",
 "List": "リスト",
 "Grid": "グリッド",
 "No files of these kinds here.": "この種類のファイルはここにありません。",
-"{count} kind": "{count} 種類",
 "New tab": "新しいタブ",
 "New tab (Ctrl+T)": "新しいタブ（Ctrl+T）",
 "Folder not found": "フォルダーが見つかりません",
@@ -1071,7 +1068,6 @@
 "Zoom in": "拡大",
 "Back to 100%": "100% に戻す",
 "View pending changes": "未コミットの変更を見る",
-"View latest version": "最新バージョンを見る",
 "Open the sidebar to see what's new": "サイドバーを開いて新着を見る",
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（Live が Freeze ファイルを書き込み中など）。解放されたら R3V が読み込みます。",
 "in {folder}": "{folder} 内",
@@ -1110,5 +1106,7 @@
 "Tree": "ツリー",
 "Project folder": "プロジェクトフォルダー",
 "{done}/{total} selected": "{done}/{total} 件を選択",
-"Instrument: {name}": "楽器：{name}"
+"Instrument: {name}": "楽器：{name}",
+"View current version": "現在のバージョンを表示",
+"Showing only: {kinds}": "表示中：{kinds}"
 }

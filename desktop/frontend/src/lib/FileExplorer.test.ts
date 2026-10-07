@@ -81,6 +81,12 @@ describe("FileExplorer", () => {
     await fireEvent.click(screen.getByTitle("Show only some kinds of file"));
     await fireEvent.click(screen.getByRole("checkbox", { name: /Live Set/ }));
     expect(names()).toEqual(["Song.als"]);
+    // The filter's button: the kinds picked, as icons (just the funnel when none).
+    const filter = screen.getByRole("button", { name: "Show only some kinds of file" });
+    expect(filter.title).toBe("Showing only: Live Set");
+    expect(filter.querySelector("svg path")?.getAttribute("d")).not.toBe("M2.5 3h11L9.5 8.5v4l-3 1.5V8.5z");
+    // Sorting says how in its tooltip only.
+    expect(screen.getByRole("button", { name: "Sort" }).title).toMatch(/^Sort: Size/);
   });
 
   it("remembers how it looks", async () => {
