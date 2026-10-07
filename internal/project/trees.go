@@ -204,6 +204,9 @@ func (r *Repo) fetchTrees(c remote.Backend, roots ...string) error {
 				need = append(need, h)
 			}
 		}
+		if p, ok := c.(remote.Preparer); ok {
+			p.PrepareObjects(need)
+		}
 		if err := inParallel(need, func(h string) error {
 			var data []byte
 			err := remote.Retry(remote.RetryAttempts, func() error {

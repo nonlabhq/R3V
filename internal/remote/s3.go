@@ -645,3 +645,40 @@ func (s *BucketBackend) Setups() (map[string][]byte, error) {
 	})
 	return out, err
 }
+
+// GetPreparer is storage reached through presigned URLs that can ask for
+// many at once (the hosted service): asked ahead, the downloads that follow
+// don't each ask for their own.
+type GetPreparer interface{ PrepareGets(keys []string) }
+
+// Preparer is a backend that can get many downloads ready at once.
+type Preparer interface {
+	PrepareObjects(hashes []string)
+	PrepareSnapshots(pid string, ids []string)
+}
+
+var _ Preparer = (*BucketBackend)(nil)
+
+func (s *BucketBackend) PrepareObjects(hashes []string) {
+	p, ok := s.b.(GetPreparer)
+	if !ok || len(hashes) < 2 {
+		return
+	}
+	keys := make([]string, len(hashes))
+	for i, h := range hashes {
+		keys[i] = s.objectKey(h)
+	}
+	p.PrepareGets(keys)
+}
+
+func (s *BucketBackend) PrepareSnapshots(pid string, ids []string) {
+	p, ok := s.b.(GetPreparer)
+	if !ok || len(ids) < 2 {
+		return
+	}
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = snapshotKey(pid, id)
+	}
+	p.PrepareGets(keys)
+}

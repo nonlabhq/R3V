@@ -207,6 +207,9 @@ func (r *Repo) fetchSnapshots(c remote.Backend, id string) error {
 				}
 			}
 			if len(want) > 1 {
+				if p, ok := c.(remote.Preparer); ok {
+					p.PrepareSnapshots(pid, want)
+				}
 				inParallel(want, func(v string) error { get(v); return nil }) // (any missed: asked for below)
 			}
 		}
@@ -226,6 +229,9 @@ func (r *Repo) fetchSnapshots(c remote.Backend, id string) error {
 					ask = append(ask, v)
 				}
 			}
+		}
+		if p, ok := c.(remote.Preparer); ok {
+			p.PrepareSnapshots(pid, ask)
 		}
 		if err := inParallel(ask, get); err != nil {
 			return err
@@ -268,6 +274,9 @@ func (r *Repo) fetchObjects(c remote.Backend, hashes []string) error {
 			need = append(need, h)
 			total += r.sizes[h] // 0 when not known
 		}
+	}
+	if p, ok := c.(remote.Preparer); ok {
+		p.PrepareObjects(need) // (one request for many URLs, on a hosted team)
 	}
 	t := r.newTransfer(StageDownloading, len(need), total)
 	t.report()
