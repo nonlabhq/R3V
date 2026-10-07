@@ -124,6 +124,7 @@ var codes = []struct {
 	{project.ErrOlderVersion, "on_older_version", exitError, "go back to the latest version: r3v checkout latest"},
 	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v save -m ..."},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
+	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
 }
 
 // classify gives err its code.

@@ -15,8 +15,8 @@ import (
 
 // A share cut off at any step — the connection lost, R3V closed — never
 // leaves the team's data broken: a teammate still gets a whole version (the
-// one before, or the new one), and sharing again finishes the job. Every
-// step is tried, one cut at a time.
+// one before, or the new one), and sharing again finishes the job without
+// sending again what went up. Every step is tried, one cut at a time.
 func TestShareCutAtEveryStep(t *testing.T) {
 	if testing.Short() {
 		t.Skip("cuts a share at every step")
@@ -33,10 +33,11 @@ func TestShareCutAtEveryStep(t *testing.T) {
 	// How many writes a share makes, measured once without a cut.
 	fake, code := team()
 	a, _, after := sharedProject(t, code, "Count")
-	start := fake.Writes
+	start, sent := fake.Writes, fake.PutBytes
 	if _, _, err := a.Save("change", Strategy("fail")); err != nil {
 		t.Fatal(err)
 	}
+	sent = fake.PutBytes - sent // what a share sends
 	if got := cloneFiles(t, code, a.Config.Name); !maps.Equal(got, after) {
 		t.Fatal("an uncut share doesn't give the new version")
 	}
@@ -48,6 +49,7 @@ func TestShareCutAtEveryStep(t *testing.T) {
 		fake, code := team()
 		a, before, after := sharedProject(t, code, "Song")
 		fake.CutAfter = fake.Writes + cut
+		put := fake.PutBytes
 		_, _, err := a.Save("change", Strategy("fail"))
 		fake.CutAfter = 0
 		shared := err == nil
@@ -65,6 +67,11 @@ func TestShareCutAtEveryStep(t *testing.T) {
 		}
 		if got := cloneFiles(t, code, a.Config.Name); !maps.Equal(got, after) {
 			t.Fatalf("cut after %d of %d writes: after sharing again, a clone gets:\n%v", cut, steps, fileNames(got))
+		}
+		// What went up before the cut isn't sent again (only a few small
+		// records are: leases, a workspace record).
+		if both := fake.PutBytes - put; both > sent+64<<10 {
+			t.Errorf("cut after %d of %d writes: sent %d KB in all, %d KB without a cut", cut, steps, both>>10, sent>>10)
 		}
 	}
 }

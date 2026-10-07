@@ -52,6 +52,11 @@ type Server struct {
 	// fails, for good (as if the computer lost its connection or R3V
 	// stopped mid-way); 0: never. Writes counts them.
 	CutAfter, Writes int
+	// CutReadsAfter: the same for downloads, counting object reads (GET):
+	// the read after this many stops half-way through the object (the
+	// connection dropped), and every request after it fails; 0: never.
+	// Reads counts them.
+	CutReadsAfter, Reads int
 	// WriteLog lists the writes in order ("PUT key"), for tests to read.
 	WriteLog []string
 	// Clock is when objects are written (time.Now when nil): tests set it
@@ -60,6 +65,8 @@ type Server struct {
 	// OnWrite, when set, is called before each PUT or POST is handled (the
 	// object's path): a test can hold a transfer mid-way there.
 	OnWrite func(method, path string)
+	// OnRead, the same before each GET of an object.
+	OnRead func(path string)
 
 	uploads map[string]*upload // multipart uploads in progress
 	nextID  int
@@ -95,6 +102,9 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	if s.OnWrite != nil && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		s.OnWrite(r.Method, r.URL.Path)
 	}
+	if s.OnRead != nil && r.Method == http.MethodGet && r.URL.Query().Get("list-type") == "" {
+		s.OnRead(r.URL.Path)
+	}
 	parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/"), "/", 2)
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -105,6 +115,25 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.CutAfter > 0 && s.Writes > s.CutAfter {
 		io.Copy(io.Discard, r.Body)
+		xmlError(w, http.StatusBadRequest, "ConnectionCut")
+		return
+	}
+	reading := r.Method == "GET" && r.URL.Query().Get("list-type") == "" && !r.URL.Query().Has("uploads")
+	if reading {
+		s.Reads++
+	}
+	if s.CutReadsAfter > 0 && s.Reads > s.CutReadsAfter {
+		io.Copy(io.Discard, r.Body)
+		if reading && s.Reads == s.CutReadsAfter+1 {
+			if parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/"), "/", 2); len(parts) == 2 {
+				if o := s.buckets[parts[0]][parts[1]]; o != nil && len(o.data) > 1 {
+					w.Header().Set("ETag", o.etag)
+					w.Header().Set("Content-Length", strconv.Itoa(len(o.data)))
+					w.Write(o.data[:len(o.data)/2])
+					panic(http.ErrAbortHandler) // the connection drops
+				}
+			}
+		}
 		xmlError(w, http.StatusBadRequest, "ConnectionCut")
 		return
 	}
@@ -165,7 +194,11 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 			w.Write(obj.data)
 		}
 	case "PUT":
-		data, _ := io.ReadAll(r.Body)
+		data, err := io.ReadAll(r.Body)
+		if err != nil { // the sender went away mid-way: nothing is stored
+			xmlError(w, http.StatusBadRequest, "IncompleteBody")
+			return
+		}
 		// Copying within storage: the body is the source object's.
 		if src := r.Header.Get("x-amz-copy-source"); src != "" {
 			p, _ := url.PathUnescape(strings.TrimPrefix(src, "/"))
@@ -247,7 +280,11 @@ func (s *Server) putPart(w http.ResponseWriter, r *http.Request, q map[string][]
 		xmlError(w, http.StatusInternalServerError, "InternalError")
 		return
 	}
-	data, _ := io.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		xmlError(w, http.StatusBadRequest, "IncompleteBody")
+		return
+	}
 	u.parts[n] = data
 	sum := md5.Sum(data)
 	w.Header().Set("ETag", `"`+hex.EncodeToString(sum[:])+`"`)

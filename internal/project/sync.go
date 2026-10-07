@@ -796,6 +796,9 @@ func (r *Repo) updateKeepingWork(c remote.Backend, head, target string, opts Mer
 func (r *Repo) Save(message string, opts MergeOptions) (*Manifest, *SyncResult, error) {
 	var first *SyncResult
 	if c, err := r.Client(); err == nil {
+		if err := r.checkDownloaded(c); err != nil {
+			return nil, nil, err
+		}
 		if first, err = r.catchUp(c, opts); err != nil {
 			return nil, nil, err
 		}
@@ -827,6 +830,27 @@ func (r *Repo) Save(message string, opts MergeOptions) (*Manifest, *SyncResult, 
 		res.KeptWork = first.KeptWork
 	}
 	return m, res, err
+}
+
+// ErrNotDownloaded: the project's download didn't finish (no version here,
+// the team has some): a commit now would share a version without the
+// team's files.
+var ErrNotDownloaded = errors.New("this project's download didn't finish: get the team's latest version first (update)")
+
+func (r *Repo) checkDownloaded(c remote.Backend) error {
+	if r.Head() != "" {
+		return nil
+	}
+	branches, err := c.Branches(r.Config.ProjectID)
+	if err != nil {
+		return nil // can't tell: the share says
+	}
+	for _, h := range branches {
+		if h != "" {
+			return ErrNotDownloaded
+		}
+	}
+	return nil
 }
 
 // catchUp takes in the team's versions before a save when HEAD is behind
@@ -1057,16 +1081,21 @@ func CloneFromTeam(t *teams.Team, project, dir, author string, onProgress func(P
 	if err != nil {
 		return nil, nil, err
 	}
+	var r *Repo
 	if entries, err := os.ReadDir(root); err == nil && len(entries) > 0 {
-		return nil, nil, fmt.Errorf("%s is not empty", root)
-	}
-	if author == "" {
-		author = defaultAuthor()
-	}
-	r, err := create(root, Config{ProjectID: p.ID, Name: p.Name, Author: author,
-		Remote: &RemoteConfig{URL: cfg.URL}})
-	if err != nil {
-		return nil, nil, err
+		// A download of this project that didn't finish (the connection
+		// lost, R3V closed) goes on; any other folder isn't touched.
+		if r, err = Open(root); err != nil || r.Config.ProjectID != p.ID || r.Head() != "" {
+			return nil, nil, fmt.Errorf("%s is not empty", root)
+		}
+	} else {
+		if author == "" {
+			author = defaultAuthor()
+		}
+		if r, err = create(root, Config{ProjectID: p.ID, Name: p.Name, Author: author,
+			Remote: &RemoteConfig{URL: cfg.URL}}); err != nil {
+			return nil, nil, err
+		}
 	}
 	r.OnProgress = onProgress
 	if err := r.JoinTeam(t); err != nil {

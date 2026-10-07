@@ -1085,5 +1085,7 @@
 "Commit cancelled: your changes are as they were": "コミットをキャンセルしました：変更は元のままです",
 "Stopped before the team got it: the version is on this computer, not shared yet": "チームに届く前に止めました：バージョンはこのパソコンにあり、まだ共有されていません",
 "The team's versions were taken in before it stopped": "止まる前にチームのバージョンを取り込みました",
-"Stopped: your versions are on this computer, not shared yet": "止めました：バージョンはこのパソコンにあり、まだ共有されていません"
+"Stopped: your versions are on this computer, not shared yet": "止めました：バージョンはこのパソコンにあり、まだ共有されていません",
+"The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "ダウンロードが完了していません（接続が切れたか R3V が閉じられました）：ファイルを取得して完了させてください。",
+"Finish downloading": "ダウンロードを完了"
 }

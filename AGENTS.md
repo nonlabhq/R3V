@@ -74,7 +74,8 @@ so:
 - **Bindings:** commit only the generated files with real changes (see
   above).
 - Pushing, tagging and releasing are the maintainer's call: do them only
-  when asked.
+  when asked. A release needs the full end-to-end run (on real storage,
+  kept outside this repository) to pass first.
 
 ## Things that must not break
 
@@ -85,6 +86,14 @@ so:
   (`-MinVersion`).
 - **Never lose a user's file.** Anything that rewrites project files checks
   first (Live running, unsaved changes) and fails rather than guesses.
+- **Any step can stop half-way** (the connection lost, R3V closed or
+  crashed). A step that writes to storage or the project is tested failing
+  and killed at several points (`crash_test.go`, `resume_test.go`,
+  `killed_test.go`), checking the five things in
+  [docs/development.md](docs/development.md#interruptions): the team's data
+  whole, the files as they were or complete, what the app offers next
+  safe, nothing sent twice, nothing left behind. A new step lists its
+  states in between and what the app shows in each.
 - **Secrets.** Connection codes and storage keys never go into logs, test
   output, commits or docs. The release signing key is never in the repo.
 - Storage cleanup (`internal/remote/gc.go`) must never delete something a

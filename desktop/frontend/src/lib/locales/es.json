@@ -1085,5 +1085,7 @@
 "Commit cancelled: your changes are as they were": "Commit cancelado: tus cambios están como estaban",
 "Stopped before the team got it: the version is on this computer, not shared yet": "Detenido antes de que el equipo la recibiera: la versión está en este ordenador, aún sin compartir",
 "The team's versions were taken in before it stopped": "Las versiones del equipo se incorporaron antes de detenerse",
-"Stopped: your versions are on this computer, not shared yet": "Detenido: tus versiones están en este ordenador, aún sin compartir"
+"Stopped: your versions are on this computer, not shared yet": "Detenido: tus versiones están en este ordenador, aún sin compartir",
+"The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "La descarga no terminó (se perdió la conexión o R3V se cerró): obtén los archivos para terminarla.",
+"Finish downloading": "Terminar la descarga"
 }
