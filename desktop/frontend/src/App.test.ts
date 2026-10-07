@@ -61,4 +61,44 @@ describe("App: tabs", () => {
     field.remove();
     expect(tabs()).toHaveLength(2);
   });
+
+  it("goes through, closes and reopens tabs, and folds the sidebar, with the keyboard", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.click(screen.getAllByRole("button", { name: /^Beat/ })[0]); // a second tab
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    const on = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent?.trim();
+    expect(on()).toContain("Beat");
+    await fireEvent.keyDown(window, { key: "Tab", ctrlKey: true });
+    expect(on()).toContain("Song"); // (round to the first)
+    await fireEvent.keyDown(window, { key: "Tab", ctrlKey: true, shiftKey: true });
+    expect(on()).toContain("Beat");
+    await fireEvent.keyDown(window, { key: "1", ctrlKey: true });
+    expect(on()).toContain("Song");
+    await fireEvent.keyDown(window, { key: "9", ctrlKey: true });
+    expect(on()).toContain("Beat");
+    await fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    await fireEvent.keyDown(window, { key: "T", ctrlKey: true, shiftKey: true });
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    expect(on()).toContain("Beat");
+    const shell = document.querySelector(".shell")!;
+    expect(shell.classList.contains("folded")).toBe(false);
+    await fireEvent.keyDown(window, { key: "\\", code: "Backslash", ctrlKey: true });
+    expect(shell.classList.contains("folded")).toBe(true);
+    await fireEvent.keyDown(window, { key: "\\", code: "Backslash", ctrlKey: true });
+    expect(shell.classList.contains("folded")).toBe(false);
+  });
+
+  it("lists the shortcuts (Ctrl+/), and Esc closes the list", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.keyDown(window, { key: "/", code: "Slash", ctrlKey: true });
+    expect(await screen.findByRole("dialog", { name: "Keyboard shortcuts" })).toBeTruthy();
+    // (tabs don't move under a dialog)
+    await fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+    expect(tabs()).toHaveLength(1);
+    await fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
 });

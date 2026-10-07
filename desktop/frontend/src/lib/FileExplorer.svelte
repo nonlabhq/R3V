@@ -2,6 +2,7 @@
   import { t, tn } from "./i18n.svelte";
   import { formatBytes, previewURL, type ProjectFile } from "./api";
   import FileIcon from "./FileIcon.svelte";
+  import { gridKey, navKey, ownKey } from "./keynav";
 
   // The Files tab's list, like a file explorer: one folder at a time (the
   // path above goes back up), as a list with columns or as a grid, sorted
@@ -83,8 +84,53 @@
   // only the first opens)
   function open(e: Entry, ev?: MouseEvent) {
     if (ev && ev.detail > 1) return;
-    if (e.dir) cwd = e.path;
+    cursor = e.path;
+    if (e.dir) enter(e.path);
     else onselect(e.path);
+  }
+  function enter(dir: string) {
+    cwd = dir;
+    cursor = "";
+  }
+  function up() {
+    if (!cwd) return;
+    const was = cwd;
+    cwd = cwd.includes("/") ? cwd.slice(0, cwd.lastIndexOf("/")) : "";
+    cursor = was; // (on the folder just left)
+  }
+
+  // The keyboard, as in a file explorer (see keynav.ts): ↑ ↓ (and ← → in
+  // the grid) through the entries; → or Enter goes into a folder (in the
+  // list), ← or Backspace up to the folder it is in.
+  let cursor = $state("");
+  let box = $state<HTMLElement>();
+  function onKey(e: KeyboardEvent) {
+    if (!ownKey(e)) return;
+    const at = cursor || selected;
+    const entry = entries.find((x) => x.path === at);
+    let to: string | null = null;
+    if (e.key === "Backspace" || (e.key === "ArrowLeft" && look.mode === "list")) up();
+    else if ((e.key === "Enter" || (e.key === "ArrowRight" && look.mode === "list")) && entry?.dir) enter(entry.path);
+    else if (look.mode === "grid") to = gridKey(entries.map((x) => x.path), at, e.key, gridCols());
+    else {
+      const nav = navKey(entries.map((x) => ({ key: x.path })), at, e.key, 10);
+      to = nav && "to" in nav ? nav.to : null;
+      if (!to) return;
+    }
+    e.preventDefault();
+    if (to) {
+      cursor = to;
+      if (!entries.find((x) => x.path === to)?.dir) onselect(to);
+      const el = () => [...(box?.querySelectorAll<HTMLElement>("[data-path]") ?? [])].find((x) => x.dataset.path === to);
+      queueMicrotask(() => el()?.scrollIntoView?.({ block: "nearest" }));
+    }
+    box?.focus({ preventScroll: true });
+  }
+  // How many tiles a row of the grid holds.
+  function gridCols(): number {
+    const tiles = [...(box?.querySelectorAll<HTMLElement>(".tile") ?? [])];
+    const top = tiles[0]?.offsetTop;
+    return Math.max(1, tiles.filter((x) => x.offsetTop === top).length);
   }
   function sortBy(k: SortKey) {
     if (look.sort === k) look.desc = !look.desc;
@@ -100,7 +146,8 @@
   let rowMin = $derived(160 + (look.cols.modified ? 140 : 0) + (look.cols.size ? 86 : 0) + (look.cols.type ? 120 : 0) + 16);
 </script>
 
-<svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".tool-wrap")) menu = ""; }} />
+<svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".tool-wrap")) menu = ""; }}
+  onkeydown={(e) => { if (menu && e.key === "Escape") { e.preventDefault(); menu = ""; } }} />
 
 <div class="explorer">
   <div class="toolbar">
@@ -159,7 +206,7 @@
   </div>
 
   {#if look.mode === "list"}
-    <div class="list" role="grid" aria-label={t("Files")}>
+    <div class="list" role="grid" aria-label={t("Files")} tabindex="-1" bind:this={box} onkeydown={onKey}>
       <div class="row head" role="row" style:grid-template-columns={cols} style:min-width="{rowMin}px">
         <button role="columnheader" onclick={() => sortBy("name")}>{t("Name")}{#if look.sort === "name"} {look.desc ? "↓" : "↑"}{/if}</button>
         {#if look.cols.modified}<button role="columnheader" onclick={() => sortBy("modified")}>{t("Date modified")}{#if look.sort === "modified"} {look.desc ? "↓" : "↑"}{/if}</button>{/if}
@@ -167,7 +214,7 @@
         {#if look.cols.type}<button role="columnheader" onclick={() => sortBy("type")}>{t("Type")}{#if look.sort === "type"} {look.desc ? "↓" : "↑"}{/if}</button>{/if}
       </div>
       {#each entries as e (e.path)}
-        <button class="row" role="row" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
+        <button class="row" role="row" data-path={e.path} class:on={e.dir ? e.path === cursor : e.path === selected} class:gone={e.file?.status === "deleted"}
           style:grid-template-columns={cols} style:min-width="{rowMin}px" onclick={(ev) => open(e, ev)}
           oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="cell name"><FileIcon kind={e.kind} open={false} /><span class="nm">{e.name}</span>
@@ -181,9 +228,10 @@
       {/each}
     </div>
   {:else}
-    <div class="grid" aria-label={t("Files")}>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+    <div class="grid" aria-label={t("Files")} tabindex="-1" bind:this={box} onkeydown={onKey}>
       {#each entries as e (e.path)}
-        <button class="tile" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
+        <button class="tile" data-path={e.path} class:on={e.dir ? e.path === cursor : e.path === selected} class:gone={e.file?.status === "deleted"}
           onclick={(ev) => open(e, ev)} oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="thumb">
             {#if e.file?.preview && e.file.status !== "deleted"}
@@ -203,6 +251,7 @@
 </div>
 
 <style>
+  .list:focus, .grid:focus { outline: none; }
   .explorer { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   .toolbar { flex: none; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-8) var(--sp-10);
     border-bottom: var(--border-width) solid var(--line); flex-wrap: wrap; }

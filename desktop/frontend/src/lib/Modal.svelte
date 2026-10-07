@@ -1,19 +1,34 @@
+<script lang="ts" module>
+  // Open dialogs, the newest last: Esc closes only the one on top.
+  const open: symbol[] = [];
+</script>
+
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import type { Snippet } from "svelte";
 
-  let { title, onclose, width = 560, backdropCloses = true, children, footer }: {
+  let { title, onclose, width = 560, backdropCloses = true, escCloses = true, children, footer }: {
     title: string;
     onclose: () => void;
     width?: number;
-    // false for forms that take a while to fill in: only ✕ closes them.
+    // false for forms that take a while to fill in: a click beside them
+    // doesn't close them (✕ and Esc do).
     backdropCloses?: boolean;
+    // false while a step it runs can't be left (Esc does nothing then).
+    escCloses?: boolean;
     children: Snippet;
     footer?: Snippet;
   } = $props();
 
+  const me = Symbol();
+  $effect(() => {
+    open.push(me);
+    return () => { open.splice(open.indexOf(me), 1); };
+  });
   function onkeydown(e: KeyboardEvent) {
-    if (e.key === "Escape" && backdropCloses) onclose();
+    if (e.key !== "Escape" || open[open.length - 1] !== me || e.defaultPrevented) return;
+    e.preventDefault();
+    if (escCloses) onclose();
   }
 </script>
 

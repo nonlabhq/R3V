@@ -90,6 +90,21 @@ describe("ProjectView: committing", () => {
     await toasted("Version committed and shared with the team");
   });
 
+  it("goes through the changes with the keyboard: folders open and close", async () => {
+    await show({ changes: [change("Samples/kick.wav", "added"), change("Song.als")] });
+    const list = document.querySelector<HTMLElement>("aside.files")!;
+    await screen.findByTitle("Samples/kick.wav");
+    await fireEvent.keyDown(list, { key: "ArrowDown" }); // the folder
+    await fireEvent.keyDown(list, { key: "ArrowLeft" }); // closes it
+    expect(screen.queryByTitle("Samples/kick.wav")).toBeNull();
+    await fireEvent.keyDown(list, { key: "ArrowRight" }); // opens it
+    await fireEvent.keyDown(list, { key: "ArrowDown" });
+    expect(screen.getByTitle("Samples/kick.wav").classList.contains("on")).toBe(true);
+    await fireEvent.keyDown(list, { key: "ArrowLeft" }); // up to its folder
+    await fireEvent.keyDown(list, { key: "Enter" }); // closes it
+    expect(screen.queryByTitle("Samples/kick.wav")).toBeNull();
+  });
+
   it("commits only the ticked changes", async () => {
     await show({ changes: [change("Song.als"), change("notes.txt", "added")] });
     api.Save.mockResolvedValue(result("published"));

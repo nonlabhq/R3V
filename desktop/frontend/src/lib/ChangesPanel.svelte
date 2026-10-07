@@ -12,6 +12,7 @@
   import ConvertDialog from "./ConvertDialog.svelte";
   import { fileView, setFileMode, type FileMode } from "./viewmode.svelte";
   import { viewerFor, type Side } from "./viewers";
+  import { navKey, ownKey, type NavRow } from "./keynav";
 
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
@@ -157,6 +158,39 @@
 
   function select(p: string) {
     selected = p;
+    cursor = p;
+  }
+
+  // The keyboard (see keynav.ts): the row it is on (a file, or "dir:" and
+  // a folder), ↑ ↓ through the rows, → ← open and close folders, Enter too.
+  // (Space is the audio player's: it plays or pauses the file shown.)
+  let cursor = $state("");
+  let navRows = $derived(rows.map((r): NavRow => r.folder
+    ? { key: "dir:" + r.folder.path, dir: true, open: isOpen(r.folder.path), depth: r.depth }
+    : { key: r.file!.path, depth: r.depth }));
+  function onListKey(e: KeyboardEvent) {
+    if (!ownKey(e) || (e.target as HTMLElement).closest(".head")) return;
+    const at = cursor || selected;
+    if (e.key === "Enter") {
+      if (!at.startsWith("dir:") || (e.target as HTMLElement).matches("input")) return;
+      e.preventDefault();
+      toggleFolder(at.slice(4));
+      return;
+    }
+    const nav = navKey(navRows, at, e.key, Math.max(1, Math.floor(viewH / ROW) - 1));
+    if (!nav) return;
+    e.preventDefault();
+    if ("toggle" in nav) toggleFolder(nav.toggle.slice(4));
+    else if (nav.to.startsWith("dir:")) cursor = nav.to;
+    else select(nav.to);
+    keepInView(navRows.findIndex((r) => r.key === ("to" in nav ? nav.to : nav.toggle)));
+    scroller?.focus({ preventScroll: true }); // (the row's button may scroll out of the drawn ones)
+  }
+  function keepInView(i: number) {
+    if (!scroller || i < 0) return;
+    const top = listOffset + i * ROW, head = 40;
+    if (top - head < scroller.scrollTop) scroller.scrollTop = top - head;
+    else if (top + ROW > scroller.scrollTop + viewH) scroller.scrollTop = top + ROW - viewH;
   }
 
   // The list and the file side by side, the line between them dragged to
@@ -291,7 +325,8 @@
   </div>
   {:else}
   <div class="side">
-  <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll}>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+  <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll} tabindex="-1" onkeydown={onListKey}>
     <!-- the list's header, kept at the top: the box to tick all, the title, how many and how big -->
     <!-- one line when there's room, else two: [box] title · how many, how big · revert · All files -->
     <div class="head">
@@ -339,8 +374,8 @@
                     onchange={() => tick(inside(d.path), fs !== "on")} />
                 {:else}<span class="pick"></span>{/if}
               {/if}
-              <button class="file dir" class:untracked={!d.tracked} class:changed={d.changed > 0}
-                onclick={() => toggleFolder(d.path)} oncontextmenu={(e) => openMenu(e, d.path, true)} title={d.path}>
+              <button class="file dir" class:untracked={!d.tracked} class:changed={d.changed > 0} class:on={cursor === "dir:" + d.path}
+                onclick={() => { cursor = "dir:" + d.path; toggleFolder(d.path); }} oncontextmenu={(e) => openMenu(e, d.path, true)} title={d.path}>
                 <FileIcon kind="folder" open={isOpen(d.path)} faint={!d.tracked} />
                 <span class="fname">{d.name}</span>
                 {#if d.changed}
@@ -518,6 +553,7 @@
 {/if}
 
 <style>
+  aside.files:focus { outline: none; }
   .panel { position: relative; display: grid; grid-template-columns: minmax(240px, 34%) 1fr; height: 100%; min-height: 0; }
   .side { display: flex; flex-direction: column; min-height: 0; border-right: var(--border-width) solid var(--line); }
   .files { flex: 1; overflow: auto; min-height: 0; padding: 0 var(--sp-8) var(--sp-16) 0; }

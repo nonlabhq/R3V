@@ -41,7 +41,7 @@
   const kindName = (k: string) => ({ version: t("Version"), "folder-list": t("Folder list"), file: t("File") } as Record<string, string>)[k];
 </script>
 
-<Modal title={t("Check “{name}”", { name })} {onclose} backdropCloses={!busy} width={620}>
+<Modal title={t("Check “{name}”", { name })} {onclose} backdropCloses={!busy} escCloses={!busy} width={620}>
   {#if busy}
     <p class="muted">{repaired || result ? t("Repairing…") : t("Reading every version and stored file again…")}</p>
     <ProgressBar p={progress} waiting={t("Reading versions…")} />

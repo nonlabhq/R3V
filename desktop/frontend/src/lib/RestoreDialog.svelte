@@ -85,7 +85,7 @@
   }
 </script>
 
-<Modal title={t("Restore from backup")} {onclose} width={520} backdropCloses={!busy}>
+<Modal title={t("Restore from backup")} {onclose} width={520} backdropCloses={!busy} escCloses={!busy}>
   <p class="muted small">{t("Brings back what the team's storage lacks: deleted projects, lost files, or the whole team into a new, empty bucket. It only adds; nothing in the team's storage is changed or deleted.")}</p>
 
   <div class="row src">

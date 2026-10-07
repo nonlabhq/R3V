@@ -16,7 +16,8 @@
   let others = $derived(st.branches.filter((b) => !b.current));
 </script>
 
-<svelte:window onclick={(e) => { if (open && !(e.target as HTMLElement).closest(".branch-wrap")) open = false; }} />
+<svelte:window onclick={(e) => { if (open && !(e.target as HTMLElement).closest(".branch-wrap")) open = false; }}
+  onkeydown={(e) => { if (open && e.key === "Escape") { e.preventDefault(); open = false; } }} />
 
 <div class="branch-wrap">
   <button class="branch" onclick={() => (open = !open)} disabled={!st.remoteUrl}
