@@ -30,7 +30,7 @@ const signedOut = { available: true, service: "https://api.r3v.so", signedIn: fa
 const signedIn = { ...signedOut, signedIn: true, email: "yi@example.test" };
 const band: TeamSummary = { id: "t1", name: "Band", address: "r3v-cloud+https://api.r3v.so/v1/teams/t1", isStorage: false, memberId: "m1",
   memberName: "Yi", keysUnreadable: false, shareSetup: false, canShareSetup: false, preupload: false, askShareSetup: false,
-  backupFailing: false, hosted: true, signedOut: false, noAccess: false };
+  backupFailing: false, hosted: true, signedOut: false, noAccess: false, looks: false };
 
 describe("CloudJoin", () => {
   it("signs in through the browser and goes to the account's team", async () => {

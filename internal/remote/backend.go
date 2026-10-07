@@ -68,6 +68,10 @@ var _ Backend = (*BucketBackend)(nil)
 type Project struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+	// Icon and Color: how it shows (see SetProjectLook): names of the app's
+	// icons and palette; "" for the app's pick.
+	Icon  string `json:"icon,omitempty"`
+	Color string `json:"color,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
 }
@@ -113,6 +117,10 @@ var _ BodyStore = (*BucketBackend)(nil)
 type Member struct {
 	ID   string `json:"id"` // 32 hex characters
 	Name string `json:"name"`
+	// Color and Picture: how they show (see SetMemberLook): a palette name,
+	// and their picture's SHA-256; "" for none.
+	Color   string `json:"color,omitempty"`
+	Picture string `json:"picture,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
 }

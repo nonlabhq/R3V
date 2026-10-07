@@ -5,6 +5,10 @@
   import RulesWindow from "./RulesWindow.svelte";
   import Tx from "./Tx.svelte";
   import { toast } from "./notify.svelte";
+  import ProjectIcon from "./ProjectIcon.svelte";
+  import Swatches from "./Swatches.svelte";
+  import { projectColor } from "./palette";
+  import { projectIconNames, projectIcons } from "./projectIcons";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
@@ -44,6 +48,27 @@
     }
   }
 
+  // Its icon and colour, for the whole team (Nightly: a team that keeps
+  // looks). Each pick is saved at once.
+  // svelte-ignore state_referenced_locally
+  let look = $state({ icon: p.icon ?? "", color: p.color ?? "" });
+  let lookBusy = $state(false);
+  async function setLook(icon: string, color: string) {
+    if (lookBusy) return; // one at a time: the team keeps the last pick
+    const was = look;
+    look = { icon, color };
+    lookBusy = true;
+    try {
+      await api.SetProjectLook(team!.id, p.id, icon, color);
+      onrenamed();
+    } catch (e) {
+      look = was;
+      toast(errorText(e), "error");
+    } finally {
+      lookBusy = false;
+    }
+  }
+
   async function openRules() {
     try {
       await api.OpenRules(p.root);
@@ -72,6 +97,28 @@
     </div>
     <p class="hint">{team ? t("Project name shared by the whole team.") : t("Project name in R3V.")} {t("Local folder keeps its name.")}</p>
   </section>
+
+  {#if team?.looks}
+    <section>
+      <h3>{t("Icon and colour")}</h3>
+      <div class="look">
+        <ProjectIcon p={{ id: p.id, name: p.name, status: "downloaded", icon: look.icon, color: look.color }} size={40} />
+        <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
+      </div>
+      <div class="icons" role="radiogroup" aria-label={t("Icon")}>
+        <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
+          title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => setLook("", look.color)}>
+          {([...p.name.trim()][0] ?? "?").toUpperCase()}</button>
+        {#each projectIconNames as name (name)}
+          <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
+            aria-label={name} onclick={() => setLook(name, look.color)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html projectIcons[name]}</svg>
+          </button>
+        {/each}
+      </div>
+      <p class="hint">{t("The whole team sees them.")}</p>
+    </section>
+  {/if}
 
   <section>
     <h3>{t("Where")}</h3>
@@ -165,6 +212,12 @@
   h3 { margin: 0 0 var(--sp-8); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
   .line { display: flex; gap: var(--sp-8); align-items: center; }
   .line input { flex: 1; }
+  .look { display: flex; align-items: center; gap: var(--sp-16); margin-bottom: var(--sp-10); }
+  .icons { display: grid; grid-template-columns: repeat(auto-fill, 32px); gap: var(--sp-4); }
+  .ic { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--muted); }
+  .ic svg { width: 18px; height: 18px; }
+  .ic.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
   .hint { margin: var(--sp-6) 0 0; font-size: var(--fs-md); color: var(--muted); }
   .action .hint { margin-top: var(--sp-2); }
   dl { display: grid; grid-template-columns: 90px 1fr; gap: var(--sp-6) var(--sp-10); margin: 0; font-size: var(--fs-base); align-items: center; }

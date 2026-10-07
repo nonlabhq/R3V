@@ -670,6 +670,34 @@ export class MemberBackup {
     }
 }
 
+/**
+ * MemberLook is how a member shows: a palette name, a data: URL.
+ */
+export class MemberLook {
+    "color": string;
+    "picture": string;
+
+    /** Creates a new MemberLook instance. */
+    constructor($$source: Partial<MemberLook> = {}) {
+        if (!("color" in $$source)) {
+            this["color"] = "";
+        }
+        if (!("picture" in $$source)) {
+            this["picture"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new MemberLook instance from a string or object.
+     */
+    static createFrom($$source: any = {}): MemberLook {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new MemberLook($$parsedSource as Partial<MemberLook>);
+    }
+}
+
 export class Overview {
     "author": string;
     "teams": TeamSummary[];
@@ -909,6 +937,70 @@ export class Preview {
             $$parsedSource["conflicts"] = $$createField3_0($$parsedSource["conflicts"]);
         }
         return new Preview($$parsedSource as Partial<Preview>);
+    }
+}
+
+/**
+ * Profile is the user as the settings panel shows them.
+ */
+export class Profile {
+    /**
+     * Available: this build has looks (Nightly).
+     */
+    "available": boolean;
+    "name": string;
+
+    /**
+     * in the current team ("" for none)
+     */
+    "memberId": string;
+    "color": string;
+
+    /**
+     * a data: URL, "" for none
+     */
+    "picture": string;
+
+    /**
+     * NotShared names the teams that didn't take the last change (a hosted
+     * team, or one that couldn't be reached).
+     */
+    "notShared": string[];
+
+    /** Creates a new Profile instance. */
+    constructor($$source: Partial<Profile> = {}) {
+        if (!("available" in $$source)) {
+            this["available"] = false;
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("memberId" in $$source)) {
+            this["memberId"] = "";
+        }
+        if (!("color" in $$source)) {
+            this["color"] = "";
+        }
+        if (!("picture" in $$source)) {
+            this["picture"] = "";
+        }
+        if (!("notShared" in $$source)) {
+            this["notShared"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Profile instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Profile {
+        const $$createField5_0 = $$createType4;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("notShared" in $$parsedSource) {
+            $$parsedSource["notShared"] = $$createField5_0($$parsedSource["notShared"]);
+        }
+        return new Profile($$parsedSource as Partial<Profile>);
     }
 }
 
@@ -2267,6 +2359,12 @@ export class TeamProject {
     "status": string;
     "branch": string;
 
+    /**
+     * Icon and Color: how the team shows it (names; "" for the app's pick).
+     */
+    "icon": string;
+    "color": string;
+
     /** Creates a new TeamProject instance. */
     constructor($$source: Partial<TeamProject> = {}) {
         if (!("id" in $$source)) {
@@ -2283,6 +2381,12 @@ export class TeamProject {
         }
         if (!("branch" in $$source)) {
             this["branch"] = "";
+        }
+        if (!("icon" in $$source)) {
+            this["icon"] = "";
+        }
+        if (!("color" in $$source)) {
+            this["color"] = "";
         }
 
         Object.assign(this, $$source);
@@ -2341,6 +2445,12 @@ export class TeamSummary {
     "backupFailing": boolean;
 
     /**
+     * Looks: the team keeps pictures, icons and colours (Nightly; not yet
+     * a hosted team).
+     */
+    "looks": boolean;
+
+    /**
      * Hosted: kept by R3V-Cloud (people and access managed there);
      * SignedOut: this computer isn't signed in to it.
      */
@@ -2390,6 +2500,9 @@ export class TeamSummary {
         }
         if (!("backupFailing" in $$source)) {
             this["backupFailing"] = false;
+        }
+        if (!("looks" in $$source)) {
+            this["looks"] = false;
         }
         if (!("hosted" in $$source)) {
             this["hosted"] = false;

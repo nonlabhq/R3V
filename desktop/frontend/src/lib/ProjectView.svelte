@@ -2,7 +2,7 @@
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
   import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type Conflict, type TeamSummary,
-    type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot } from "./api";
+    type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook } from "./api";
   import { toast } from "./notify.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
@@ -143,6 +143,17 @@
   $effect(() => {
     root; refreshKey;
     load();
+  });
+
+  // How the team's members show on the history (Nightly; a team that keeps
+  // no looks: undefined, the initials as before). Asked again when the team
+  // changes (refreshKey); the app keeps them a minute.
+  let teamLooks = $derived(!!st?.teamId && !!teams.find((tm) => tm.id === st!.teamId)?.looks);
+  let looks = $state<Record<string, MemberLook | undefined> | undefined>(undefined);
+  $effect(() => {
+    root; refreshKey;
+    if (!teamLooks) { looks = undefined; return; }
+    api.MemberLooks(root).then((l) => (looks = l)).catch(() => {});
   });
 
   // Just added: ask about the first version once the project is read.
@@ -754,7 +765,7 @@
                 title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
-              branch={st.branch} head={st.head} incoming={incomingIds}
+              branch={st.branch} head={st.head} incoming={incomingIds} {looks}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>

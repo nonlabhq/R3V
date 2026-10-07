@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, type Overview, type Progress, type ProjectInfo, type TeamProject } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, type Overview, type Progress, type ProjectInfo, type TeamProject, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -26,6 +26,9 @@
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
   import Tooltip from "./lib/Tooltip.svelte";
+  import Avatar from "./lib/Avatar.svelte";
+  import UserSettings from "./lib/UserSettings.svelte";
+
 
   let overview = $state<Overview | null>(null);
   let onboarding = $state(false);
@@ -200,6 +203,10 @@
   const pct = (st: UpdateState) => (st.total > 0 ? Math.round((st.done / st.total) * 100) : 0);
   // The settings' "Check for updates": now, and say when there's none.
   let appSettings = $state(false);
+  // The user's colour and picture (Nightly), and their settings.
+  let profile = $state<Profile | null>(null);
+  let userSettings = $state(false);
+  function loadProfile() { api.Profile().then((p) => (profile = p)).catch(() => {}); }
   let checkingNow = $state(false);
   async function checkUpdateNow() {
     checkingNow = true;
@@ -507,6 +514,7 @@
       if (overview && overview.teams.length === 0) onboarding = true;
     });
     api.Autostart().then((on) => (autostart = on)).catch(() => {});
+    loadProfile();
     api.Version().then((v) => (appVersion = v)).catch(() => {});
     api.Edition().then((e) => (edition = e)).catch(() => {});
     api.Channel().then((c) => (nightly = c.build === "nightly")).catch(() => {});
@@ -675,7 +683,12 @@
       </div>
       <!-- who you are in this team, and the app's settings -->
       <div class="user">
-        {#if current?.memberName}
+        {#if current?.memberName && profile?.available}
+          <button class="ghost who" onclick={() => (userSettings = true)} title={t("User settings")}>
+            <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} />
+            <span class="user-name">{current.memberName}</span>
+          </button>
+        {:else if current?.memberName}
           <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
           <span class="user-name">{current.memberName}</span>
         {/if}
@@ -866,6 +879,11 @@
     ondownloaddir={changeDownloadDir} onupdate={(u) => (update = u)} onclose={() => (appSettings = false)} />
 {/if}
 
+{#if userSettings}
+  <UserSettings team={current} onclose={() => (userSettings = false)}
+    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }} />
+{/if}
+
 {#snippet projectSettings(p: TeamProject, inline: boolean)}
   <ProjectSettings {p} team={current} {inline}
     onclose={() => (settingsFor = null)}
@@ -928,6 +946,8 @@
     padding: var(--sp-10) var(--sp-14); border-top: var(--border-width) solid var(--line); }
   .user .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
+  .who { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-2) var(--sp-4);
+    margin-left: calc(var(--sp-4) * -1); text-align: left; color: var(--text); }
   .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .prefs { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-sm); color: var(--faint); }
   .keys { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-md); color: var(--faint); }

@@ -108,8 +108,9 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
     left = Math.max(left, -c.col);
     right = Math.max(right, c.col);
   }
-  let n = 1;
-  for (const c of chains) c.color = c.main ? 0 : n++ % 5 || 1;
+  // The main branch's colour, then the palette's in order (tokens.css).
+  let n = 0;
+  for (const c of chains) c.color = c.main ? 0 : (n++ % 12) + 1;
 
   const edges: Edge[] = [];
   for (const v of versions) {
