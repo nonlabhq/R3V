@@ -26,10 +26,20 @@ import (
 // killedChild runs a step in the child: R3V_KILL_DIR the project (or the
 // folder to clone into), R3V_KILL_CODE and R3V_KILL_NAME the team and
 // project to clone, R3V_KILL_STAGE a stage to die at (os.Exit, as a crash)
-// once R3V_KILL_DONE items of it are done.
+// once R3V_KILL_DONE items of it are done, R3V_KILL_WRITES the number of
+// files a switch puts in place before dying, R3V_KILL_TO the version to
+// switch to (op "checkout").
 func killedChild(op string) int {
 	dir, stage := os.Getenv("R3V_KILL_DIR"), os.Getenv("R3V_KILL_STAGE")
 	done, _ := strconv.Atoi(os.Getenv("R3V_KILL_DONE"))
+	if n, _ := strconv.Atoi(os.Getenv("R3V_KILL_WRITES")); n > 0 {
+		written := 0
+		fileWritten = func(string) {
+			if written++; written >= n {
+				os.Exit(3)
+			}
+		}
+	}
 	die := func(p Progress) {
 		if stage != "" && p.Stage == stage && p.Done >= done {
 			os.Exit(3)
@@ -53,6 +63,8 @@ func killedChild(op string) int {
 			_, _, err = r.Save("change", Strategy("fail"))
 		case "update":
 			_, err = r.Update(Strategy("fail"))
+		case "checkout":
+			_, _, err = r.Checkout(os.Getenv("R3V_KILL_TO"), false)
 		case "preupload":
 			PreuploadMin = 1000 // (as the test that started it)
 			cands, cerr := r.PreuploadCandidates(time.Now().Add(time.Hour))
@@ -72,8 +84,9 @@ func killedChild(op string) int {
 }
 
 // runKilled runs op in a child and kills it at the n-th request of kind
-// ("write" or "read") to the team's storage (0: not by request), or lets it
-// die itself (R3V_KILL_STAGE in env). It says whether the child ended
+// ("write" or "read") to the team's storage (0: not by request; fake may
+// then be nil), or lets it die itself (R3V_KILL_STAGE or R3V_KILL_WRITES in
+// env). It says whether the child ended
 // before finishing.
 func runKilled(t *testing.T, fake *s3test.Server, op, kind string, n int, env ...string) bool {
 	t.Helper()
@@ -94,7 +107,9 @@ func runKilled(t *testing.T, fake *s3test.Server, op, kind string, n int, env ..
 	case "read":
 		fake.OnRead = func(string) { kill() }
 	}
-	defer func() { fake.OnWrite, fake.OnRead = nil, nil }()
+	if fake != nil {
+		defer func() { fake.OnWrite, fake.OnRead = nil, nil }()
+	}
 	mu.Lock()
 	err := cmd.Start()
 	mu.Unlock()
