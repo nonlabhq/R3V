@@ -97,6 +97,86 @@ The connection can drop and R3V can be closed or crash at any moment. Every step
 
 A new step lists its states in between (in its design note or pull request): where it can stop, what is on disk and in storage then, and what the app shows and allows. Reviews ask of each write: what if it stops here?
 
+## Lanes
+
+Work goes in lanes, each a session of its own; only Core merges into `main`.
+
+| Lane | What | Owns | Where in this repository |
+|---|---|---|---|
+| Core | this repository: the command line, the app, what is stored, releases | `main`, the version, tags, releases, the end-to-end run | the main checkout, short branches `feat/…`, `fix/…`, `ui/…`, `docs/…` |
+| Cloud | the private R3V-Cloud service, and its client here (`internal/cloud`, the broker in `internal/remote`) | the R3V-Cloud repository (its `main`, its deployments) | `feat/cloud` only, in `../R3V.wt/cloud` |
+| Experiments | a direction being tried | its branch | `exp/<name>`, in `../R3V.wt/<name>`, one worktree each |
+
+### Rules
+
+1. **Only Core merges into `main`**, changes the version, tags and releases
+   (after the full end-to-end run). Other lanes hand over; they don't merge,
+   not even a small fix in their own package: a change that looks like one
+   lane's can reach Stable or the settings both channels share.
+2. **New things arrive behind Nightly**: a preset in `presets/`, a build
+   tag, or a switch set only in a `nightly` file (as `remote.HostedTeams`
+   is), with a Stable test that shows Stable doesn't reach it. Stable and
+   Nightly share the settings folder (teams, sessions): what Nightly writes
+   there, Stable must be able to ignore safely.
+3. **What must not break** (AGENTS.md) is Core's: stored formats, content
+   hashes, chunk boundaries, what a team stores, the CLI's `--json` and
+   error codes. A lane needing to change one says so in its hand-over;
+   Core decides (and whether a release must force updating).
+4. **A lane's worktree is its own.** Don't edit another lane's worktree or
+   its uncommitted files (generated noise included): tell its session.
+5. **Every report names the repository** (R3V or R3V-Cloud), the branch
+   and the commit.
+
+### Handing over to Core
+
+1. The lane merges `main` into its branch, then runs `go vet` and
+   `go test` both plain and with `-tags nightly`, and, for UI changes,
+   `npx svelte-check`, `npm test` and `node scripts/i18n-check.mjs`.
+2. It sends Core a message (between sessions) saying:
+   - what changed, and why;
+   - where the risks are (Stable, shared settings, storage, interruptions);
+   - whether it touches anything on the must-not-break list;
+   - the tests run, and their results;
+   - the R3V-Cloud commit or deployment it goes with, if any.
+3. Core reviews it: correctness, the must-not-break list, the
+   interruption checks (see Interruptions), and that Stable stays as it
+   was.
+4. Core fixes what it finds on `fix/<lane>-review` on top of the lane's
+   branch and merges both with `--no-ff`; something that needs rethinking
+   goes back to the lane instead.
+5. Core tells the lane, which merges `main` back and reviews Core's fixes
+   (it knows its code best).
+6. Releasing stays Core's, after the full end-to-end run.
+
+### Between this repository and R3V-Cloud
+
+- The service's API is R3V-Cloud's `docs/api.md`. A change to it is said
+  in the hand-over, and keeps released Nightlies working (or ships with
+  them).
+- Tests here use fake services; a test against the test service runs only
+  when asked (a build tag or an environment variable).
+- This repository is public: the client only. The service's code, accounts
+  and keys stay in R3V-Cloud. Secrets (sessions, presigned addresses,
+  invitation tokens, storage keys) never go into logs, errors or test
+  output.
+
+### Experiments
+
+- A branch `exp/<name>` from `main`, in `../R3V.wt/<name>`. It can build
+  Nightly installers to try; it doesn't publish them.
+- To keep it: rename it `feat/<name>`, put what it adds behind Nightly,
+  and hand it over.
+- To stop it: say why in its design note (parked, and what would bring it
+  back), then remove its worktree; the branch can stay.
+
+### Files every lane touches
+
+- Translations: add keys at the end of every locale; never reorder or
+  rewrite others'. Conflicts are Core's to settle at the merge.
+- Bindings: commit only the files with real changes (`git diff -w`).
+- Notes for one moment (a review's notes): delete them, don't commit them.
+  Decisions go in `docs/design/`.
+
 ## Design notes
 
 - [docs/als-format-notes.md](als-format-notes.md) — findings about the `.als` format
