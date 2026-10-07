@@ -1147,5 +1147,15 @@
 "Your name comes from your R3V-Cloud account.": "你的名字來自 R3V-Cloud 帳號。",
 "Leave the team…": "離開團隊…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "你也會離開 R3V-Cloud 上的這個團隊：之後要有人重新邀請你才能回來。專案資料夾會留在磁碟上。",
-"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "目前登入的帳號不在這個團隊裡（或已不在）。它的專案會原樣留在這裡；到團隊設定移除團隊，即可把專案保留為本機專案。"
+"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "目前登入的帳號不在這個團隊裡（或已不在）。它的專案會原樣留在這裡；到團隊設定移除團隊，即可把專案保留為本機專案。",
+"Remove {team}?": "移除 {team}？",
+"Leave {team}?": "離開 {team}？",
+"You're no longer in this team on R3V-Cloud: this computer forgets it. Project folders stay on disk.": "你已不在 R3V-Cloud 上的這個團隊：這台電腦會忘記它。專案資料夾會留在磁碟上。",
+"Their versions stay and you can keep committing on this computer, no longer shared with the team.": "它們的版本會保留，你可以繼續在這台電腦上 commit，但不會再分享給團隊。",
+"Without them, older versions that use other samples than today's can't be opened once you've left.": "沒有這些檔案，用到與現在不同取樣的舊版本，離開後就無法開啟。",
+"Leaving…": "離開中…",
+"Leave the team": "離開團隊",
+"Remove the team…": "移除團隊…",
+"{team} is no longer on this computer. Its projects are under Local now.": "{team} 已不在這台電腦上。它的專案現在在「本機」底下。",
+"{team} is no longer on this computer. Project folders were left on disk.": "{team} 已不在這台電腦上。專案資料夾留在磁碟上。"
 }
