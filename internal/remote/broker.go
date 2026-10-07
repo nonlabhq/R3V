@@ -119,6 +119,10 @@ func NewBroker(base, token string) (Bucket, error) {
 // ContentsPerProject: the service keeps each project's contents apart.
 func (b *brokerBucket) ContentsPerProject() bool { return true }
 
+// KeepsLooks: the service keeps members' and projects' looks in their
+// records, and members' pictures (LooksKeeper).
+func (b *brokerBucket) KeepsLooks() bool { return true }
+
 var brokerContents = regexp.MustCompile(`^projects/([0-9a-f]{32})/((?:objects|chunked|snapshots)/.+)$`)
 
 // contents splits a key kept in storage (handed out as URLs) into its

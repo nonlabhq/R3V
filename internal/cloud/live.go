@@ -25,6 +25,10 @@ type Hub struct {
 	// OnTeamChange is called (on its own goroutine) when a team's people,
 	// roles or projects change, or the person's own access: read them again.
 	OnTeamChange func(service string)
+	// OnRecord is called (on its own goroutine) when the service wrote a
+	// record of team (its id): a member's (looks), the team's, a project's,
+	// a lock.
+	OnRecord func(service, team string, r Record)
 
 	mu    sync.Mutex
 	conns map[string]*liveConn // by team address
@@ -194,6 +198,17 @@ type liveMsg struct {
 	Project  string   `json:"project"`
 	Key      string   `json:"key"`
 	Projects []string `json:"projects"`
+	Kind     string   `json:"kind"`
+	ID       string   `json:"id"`
+	Sum      string   `json:"sum"`
+}
+
+// Record is a record the service wrote (R3V-Cloud's docs/api.md, Live
+// notices): Kind "member" (ID the member, Sum the picture it names),
+// "team", "project" (ID the project), "lock" (ID the path, in Project).
+// Kinds this build doesn't know are passed on too.
+type Record struct {
+	Kind, ID, Sum, Project string
 }
 
 // session is one connection: it says whether it got connected.
@@ -269,6 +284,10 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 		case "team", "access":
 			if f := c.hub.OnTeamChange; f != nil {
 				go f(c.service)
+			}
+		case "record":
+			if f := c.hub.OnRecord; f != nil {
+				go f(c.service, c.team, Record{Kind: m.Kind, ID: m.ID, Sum: m.Sum, Project: m.Project})
 			}
 		}
 	}

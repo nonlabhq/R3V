@@ -277,3 +277,41 @@ func TestLiveWatchWhileAnotherStops(t *testing.T) {
 		stopB()
 	}
 }
+
+// A record the service wrote is passed on with its team, kinds this build
+// doesn't know too (the app decides what to do with them).
+func TestLivePassesRecordsOn(t *testing.T) {
+	f := newFakeLive(t)
+	h := testHub()
+	got := make(chan Record, 4)
+	team := strings.Repeat("1", 32)
+	h.OnRecord = func(service, tm string, r Record) {
+		if service != f.URL || tm != team {
+			t.Errorf("record for %q %q", service, tm)
+		}
+		got <- r
+	}
+	defer h.Close()
+	nudge, _, stop := h.Watch(TeamAddress(f.URL, team), strings.Repeat("a", 32))
+	defer stop()
+	waitFor(t, "connected", nudge)
+	<-f.subscribed
+	f.send(t, `{"type":"record","kind":"member","id":"m1","sum":"`+strings.Repeat("ab", 32)+`"}`)
+	f.send(t, `{"type":"record","kind":"lock","id":"Song.als","project":"p1"}`)
+	f.send(t, `{"type":"record","kind":"someday"}`)
+	want := map[string]Record{
+		"member":  {Kind: "member", ID: "m1", Sum: strings.Repeat("ab", 32)},
+		"lock":    {Kind: "lock", ID: "Song.als", Project: "p1"},
+		"someday": {Kind: "someday"},
+	}
+	for range want {
+		select {
+		case r := <-got:
+			if r != want[r.Kind] {
+				t.Errorf("record %+v, want %+v", r, want[r.Kind])
+			}
+		case <-time.After(3 * time.Second):
+			t.Fatal("a record wasn't passed on")
+		}
+	}
+}

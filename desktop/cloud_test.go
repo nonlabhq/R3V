@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/project"
@@ -196,5 +197,53 @@ func TestRenamingAHostedTeam(t *testing.T) {
 	s, _ := teams.Load()
 	if got := s.Find(team.ID); got == nil || got.Name != "Trio" {
 		t.Errorf("team here: %+v", got)
+	}
+}
+
+// Records a hosted team's service wrote: a member's look asks the team's
+// looks again on its projects' pages; a lock reads its project's page again;
+// a kind this build doesn't know does nothing.
+func TestFollowingRecords(t *testing.T) {
+	team := hostedTeam(t, "https://cloud.example")
+	roots := map[string]string{"p1": t.TempDir(), "p2": t.TempDir()}
+	if _, err := teams.Update(func(s *teams.Store) error {
+		for pid, root := range roots {
+			s.SetProjectRoot(team.ID, strings.Repeat(pid[1:], 32)[:32], root)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	a := NewApp()
+	var mu sync.Mutex
+	var told []string
+	a.emit = func(name string, data any) {
+		if e, ok := data.(WatchEvent); ok && name == "team-watch" && e.Kind == "record" {
+			mu.Lock()
+			told = append(told, e.Root)
+			mu.Unlock()
+		}
+	}
+	looksCache.Lock()
+	looksCache.byTeam[team.Remote.URL] = teamLooks{at: time.Now()}
+	looksCache.Unlock()
+	id := strings.Repeat("1", 32)
+
+	a.onRecord("https://cloud.example", id, cloud.Record{Kind: "member", ID: "m1"})
+	looksCache.Lock()
+	_, cached := looksCache.byTeam[team.Remote.URL]
+	looksCache.Unlock()
+	if cached || len(told) != 2 {
+		t.Errorf("member: looks still cached %v, pages told %v", cached, told)
+	}
+	told = nil
+	a.onRecord("https://cloud.example", id, cloud.Record{Kind: "lock", ID: "Song.als", Project: strings.Repeat("2", 32)})
+	if !slices.Equal(told, []string{roots["p2"]}) {
+		t.Errorf("lock: pages told %v", told)
+	}
+	told = nil
+	a.onRecord("https://cloud.example", id, cloud.Record{Kind: "someday"})
+	if len(told) != 0 {
+		t.Errorf("an unknown kind: pages told %v", told)
 	}
 }

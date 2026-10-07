@@ -1,7 +1,7 @@
 # Looks: pictures, icons and colours
 
 Status: built, Nightly only (`remote.Looks`, set in
-`internal/remote/looks_nightly.go`).
+`internal/remote/looks_nightly.go`); hosted teams too.
 
 How people and projects show, the same for the whole team:
 
@@ -95,19 +95,14 @@ Stable doesn't reach looks: `remote.Looks` is false, `SetMemberLook`,
 
 ## Hosted teams (R3V-Cloud)
 
-Not yet: their records go through the service, which keeps only what it
-knows. The app shows initials there, and User settings says the team can't
-keep pictures yet. What R3V-Cloud needs to add:
-
-- keep a member's `color` (a palette number, `b3`) and `picture` (a hash)
-  and a project's `icon` and `color` in its records, returning them in the
-  lists;
-- an API to upload a member's picture (checked: square PNG/JPEG, 256 pixels,
-  64 KB, its SHA-256) and to read one by member and hash, at an address
-  named by the hash (cached for good: a new picture is a new address).
-
-No team feature (see above). The client side is then a `PictureStore` for
-the broker.
+The service keeps records as R3V writes them, looks included, and member
+pictures as small keys at the same names, checked when written (square
+PNG/JPEG, 256 pixels, 64 KB, named by its SHA-256) and served with an
+immutable cache header (R3V-Cloud's docs/api.md). So the broker is a
+`PictureStore` like any bucket (`brokerBucket.KeepsLooks`), and the same
+steps apply. Its people live in the service, not in `members/`: the
+first look a member gives a hosted team writes their record, with their
+name (`shareLook`). No team feature (see above).
 
 ## Seeing changes
 
@@ -115,9 +110,10 @@ A storage team (S3, R2) has no way to tell: the app asks for looks again
 when the team watch sees something (a new version), and at most once a
 minute. That is enough for looks.
 
-A hosted team tells at once. The service already sends `key` (a branch
-moved) and `team`/`access` on its live connection; it should send one more
-kind for every record it writes, so the app needn't poll for any of them:
+A hosted team tells at once. Besides `key` (a branch moved) and
+`team`/`access`, its live connection sends one more kind for every record
+the service writes, so the app needn't poll for any of them
+(`cloud.Hub.OnRecord`, followed by `App.onRecord`):
 
     {"type": "record", "kind": "member" | "project" | "team" | "lock",
      "id": "<member, project or file id>", "sum": "<picture hash, if any>"}
@@ -129,8 +125,8 @@ kind for every record it writes, so the app needn't poll for any of them:
 | `team` | the team renamed, or a feature turned on | the team again (a feature this build lacks: says to update at once) |
 | `lock` | a file locked or unlocked | the project's locks again |
 
-A project added or deleted goes to everyone in the team (they aren't
-listening to a project they don't have yet); the others to whoever
-listens to that project, or to the team for `member` and `team`. The
-Durable Object that writes a record holds the connections, so it sends
-the message after the write, in order.
+`member`, `team` and `project` go to everyone in the team (a project's
+too: people don't listen to a project they don't have yet); `lock` to
+whoever listens to its project. The Durable Object that writes a record
+sends the message after the write, in order. The app ignores kinds it
+doesn't know.

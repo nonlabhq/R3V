@@ -99,12 +99,6 @@ describe("User settings", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(/too big/);
     expect(mocks.square).not.toHaveBeenCalled();
   });
-
-  it("says a hosted team shows the initial", async () => {
-    api.Profile.mockResolvedValue(profile());
-    render(UserSettings, { team: team({ looks: false, name: "Cloud band" }), onchanged: () => {}, onclose: () => {} });
-    expect(await screen.findByText(/Cloud band can't keep pictures and colours yet/)).toBeTruthy();
-  });
 });
 
 describe("Project icon and colour", () => {
@@ -147,12 +141,6 @@ describe("Project icon and colour", () => {
     await fireEvent.keyDown(window, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "Icon and colour" })).toBeNull();
     expect(document.activeElement).toBe(icon);
-  });
-
-  it("says a hosted team can't keep them yet", () => {
-    render(ProjectSettings, { ...props, team: team({ looks: false, hosted: true }) });
-    expect(screen.getByText(/Band can't keep icons and colours yet/)).toBeTruthy();
-    expect(screen.queryByRole("radio", { name: "drum" })).toBeNull();
   });
 });
 

@@ -123,9 +123,6 @@
       <span class="hint">{profile.picture ? t("Shown when your picture can't be.") : t("Your initial shows on this colour.")}</span>
     </section>
 
-    {#if team && !team.looks}
-      <p class="hint">{t("{team} can't keep pictures and colours yet: your initial shows there.", { team: team.name })}</p>
-    {/if}
   {/if}
   {#if error}<p class="hint err" role="alert">{error}</p>{/if}
 

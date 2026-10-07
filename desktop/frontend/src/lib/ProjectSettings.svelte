@@ -153,10 +153,6 @@
       <button onclick={rename} disabled={renaming || !name.trim() || name.trim() === p.name}>{renaming ? t("Renaming…") : t("Rename")}</button>
     </div>
     <p class="hint">{team ? t("Project name shared by the whole team.") : t("Project name in R3V.")} {t("Local folder keeps its name.")}</p>
-    {#if team?.hosted && !team.looks}
-      <!-- (hosted teams are Nightly's: looks are too, not kept there yet) -->
-      <p class="hint">{t("{team} can't keep icons and colours yet: the project shows its initial there.", { team: team.name })}</p>
-    {/if}
   </section>
 
   {#if lookOpen && team?.looks}
