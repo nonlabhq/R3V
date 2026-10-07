@@ -14,6 +14,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/handlers"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -44,11 +45,22 @@ type App struct {
 	// preuploadNow: projects to look at for big files at once (one just
 	// added), not at the next round.
 	preuploadNow chan string
+	// live: hosted teams' notices (R3V-Cloud), instead of waiting for the
+	// next poll.
+	live *cloud.Hub
 }
 
 func NewApp() *App {
-	return &App{locks: map[string]*sync.Mutex{}, teamWatches: map[string]context.CancelFunc{}, watches: map[string]*folderWatch{},
-		preuploadNow: make(chan string, 8)}
+	a := &App{locks: map[string]*sync.Mutex{}, teamWatches: map[string]context.CancelFunc{}, watches: map[string]*folderWatch{},
+		preuploadNow: make(chan string, 8), live: cloud.NewHub()}
+	// People, roles or projects changed on the service: the team list
+	// follows, and the frontend is told.
+	a.live.OnTeamChange = func(service string) {
+		if _, err := cloud.SyncTeams(service); err == nil && a.emit != nil {
+			a.emit("teams", service)
+		}
+	}
+	return a
 }
 
 func (a *App) ServiceName() string { return "App" }
@@ -81,6 +93,7 @@ func (a *App) ServiceShutdown() error {
 	for _, cancel := range a.teamWatches {
 		cancel()
 	}
+	a.live.Close()
 	return nil
 }
 
@@ -190,19 +203,8 @@ func (a *App) startWatch(root string) {
 	a.mu.Unlock()
 
 	a.tidyLater(root) // e.g. a project from before files were kept in the team's storage
-	go func() {
-		w := teamwatch.New(root)
-		for {
-			for _, e := range w.Check() {
-				a.handleEvent(root, r.Config.Name, e)
-			}
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(a.pollInterval()):
-			}
-		}
-	}()
+	// Hosted teams tell when a branch moves; the poll is then the safety net.
+	go teamwatch.RunLive(ctx, root, a.pollInterval, a.live, func(e teamwatch.Event) { a.handleEvent(root, r.Config.Name, e) })
 }
 
 // pollInterval is how often a team watch looks for new versions. Storage bills

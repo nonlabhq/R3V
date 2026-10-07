@@ -171,9 +171,16 @@ so `BucketBackend` and every feature on it work unchanged:
   account's teams are kept in the teams store as hosted teams (no keys;
   one member id per person, given by the service) and brought up to date
   when listed.
+- **Live notices** (`cloud.Hub`, `teamwatch.RunLive`): one WebSocket per
+  hosted team (a one-use ticket, then subscriptions to the projects open
+  here). A branch moving wakes that project's watch at once; the poll
+  stays as a safety net, every 10 minutes while notices come and as
+  before while they don't. Sockets get closed now and then: the app
+  reconnects with backoff and then looks at every project, since notices
+  sent meanwhile are lost.
 
-Still to come: live notices instead of polling, file locks, the app's
-screens, and cleanup and backup project by project.
+Still to come: file locks, the app's screens, and cleanup and backup
+project by project.
 
 Client-side encryption of file contents is compatible with this design because all diffing and merging happens in the client: the backend only ever needs hashes and bytes. Deduplication would then use a keyed hash per team.
 
