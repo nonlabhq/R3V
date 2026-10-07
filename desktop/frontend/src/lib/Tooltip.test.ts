@@ -13,6 +13,7 @@ describe("splitTip", () => {
     expect(splitTip("New tab (Ctrl+T)")).toEqual({ text: "New tab", keys: "Ctrl+T" });
     expect(splitTip("Refresh (F5)")).toEqual({ text: "Refresh", keys: "F5" });
     expect(splitTip("Close (Esc)")).toEqual({ text: "Close", keys: "Esc" });
+    expect(splitTip("Hide the sidebar (Ctrl+\\)")).toEqual({ text: "Hide the sidebar", keys: "Ctrl+\\" });
     expect(splitTip("Mix (the final one)")).toEqual({ text: "Mix (the final one)", keys: "" });
   });
 });

@@ -161,7 +161,13 @@
     return Math.max(4, Math.ceil(end / beatsPerBar));
   });
   let total = $derived(bars * beatsPerBar);
-  let step = $derived([1, 2, 4, 8, 16, 32, 64, 128, 256].find((s) => bars / s <= 16) ?? 512);
+  // Bars between the ruler's numbers: as many numbers as fit (34px each),
+  // 16 at most.
+  let rulerW = $state(0);
+  let step = $derived.by(() => {
+    const most = Math.min(16, rulerW ? Math.max(2, Math.floor(rulerW / 34)) : 16);
+    return [1, 2, 4, 8, 16, 32, 64, 128, 256].find((s) => Math.ceil(bars / s) <= most) ?? 512;
+  });
   const pct = (beats: number) => `${(beats / total) * 100}%`;
 
   const arrClips = (t: TrackSummary | undefined) => (t?.clips ?? []).filter((c) => c.slot < 0);
@@ -436,7 +442,7 @@
       {#if rows.length || !compare}
         <div class="arr" style:--grid={pct(step * beatsPerBar)}>
           <div class="row ruler">
-            <div class="lane">
+            <div class="lane" bind:clientWidth={rulerW}>
               {#each Array.from({ length: Math.ceil(bars / step) }, (_, i) => i * step) as b}
                 <span class="tick" style:left={pct(b * beatsPerBar)}>{b + 1}</span>
               {/each}
