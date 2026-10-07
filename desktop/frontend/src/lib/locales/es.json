@@ -1164,8 +1164,6 @@
 "Icon": "Icono",
 "The project's initial": "La inicial del proyecto",
 "The whole team sees them.": "Todo el equipo los ve.",
-"Orange": "Naranja",
-"Amber": "Ámbar",
 "Lime": "Lima",
 "Green": "Verde",
 "Teal": "Verde azulado",
@@ -1174,9 +1172,6 @@
 "Indigo": "Índigo",
 "Violet": "Violeta",
 "Pink": "Rosa",
-"Red": "Rojo",
-"Sand": "Arena",
-"Slate": "Pizarra",
 "Not shown in {teams} yet: hosted teams can't keep pictures and colours.": "Aún no se muestra en {teams}: los equipos alojados todavía no pueden guardar imágenes ni colores.",
 "This file can't be read as a picture.": "Este archivo no se puede leer como imagen.",
 "Upload picture…": "Subir imagen…",
@@ -1188,5 +1183,9 @@
 "Shown when your picture can't be.": "Se muestra cuando no se puede mostrar tu imagen.",
 "Your initial shows on this colour.": "Tu inicial se muestra sobre este color.",
 "{team} can't keep pictures and colours yet: your initial shows there.": "{team} todavía no puede guardar imágenes ni colores: allí se muestra tu inicial.",
-"This picture is too big: pick one under {size} MB.": "Esta imagen es demasiado grande: elige una de menos de {size} MB."
+"This picture is too big: pick one under {size} MB.": "Esta imagen es demasiado grande: elige una de menos de {size} MB.",
+"Mint": "Menta",
+"Magenta": "Magenta",
+"Sky": "Celeste",
+"Lilac": "Lila"
 }

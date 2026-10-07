@@ -1164,8 +1164,6 @@
 "Icon": "アイコン",
 "The project's initial": "プロジェクト名の頭文字",
 "The whole team sees them.": "チーム全員に表示されます。",
-"Orange": "オレンジ",
-"Amber": "アンバー",
 "Lime": "ライム",
 "Green": "グリーン",
 "Teal": "ティール",
@@ -1174,9 +1172,6 @@
 "Indigo": "インディゴ",
 "Violet": "バイオレット",
 "Pink": "ピンク",
-"Red": "レッド",
-"Sand": "サンド",
-"Slate": "スレート",
 "Not shown in {teams} yet: hosted teams can't keep pictures and colours.": "{teams} にはまだ表示されません：ホスト型チームはまだ画像と色を保存できません。",
 "This file can't be read as a picture.": "このファイルは画像として読み込めません。",
 "Upload picture…": "画像をアップロード…",
@@ -1188,5 +1183,9 @@
 "Shown when your picture can't be.": "画像を表示できないときに使われます。",
 "Your initial shows on this colour.": "あなたの頭文字がこの色の上に表示されます。",
 "{team} can't keep pictures and colours yet: your initial shows there.": "{team} はまだ画像と色を保存できません：そこではあなたの頭文字が表示されます。",
-"This picture is too big: pick one under {size} MB.": "この画像は大きすぎます。{size} MB 未満のものを選んでください。"
+"This picture is too big: pick one under {size} MB.": "この画像は大きすぎます。{size} MB 未満のものを選んでください。",
+"Mint": "ミント",
+"Magenta": "マゼンタ",
+"Sky": "スカイ",
+"Lilac": "ライラック"
 }

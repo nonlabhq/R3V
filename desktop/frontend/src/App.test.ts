@@ -118,7 +118,7 @@ describe("App: tabs", () => {
 
 describe("App: the user", () => {
   it("opens User settings from the user area (Nightly), and shows their picture there", async () => {
-    api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "teal",
+    api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "b2",
       picture: "data:image/png;base64,AAAA", notShared: [] });
     render(App);
     const who = await screen.findByRole("button", { name: /Yi/ });

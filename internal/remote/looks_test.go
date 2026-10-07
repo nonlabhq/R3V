@@ -289,14 +289,14 @@ func TestProjectLook(t *testing.T) {
 	withLooks(t)
 	_, b := newTeam(t)
 	b.PutProject(remote.Project{ID: song, Name: "Song"})
-	if err := remote.SetProjectLook(b, song, "drum", "palette-3"); err != nil {
+	if err := remote.SetProjectLook(b, song, "drum", "b3"); err != nil {
 		t.Fatal(err)
 	}
 	if err := remote.RenameProject(b, song, "Song 2"); err != nil {
 		t.Fatal(err)
 	}
 	ps, _ := b.Projects()
-	if len(ps) != 1 || ps[0].Name != "Song 2" || ps[0].Icon != "drum" || ps[0].Color != "palette-3" {
+	if len(ps) != 1 || ps[0].Name != "Song 2" || ps[0].Icon != "drum" || ps[0].Color != "b3" {
 		t.Errorf("record: %+v", ps)
 	}
 	if info, _ := b.Info(); len(info.Features) != 0 {

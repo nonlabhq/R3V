@@ -9,13 +9,15 @@
   // name: the same every time); where it is shows as a small mark (on the
   // team only, folder missing). One place to change when projects get
   // pictures of their own.
-  let { p, size = 22 }: { p: Pick<TeamProject, "name" | "status"> & { icon?: string; color?: string }; size?: number } = $props();
+  let { p, size = 22 }: {
+    p: Pick<TeamProject, "name" | "status"> & { id?: string; icon?: string; color?: string }; size?: number;
+  } = $props();
 
   // (Object.hasOwn: a name from the team's records is never a built-in key.)
   let icon = $derived(p.icon && Object.hasOwn(projectIcons, p.icon) ? projectIcons[p.icon] : "");
 </script>
 
-<span class="pi {p.status}" style:--c={cssColor(projectColor(p.name, p.color))} style:--s="{size}px" aria-hidden="true">
+<span class="pi {p.status}" style:--c={cssColor(projectColor(p.id || p.name, p.color))} style:--s="{size}px" aria-hidden="true">
   {#if icon}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html icon}</svg>
   {:else}

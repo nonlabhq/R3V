@@ -1,10 +1,10 @@
-// The palette (tokens.css --palette-*): the colours people pick for
-// themselves and their projects, and the branches' colours. The names are
-// what a team stores (a member's or a project's colour): add names, never
-// rename or remove one. A name this build doesn't know shows as no pick.
+// The palette (tokens.css --palette-b1..b12, the R3V VI): the colours
+// people pick for themselves and their projects, and the branches'
+// colours. A team stores a colour's number ("b3"), never its value or name,
+// so the colours can be tuned: add numbers, never reuse one. One this build
+// doesn't know shows as no pick. In order: each is far from the one before.
 
-export const palette = ["orange", "amber", "lime", "green", "teal", "cyan", "blue", "indigo", "violet", "pink",
-  "red", "sand", "slate"] as const;
+export const palette = ["b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12"] as const;
 
 export type PaletteName = (typeof palette)[number];
 
@@ -19,11 +19,10 @@ export function pickFor(seed: string): PaletteName {
   return palette[hash(seed) % palette.length];
 }
 
-/** A project's colour when none was chosen: as before the palette, one of
- *  lanes 1-4 picked from its name (lane 0 is the main branch's). */
-export function projectColor(name: string, chosen = ""): string {
-  if (known.has(chosen)) return chosen;
-  return ["violet", "teal", "blue", "pink"][hash(name) % 4];
+/** A project's colour: the chosen one, else one picked from seed (its id,
+ *  else its name), the same everywhere. */
+export function projectColor(seed: string, chosen = ""): string {
+  return colorOf(chosen, seed);
 }
 
 /** The colour to show: the chosen one if it is the palette's, else seed's. */

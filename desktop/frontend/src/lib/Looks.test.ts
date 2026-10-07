@@ -41,19 +41,19 @@ function pickFile(file: File) {
 
 describe("User settings", () => {
   it("changes the colour, at random too", async () => {
-    api.Profile.mockResolvedValue(profile({ color: "teal" }));
+    api.Profile.mockResolvedValue(profile({ color: "b2" }));
     api.SetProfileColor.mockImplementation(async (c: string) => profile({ color: c }));
     const onchanged = vi.fn();
     render(UserSettings, { team: team(), onchanged, onclose: () => {} });
     const teal = await screen.findByRole("radio", { name: "Teal" });
     expect(teal.getAttribute("aria-checked")).toBe("true");
     await fireEvent.click(screen.getByRole("radio", { name: "Pink" }));
-    await waitFor(() => expect(onchanged).toHaveBeenLastCalledWith(expect.objectContaining({ color: "pink" })));
-    expect(api.SetProfileColor).toHaveBeenLastCalledWith("pink");
+    await waitFor(() => expect(onchanged).toHaveBeenLastCalledWith(expect.objectContaining({ color: "b4" })));
+    expect(api.SetProfileColor).toHaveBeenLastCalledWith("b4");
     await waitFor(() => expect(screen.getByRole("radio", { name: "Pink" }).getAttribute("aria-checked")).toBe("true"));
     await fireEvent.click(screen.getByRole("button", { name: "Random" }));
     await waitFor(() => expect(api.SetProfileColor).toHaveBeenCalledTimes(2));
-    expect(api.SetProfileColor.mock.calls[1][0]).not.toBe("pink");
+    expect(api.SetProfileColor.mock.calls[1][0]).not.toBe("b4");
   });
 
   it("uploads a picture (made square and small first) and removes it", async () => {
@@ -84,7 +84,7 @@ describe("User settings", () => {
   });
 
   it("takes one pick at a time, and refuses a huge file before reading it", async () => {
-    api.Profile.mockResolvedValue(profile({ color: "teal" }));
+    api.Profile.mockResolvedValue(profile({ color: "b2" }));
     let done!: () => void;
     api.SetProfileColor.mockImplementation((c: string) => new Promise((ok) => (done = () => ok(profile({ color: c })))));
     render(UserSettings, { team: team(), onchanged: () => {}, onclose: () => {} });
@@ -115,8 +115,8 @@ describe("Project icon and colour", () => {
     render(ProjectSettings, { ...props, team: team() });
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", ""));
-    await fireEvent.click(screen.getByRole("radio", { name: "Amber" }));
-    await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", "amber"));
+    await fireEvent.click(screen.getByRole("radio", { name: "Lime" }));
+    await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", "b5"));
     expect(screen.getByRole("radio", { name: "drum" }).getAttribute("aria-checked")).toBe("true");
   });
 
@@ -144,13 +144,13 @@ describe("History graph with looks", () => {
       incoming: new Set<string>(), pending: 0, selected: "v2", onselect: () => {}, looks });
 
   it("shows an author's picture, else their initial on their colour", () => {
-    show({ y1: { color: "", picture: PIC }, r1: { color: "pink", picture: "" } });
+    show({ y1: { color: "", picture: PIC }, r1: { color: "b4", picture: "" } });
     const yi = screen.getByRole("option", { name: /^v1,/ });
     expect(yi.querySelector("img")?.getAttribute("src")).toBe(PIC);
     const robin = screen.getByRole("option", { name: /^v2,/ });
     expect(robin.querySelector("img")).toBeNull();
     expect(robin.textContent).toBe("R");
-    expect(robin.style.getPropertyValue("--m")).toBe("var(--palette-pink)");
+    expect(robin.style.getPropertyValue("--m")).toBe("var(--palette-b4)");
   });
 
   it("shows the initial when a picture can't be shown", async () => {

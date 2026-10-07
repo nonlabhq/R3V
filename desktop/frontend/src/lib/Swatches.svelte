@@ -8,21 +8,21 @@
     value: string; label: string; disabled?: boolean; onpick: (name: string) => void;
   } = $props();
 
+  // What each number is called (the names only show; the number is kept).
   function nameOf(c: string): string {
     switch (c) {
-      case "orange": return t("Orange");
-      case "amber": return t("Amber");
-      case "lime": return t("Lime");
-      case "green": return t("Green");
-      case "teal": return t("Teal");
-      case "cyan": return t("Cyan");
-      case "blue": return t("Blue");
-      case "indigo": return t("Indigo");
-      case "violet": return t("Violet");
-      case "pink": return t("Pink");
-      case "red": return t("Red");
-      case "sand": return t("Sand");
-      case "slate": return t("Slate");
+      case "b1": return t("Violet");
+      case "b2": return t("Teal");
+      case "b3": return t("Blue");
+      case "b4": return t("Pink");
+      case "b5": return t("Lime");
+      case "b6": return t("Indigo");
+      case "b7": return t("Mint");
+      case "b8": return t("Magenta");
+      case "b9": return t("Sky");
+      case "b10": return t("Green");
+      case "b11": return t("Lilac");
+      case "b12": return t("Cyan");
     }
     return c;
   }

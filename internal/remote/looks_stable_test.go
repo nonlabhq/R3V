@@ -25,7 +25,7 @@ func TestStableHasNoPictures(t *testing.T) {
 		t.Errorf("PutPicture: %v", err)
 	}
 	b.PutProject(remote.Project{ID: song, Name: "Song"})
-	if err := remote.SetProjectLook(b, song, "drum", "palette-1"); !errors.Is(err, remote.ErrLooksNotInBuild) {
+	if err := remote.SetProjectLook(b, song, "drum", "b1"); !errors.Is(err, remote.ErrLooksNotInBuild) {
 		t.Errorf("SetProjectLook: %v", err)
 	}
 	if keys := pictureKeys(t, f); len(keys) != 0 {

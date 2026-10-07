@@ -59,15 +59,15 @@ func TestLooks(t *testing.T) {
 		return nil
 	})
 
-	p, err := a.SetProfileColor("palette-2")
-	if err != nil || p.Color != "palette-2" || p.Name != "Alice" || !slices.Equal(p.NotShared, []string{"Hosted"}) {
+	p, err := a.SetProfileColor("b2")
+	if err != nil || p.Color != "b2" || p.Name != "Alice" || !slices.Equal(p.NotShared, []string{"Hosted"}) {
 		t.Fatalf("SetProfileColor: %+v %v", p, err)
 	}
 	if p, err = a.SetProfilePicture(pngURL(t, 128)); err != nil || !strings.HasPrefix(p.Picture, "data:image/png;base64,") {
 		t.Fatalf("SetProfilePicture: %+v %v", p, err)
 	}
 	looks, err := a.MemberLooks(root)
-	if l := looks[me.MemberID]; err != nil || l.Color != "palette-2" || l.Picture != p.Picture {
+	if l := looks[me.MemberID]; err != nil || l.Color != "b2" || l.Picture != p.Picture {
 		t.Fatalf("MemberLooks: %+v %v", looks, err)
 	}
 
@@ -87,22 +87,22 @@ func TestLooks(t *testing.T) {
 			t.Errorf("%.30s: taken", bad)
 		}
 	}
-	if p, err = a.SetProfilePicture(""); err != nil || p.Picture != "" || p.Color != "palette-2" {
+	if p, err = a.SetProfilePicture(""); err != nil || p.Picture != "" || p.Color != "b2" {
 		t.Errorf("removing the picture: %+v %v", p, err)
 	}
 
-	if err := a.SetProjectLook(team.ID, tp.ID, "drum", "palette-4"); err == nil {
+	if err := a.SetProjectLook(team.ID, tp.ID, "drum", "b4"); err == nil {
 		t.Error("a look for a project the team doesn't have yet")
 	}
 	s, _ := teams.Load()
 	c, _ := s.Find(team.ID).Open()
 	c.PutProject(remote.Project{ID: tp.ID, Name: tp.Name}) // its first version shared
-	if err := a.SetProjectLook(team.ID, tp.ID, "drum", "palette-4"); err != nil {
+	if err := a.SetProjectLook(team.ID, tp.ID, "drum", "b4"); err != nil {
 		t.Fatal(err)
 	}
 	for _, overview := range []func() (*Overview, error){a.Overview, a.LocalOverview} {
 		ov, err := overview()
-		if err != nil || len(ov.Projects) != 1 || ov.Projects[0].Icon != "drum" || ov.Projects[0].Color != "palette-4" {
+		if err != nil || len(ov.Projects) != 1 || ov.Projects[0].Icon != "drum" || ov.Projects[0].Color != "b4" {
 			t.Errorf("overview: %+v %v", ov, err)
 		}
 	}

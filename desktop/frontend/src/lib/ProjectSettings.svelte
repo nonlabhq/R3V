@@ -102,8 +102,8 @@
     <section>
       <h3>{t("Icon and colour")}</h3>
       <div class="look">
-        <ProjectIcon p={{ name: p.name, status: "downloaded", icon: look.icon, color: look.color }} size={40} />
-        <Swatches value={projectColor(p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
+        <ProjectIcon p={{ id: p.id, name: p.name, status: "downloaded", icon: look.icon, color: look.color }} size={40} />
+        <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
       </div>
       <div class="icons" role="radiogroup" aria-label={t("Icon")}>
         <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}

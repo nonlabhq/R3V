@@ -16,15 +16,15 @@ How people and projects show, the same for the whole team:
 
 ## One palette
 
-`tokens.css` has one palette (`--palette-<name>`, 13 colours); people,
-projects and the branches' lanes (`--lane-0..4`) use it. A stored colour is
-the palette's name (`teal`), never a value: the look can change, the names
-stay. With no pick, a colour is picked from the member id (from the
-project's name for a project: one of lanes 1–4, as before), so everyone
-sees the same one.
+`tokens.css` has one palette, the R3V VI's 12 colours (`--palette-b1..b12`;
+the main branch alone has the brand orange). People, projects and the
+branches' lanes (`--lane-1..12`, in order) use it. A stored colour is the
+palette's number (`b3`), never a value or a name: the colours can be tuned,
+the numbers stay. With no pick, a colour is picked from the member's id
+(the project's id for a project), so everyone sees the same one.
 
-Names (colours and icons) are what a team stores: add, never rename or
-remove one. A name a build doesn't know shows as no pick.
+Numbers and icon names are what a team stores: add, never reuse or rename
+one. One a build doesn't know shows as no pick.
 
 ## What the team stores
 

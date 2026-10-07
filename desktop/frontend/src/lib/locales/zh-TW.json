@@ -1164,8 +1164,6 @@
 "Icon": "圖示",
 "The project's initial": "專案名稱的首字",
 "The whole team sees them.": "整個團隊都看得到。",
-"Orange": "橘",
-"Amber": "琥珀",
 "Lime": "萊姆綠",
 "Green": "綠",
 "Teal": "藍綠",
@@ -1174,9 +1172,6 @@
 "Indigo": "靛",
 "Violet": "紫",
 "Pink": "粉紅",
-"Red": "紅",
-"Sand": "沙色",
-"Slate": "石板灰",
 "Not shown in {teams} yet: hosted teams can't keep pictures and colours.": "{teams} 還看不到：託管團隊目前無法保存頭像和顏色。",
 "This file can't be read as a picture.": "這個檔案無法當作圖片讀取。",
 "Upload picture…": "上傳圖片…",
@@ -1188,5 +1183,9 @@
 "Shown when your picture can't be.": "圖片無法顯示時使用。",
 "Your initial shows on this colour.": "你的名字首字會顯示在這個顏色上。",
 "{team} can't keep pictures and colours yet: your initial shows there.": "{team} 目前還無法保存頭像和顏色：在那裡會顯示你的首字。",
-"This picture is too big: pick one under {size} MB.": "這張圖片太大了：請選小於 {size} MB 的圖片。"
+"This picture is too big: pick one under {size} MB.": "這張圖片太大了：請選小於 {size} MB 的圖片。",
+"Mint": "薄荷",
+"Magenta": "洋紅",
+"Sky": "天藍",
+"Lilac": "丁香紫"
 }
