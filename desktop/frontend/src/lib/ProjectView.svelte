@@ -24,6 +24,7 @@
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";
+  import ActionIcon from "./ActionIcon.svelte";
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
@@ -718,16 +719,16 @@
 
     {#snippet versionActions(v: Version)}
       {#if st!.remoteUrl && !st!.olderVersion && !v.inBranch && !incomingIds.has(v.id)}
-        <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}>{t("Merge")}</button>
+        <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge")}</button>
       {/if}
       {#if v.id !== st!.head && !incomingIds.has(v.id) && !v.notHere}
-        <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}>{t("Go to")}</button>
+        <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to")}</button>
       {/if}
       {#if !st!.olderVersion && v.inBranch && !incomingIds.has(v.id) && v.parents.length}
-        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo commit")}</button>
       {/if}
       {#if !v.notHere}
-        <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}>{t("Export…")}</button>
+        <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}><ActionIcon name="export" />{t("Export…")}</button>
       {/if}
     {/snippet}
 
@@ -741,13 +742,13 @@
             {#snippet cardActions(v: Version)}
               {@const isNew = incomingIds.has(v.id)}
               <button disabled={v.id === st!.head || isNew || v.notHere} onclick={() => goTo(v)}
-                title={v.id === st!.head ? t("You are on this version") : isNew ? t("Get updates first") : t("Put the project in the state of this version")}>{t("Go to")}</button>
+                title={v.id === st!.head ? t("You are on this version") : isNew ? t("Get updates first") : t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to")}</button>
               <button disabled={!st!.remoteUrl || !!st!.olderVersion || v.inBranch || isNew} onclick={() => openVersionMerge(v)}
-                title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}>{t("Merge")}</button>
+                title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge")}</button>
               <button disabled={!!st!.olderVersion || !v.inBranch || isNew || !v.parents.length} onclick={() => (undoing = v)}
-                title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+                title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo commit")}</button>
               <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
-                title={t("Start a branch from this version")}>{t("New branch")}</button>
+                title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
               branch={st.branch} head={st.head} incoming={incomingIds}
