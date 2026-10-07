@@ -93,7 +93,10 @@ touches nothing else, and anyone in the team can.
 
 ## Hosted teams (R3V-Cloud)
 
-Not yet: the service keeps only the keys it knows. What it needs:
-`branchinfo/<key>.json` as small keys (readers read, writers write), a
-`record` notice of kind `branch`, and `brokerBucket.KeepsBranchRecords`.
-Until then a hosted team's branches are called by their keys.
+The service keeps `branchinfo/<key>.json` and `milestones/<id>.json` as
+small keys, raw (readers read, writers write and delete; a read-only
+collaborator can't), and tells the project's listeners of each change (a
+`record` notice of kind `branch` or `milestone`: the page asks the team
+again). `brokerBucket.KeepsBranchRecords` lets the client use them. The
+service doesn't refuse deleting main (taking back a project's only
+version does that); the client does, for a normal delete.
