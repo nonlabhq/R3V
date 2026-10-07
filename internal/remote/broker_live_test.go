@@ -17,10 +17,10 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote/backendtest"
 )
 
-// Against R3V-Cloud's service running with its development calls
-// (`wrangler dev --env remote-r2`, DEV_ENDPOINTS=1):
+// Against a running R3V-Cloud service with its development calls on (they
+// make people and put them in teams without email); skipped otherwise:
 //
-//	R3V_TEST_CLOUD=http://localhost:8787 go test ./internal/remote -run Broker -v
+//	R3V_TEST_CLOUD=<address> [R3V_TEST_CLOUD_DEV_KEY=<key>] go test ./internal/remote -run Broker -v
 //
 // Each run makes a new team with an owner, a member and a collaborator.
 
