@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/svelte";
 
 // Looks (Nightly): the user's colour and picture in User settings, a
 // project's icon and colour, and teammates' pictures on the history graph;
@@ -115,6 +115,20 @@ describe("Project icon and colour", () => {
     await fireEvent.click(screen.getByRole("radio", { name: "Lime" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", "b5"));
     expect(screen.getByRole("radio", { name: "drum" }).getAttribute("aria-checked")).toBe("true"); // a colour doesn't
+  });
+
+  it("offers the programs' icons first, named by their brands", async () => {
+    render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    const apps = screen.getByRole("radiogroup", { name: "Apps" });
+    const radios = within(apps).getAllByRole("radio");
+    expect(radios[0].getAttribute("aria-label")).toBe("Ableton Live");
+    expect(within(apps).getByRole("radio", { name: "Blender" }).getAttribute("title")).toBe("Blender");
+    expect(within(apps).queryByRole("radio", { name: "drum" })).toBeNull(); // the drawn ones after
+    const groups = screen.getAllByRole("radiogroup");
+    expect(groups.indexOf(apps)).toBeLessThan(groups.findIndex((g) => within(g).queryByRole("radio", { name: "drum" })));
+    await fireEvent.click(within(apps).getByRole("radio", { name: "Unity" }));
+    await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "app-unity", ""));
   });
 
   it("goes back when the team doesn't take it", async () => {

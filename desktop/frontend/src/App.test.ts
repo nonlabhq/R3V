@@ -116,6 +116,76 @@ describe("App: tabs", () => {
   });
 });
 
+describe("App: tabs of more than one team", () => {
+  // Two teams; the overview is the selected one's.
+  const teams = [{ id: "a", name: "Band", memberName: "Yi" }, { id: "b", name: "Duo", memberName: "Yi" }];
+  const lists: Record<string, ReturnType<typeof project>[]> = { a: [project("Song"), project("Beat")], b: [project("Loop")] };
+  let currentTeam = "a";
+  const teamOverview = () => ({ teams, currentTeam, projects: lists[currentTeam], teamChecked: true, teamError: "" });
+  beforeEach(() => {
+    currentTeam = "a";
+    api.LocalOverview.mockImplementation(async () => teamOverview());
+    api.Overview.mockImplementation(async () => teamOverview());
+    api.SelectTeam.mockImplementation(async (id: string) => { currentTeam = id; });
+  });
+  const on = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent?.trim();
+  const teamMenu = () => document.querySelector<HTMLElement>(".team-menu .switch")!;
+  const teamShown = () => teamMenu().textContent;
+
+  it("keeps a team's tabs when another team is picked, and goes back to it from its tab", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    await fireEvent.click(teamMenu());
+    await fireEvent.click(screen.getByRole("button", { name: /Duo/ }));
+    await waitFor(() => expect(teamShown()).toContain("Duo"));
+    // team b's project opens in a tab of its own, and team a's stays
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Loop")]));
+    expect(on()).toContain("Loop");
+    expect(screen.getAllByRole("tab")[0].title).toBe("Band · Song\nC:/Song");
+    // tabs of two teams: each says which
+    expect(document.querySelectorAll(".tab-team")).toHaveLength(2);
+    // remembered as one list
+    expect(JSON.parse(localStorage.getItem("r3v.tabs")!).map((x: { team: string; key: string }) => `${x.team}:${x.key}`))
+      .toEqual(["a:C:/Song", "b:C:/Loop"]);
+
+    // team a's tab: the sidebar goes to team a, and its project shows
+    await fireEvent.click(screen.getAllByRole("tab")[0]);
+    await waitFor(() => expect(teamShown()).toContain("Band"));
+    expect(api.SelectTeam).toHaveBeenLastCalledWith("a");
+    await waitFor(() => expect(on()).toContain("Song"));
+    expect(screen.getAllByRole("button", { name: /^Beat/ }).length).toBeGreaterThan(0); // team a's list
+    expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Loop")]);
+  });
+
+  it("closes the shown tab to the next one, on its team", async () => {
+    localStorage.setItem("r3v.tabs", JSON.stringify([
+      { team: "a", key: "C:/Song", p: { id: "song", root: "C:/Song", name: "Song", icon: "", color: "", status: "downloaded" } },
+      { team: "b", key: "C:/Loop", p: { id: "loop", root: "C:/Loop", name: "Loop", icon: "", color: "", status: "downloaded" } },
+    ]));
+    render(App);
+    await waitFor(() => expect(on()).toContain("Song"));
+    await fireEvent.keyDown(window, { key: "w", ctrlKey: true });
+    await waitFor(() => expect(teamShown()).toContain("Duo"));
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Loop")]));
+    expect(on()).toContain("Loop");
+    // and back again
+    await fireEvent.keyDown(window, { key: "T", ctrlKey: true, shiftKey: true });
+    await waitFor(() => expect(teamShown()).toContain("Band"));
+    await waitFor(() => expect(on()).toContain("Song"));
+  });
+
+  it("starts the one list from the team's old one, and drops tabs of teams gone", async () => {
+    localStorage.setItem("r3v.tabs:a", JSON.stringify(["C:/Beat", "C:/Gone"]));
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Beat")]));
+    localStorage.setItem("r3v.tabs", JSON.stringify([{ team: "x", key: "C:/Old", p: { name: "Old" } }, { team: "a", key: "C:/Song" }]));
+    cleanup();
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    expect(localStorage.getItem("r3v.tabs")).not.toContain("C:/Old");
+  });
+});
+
 describe("App: the user", () => {
   it("opens User settings from the user area (Nightly), and shows their picture there", async () => {
     api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "b2",

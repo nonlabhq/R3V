@@ -23,6 +23,7 @@ vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wa
 const emit = (name: string, data: unknown) => (mocks.handlers[name] ?? []).forEach((fn) => fn({ data }));
 
 import ProjectView from "./ProjectView.svelte";
+import type { TeamSummary } from "./api";
 import { preuploads, queue } from "./preupload.svelte";
 
 // jsdom has no ResizeObserver (bind:clientHeight uses it).
@@ -376,6 +377,72 @@ describe("ProjectView: a project just added", () => {
   });
 });
 
+describe("ProjectView: the header", () => {
+  const band = { id: "t", name: "Band", looks: true } as unknown as TeamSummary;
+
+  it("names the project's team, with its settings, and shows the project's icon", async () => {
+    const onteamsettings = vi.fn();
+    await show({}, { teams: [band], onteamsettings, entry: { id: "p1", icon: "app-ableton", color: "" } });
+    const header = document.querySelector("header")!;
+    expect(within(header).getByText("Band")).toBeTruthy();
+    expect(header.querySelector(".pi svg")).toBeTruthy(); // the icon, not the initial
+    await fireEvent.click(within(header).getByRole("button", { name: "Team settings: names, connection code, keys" }));
+    expect(onteamsettings).toHaveBeenCalledWith(band);
+  });
+
+  it("shows no team for a project on this computer only", async () => {
+    await show({ teamId: "", teamName: "", remoteUrl: "" }, { teams: [band], onteamsettings: vi.fn() });
+    const header = document.querySelector("header")!;
+    expect(within(header).queryByText("Band")).toBeNull();
+    expect(within(header).queryByRole("button", { name: "Team settings: names, connection code, keys" })).toBeNull();
+    expect(header.querySelector(".pi")?.textContent).toContain("S"); // its initial
+  });
+});
+
+describe("ProjectView: an icon for a project just added", () => {
+  const live = { applied: [{ folder: "", preset: "ableton", detected: true }], fromFile: false, error: "", suggestions: [] };
+  const first = { head: "", latest: "", history: [], changes: [change("Song.als", "added")], rules: live };
+  async function share(team: Record<string, unknown>, entry: Record<string, unknown>) {
+    const r = await show(first, { firstShare: true, teams: [{ id: "t", name: "Band", ...team }], entry: { id: "p1", icon: "", color: "b3", ...entry } });
+    await screen.findByText("“Song” is added");
+    api.Save.mockResolvedValue(result("published"));
+    await fireEvent.click(screen.getByRole("button", { name: "Commit & Share now" }));
+    await toasted("Version committed and shared with the team");
+    return r;
+  }
+
+  it("gets Live's icon once the team has it, keeping its colour", async () => {
+    const { onchanged } = await share({ looks: true }, {});
+    await waitFor(() => expect(api.SetProjectLook).toHaveBeenCalledWith("t", "p1", "app-ableton", "b3"));
+    await waitFor(() => expect(onchanged).toHaveBeenCalled());
+  });
+
+  it("keeps an icon picked before, and asks nothing of a team without looks", async () => {
+    await share({ looks: true }, { icon: "drum" });
+    cleanup();
+    await share({ looks: false }, {});
+    await new Promise((r) => setTimeout(r, 0));
+    expect(api.SetProjectLook).not.toHaveBeenCalled();
+  });
+
+  it("gets one after the versions of a project that joined a team are shared", async () => {
+    await show({ unshared: true, rules: live }, { firstShare: true, teams: [{ id: "t", name: "Band", looks: true }], entry: { id: "p1", icon: "", color: "" } });
+    await screen.findByText("Share “Song” with Band?");
+    api.ShareVersions.mockResolvedValue(result("published"));
+    await fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Share now" }));
+    await waitFor(() => expect(api.SetProjectLook).toHaveBeenCalledWith("t", "p1", "app-ableton", ""));
+  });
+
+  it("gets none on a later commit of a project not just added", async () => {
+    await show({ changes: [change("Song.als")], rules: live }, { teams: [{ id: "t", name: "Band", looks: true }], entry: { id: "p1", icon: "", color: "" } });
+    api.Save.mockResolvedValue(result("published"));
+    await typeMessage("More");
+    await fireEvent.click(commitButton());
+    await toasted("Version committed and shared with the team");
+    expect(api.SetProjectLook).not.toHaveBeenCalled();
+  });
+});
+
 describe("ProjectView: an older version without a team", () => {
   it("makes it the latest version, described", async () => {
     await show({ remoteUrl: "", teamName: "", olderVersion: version("h0", "old one") });
@@ -471,7 +538,9 @@ describe("ProjectView: Overview", () => {
     await fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sent to the label/ }));
     await screen.findByRole("heading", { name: "v1" });
     // On the version: the milestone, which opens to be changed or taken away.
-    await fireEvent.click(screen.getByRole("button", { name: /^Sent to the label$/ }));
+    const tags = screen.getAllByRole("button", { name: /^Sent to the label$/ }); // on the graph, and on the version
+    expect(tags.length).toBe(2);
+    await fireEvent.click(tags[1]);
     const dialog = screen.getByRole("dialog", { name: "Milestone" });
     api.EditMilestone.mockResolvedValue(undefined);
     await fireEvent.input(within(dialog).getByRole("textbox", { name: "Name" }), { target: { value: "Sent to the label, v1" } });

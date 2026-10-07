@@ -146,21 +146,54 @@ type ProgressEvent struct {
 }
 
 // progressFor emits "progress" events for root, at most every 150 ms unless
-// the stage changes. Call done when the operation ends: if anything was
-// reported, it sends a final "done" event.
+// the stage changes; one held back goes out when its time comes (so the
+// last of a stage, its 100%, is never lost). Call done when the operation
+// ends: if anything was reported, it sends a final "done" event.
 func (a *App) progressFor(root string) (report func(project.Progress), done func()) {
+	const every = 150 * time.Millisecond
+	var mu sync.Mutex
 	var last time.Time
 	stage := ""
-	report = func(p project.Progress) {
-		if a.emit == nil || (p.Stage == stage && time.Since(last) < 150*time.Millisecond) {
-			return
-		}
+	var held *project.Progress
+	var timer *time.Timer
+	send := func(p project.Progress) {
 		last, stage = time.Now(), p.Stage
 		a.lastProgress.Store(last.UnixNano())
 		a.emit("progress", ProgressEvent{Root: root, Stage: p.Stage, Done: p.Done, Total: p.Total,
 			Bytes: p.Bytes, TotalBytes: p.TotalBytes, Cancellable: a.canCancel(root)})
 	}
+	report = func(p project.Progress) {
+		if a.emit == nil {
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if p.Stage == stage && time.Since(last) < every {
+			held = &p
+			if timer == nil {
+				timer = time.AfterFunc(every-time.Since(last), func() {
+					mu.Lock()
+					defer mu.Unlock()
+					if held != nil {
+						send(*held)
+						held = nil
+					}
+					timer = nil
+				})
+			}
+			return
+		}
+		held = nil
+		send(p)
+	}
 	done = func() {
+		mu.Lock()
+		defer mu.Unlock()
+		held = nil
+		if timer != nil {
+			timer.Stop()
+			timer = nil
+		}
 		if a.emit != nil && stage != "" {
 			a.emit("progress", ProgressEvent{Root: root, Stage: "done"})
 		}

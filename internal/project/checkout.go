@@ -142,10 +142,21 @@ func (r *Repo) putFiles(m *Manifest, head, switching string) ([]string, error) {
 			ix.dirty = true
 		}
 	}
+	// Putting the files in place, counted: big ones take a while.
+	placing, placed := 0, 0
+	for _, f := range m.Files {
+		if have[f.Path] != f.Hash {
+			placing++
+		}
+	}
+	if placing > 0 {
+		r.report(StagePlacing, 0, placing)
+	}
 	for _, f := range m.Files {
 		if have[f.Path] == f.Hash {
 			continue
 		}
+		placed++
 		if err := r.exportObject(f.Hash, r.Abs(f.Path)); err != nil {
 			return nil, fmt.Errorf("%s: %w", f.Path, err)
 		}
@@ -155,6 +166,7 @@ func (r *Repo) putFiles(m *Manifest, head, switching string) ([]string, error) {
 		if fileWritten != nil {
 			fileWritten(f.Path)
 		}
+		r.report(StagePlacing, placed, placing)
 	}
 	r.forgetProfile() // the version may have brought another .r3v.yaml
 

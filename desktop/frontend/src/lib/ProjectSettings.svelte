@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { api, errorText, type ProjectInfo, type TeamProject, type TeamSummary } from "./api";
+  import { api, errorText, type ProjectInfo, type Progress, type TeamProject, type TeamSummary } from "./api";
   import Modal from "./Modal.svelte";
   import RulesWindow from "./RulesWindow.svelte";
   import Tx from "./Tx.svelte";
@@ -9,17 +9,19 @@
   import Swatches from "./Swatches.svelte";
   import { projectColor } from "./palette";
   import { projectIconNames, projectIcons } from "./projectIcons";
+  import { appIconNames, appIcons } from "./appIcons";
   import { portal } from "./portal";
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "./emoji";
   import BranchSettings from "./BranchSettings.svelte";
+  import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import { branchLabel, branchLane } from "./branches";
   import { ago, type BranchList, type DeletedBranch } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
   // need a confirmation of their own are the caller's.
-  let { p, team, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate }: {
+  let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved }: {
     p: TeamProject;
     inline?: boolean;       // in the project's Settings tab, not a dialog
     team?: TeamSummary;     // the project's team (none: on this computer only)
@@ -27,6 +29,9 @@
     onrenamed: () => void;
     oncheck: () => void;
     ondelete: () => void;
+    teams?: TeamSummary[];     // the teams on this computer (to move it to)
+    progress?: Progress | null; // the project's step under way (a move)
+    onmoved?: (teamId: string, copied: boolean) => void;
     onunlink: () => void;
     onlocate: () => void;
   } = $props();
@@ -123,6 +128,7 @@
   // branch names: Nightly).
   let branchList = $state<BranchList | null>(null);
   let branchOpen = $state<string | null>(null);
+  let moving = $state(false); // the move dialog open
   let deleted = $state<DeletedBranch[]>([]);
   const loadBranches = () => {
     api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
@@ -195,6 +201,18 @@
       {#if lookTab === "icons"}
         <!-- (an emoji has its own colours: the colour is for the icons) -->
         <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
+        <!-- the programs first (brand names: not translated), then the drawn icons -->
+        <div class="group">
+          <h4>{t("Apps")}</h4>
+          <div class="icons" role="radiogroup" aria-label={t("Apps")}>
+            {#each appIconNames as name (name)}
+              <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
+                title={appIcons[name].title} aria-label={appIcons[name].title} onclick={() => pickIcon(name)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html appIcons[name].svg}</svg>
+              </button>
+            {/each}
+          </div>
+        </div>
         <div class="icons" role="radiogroup" aria-label={t("Icon")}>
           <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
             title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => pickIcon("")}>
@@ -307,6 +325,13 @@
         {/if}
       </div>
     {/if}
+    {#if team && here && onmoved}
+      <div class="action">
+        <div><strong>{t("Move to another team…")}</strong>
+          <p class="hint">{t("Its whole history goes to another team (or a copy of it). The folder here stays as it is.")}</p></div>
+        <button onclick={() => (moving = true)}>{t("Move…")}</button>
+      </div>
+    {/if}
     {#if team}
       <div class="action">
         <div><strong>{t("Delete from {team}…", { team: team.name })}</strong>
@@ -327,6 +352,11 @@
   {/snippet}
 </Modal>
 {/if}
+{/if}
+
+{#if moving && team && onmoved}
+  <MoveProjectDialog root={p.root} name={p.name} {team} {teams} {progress}
+    onmoved={(id, copied) => { moving = false; onmoved(id, copied); }} onclose={() => (moving = false)} />
 {/if}
 
 {#if branchOpen !== null && branchList}
@@ -361,6 +391,8 @@
   .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
   .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
   .kinds button.on { background: var(--panel-2); color: var(--text); }
+  .group { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .group h4 { margin: 0; }
   .icons { display: grid; grid-template-columns: repeat(auto-fill, 32px); gap: var(--sp-4); }
   .ic { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
     font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--muted); }

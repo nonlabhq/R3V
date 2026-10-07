@@ -24,8 +24,17 @@ import (
 
 const chunksDir = "chunks"
 
-// pieceTransfers is how many pieces of one file go up or down at once.
-const pieceTransfers = 6
+// pieceTransfers is how many pieces of one file go up or down at once;
+// through a hosted team's service, where each piece first waits for its
+// URL, more (still within the service's requests a second).
+const pieceTransfers, pieceTransfersHosted = 6, 16
+
+func piecesAtOnce(c remote.Backend) int {
+	if remote.ThroughService(c) {
+		return pieceTransfersHosted
+	}
+	return pieceTransfers
+}
 
 // chunkStore is c when file of size bytes are kept there as pieces.
 func chunkStore(c remote.Backend, size int64) (remote.BodyStore, bool) {
@@ -113,7 +122,7 @@ func (r *Repo) uploadChunked(bs remote.BodyStore, c remote.Backend, h, src strin
 		wg       sync.WaitGroup
 		mu       sync.Mutex
 		firstErr error
-		sem      = make(chan struct{}, pieceTransfers)
+		sem      = make(chan struct{}, piecesAtOnce(c))
 	)
 	failed := func() error {
 		mu.Lock()
@@ -241,7 +250,10 @@ func (r *Repo) downloadChunked(c remote.Backend, h string, l *chunk.List, t *tra
 			counted[ph] = true
 		}
 	}
-	if err := inParallelN(pieceTransfers, fetch, func(ph string) error {
+	if p, ok := c.(remote.Preparer); ok {
+		p.PrepareObjects(fetch)
+	}
+	if err := inParallelN(piecesAtOnce(c), fetch, func(ph string) error {
 		return r.fetchPiece(c, ph, filepath.Join(tmp, ph), t)
 	}); err != nil {
 		return err

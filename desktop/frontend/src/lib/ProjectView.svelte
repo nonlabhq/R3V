@@ -2,7 +2,8 @@
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
   import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type Conflict, type TeamSummary,
-    type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook } from "./api";
+    type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
+  import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
@@ -44,8 +45,10 @@
   // With no versions yet, it asks whether to commit (and share) a first one
   // now or after a look through the files; a project with versions shares
   // them right away.
-  let { root, refreshKey, teams, firstShare = false, downloaded = false, onchanged, onfirstshared, ondownloadseen, onsettings, settings }: {
+  let { root, refreshKey, teams, entry, firstShare = false, downloaded = false, onchanged, onfirstshared, ondownloadseen, onsettings, onteamsettings, settings }: {
     root: string; refreshKey: number; teams: TeamSummary[]; firstShare?: boolean;
+    entry?: TeamProject; // the project in the team's list (its id, icon and colour)
+    onteamsettings?: (team: TeamSummary) => void; // the header's ⚙ of the project's team
     downloaded?: boolean; // just downloaded: show the project's check
     ondownloadseen?: () => void;
     onchanged: () => void; onfirstshared?: () => void;
@@ -172,10 +175,29 @@
   $effect(() => {
     if (!st || firstShareStarted || !untrack(() => firstShare)) return;
     firstShareStarted = true;
+    iconAfterShare = true;
     onfirstshared?.();
     if (!st.head) askFirstVersion();
     else if (st.remoteUrl) shareAsk = true; // versions already: share them now or later
   });
+  // Just added, once the team has it (the first share: a team has no
+  // looks for a project before): the icon of the one program R3V
+  // recognises, when the project has none yet. The user can change it.
+  let iconAfterShare = false;
+  async function autoIcon() {
+    if (!iconAfterShare || !st) return;
+    iconAfterShare = false;
+    const team = teams.find((tm) => tm.id === st!.teamId);
+    const icon = appIconFor(st.rules?.applied, st.openable);
+    if (!team?.looks || !entry?.id || entry.icon || !icon) return;
+    try {
+      await api.SetProjectLook(team.id, entry.id, icon, entry.color ?? "");
+      onchanged();
+    } catch {
+      // (only a nicety: the project shows its initial, as before)
+    }
+  }
+
   // Samples the sets use that are missing (and R3V has a copy of): offered
   // back, into Samples/Imported. Read again when the project changes.
   let spots = $state<SampleSpot[]>([]);
@@ -286,6 +308,7 @@
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
       if (r.log.length && r.action.startsWith("cancelled")) toast(t("The team's versions were taken in before it stopped") + reopen(), "info", 9000);
+      if (r.action === "published") autoIcon();
       if (r.action !== "nothing" && r.action !== "cancelled") {
         message = "";
         resetChangesView(root); // (back to list or tree by the number of changes)
@@ -688,7 +711,10 @@
       call: () => api.ShareVersions(root),
       done: (r) => {
         if (r.action === "cancelled-kept") toast(t("Stopped: your versions are on this computer, not shared yet"), "info");
-        else toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
+        else {
+          toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
+          autoIcon();
+        }
       },
     });
   }
@@ -714,7 +740,8 @@
   </div>
 {:else}
   <div class="view">
-    <ProjectHeader {st} {refreshing} oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
+    <ProjectHeader {st} {refreshing} team={teams.find((tm) => tm.id === st!.teamId)} {entry} {onteamsettings}
+      oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
 
     <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
       oncancel={() => cancelSave(root)} cancelling={!!cancelling[root]}

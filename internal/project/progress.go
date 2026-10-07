@@ -22,6 +22,13 @@ const (
 	StageUploading   = "uploading"   // sending files to the team
 	StageDownloading = "downloading" // fetching files from the team
 	StageExporting   = "exporting"   // writing a version to another folder
+	// StageFinishing: the files are up; the version's folder lists, the
+	// version and the branch follow (Done of Total steps).
+	StageFinishing = "finishing"
+	// StageHistory: getting the team's versions (Done so far; Total 0).
+	StageHistory = "history"
+	// StagePlacing: putting a version's files in the project folder.
+	StagePlacing = "placing"
 )
 
 // Progress describes a long-running step: Done of Total items (Total is 0
