@@ -177,12 +177,18 @@ func TestBrokerUploadThereAlready(t *testing.T) {
 	}
 }
 
-func TestBrokerWritesOfKeysAreNotRepeated(t *testing.T) {
+// A write the service failed is tried again: one dropped answer mustn't
+// leave a commit unshared.
+func TestBrokerWritesOfKeysAreRepeated(t *testing.T) {
 	f := newFakeCloud(t)
-	f.keyPut = func(w http.ResponseWriter) { w.WriteHeader(503) }
-	err := f.bucket(t).Put("projects/"+testPID+"/branches/main", strings.NewReader("v"), 1, "", "etag")
-	if err == nil || f.keyPuts.Load() != 1 {
-		t.Errorf("err %v after %d tries; want an error after exactly one", err, f.keyPuts.Load())
+	f.keyPut = func(w http.ResponseWriter) {
+		if f.keyPuts.Load() < 3 {
+			w.WriteHeader(503)
+		}
+	}
+	err := f.bucket(t).Put("projects/"+testPID+"/branches/main", strings.NewReader("v"), 1, "", "*")
+	if err != nil || f.keyPuts.Load() != 3 {
+		t.Errorf("err %v after %d tries; want it to work at the third", err, f.keyPuts.Load())
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -712,6 +713,7 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 		return out, nil
 	}
 	if err != nil {
+		log.Printf("commit %s: %v", root, err) // (the app shows it for a moment only)
 		return conflictResult(err)
 	}
 	out := syncResult(res)
@@ -737,6 +739,7 @@ func (a *App) ShareVersions(root string) (*Result, error) {
 		return cancelled(nil, true), nil
 	}
 	if err != nil {
+		log.Printf("share %s: %v", root, err) // (the app shows it for a moment only)
 		return conflictResult(err)
 	}
 	return syncResult(res), nil

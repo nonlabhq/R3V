@@ -113,17 +113,14 @@ func contents(key string) (pid, rel string, ok bool) {
 
 // --- the service's own calls -------------------------------------------------
 
-// call sends a request to the service. Requests that can be repeated
-// (reads, questions, asking for URLs) are tried again when the service or
-// the network fails; writes are not (a write that got through but whose
-// answer was lost would look like a conflict).
-func (b *brokerBucket) call(method, path string, body []byte, hdr map[string]string, repeatable bool) (*http.Response, error) {
-	tries := 1
-	if repeatable {
-		tries = b.tries
-	}
+// call sends a request to the service, tried again when the service or the
+// network fails. Writes of small keys are tried again too, as storage
+// teams' are: a conditional write that got through but whose answer was
+// lost comes back as a conflict, which the caller looks into (failing at
+// once left a commit unshared over one dropped connection).
+func (b *brokerBucket) call(method, path string, body []byte, hdr map[string]string) (*http.Response, error) {
 	var last error
-	for try := 0; try < tries; try++ {
+	for try := 0; try < b.tries; try++ {
 		if try > 0 {
 			time.Sleep(b.backoff << (try - 1))
 		}
@@ -162,7 +159,7 @@ func (b *brokerBucket) call(method, path string, body []byte, hdr map[string]str
 
 func (b *brokerBucket) json(path string, in, out any) error {
 	data, _ := json.Marshal(in)
-	resp, err := b.call("POST", path, data, map[string]string{"content-type": "application/json"}, true)
+	resp, err := b.call("POST", path, data, map[string]string{"content-type": "application/json"})
 	if err != nil {
 		return err
 	}
@@ -339,7 +336,7 @@ func (b *brokerBucket) open(key string) (*http.Response, error) {
 		}
 		return resp, nil
 	}
-	resp, err := b.call("GET", keyPath(key), nil, nil, true)
+	resp, err := b.call("GET", keyPath(key), nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +369,7 @@ func (b *brokerBucket) Open(key string) (io.ReadCloser, error) {
 }
 
 func (b *brokerBucket) Exists(key string) (bool, error) {
-	resp, err := b.call("HEAD", keyPath(key), nil, nil, true)
+	resp, err := b.call("HEAD", keyPath(key), nil, nil)
 	if err != nil {
 		return false, err
 	}
@@ -401,7 +398,7 @@ func (b *brokerBucket) Put(key string, r io.Reader, size int64, sum, cond string
 		default:
 			hdr["if-match"] = cond
 		}
-		resp, err := b.call("PUT", keyPath(key), data, hdr, false)
+		resp, err := b.call("PUT", keyPath(key), data, hdr)
 		if err != nil {
 			return err
 		}
@@ -467,7 +464,7 @@ func (b *brokerBucket) Delete(key, cond string) error {
 	if cond != "" {
 		hdr["if-match"] = cond
 	}
-	resp, err := b.call("DELETE", keyPath(key), nil, hdr, false)
+	resp, err := b.call("DELETE", keyPath(key), nil, hdr)
 	if err != nil {
 		return err
 	}
@@ -489,7 +486,7 @@ func (b *brokerBucket) List(prefix, startAfter string, page func([]Item) bool) e
 	after := startAfter
 	for {
 		q := url.Values{"prefix": {prefix}, "after": {after}}
-		resp, err := b.call("GET", "/keys?"+q.Encode(), nil, nil, true)
+		resp, err := b.call("GET", "/keys?"+q.Encode(), nil, nil)
 		if err != nil {
 			return err
 		}
@@ -529,7 +526,7 @@ func (b *brokerBucket) List(prefix, startAfter string, page func([]Item) bool) e
 }
 
 func (b *brokerBucket) Folders(dir string) ([]string, error) {
-	resp, err := b.call("GET", "/folders?"+url.Values{"dir": {dir}}.Encode(), nil, nil, true)
+	resp, err := b.call("GET", "/folders?"+url.Values{"dir": {dir}}.Encode(), nil, nil)
 	if err != nil {
 		return nil, err
 	}
