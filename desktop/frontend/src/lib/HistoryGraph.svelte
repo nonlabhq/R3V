@@ -126,20 +126,34 @@
   let hovered = $state<string | null>(null);
   let cardHeight = $state(140);
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
-  function hover(id: string) { clearTimeout(hideTimer); hovered = id; }
+  // Where the graph is in the window when a card opens (the card is put
+  // over everything, the sidebar included: see portal).
+  let origin = $state({ left: 0, top: 0 });
+  function hover(id: string) {
+    clearTimeout(hideTimer);
+    const r = box?.getBoundingClientRect();
+    if (r) origin = { left: r.left, top: r.top };
+    hovered = id;
+  }
   function unhover() { clearTimeout(hideTimer); hideTimer = setTimeout(() => (hovered = null), 180); }
   let card = $derived.by(() => {
     const v = hovered ? byID.get(hovered) : undefined;
     if (!v) return null;
     const c = g.chainOf.get(v.id)!;
-    // Below the dot, centred on it, clear of the pointer; above it when
-    // there's no room below. The little arrow points at the dot.
-    const nx = panX + x(c.col) * zoom, ny = panY + y(v.id) * zoom, gap = 12 * zoom + 12;
-    const left = Math.min(Math.max(4, nx - CARD_W / 2), Math.max(4, width - 4 - CARD_W));
-    const below = ny + gap + cardHeight <= boxHeight - 4 || ny - gap - cardHeight < 4;
-    return { v, branch: c.name, left, below, top: below ? ny + gap : ny - gap - cardHeight,
-      arrow: Math.min(Math.max(14, nx - left), CARD_W - 14) };
+    // To the left of the dot, centred on it: the pointer can go up and down
+    // the versions without the card in the way. The little arrow points at
+    // the dot. (In the window: over the sidebar if it comes to that.)
+    const nx = origin.left + panX + x(c.col) * zoom, ny = origin.top + panY + y(v.id) * zoom, gap = 12 * zoom + 10;
+    const vh = typeof window === "undefined" ? 800 : window.innerHeight;
+    const left = Math.max(8, nx - gap - CARD_W);
+    const top = Math.min(Math.max(8, ny - cardHeight / 2), Math.max(8, vh - 8 - cardHeight));
+    return { v, branch: c.name, left, top, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
   });
+  // Puts a node at the end of the page, so nothing clips or covers it.
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return { destroy: () => node.remove() };
+  }
 
   // The view: pan (px on the screen) and zoom.
   let panX = $state(0), panY = $state(0), zoom = $state(1);
@@ -175,6 +189,19 @@
     if (zoom === 1) { moved = false; resetView(); return; }
     zoomBy(1 / zoom);
   }
+  // The crosshair: back to 100% and the first view, with your changes (or
+  // the version you are on) in sight; what is picked stays picked.
+  function locate() {
+    moved = false;
+    resetView();
+    const id = pending ? "pending" : head;
+    const c = id === "pending" ? pendAt : g.chainOf.get(id);
+    if (!id || !c) return;
+    const nx = panX + x(c.col), ny = panY + (id === "pending" ? yRow(0) : y(id));
+    if (nx < 40 || nx > width - 40) { panX = width / 2 - x(c.col); moved = true; }
+    if (ny < 40 || ny > boxHeight - 40) { panY = boxHeight / 3 - (ny - panY); moved = true; }
+    clamp();
+  }
   // Back to what matters now: your changes when you have some, else the
   // version you are on (the toolbar offers it when something else is picked).
   let backTo = $derived(pending ? (selected !== "pending" ? "pending" : "") : head && selected !== head ? head : "");
@@ -193,7 +220,7 @@
   let drag: { x: number; y: number; px: number; py: number; moved: boolean; id: number } | null = null;
   let dragging = $state(false);
   function onpointerdown(e: PointerEvent) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".card, .toolbar")) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".card, .toolbar, .zoombar")) return;
     drag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false, id: e.pointerId };
   }
   function onpointermove(e: PointerEvent) {
@@ -320,18 +347,27 @@
       {/each}
 
     </div>
-    <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
-      <button class="ghost zoom" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out")}>−</button>
+    <div class="zoombar" style:left="{width - 14}px">
+      <button class="ghost" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out")}>−</button>
       <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>
-      <button class="ghost zoom" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in")}>+</button>
-      {#if backTo === "pending"}
-        <span class="sep" aria-hidden="true"></span>
-        <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
-      {:else if backTo}
-        <span class="sep" aria-hidden="true"></span>
-        <button class="back light" onclick={goBack}>{t("View latest version")}</button>
-      {/if}
+      <button class="ghost" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in")}>+</button>
+      <button class="ghost locate" onclick={locate} aria-label={t("Back to 100% and to where you are")}
+        title={t("Back to 100% and to where you are")}>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <circle cx="8" cy="8" r="5" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" />
+          <path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15" />
+        </svg>
+      </button>
     </div>
+    {#if backTo}
+      <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
+        {#if backTo === "pending"}
+          <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
+        {:else}
+          <button class="back light" onclick={goBack}>{t("View latest version")}</button>
+        {/if}
+      </div>
+    {/if}
     {#if link}
       <svg class="link" aria-hidden="true">
         <path d="M {link.x1} {link.y1} C {(link.x1 + link.x2) / 2} {link.y1}, {(link.x1 + link.x2) / 2} {link.y2}, {link.x2} {link.y2}"
@@ -340,8 +376,8 @@
     {/if}
     {#if card}
       {@const v = card.v}
-      <div class="card surface-menu" class:above={!card.below} role="group" aria-label={v.message || t("(no description)")}
-        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ax="{card.arrow}px"
+      <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")} use:portal
+        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
         bind:clientHeight={cardHeight} onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
         <span class="arrow" aria-hidden="true"></span>
         <div class="card-h">
@@ -366,9 +402,16 @@
     gap: var(--sp-2); padding: var(--sp-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-pill);
     box-shadow: var(--shadow-pop); white-space: nowrap; cursor: default; }
   .toolbar button { border-radius: var(--radius-pill); padding: var(--sp-6) var(--sp-12); font-size: var(--fs-md); }
-  .toolbar .zoom { padding: var(--sp-6) var(--sp-10); color: var(--muted); }
-  .toolbar .pct { min-width: 56px; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text); }
-  .toolbar .sep { width: var(--border-width); height: 20px; margin: 0 var(--sp-6); background: var(--line-strong); }
+  /* Zoom: small and quiet, top right of what the details leave. */
+  .zoombar { position: absolute; top: var(--sp-14); transform: translateX(-100%); z-index: 3; display: flex; align-items: center;
+    gap: 0; cursor: default; opacity: .7; transition: opacity .15s; }
+  .zoombar:hover, .zoombar:focus-within { opacity: 1; }
+  .zoombar button { display: flex; align-items: center; justify-content: center; min-width: 22px; height: 22px;
+    padding: 0 var(--sp-4); border: none; border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--muted); }
+  .zoombar button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
+  .zoombar .pct { min-width: 40px; font-family: var(--font-mono); font-size: var(--fs-xs); }
+  .zoombar .locate { margin-left: var(--sp-2); }
+  .zoombar svg { position: static; }
   .toolbar .back { font-weight: var(--fw-semibold); }
   .toolbar .light { background: var(--text); color: var(--bg); border-color: var(--text); }
   .toolbar .light:hover:not(:disabled) { background: var(--switch-knob); border-color: var(--switch-knob); }
@@ -387,13 +430,11 @@
   .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-  .card { position: absolute; z-index: 2; padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
+  .card { position: fixed; z-index: var(--z-menu); padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
-  .arrow { position: absolute; left: var(--ax); top: -6px; width: 10px; height: 10px; margin-left: -5px;
+  .arrow { position: absolute; right: -6px; top: var(--ay); width: 10px; height: 10px; margin-top: -5px;
     transform: rotate(45deg); background: var(--surface-menu);
-    border-left: var(--border-width) solid var(--line); border-top: var(--border-width) solid var(--line); }
-  .card.above .arrow { top: auto; bottom: -6px; border: none;
-    border-right: var(--border-width) solid var(--line); border-bottom: var(--border-width) solid var(--line); }
+    border-right: var(--border-width) solid var(--line); border-top: var(--border-width) solid var(--line); }
   .card-h { display: flex; gap: var(--sp-10); align-items: flex-start; }
   .avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--c); display: flex;
     align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
