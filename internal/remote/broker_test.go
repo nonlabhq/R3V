@@ -3,6 +3,7 @@ package remote
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -220,6 +221,71 @@ func TestBrokerAsksAboutContentsInBatches(t *testing.T) {
 			sizes = append(sizes, len(a))
 		}
 		t.Errorf("questions of %v hashes, want 1000, 1000, 500", sizes)
+	}
+}
+
+func TestBrokerDownloadGivesUpOnAStall(t *testing.T) {
+	b := newFakeCloud(t).bucket(t)
+	// Storage sends the headers and a few bytes, then nothing.
+	stalled := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-length", "1000")
+		w.Write([]byte("a l"))
+		w.(http.Flusher).Flush()
+		time.Sleep(3 * time.Second)
+	}))
+	defer stalled.Close()
+	resp, err := b.transfer("GET", func() (string, error) { return stalled.URL, nil }, nil, 0, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Now()
+	_, err = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err == nil || time.Since(start) > 2*time.Second {
+		t.Errorf("a stalled download: %v after %v; want an error within the stall time", err, time.Since(start))
+	}
+}
+
+func TestBrokerReadsAreRetried(t *testing.T) {
+	var tries atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if tries.Add(1) < 3 {
+			w.WriteHeader(503)
+			return
+		}
+		w.Header().Set("etag", `"e1"`)
+		w.Write([]byte(`{"name":"Band"}`))
+	}))
+	defer srv.Close()
+	bb, _ := NewBroker(srv.URL+"/v1/teams/t", "token")
+	b := bb.(*brokerBucket)
+	b.backoff = time.Millisecond
+	data, etag, err := b.Get("team.json")
+	if err != nil || string(data) != `{"name":"Band"}` || etag != `"e1"` || tries.Load() != 3 {
+		t.Errorf("Get = %q %q %v after %d tries", data, etag, err, tries.Load())
+	}
+}
+
+func TestBrokerUploadOfUnknownSum(t *testing.T) {
+	f := newFakeCloud(t)
+	var header string
+	f.storage = func(_ int32, w http.ResponseWriter, r *http.Request) bool {
+		header = r.Header.Get("x-amz-checksum-sha256")
+		return false
+	}
+	// A version record: written without its sum, from a plain reader.
+	data := []byte(`{"version":1}`)
+	s := sha256.Sum256(data)
+	id := hex.EncodeToString(s[:])
+	key := "projects/" + testPID + "/snapshots/" + id + ".json"
+	if err := f.bucket(t).Put(key, io.MultiReader(bytes.NewReader(data)), -1, "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.stored["snapshots/"+id+".json"]; !bytes.Equal(got, data) {
+		t.Errorf("stored %q", got)
+	}
+	if header != base64.StdEncoding.EncodeToString(s[:]) {
+		t.Errorf("checksum sent %q, want the record's own", header)
 	}
 }
 
