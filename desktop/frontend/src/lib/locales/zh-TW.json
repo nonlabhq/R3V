@@ -1108,5 +1108,8 @@
 "Commit (in the commit box)": "Commit（在提交框中）",
 "Close a dialog or a menu": "關閉對話框或選單",
 "This list": "這份清單",
-"Play or pause the audio shown": "播放或暫停顯示中的音訊"
+"Play or pause the audio shown": "播放或暫停顯示中的音訊",
+"Show the changes as": "變更顯示方式",
+"Tree": "樹狀",
+"Project folder": "專案資料夾"
 }

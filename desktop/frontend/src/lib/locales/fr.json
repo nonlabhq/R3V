@@ -1108,5 +1108,8 @@
 "Commit (in the commit box)": "Commit (dans la zone de commit)",
 "Close a dialog or a menu": "Fermer une boîte de dialogue ou un menu",
 "This list": "Cette liste",
-"Play or pause the audio shown": "Lire ou mettre en pause l'audio affiché"
+"Play or pause the audio shown": "Lire ou mettre en pause l'audio affiché",
+"Show the changes as": "Afficher les modifications en",
+"Tree": "Arbre",
+"Project folder": "Dossier du projet"
 }

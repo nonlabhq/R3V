@@ -1108,5 +1108,8 @@
 "Commit (in the commit box)": "コミット（コミット欄で）",
 "Close a dialog or a menu": "ダイアログやメニューを閉じる",
 "This list": "この一覧",
-"Play or pause the audio shown": "表示中のオーディオを再生・一時停止"
+"Play or pause the audio shown": "表示中のオーディオを再生・一時停止",
+"Show the changes as": "変更の表示",
+"Tree": "ツリー",
+"Project folder": "プロジェクトフォルダー"
 }

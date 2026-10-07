@@ -38,7 +38,7 @@
   <div class="modal surface-dialog" style:width="{width}px" role="dialog" aria-modal="true" aria-label={title}>
     <header>
       <h2>{title}</h2>
-      <button class="ghost close" onclick={onclose} aria-label={t("Close")}>✕</button>
+      <button class="ghost close" onclick={onclose} aria-label={t("Close")} title={t("Close") + " (Esc)"}>✕</button>
     </header>
     <div class="body">{@render children()}</div>
     {#if footer}
