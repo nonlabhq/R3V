@@ -17,6 +17,7 @@ vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wa
 import CloudJoin from "./CloudJoin.svelte";
 import CloudPeople from "./CloudPeople.svelte";
 import JoinOrCreate from "./JoinOrCreate.svelte";
+import TeamSettings from "./TeamSettings.svelte";
 import type { TeamSummary } from "./api";
 
 beforeEach(() => {
@@ -143,5 +144,33 @@ describe("CloudPeople", () => {
     expect(screen.queryByText("Invite someone")).toBeNull();
     expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
     expect(screen.getByText("Song · Can edit")).toBeTruthy(); // Sam's project, read only
+  });
+});
+
+describe("TeamSettings of a hosted team", () => {
+  const open = async (team: TeamSummary) => {
+    api.HistoryDownloadSize.mockResolvedValue(0);
+    render(TeamSettings, { team, reload: vi.fn(async () => {}), onclose: vi.fn() });
+  };
+
+  it("leaves it, in those words", async () => {
+    await open(band);
+    await fireEvent.click(await screen.findByRole("button", { name: "Leave the team…" }));
+    await screen.findByText("Leave Band?");
+    screen.getByText(/someone has to invite you again/);
+    screen.getByText(/no longer shared with the team/);
+    await fireEvent.click(screen.getByRole("button", { name: "Leave the team" }));
+    await waitFor(() => expect(api.RemoveTeam).toHaveBeenCalledWith("t1", true, false));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("Band is no longer on this computer. Its projects are under Local now.", "info", 7000));
+  });
+
+  it("removes one the account is no longer in", async () => {
+    await open({ ...band, noAccess: true });
+    await fireEvent.click(await screen.findByRole("button", { name: "Remove the team…" }));
+    await screen.findByText("Remove Band?");
+    screen.getByText(/You're no longer in this team/);
+    expect(screen.queryByText(/someone has to invite you again/)).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    await waitFor(() => expect(api.RemoveTeam).toHaveBeenCalledWith("t1", true, false));
   });
 });

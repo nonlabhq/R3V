@@ -163,8 +163,10 @@
       leaving = true;
       await api.RemoveTeam(team.id, keepProjects, keepProjects && fullHistory);
       await reload();
-      toast(t(keepProjects ? "Disconnected from {team}. Its projects are under Local now." : "Disconnected from {team}. Project folders were left on disk.",
-        { team: team.name }), "info", 7000);
+      const text = team.hosted
+        ? (keepProjects ? "{team} is no longer on this computer. Its projects are under Local now." : "{team} is no longer on this computer. Project folders were left on disk.")
+        : (keepProjects ? "Disconnected from {team}. Its projects are under Local now." : "Disconnected from {team}. Project folders were left on disk.");
+      toast(t(text, { team: team.name }), "info", 7000);
       onclose();
     } catch (e) {
       toast(errorText(e), "error", 9000);
@@ -313,32 +315,39 @@
     <button class="ghost danger-text" onclick={() => {
       keepProjects = true; fullHistory = false; historySize = 0; confirmDisconnect = true;
       api.HistoryDownloadSize("", team.id).then((n) => (historySize = n)).catch(() => {});
-    }}>{team.hosted ? t("Leave the team…") : t("Disconnect…")}</button>
+    }}>{team.hosted ? (team.noAccess ? t("Remove the team…") : t("Leave the team…")) : t("Disconnect…")}</button>
     <span class="spacer"></span>
     <button onclick={onclose}>{t("Close")}</button>
   {/snippet}
 </Modal>
 
 {#if confirmDisconnect}
-  <Modal title={t("Disconnect from {team}?", { team: team.name })} onclose={() => (confirmDisconnect = false)}>
-    <p>{team.hosted ? t("You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.")
+  <!-- A hosted team is left (or, the account no longer in it, removed);
+       a storage team is disconnected. -->
+  <Modal title={team.hosted ? (team.noAccess ? t("Remove {team}?", { team: team.name }) : t("Leave {team}?", { team: team.name }))
+      : t("Disconnect from {team}?", { team: team.name })} onclose={() => (confirmDisconnect = false)}>
+    <p>{team.hosted ? (team.noAccess ? t("You're no longer in this team on R3V-Cloud: this computer forgets it. Project folders stay on disk.")
+        : t("You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk."))
       : t("This computer forgets the team and its key. Nothing changes for your teammates, and project folders stay on disk.")}</p>
     <label class="keep">
       <input type="checkbox" bind:checked={keepProjects} />
       <span><Tx text={t("Move this team's projects to {local}")} strong={{ local: t("Local") }} />
-        <span class="faint small">{t("Their versions stay and you can keep committing on this computer. Join the team again later to reconnect them.")}</span></span>
+        <span class="faint small">{team.hosted ? t("Their versions stay and you can keep committing on this computer, no longer shared with the team.")
+          : t("Their versions stay and you can keep committing on this computer. Join the team again later to reconnect them.")}</span></span>
     </label>
-    {#if keepProjects && historySize > 0}
+    {#if keepProjects && historySize > 0 && !team.noAccess}
       <label class="keep sub">
         <input type="checkbox" bind:checked={fullHistory} />
         <span>{t("Also download the files of older versions ({size})", { size: mb(historySize) })}
-          <span class="faint small">{t("Without them, older versions that use other samples than today's need the team again to open.")}</span></span>
+          <span class="faint small">{team.hosted ? t("Without them, older versions that use other samples than today's can't be opened once you've left.")
+            : t("Without them, older versions that use other samples than today's need the team again to open.")}</span></span>
       </label>
     {/if}
     {#snippet footer()}
       <button onclick={() => (confirmDisconnect = false)} disabled={leaving}>{t("Cancel")}</button>
       <button class="danger" onclick={disconnectAsked} disabled={leaving}>
-        {leaving ? (fullHistory ? t("Downloading…") : t("Disconnecting…")) : t("Disconnect")}</button>
+        {leaving ? (fullHistory ? t("Downloading…") : team.hosted ? t("Leaving…") : t("Disconnecting…"))
+          : team.hosted ? (team.noAccess ? t("Remove") : t("Leave the team")) : t("Disconnect")}</button>
     {/snippet}
   </Modal>
 

@@ -40,3 +40,7 @@ MergeTest-*.als
 
 # local dev servers for the browser preview
 .claude/launch.json
+
+# Smoke tests' results (npm run smoke)
+/desktop/frontend/test-results/
+/desktop/frontend/playwright-report/

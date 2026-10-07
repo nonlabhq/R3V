@@ -171,3 +171,30 @@ func TestRemovingATeamWithoutAccess(t *testing.T) {
 		t.Errorf("local %v, team still listed: %v", store.Local, store.Find(team.ID) != nil)
 	}
 }
+
+// A hosted team is renamed on the service only, in one call: nothing else
+// to write there that could fail halfway.
+func TestRenamingAHostedTeam(t *testing.T) {
+	var mu sync.Mutex
+	var calls []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+	team := hostedTeam(t, srv.URL)
+	t.Setenv("R3V_CLOUD_TOKEN", "tok")
+	if err := NewApp().RenameTeamForEveryone(team.ID, "Trio"); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"PATCH /v1/teams/" + strings.Repeat("1", 32)}
+	if !slices.Equal(calls, want) {
+		t.Errorf("calls %v, want %v", calls, want)
+	}
+	s, _ := teams.Load()
+	if got := s.Find(team.ID); got == nil || got.Name != "Trio" {
+		t.Errorf("team here: %+v", got)
+	}
+}

@@ -10,8 +10,9 @@ import (
 	"sync"
 )
 
-// Until the system stores (macOS Keychain, the Secret Service) are wired
-// up: one file this user alone can read, beside R3V's settings.
+// Where no system store can be used (a Linux without the Secret Service,
+// other systems): one file this user alone can read, beside R3V's
+// settings.
 
 var mu sync.Mutex
 
@@ -24,6 +25,10 @@ func path() string {
 }
 
 func load() (map[string]string, error) {
+	// (made readable by others since, e.g. copied: this user's again)
+	if fi, err := os.Stat(path()); err == nil && fi.Mode().Perm()&0o077 != 0 {
+		os.Chmod(path(), 0o600)
+	}
 	data, err := os.ReadFile(path())
 	if errors.Is(err, os.ErrNotExist) {
 		return map[string]string{}, nil
@@ -47,7 +52,7 @@ func save(m map[string]string) error {
 	return os.Rename(tmp, path())
 }
 
-func set(target, _ string, secret string) error {
+func fileSet(target, secret string) error {
 	mu.Lock()
 	defer mu.Unlock()
 	m, err := load()
@@ -58,7 +63,7 @@ func set(target, _ string, secret string) error {
 	return save(m)
 }
 
-func get(target string) (string, error) {
+func fileGet(target string) (string, error) {
 	mu.Lock()
 	defer mu.Unlock()
 	m, err := load()
@@ -72,7 +77,7 @@ func get(target string) (string, error) {
 	return s, nil
 }
 
-func del(target string) error {
+func fileDel(target string) error {
 	mu.Lock()
 	defer mu.Unlock()
 	m, err := load()

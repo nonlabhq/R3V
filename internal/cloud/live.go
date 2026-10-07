@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -61,15 +62,15 @@ func (h *Hub) Watch(teamAddress, pid string) (nudge <-chan struct{}, connected f
 		h.conns[teamAddress] = c
 		go c.run(ctx)
 	}
-	h.mu.Unlock()
+	// (added while the hub is held: a stop of the connection's last watch
+	// meanwhile would otherwise end it with this one on it)
 	c.add(pid, ch)
+	h.mu.Unlock()
 	return ch, c.isConnected, func() {
-		if c.remove(pid, ch) {
-			h.mu.Lock()
-			if h.conns[teamAddress] == c {
-				delete(h.conns, teamAddress)
-			}
-			h.mu.Unlock()
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		if c.remove(pid, ch) && h.conns[teamAddress] == c {
+			delete(h.conns, teamAddress)
 			c.cancel()
 		}
 	}
@@ -219,6 +220,8 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 
 	sctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	var heard atomic.Int64 // when the service last said anything
+	heard.Store(time.Now().UnixNano())
 	go func() { // keep the connection alive; resubscribe when asked
 		t := time.NewTicker(c.hub.ping)
 		defer t.Stop()
@@ -227,6 +230,12 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 			case <-sctx.Done():
 				return
 			case <-t.C:
+				// The last ping unanswered: the connection is gone without a
+				// word (sleep, a network change), so connect again.
+				if time.Since(time.Unix(0, heard.Load())) > 2*c.hub.ping {
+					cancel()
+					return
+				}
 				if ws.Write(sctx, websocket.MessageText, []byte("ping")) != nil {
 					cancel()
 					return
@@ -244,6 +253,7 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 		if err != nil {
 			return true, err
 		}
+		heard.Store(time.Now().UnixNano())
 		if string(data) == "pong" {
 			continue
 		}
