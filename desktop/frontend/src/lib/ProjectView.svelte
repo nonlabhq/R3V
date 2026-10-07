@@ -54,9 +54,10 @@
   let loadError = $state("");
   // The tab is remembered per project. Overview: the history graph, then the
   // picked version (or your changes) and its files; Changes and History are
-  // the earlier layout, kept for now.
+  // the earlier layout, hidden now (OLD_TABS) and kept for a while.
   type Tab = "overview" | "files" | "settings" | "changes" | "history";
-  const tabs: Tab[] = ["overview", "files", "settings", "changes", "history"];
+  const OLD_TABS = false;
+  const tabs: Tab[] = OLD_TABS ? ["overview", "files", "settings", "changes", "history"] : ["overview", "files", "settings"];
   const tabKey = `r3v.tab:${untrack(() => root)}`;
   let tab = $state<Tab>((() => {
     try {
@@ -701,11 +702,13 @@
       {:else}
         <button onclick={onsettings}>{t("Settings")}</button>
       {/if}
-      <span class="sep" aria-hidden="true"></span>
-      <button class:on={tab === "changes"} onclick={() => (tab = "changes")}>
-        {t("Changes")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
-      </button>
-      <button class:on={tab === "history"} onclick={() => (tab = "history")}>{t("History")}</button>
+      {#if OLD_TABS}
+        <span class="sep" aria-hidden="true"></span>
+        <button class:on={tab === "changes"} onclick={() => (tab = "changes")}>
+          {t("Changes")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
+        </button>
+        <button class:on={tab === "history"} onclick={() => (tab = "history")}>{t("History")}</button>
+      {/if}
     </nav>
 
     {#snippet changesPanel(scope: "changes" | "all" | undefined, footer = false)}

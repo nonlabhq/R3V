@@ -266,7 +266,8 @@ describe("ProjectView: versions", () => {
 
   it("asks about uncommitted changes before going to a version", async () => {
     await show({ changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
-    await fireEvent.click(screen.getByRole("button", { name: "History" }));
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
     await fireEvent.click(await screen.findByRole("button", { name: "Go to" }));
     await screen.findByText("Go to an older version");
     api.GoToVersion.mockResolvedValue(result("moved"));
@@ -274,16 +275,26 @@ describe("ProjectView: versions", () => {
     await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", true, false));
   });
 
-  it("takes back the latest version from History", async () => {
+  it("takes back the latest version", async () => {
     await show({ history: [version("h1", "oops", { author: "Yi" }), version("p", "v1", { parents: [] })] });
     api.PlanUndo.mockResolvedValue({ changed: ["a.txt"], blocked: [], conflicts: [], error: "",
       takeBack: { ok: true, why: "", haveIt: [], branches: [], shared: true, featureOff: false } });
     api.TakeBackVersion.mockResolvedValue(result("taken-back"));
-    await fireEvent.click(screen.getByRole("button", { name: "History" }));
-    await fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(await screen.findByRole("button", { name: "Undo" })); // (the version you're on, shown)
     await screen.findByText(/Removes it from the history, yours and the team's/);
     await fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Undo commit" }));
     await waitFor(() => expect(api.TakeBackVersion).toHaveBeenCalledWith(ROOT, "h1", true));
+  });
+});
+
+describe("ProjectView: tabs", () => {
+  it("shows Overview, Files and Settings only (the earlier Changes and History are hidden)", async () => {
+    localStorage.setItem(`r3v.tab:${ROOT}`, "history"); // (remembered from before)
+    await show({ changes: [change("Song.als")] });
+    const nav = document.querySelector("nav")!;
+    expect([...nav.querySelectorAll("button")].map((b) => b.textContent?.replace(/\d+/g, "").trim())).toEqual(["Overview", "Files", "Settings"]);
+    expect(nav.querySelector("button.on")?.textContent).toContain("Overview");
   });
 });
 
