@@ -14,6 +14,7 @@
   import { viewerFor, type Side } from "./viewers";
   import { navKey, ownKey, type NavRow } from "./keynav";
   import { changesView, pickChangesView } from "./changesview.svelte";
+  import { portal } from "./portal";
 
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
@@ -49,6 +50,7 @@
   // leave it out of versions.
   let menu = $state<{ path: string; x: number; y: number; dir: boolean; ignore: IgnoreOption[] } | null>(null);
   let ignoreOpen = $state(false); // the Ignore submenu
+  let menuW = $state(220), menuH = $state(200); // (kept inside the window)
 
   // history of the selected file
   let history = $state<FileVersion[] | null>(null);
@@ -553,7 +555,8 @@
 {#if menu}
   {@const m = menu}
   {@const f = m.dir ? undefined : files.find((x) => x.path === m.path)}
-  <div class="ctx surface-menu" role="menu" style:left="{Math.min(m.x, window.innerWidth - 240)}px" style:top="{Math.min(m.y, window.innerHeight - 260)}px">
+  <div class="ctx surface-menu" role="menu" use:portal bind:offsetWidth={menuW} bind:offsetHeight={menuH}
+    style:left="{Math.max(8, Math.min(m.x, window.innerWidth - menuW - 8))}px" style:top="{Math.max(8, Math.min(m.y, window.innerHeight - menuH - 8))}px">
     {#if !m.dir && f && f.status !== "deleted"}
       <button class="item" onclick={() => openFile(m.path)}>{f.kind === "set" ? t("Open in {tool}", { tool: "Live" }) : f.kind === "audio" ? t("Open in default player") : t("Open")}</button>
     {/if}
@@ -576,7 +579,7 @@
           {t("Ignore")}<span class="arrow">›</span>
         </button>
         {#if ignoreOpen}
-          <div class="ctx submenu surface-menu" role="menu" class:left={m.x > window.innerWidth - 480}>
+          <div class="ctx submenu surface-menu" role="menu" class:left={m.x > window.innerWidth - menuW - 270}>
             {#each m.ignore as o}
               <button class="item" onclick={() => ignore(o.pattern)}>{o.label}<span class="faint pat mono">{o.pattern}</span></button>
             {/each}
@@ -633,7 +636,13 @@
   /* The list: a row per change, its folder under its name */
   li.two { height: 44px; }
   li.two .file { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
-  li.two .file.on { background: var(--accent-soft); }
+  /* (hovered or picked: the whole row, its box too) */
+  li.two::before { content: ""; position: absolute; inset: 2px 0 2px 18px; border-radius: var(--radius); pointer-events: none; }
+  li.two:hover::before { background: var(--panel); }
+  li.two:has(.file.on)::before { background: var(--accent-soft); }
+  li.two .file:hover, li.two .file.on { background: transparent; }
+  li.two > :not(.more) { position: relative; }
+  li.two .more { z-index: 1; }
   .names { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
   .names .fname { font-weight: var(--fw-semibold); }
   .fdir { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

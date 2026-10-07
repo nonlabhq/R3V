@@ -2,6 +2,7 @@
   import { t } from "./i18n.svelte";
   import { ago, type Version } from "./api";
   import { branchGraph, short } from "./branchGraph";
+  import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
   // The Overview's left column: the branch graph (see branchGraph.ts), main
@@ -155,11 +156,6 @@
     const top = Math.min(Math.max(8, ny - cardHeight / 2), Math.max(8, vh - 8 - cardHeight));
     return { v, branch: c.name, left, top, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
   });
-  // Puts a node at the end of the page, so nothing clips or covers it.
-  function portal(node: HTMLElement) {
-    document.body.appendChild(node);
-    return { destroy: () => node.remove() };
-  }
 
   // At first (and on double-click): main in the middle, a short history in
   // the middle too, a long one from the top.
