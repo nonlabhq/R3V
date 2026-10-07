@@ -174,35 +174,87 @@ func (r *Repo) mergeBase(a, b string) (string, error) {
 // --- transfer ---
 
 // fetchSnapshots downloads id and any ancestors not stored locally.
+// Not one version after another: the team's versions not here are asked
+// for together (where storage lists them), then id's ancestors among them
+// are walked a generation at a time (asking for any not had yet), then all
+// their folder lists come, a level at a time, and only then are the
+// versions stored: a version stored here can always be read, and stopped
+// half-way, nothing is stored and it is all asked for again.
 func (r *Repo) fetchSnapshots(c remote.Backend, id string) error {
-	stack := []string{id}
-	got := 0
-	for len(stack) > 0 {
-		cur := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		if cur == "" || r.HasSnapshot(cur) {
-			continue
-		}
-		r.report(StageHistory, got, 0)
-		got++
-		data, err := c.GetSnapshot(r.Config.ProjectID, cur)
+	if id == "" || r.HasSnapshot(id) {
+		return nil
+	}
+	pid := r.Config.ProjectID
+	var mu sync.Mutex
+	fetched := map[string][]byte{}
+	get := func(v string) error {
+		data, err := c.GetSnapshot(pid, v)
 		if err != nil {
-			return fmt.Errorf("download version %s: %w", short(cur), err)
+			return fmt.Errorf("download version %s: %w", short(v), err)
 		}
-		m, err := manifest.Parse(cur, data)
-		if err != nil {
-			return err
-		}
-		// Its folders first: a version stored here can always be read.
-		if m.Tree != "" {
-			if err := r.fetchTrees(c, m.Tree); err != nil {
-				return err
+		mu.Lock()
+		fetched[v] = data
+		mu.Unlock()
+		return nil
+	}
+	r.report(StageHistory, 0, 0)
+	if l, ok := c.(remote.SnapshotLister); ok {
+		if ids, err := l.SnapshotIDs(pid); err == nil {
+			var want []string
+			for _, v := range ids {
+				if !r.HasSnapshot(v) {
+					want = append(want, v)
+				}
+			}
+			if len(want) > 1 {
+				inParallel(want, func(v string) error { get(v); return nil }) // (any missed: asked for below)
 			}
 		}
-		if err := r.storeSnapshot(cur, data); err != nil {
+	}
+	// id's ancestors not here, a generation at a time.
+	var order []string
+	parsed := map[string]*Manifest{}
+	seen := map[string]bool{}
+	level := []string{id}
+	for len(level) > 0 {
+		var need, ask []string
+		for _, v := range level {
+			if v != "" && !seen[v] && !r.HasSnapshot(v) {
+				seen[v] = true
+				need = append(need, v)
+				if fetched[v] == nil {
+					ask = append(ask, v)
+				}
+			}
+		}
+		if err := inParallel(ask, get); err != nil {
 			return err
 		}
-		stack = append(stack, m.Parents...)
+		var next []string
+		for _, v := range need {
+			m, err := manifest.Parse(v, fetched[v])
+			if err != nil {
+				return err
+			}
+			parsed[v] = m
+			order = append(order, v)
+			next = append(next, m.Parents...)
+		}
+		r.report(StageHistory, len(order), 0)
+		level = next
+	}
+	// Their folders first: a version stored here can always be read.
+	var roots []string
+	for _, v := range order {
+		roots = append(roots, parsed[v].Tree)
+	}
+	if err := r.fetchTrees(c, roots...); err != nil {
+		return err
+	}
+	for _, v := range order {
+		if err := r.storeSnapshot(v, fetched[v]); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -384,7 +436,21 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	if err := visit(head); err != nil {
 		return err
 	}
-	missing, err := c.MissingSnapshots(r.Config.ProjectID, order)
+	// What the team's branch has is on the team, all of it (a branch moves
+	// only once its versions are up): only the versions after it are asked
+	// about, not the whole history on every share.
+	ask := order
+	if old != "" && r.HasSnapshot(old) {
+		if there, err := r.ancestors(old); err == nil {
+			ask = nil
+			for _, id := range order {
+				if !there[id] {
+					ask = append(ask, id)
+				}
+			}
+		}
+	}
+	missing, err := c.MissingSnapshots(r.Config.ProjectID, ask)
 	if err != nil {
 		return err
 	}
@@ -463,10 +529,16 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 		return err
 	}
 	next()
+	// The versions, several at a time: none is reached before the branch
+	// moves (below), and one left out by a stop is asked about next time.
+	var put []string
 	for _, id := range order {
-		if !need[id] {
-			continue
+		if need[id] {
+			put = append(put, id)
 		}
+	}
+	var stepMu sync.Mutex
+	if err := inParallel(put, func(id string) error {
 		data, err := os.ReadFile(r.snapshotPath(id))
 		if err != nil {
 			return err
@@ -474,7 +546,12 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 		if err := c.PutSnapshot(r.Config.ProjectID, id, data); err != nil {
 			return err
 		}
+		stepMu.Lock()
 		next()
+		stepMu.Unlock()
+		return nil
+	}); err != nil {
+		return err
 	}
 	// (the last moment it can stop: then the team has it)
 	if err := r.stopped(); err != nil {

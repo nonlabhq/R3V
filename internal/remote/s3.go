@@ -304,6 +304,31 @@ func (s *BucketBackend) UpdateBranch(pid, name, old, new string) error {
 	return err
 }
 
+// SnapshotLister is storage that lists a project's versions (so a long
+// history can be asked for all at once).
+type SnapshotLister interface {
+	SnapshotIDs(pid string) ([]string, error)
+}
+
+var _ SnapshotLister = (*BucketBackend)(nil)
+
+func (s *BucketBackend) SnapshotIDs(pid string) ([]string, error) {
+	if !validHex(pid, 32) {
+		return nil, errors.New("invalid project id")
+	}
+	keys, err := s.list(projectDir(pid) + "snapshots/")
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, k := range keys {
+		if id := strings.TrimSuffix(path.Base(k), ".json"); validHex(id, 64) {
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}
+
 func (s *BucketBackend) MissingSnapshots(pid string, ids []string) ([]string, error) {
 	return s.missing(ids, func(id string) string { return snapshotKey(pid, id) })
 }
