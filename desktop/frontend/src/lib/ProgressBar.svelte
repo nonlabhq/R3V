@@ -7,6 +7,23 @@
 
   let detail = $derived(p ? progressDetail(p) : "");
   let known = $derived(!!p && (!!p.totalBytes || !!p.total));
+
+  // Still working: a step that reports no progress for a while (the end
+  // of an upload, a request to the team) keeps a gradient moving over the
+  // bar, so it never looks stuck.
+  const STILL = 1500;
+  let changed = $state(Date.now());
+  let still = $state(false);
+  let sig = $derived(p ? `${p.stage}:${p.done}:${p.bytes}` : "");
+  $effect(() => {
+    sig;
+    changed = Date.now();
+    still = false;
+  });
+  $effect(() => {
+    const timer = setInterval(() => (still = Date.now() - changed >= STILL), 500);
+    return () => clearInterval(timer);
+  });
 </script>
 
 <div class="progress">
@@ -14,7 +31,7 @@
     <span>{p ? progressText(p, team) : waiting}</span>
     {#if detail}<span class="faint detail">{detail}</span>{/if}
   </div>
-  <div class="bar" class:indeterminate={!known}>
+  <div class="bar" class:indeterminate={!known} class:still={known && still} data-testid="progress-bar">
     <div style="width: {known ? Math.round(progressFraction(p!) * 100) : 30}%"></div>
   </div>
 </div>
@@ -27,4 +44,10 @@
   .bar > div { height: 100%; background: var(--accent); transition: width .2s; }
   .bar.indeterminate > div { animation: slide 1.2s ease-in-out infinite; }
   @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+  .bar { position: relative; }
+  .bar.still::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 35%, transparent), transparent);
+    background-size: 40% 100%; background-repeat: no-repeat; animation: sweep 1.4s linear infinite; }
+  @keyframes sweep { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+  @media (prefers-reduced-motion: reduce) { .bar.still::after, .bar.indeterminate > div { animation-duration: 3s; } }
 </style>
