@@ -147,6 +147,10 @@
   let firstShare = $state("");
   let justDownloaded = $state(""); // show its check when it opens
   let appVersion = $state("");
+  function copyVersion() {
+    navigator.clipboard?.writeText(appVersion).then(() => toast(t("Copied {version}", { version: appVersion }), "ok"),
+      () => toast(appVersion, "info"));
+  }
   let edition = $state(""); // a build with extensions, e.g. "Pro"
   let nightly = $state(false); // the Style lab is there to try looks
 
@@ -615,8 +619,13 @@
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
         <img src="/brand/r3v-icon-small.svg" alt="" /><img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
-        {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
+      <!-- the version, short (0.1.3, and Nightly); in full in its tooltip, copied on a click -->
+      {#if appVersion}
+        <button class="ghost version" onclick={copyVersion} title={t("R3V {version} — click to copy", { version: appVersion })}>
+          v{appVersion.split("-")[0]}{#if appVersion.includes("-nightly")}<span class="channel">Nightly</span>{/if}
+        </button>
+      {/if}
       <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       {#if update}
@@ -923,6 +932,7 @@
   .shell.folded aside { padding-left: var(--sp-6); padding-right: var(--sp-6); }
   .aside-top { display: flex; align-items: center; gap: var(--sp-4); }
   .aside-top .brand { flex: 1; min-width: 0; }
+  .aside-top .version { margin-bottom: var(--sp-8); }
   .fold { flex: none; padding: var(--sp-2) var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; margin-bottom: var(--sp-8); }
   .fold:hover:not(:disabled) { color: var(--text); }
   .folded-top { flex-direction: column; margin-left: calc(var(--sp-6) * -1); margin-right: calc(var(--sp-6) * -1); }
@@ -1004,7 +1014,11 @@
   .add .hint { font-size: var(--fs-xs); color: var(--faint); font-weight: 400; }
   .pad { padding: 0 var(--sp-8); }
   .link { border: none; background: none; color: var(--muted); text-decoration: underline; padding: 0; font-size: var(--fs-md); text-align: left; }
-  .version { margin-left: auto; font-size: var(--fs-xs); font-weight: 400; }
+  .version { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-2) var(--sp-4);
+    font-size: var(--fs-xs); font-weight: 400; color: var(--faint); white-space: nowrap; }
+  .version:hover { color: var(--muted); }
+  .channel { padding: 0 var(--sp-6); border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent);
+    font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: .04em; text-transform: uppercase; line-height: 1.5; }
   .edition { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; padding: 1px var(--sp-6);
     border-radius: var(--radius); color: var(--accent-ink); background: var(--accent); }
   .update { margin: 0 0 var(--sp-10); padding: var(--sp-8) var(--sp-10); border-radius: var(--radius-lg); background: var(--accent-bg); border: var(--border-width) solid var(--accent-line); font-size: var(--fs-md); }

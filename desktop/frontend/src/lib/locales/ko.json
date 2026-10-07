@@ -1109,5 +1109,7 @@
 "Instrument: {name}": "악기: {name}",
 "View current version": "현재 버전 보기",
 "Showing only: {kinds}": "표시 중: {kinds}",
-"Undo": "되돌리기"
+"Undo": "되돌리기",
+"R3V {version} — click to copy": "R3V {version} — 클릭해 복사",
+"Copied {version}": "{version} 복사됨"
 }

@@ -1109,5 +1109,7 @@
 "Instrument: {name}": "楽器：{name}",
 "View current version": "現在のバージョンを表示",
 "Showing only: {kinds}": "表示中：{kinds}",
-"Undo": "元に戻す"
+"Undo": "元に戻す",
+"R3V {version} — click to copy": "R3V {version} — クリックでコピー",
+"Copied {version}": "{version} をコピーしました"
 }

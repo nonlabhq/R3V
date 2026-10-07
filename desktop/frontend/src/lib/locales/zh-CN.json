@@ -1109,5 +1109,7 @@
 "Instrument: {name}": "乐器：{name}",
 "View current version": "查看当前版本",
 "Showing only: {kinds}": "只显示：{kinds}",
-"Undo": "撤销"
+"Undo": "撤销",
+"R3V {version} — click to copy": "R3V {version} — 点击复制",
+"Copied {version}": "已复制 {version}"
 }

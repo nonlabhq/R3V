@@ -1109,5 +1109,7 @@
 "Instrument: {name}": "Instrumento: {name}",
 "View current version": "Ver la versión actual",
 "Showing only: {kinds}": "Solo: {kinds}",
-"Undo": "Deshacer"
+"Undo": "Deshacer",
+"R3V {version} — click to copy": "R3V {version} — clic para copiar",
+"Copied {version}": "{version} copiado"
 }
