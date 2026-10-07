@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/backup"
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/health"
 	"github.com/nonlabhq/r3v/internal/liveenv"
 	"github.com/nonlabhq/r3v/internal/project"
@@ -54,6 +55,10 @@ type TeamSummary struct {
 	// BackupFailing: this computer's backups of the team have failed for a
 	// while (see BackupInfo).
 	BackupFailing bool `json:"backupFailing"`
+	// Hosted: kept by R3V-Cloud (people and access managed there);
+	// SignedOut: this computer isn't signed in to it.
+	Hosted    bool `json:"hosted"`
+	SignedOut bool `json:"signedOut"`
 }
 
 // TeamProject is a project as the sidebar shows it.
@@ -80,7 +85,8 @@ type Overview struct {
 }
 
 func teamSummary(t teams.Team) TeamSummary {
-	return TeamSummary{ID: t.ID, Name: t.Name, Address: t.Remote.Display(), IsStorage: t.Remote.IsStorage(),
+	svc, hosted := cloud.Hosted(t)
+	return TeamSummary{Hosted: hosted, SignedOut: hosted && !cloud.SignedIn(svc), ID: t.ID, Name: t.Name, Address: t.Remote.Display(), IsStorage: t.Remote.IsStorage(),
 		MemberID: t.MemberID, MemberName: t.MemberName, KeysUnreadable: t.KeysUnreadable,
 		ShareSetup: t.ShareSetup && t.Remote.IsStorage(), CanShareSetup: t.Remote.IsStorage(),
 		Preupload:     !t.NoPreupload && t.Remote.IsStorage(),
@@ -344,6 +350,11 @@ func (a *App) RenameTeamForEveryone(id, name string) error {
 	if t == nil {
 		return errors.New("unknown team")
 	}
+	if svc, ok := cloud.Hosted(*t); ok { // the service keeps the team's name
+		if err := cloud.RenameTeam(svc, cloud.TeamID(t.Remote.URL), name); err != nil {
+			return err
+		}
+	}
 	b, err := t.Open()
 	if err != nil {
 		return err
@@ -367,6 +378,15 @@ func (a *App) RemoveTeam(id string, keepProjects, fullHistory bool) error {
 	store, err := teams.Load()
 	if err != nil {
 		return err
+	}
+	// A hosted team is left on the service too; otherwise it would come back
+	// with the next look at the account's teams.
+	if t := store.Find(id); t != nil {
+		if svc, ok := cloud.Hosted(*t); ok && cloud.SignedIn(svc) {
+			if err := cloud.Leave(svc, cloud.TeamID(t.Remote.URL)); err != nil {
+				return err
+			}
+		}
 	}
 	for key, root := range store.Projects {
 		if !strings.HasPrefix(key, id+"/") {

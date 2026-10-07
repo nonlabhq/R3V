@@ -3,7 +3,10 @@ import * as App from "../../bindings/github.com/nonlabhq/r3v/desktop/app";
 export type {
   State, Version, Change, Conflict, Preview, Result, Branch,
   Overview, TeamSummary, TeamProject, ProjectFile, FileVersion, ProjectInfo, RuleSuggestion, SampleSpot,
+  CloudStatus, CloudPeople,
 } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
+export type { Member as CloudMember, Invitation as CloudInvitation, Project as CloudProject }
+  from "../../bindings/github.com/nonlabhq/r3v/internal/cloud/models";
 
 // A project file for the web view (audio previews): now ("" version) or as in
 // a version. AIFF is served as WAV.
