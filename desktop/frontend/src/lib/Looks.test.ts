@@ -132,6 +132,12 @@ describe("Project icon and colour", () => {
     render(ProjectSettings, { ...props, team: team({ looks: false }) });
     expect(screen.queryByText("Icon and colour")).toBeNull();
   });
+
+  it("says a hosted team can't keep them yet", () => {
+    render(ProjectSettings, { ...props, team: team({ looks: false, hosted: true }) });
+    expect(screen.getByText(/Band can't keep icons and colours yet/)).toBeTruthy();
+    expect(screen.queryByRole("radio", { name: "drum" })).toBeNull();
+  });
 });
 
 describe("History graph with looks", () => {

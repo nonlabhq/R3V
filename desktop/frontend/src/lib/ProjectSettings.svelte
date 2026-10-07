@@ -118,6 +118,12 @@
       </div>
       <p class="hint">{t("The whole team sees them.")}</p>
     </section>
+  {:else if team?.hosted}
+    <!-- (hosted teams are Nightly's: looks are too, not kept there yet) -->
+    <section>
+      <h3>{t("Icon and colour")}</h3>
+      <p class="hint">{t("{team} can't keep icons and colours yet: the project shows its initial there.", { team: team.name })}</p>
+    </section>
   {/if}
 
   <section>

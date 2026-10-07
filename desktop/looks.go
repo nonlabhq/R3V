@@ -32,8 +32,9 @@ type Profile struct {
 	MemberID  string `json:"memberId"` // in the current team ("" for none)
 	Color     string `json:"color"`
 	Picture   string `json:"picture"` // a data: URL, "" for none
-	// NotShared names the teams that didn't take the last change (a hosted
-	// team, or one that couldn't be reached).
+	// NotShared names the teams that didn't take the last change (couldn't
+	// be reached). Hosted teams can't keep looks yet and aren't named: the
+	// app says so where they show.
 	NotShared []string `json:"notShared"`
 }
 
@@ -116,7 +117,7 @@ func (a *App) setLook(change func(*teams.Look)) (Profile, error) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for _, t := range s.Teams {
-		if t.MemberID == "" {
+		if _, hosted := cloud.Hosted(t); hosted || t.MemberID == "" {
 			continue
 		}
 		wg.Add(1)

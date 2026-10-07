@@ -50,7 +50,7 @@
       profile = await set();
       onchanged(profile);
       if (profile.notShared.length)
-        toast(t("Not shown in {teams} yet: hosted teams can't keep pictures and colours.", { teams: profile.notShared.join(", ") }), "info", 8000);
+        toast(t("{teams} couldn't be reached: they get it with your next change.", { teams: profile.notShared.join(", ") }), "info", 8000);
     } catch (e) {
       error = errorText(e);
     } finally {
