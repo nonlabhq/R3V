@@ -1239,5 +1239,19 @@
 "“{branch}” is back, where it was.": "「{branch}」を元の位置に戻しました。",
 "Deleted branches": "削除したブランチ",
 "deleted by {name} {when}": "{when} {name} が削除",
-"deleted {when}": "{when} に削除"
+"deleted {when}": "{when} に削除",
+"Milestones": "マイルストーン",
+"Milestone changed for everyone in the team": "チーム全員に対してマイルストーンを変更しました",
+"Milestone added for everyone in the team": "チーム全員に対してマイルストーンを追加しました",
+"Milestone taken away; the version stays": "マイルストーンを外しました。バージョンはそのまま残ります",
+"Milestone": "マイルストーン",
+"Mark as a milestone": "マイルストーンにする",
+"Gives {version} a name the whole team sees on the history.": "{version} に、チーム全員が履歴で見られる名前を付けます。",
+"Sent to the label, v1": "レーベルに提出 v1",
+"Note": "メモ",
+"What it is, for whom (optional)": "何のためか、誰向けか（任意）",
+"Take away": "外す",
+"Add milestone": "マイルストーンを追加",
+"Give this version a name the whole team sees": "このバージョンにチーム全員が見られる名前を付ける",
+"Milestone…": "マイルストーン…"
 }

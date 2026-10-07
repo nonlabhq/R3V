@@ -1239,5 +1239,19 @@
 "“{branch}” is back, where it was.": "« {branch} » est de retour, là où elle était.",
 "Deleted branches": "Branches supprimées",
 "deleted by {name} {when}": "supprimée par {name} {when}",
-"deleted {when}": "supprimée {when}"
+"deleted {when}": "supprimée {when}",
+"Milestones": "Jalons",
+"Milestone changed for everyone in the team": "Jalon modifié pour toute l'équipe",
+"Milestone added for everyone in the team": "Jalon ajouté pour toute l'équipe",
+"Milestone taken away; the version stays": "Jalon retiré ; la version reste",
+"Milestone": "Jalon",
+"Mark as a milestone": "Marquer comme jalon",
+"Gives {version} a name the whole team sees on the history.": "Donne à {version} un nom que toute l'équipe voit dans l'historique.",
+"Sent to the label, v1": "Envoyé au label, v1",
+"Note": "Note",
+"What it is, for whom (optional)": "Ce que c'est, pour qui (facultatif)",
+"Take away": "Retirer",
+"Add milestone": "Ajouter le jalon",
+"Give this version a name the whole team sees": "Donner à cette version un nom que toute l'équipe voit",
+"Milestone…": "Jalon…"
 }

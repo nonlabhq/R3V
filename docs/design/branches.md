@@ -1,8 +1,7 @@
 # Branch names, colours, deletes and milestones
 
-Status: names, colours, deleting and getting branches back built, Nightly
-only (`remote.BranchRecords`, set in `internal/remote/branches_nightly.go`).
-Milestones follow.
+Status: built, Nightly only (`remote.BranchRecords`, set in
+`internal/remote/branches_nightly.go`).
 
 ## Names apart from keys
 
@@ -74,6 +73,23 @@ the app says how many versions are on no other branch (`OnlyOnBranch`).
 A teammate on a branch deleted meanwhile sees it said on the project's
 page (who, when; their files and versions as they were), with **Restore
 it** and **Switch to main**. Committing there would make the branch again.
+
+## Milestones
+
+A milestone gives a version a name the whole team sees ("Sent to the
+label, v1"), with a note: Git's tags, for people who don't know Git. Kept
+at `projects/<pid>/milestones/<id>.json` (`{version, name, note, by,
+time}`, the id random). A milestone only names a version, which storage
+keeps for good, so it always leads to it; renaming one or taking it away
+touches nothing else, and anyone in the team can.
+
+- **Milestone…** on a version (its details) adds one; a flag shows on its
+  dot in the history and in its card; the branch menu lists them, newest
+  first, and goes to the version.
+- Its name follows a branch name's rules; a note has at most 1000
+  characters.
+- Like records, milestones only add (no R3V reads the folder), so they are
+  not a team feature; a team keeps them where it keeps branch records.
 
 ## Hosted teams (R3V-Cloud)
 

@@ -440,6 +440,7 @@ func (a *App) State(root string) (*State, error) {
 	sw.lap("log")
 	st.Branches, st.Incoming, st.TakenBack, st.History = part.Branches, part.Incoming, part.TakenBack, part.History
 	st.BranchNames = keepsBranchRecords(r)
+	st.Milestones = part.Milestones
 	if part.OlderVersion != nil {
 		st.OlderVersion = part.OlderVersion
 	}
@@ -467,6 +468,8 @@ type TeamPart struct {
 	// BranchGone: the branch you are on was deleted from the team (nil
 	// otherwise): the page says so and offers it back.
 	BranchGone *DeletedBranch `json:"branchGone"`
+	// Milestones: versions given a name for the team, newest first.
+	Milestones []Milestone `json:"milestones"`
 }
 
 // TeamState asks the team for its branches and new versions. It runs
@@ -516,7 +519,7 @@ func (a *App) TeamState(root string) (*TeamPart, error) {
 // teamPart works out the team's side from a fetched view (nil: none), with
 // no network except, when fetchNames, the member list (cached a minute).
 func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool) (*TeamPart, error) {
-	part := &TeamPart{Online: view != nil, Branches: []Branch{}, Incoming: []Version{}, TakenBack: []Version{}}
+	part := &TeamPart{Online: view != nil, Branches: []Branch{}, Incoming: []Version{}, TakenBack: []Version{}, Milestones: []Milestone{}}
 	part.Unshared = view != nil && view.Heads[r.BranchName()] == "" && r.Head() != ""
 	tips := map[string][]string{}
 	if view != nil {
@@ -569,6 +572,7 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 		} else {
 			names = cachedMemberNames(r)
 		}
+		part.Milestones = a.milestonesOf(r, fetchNames, names)
 		renameAuthors(names, part.History)
 		renameAuthors(names, part.Incoming)
 		renameAuthors(names, part.TakenBack)

@@ -16,7 +16,7 @@
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks }: {
+  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string }[];
     branch: string;    // the branch you are on
@@ -29,6 +29,7 @@
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
+    milestones?: { version: string; name: string }[]; // versions the team named: a flag on their dot
   } = $props();
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
@@ -40,6 +41,11 @@
   let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
   let g = $derived(branchGraph(versions, branches, branch, "main", head, (name) => branchLane(branches, name)));
   const labelOf = (name: string) => branchLabel(branches, name);
+  let flags = $derived.by(() => {
+    const m = new Map<string, string[]>();
+    for (const ms of milestones ?? []) m.set(ms.version, [...(m.get(ms.version) ?? []), ms.name]);
+    return m;
+  });
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
   // Where your changes go: the branch you are on (its own column even when it
@@ -354,10 +360,11 @@
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
-          aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}`}
+          aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}${flags.has(v.id) ? `, ⚑ ${flags.get(v.id)!.join(", ")}` : ""}`}
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
           onclick={() => onselect(v.id)}>{#if showPic(lk)}<img src={lk!.picture} alt="" draggable="false"
-            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}</button>
+            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}{#if flags.has(v.id)}<span
+            class="flag" aria-hidden="true">⚑</span>{/if}</button>
       {/each}
 
     </div>
@@ -404,6 +411,7 @@
           <div class="card-t">
             <div class="card-msg">{v.message || t("(no description)")}</div>
             <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {labelOf(card.branch)}{/if} · <span class="mono">{v.short}</span></div>
+            {#if flags.has(v.id)}<div class="card-flag">⚑ {flags.get(v.id)!.join(" · ")}</div>{/if}
           </div>
         </div>
         {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}
@@ -443,7 +451,7 @@
     font-weight: var(--fw-semibold); line-height: 20px; text-align: center; }
   .node:hover:not(:disabled) { border-color: var(--c); background: var(--hover); }
   .node.tinted { color: var(--m); background: color-mix(in srgb, var(--m) 22%, var(--panel)); }
-  .node.pic { overflow: hidden; line-height: 0; }
+  .node.pic { line-height: 0; } /* (the img is round itself: the flag may stick out) */
   .node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
   .node.here { background: var(--c); color: var(--bg); }
   .node.here.pic { box-shadow: 0 0 0 2px var(--c); }
@@ -465,6 +473,9 @@
   .card-msg { font-size: var(--fs-md); font-weight: var(--fw-semibold); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
     -webkit-box-orient: vertical; overflow: hidden; user-select: text; }
   .card-meta { font-size: var(--fs-xs); color: var(--faint); margin-top: var(--sp-2); }
+  .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
+  .flag { position: absolute; top: -9px; right: -9px; font-size: 11px; line-height: 1; color: var(--accent);
+    text-shadow: 0 0 2px var(--bg), 0 0 2px var(--bg); pointer-events: none; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   .label { position: absolute; height: auto; padding: var(--sp-2) var(--sp-8);

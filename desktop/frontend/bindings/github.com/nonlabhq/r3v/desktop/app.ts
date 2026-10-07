@@ -36,6 +36,13 @@ export function AddIgnoreRule(root: string, pattern: string): $CancellablePromis
 }
 
 /**
+ * AddMilestone names version for the whole team.
+ */
+export function AddMilestone(root: string, version: string, name: string, note: string): $CancellablePromise<void> {
+    return $Call.ByID(1857537538, root, version, name, note);
+}
+
+/**
  * AddProjectToTeam starts tracking an Ableton project folder as part of a
  * team. It returns quickly; the frontend then commits and uploads the first
  * version with Save, showing its progress.
@@ -453,6 +460,13 @@ export function DownloadUpdate(): $CancellablePromise<void> {
 }
 
 /**
+ * EditMilestone renames milestone id and changes its note.
+ */
+export function EditMilestone(root: string, id: string, name: string, note: string): $CancellablePromise<void> {
+    return $Call.ByID(1674524029, root, id, name, note);
+}
+
+/**
  * Edition names a build with extensions ("" for the public app).
  */
 export function Edition(): $CancellablePromise<string> {
@@ -757,6 +771,13 @@ export function RecoverSwitch(root: string, force: boolean): $CancellablePromise
     return $Call.ByID(1111973759, root, force).then(($result: any) => {
         return $$createType10($result);
     });
+}
+
+/**
+ * RemoveMilestone takes milestone id away (its version stays).
+ */
+export function RemoveMilestone(root: string, id: string): $CancellablePromise<void> {
+    return $Call.ByID(1998094825, root, id);
 }
 
 /**

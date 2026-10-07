@@ -459,6 +459,35 @@ describe("ProjectView: discarding", () => {
 });
 
 describe("ProjectView: Overview", () => {
+  it("names a version as a milestone, shows it, and goes to it from the branch menu", async () => {
+    const ms = { id: "m1", version: "h0", name: "Sent to the label", note: "long intro", by: "Mia", time: "2026-10-05T10:00:00Z" };
+    await show({ branchNames: true, milestones: [ms],
+      history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    // The flag on its dot.
+    expect(screen.getByRole("option", { name: /^v1,.*⚑ Sent to the label/ })).toBeTruthy();
+    // From the branch menu, to its version.
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sent to the label/ }));
+    await screen.findByRole("heading", { name: "v1" });
+    // On the version: the milestone, which opens to be changed or taken away.
+    await fireEvent.click(screen.getByRole("button", { name: /^Sent to the label$/ }));
+    const dialog = screen.getByRole("dialog", { name: "Milestone" });
+    api.EditMilestone.mockResolvedValue(undefined);
+    await fireEvent.input(within(dialog).getByRole("textbox", { name: "Name" }), { target: { value: "Sent to the label, v1" } });
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.EditMilestone).toHaveBeenCalledWith(ROOT, "m1", "Sent to the label, v1", "long intro"));
+    // A new one, on the other version.
+    await fireEvent.click(screen.getByRole("option", { name: /^v2,/ }));
+    await screen.findByRole("heading", { name: "v2" });
+    api.AddMilestone.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Milestone…" }));
+    await fireEvent.input(within(screen.getByRole("dialog", { name: "Mark as a milestone" })).getByRole("textbox", { name: "Name" }),
+      { target: { value: "Final mix" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Add milestone" }));
+    await waitFor(() => expect(api.AddMilestone).toHaveBeenCalledWith(ROOT, "h1", "Final mix", ""));
+  });
+
   it("starts on your changes, and shows a version picked in the graph", async () => {
     await show({ changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     expect(screen.getByRole("option", { name: /Your changes/ }).getAttribute("aria-selected")).toBe("true");

@@ -1239,5 +1239,19 @@
 "“{branch}” is back, where it was.": "“{branch}”이(가) 원래 위치로 돌아왔습니다.",
 "Deleted branches": "삭제된 브랜치",
 "deleted by {name} {when}": "{when} {name}이(가) 삭제",
-"deleted {when}": "{when} 삭제됨"
+"deleted {when}": "{when} 삭제됨",
+"Milestones": "마일스톤",
+"Milestone changed for everyone in the team": "팀 모두에게 마일스톤이 변경되었습니다",
+"Milestone added for everyone in the team": "팀 모두에게 마일스톤이 추가되었습니다",
+"Milestone taken away; the version stays": "마일스톤을 제거했습니다. 버전은 그대로 남습니다",
+"Milestone": "마일스톤",
+"Mark as a milestone": "마일스톤으로 표시",
+"Gives {version} a name the whole team sees on the history.": "{version}에 팀 모두가 기록에서 볼 수 있는 이름을 붙입니다.",
+"Sent to the label, v1": "레이블에 보냄, v1",
+"Note": "메모",
+"What it is, for whom (optional)": "무엇이고 누구를 위한 것인지 (선택)",
+"Take away": "제거",
+"Add milestone": "마일스톤 추가",
+"Give this version a name the whole team sees": "이 버전에 팀 모두가 볼 수 있는 이름을 붙입니다",
+"Milestone…": "마일스톤…"
 }

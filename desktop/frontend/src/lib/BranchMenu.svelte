@@ -5,12 +5,13 @@
 
   // The branch you are on, and its menu: switch to another, merge one into
   // it, or start a new one from where you are. (Above the Overview's graph.)
-  let { st, onswitch, onmerge, onnewbranch, onsettings }: {
+  let { st, onswitch, onmerge, onnewbranch, onsettings, onmilestone }: {
     st: State;
     onswitch: (branch: string) => void;
     onmerge: (branch: string) => void; // into the current one
     onnewbranch: () => void;
     onsettings?: (branch: string) => void; // a branch's settings (where the team keeps names)
+    onmilestone?: (version: string) => void; // show a milestone's version
   } = $props();
   const label = (key: string) => branchLabel(st.branches, key);
 
@@ -64,6 +65,18 @@
       {:else}
         <div class="item faint">{t("no other branches")}</div>
       {/each}
+      {#if st.milestones?.length && onmilestone}
+        <div class="sep"></div>
+        <div class="menu-h">{t("Milestones")}</div>
+        <div class="milestones">
+          {#each st.milestones as m (m.id)}
+            <button class="item" onclick={() => { open = false; onmilestone(m.version); }} title={m.note}>
+              <span class="bn">⚑ {m.name}</span>
+              <span class="faint">{ago(m.time)}</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
       <div class="sep"></div>
       <button class="item" onclick={() => { open = false; onnewbranch(); }}>{t("New branch from here…")}</button>
     </div>
@@ -86,6 +99,7 @@
   .item.current { font-weight: var(--fw-semibold); color: var(--accent); }
   .sep { height: 1px; background: var(--line); margin: var(--sp-6) 0; }
   .row { display: flex; align-items: center; }
+  .milestones { max-height: 220px; overflow: auto; }
   .row .item { flex: 1; min-width: 0; }
   .item.current { align-items: center; }
   .bn { display: inline-flex; align-items: center; gap: var(--sp-6); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

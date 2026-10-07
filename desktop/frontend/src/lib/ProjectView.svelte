@@ -22,6 +22,7 @@
   import HistoryGraph from "./HistoryGraph.svelte";
   import BranchMenu from "./BranchMenu.svelte";
   import BranchSettings from "./BranchSettings.svelte";
+  import MilestoneDialog from "./MilestoneDialog.svelte";
   import { branchLabel, freeColor } from "./branches";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
@@ -86,6 +87,9 @@
   // What a branch is called (its key where the team keeps no names).
   const bl = (key: string) => branchLabel(st?.branches, key);
   let branchSettings = $state<string | null>(null); // a branch's key: its settings open
+  // A milestone being added (no id) or changed.
+  let milestone = $state<{ version: string; label: string; id?: string; name?: string; note?: string } | null>(null);
+  const milestonesOf = (id: string) => (st?.milestones ?? []).filter((m) => m.version === id);
   // Go to version: asked first when there are uncommitted changes.
   let leaving = $state<{ target: Version | null; message: string } | null>(null); // null target: latest
   let keepOpen = $state<string | null>(null); // message for "Make this the latest version"
@@ -767,6 +771,10 @@
       {#if !v.notHere}
         <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}><ActionIcon name="export" />{t("Export…")}</button>
       {/if}
+      {#if st!.branchNames && !incomingIds.has(v.id)}
+        <button onclick={() => (milestone = { version: v.id, label: `“${v.message || v.short}”` })}
+          title={t("Give this version a name the whole team sees")}><ActionIcon name="flag" />{t("Milestone…")}</button>
+      {/if}
     {/snippet}
 
     <main class:flush={tab !== "history"} class:reading inert={reading}>
@@ -775,7 +783,7 @@
           <div class="graph-pane">
             <div class="graph-bar">
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
-                onsettings={(key) => (branchSettings = key)} />
+                onsettings={(key) => (branchSettings = key)} onmilestone={(id) => (graphPick = id)} />
             </div>
             {#snippet cardActions(v: Version)}
               {@const isNew = incomingIds.has(v.id)}
@@ -789,7 +797,7 @@
                 title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
-              branch={st.branch} head={st.head} incoming={incomingIds} {looks}
+              branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
@@ -798,14 +806,22 @@
             {#if shown === "pending"}
               <div class="pending-h">
                 <strong>{t("Your changes")}</strong>
-                <span class="faint">{t("not committed yet · on {branch}", { branch: st.branch })}</span>
+                <span class="faint">{t("not committed yet · on {branch}", { branch: bl(st.branch) })}</span>
               </div>
               <div class="pending-body">{@render changesPanel("changes", true)}</div>
               <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
             {:else if shownVersion}
               {@const v = shownVersion}
               {#snippet acts()}{@render versionActions(v)}{/snippet}
-              <VersionDetail {root} {v} branch={v.inBranch ? bl(st.branch) : v.branches.map(bl).join(", ")} actions={acts} />
+              {#snippet marks()}
+                {#each milestonesOf(v.id) as m (m.id)}
+                  <button class="mark" title={m.note || t("Milestone")}
+                    onclick={() => (milestone = { version: v.id, label: `“${v.message || v.short}”`, id: m.id, name: m.name, note: m.note })}>
+                    <ActionIcon name="flag" />{m.name}</button>
+                {/each}
+              {/snippet}
+              <VersionDetail {root} {v} branch={v.inBranch ? bl(st.branch) : v.branches.map(bl).join(", ")} actions={acts}
+                marks={milestonesOf(v.id).length ? marks : undefined} />
             {:else}
               <p class="muted pad">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
             {/if}
@@ -945,6 +961,10 @@
       text={t("A branch is your own line of versions (e.g. to try an idea). The team keeps working on “{branch}”; merge back when you're happy.", { branch: bl(st.branch) })}
       bind:value={() => newBranch ?? "", (v) => (newBranch = v)} busy={busy === "branch"}
       onconfirm={createBranch} onclose={() => (newBranch = null)} />
+  {/if}
+
+  {#if milestone}
+    <MilestoneDialog {root} {...milestone} onchanged={load} onclose={() => (milestone = null)} />
   {/if}
 
   {#if branchSettings !== null}

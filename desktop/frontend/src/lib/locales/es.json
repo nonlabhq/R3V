@@ -1239,5 +1239,19 @@
 "“{branch}” is back, where it was.": "«{branch}» ha vuelto, donde estaba.",
 "Deleted branches": "Ramas eliminadas",
 "deleted by {name} {when}": "eliminada por {name} {when}",
-"deleted {when}": "eliminada {when}"
+"deleted {when}": "eliminada {when}",
+"Milestones": "Hitos",
+"Milestone changed for everyone in the team": "Hito cambiado para todo el equipo",
+"Milestone added for everyone in the team": "Hito añadido para todo el equipo",
+"Milestone taken away; the version stays": "Hito quitado; la versión se conserva",
+"Milestone": "Hito",
+"Mark as a milestone": "Marcar como hito",
+"Gives {version} a name the whole team sees on the history.": "Da a {version} un nombre que todo el equipo ve en el historial.",
+"Sent to the label, v1": "Enviado al sello, v1",
+"Note": "Nota",
+"What it is, for whom (optional)": "Qué es, para quién (opcional)",
+"Take away": "Quitar",
+"Add milestone": "Añadir hito",
+"Give this version a name the whole team sees": "Dar a esta versión un nombre que todo el equipo ve",
+"Milestone…": "Hito…"
 }

@@ -1239,5 +1239,19 @@
 "“{branch}” is back, where it was.": "「{branch}」已復原到原本的位置。",
 "Deleted branches": "已刪除的分支",
 "deleted by {name} {when}": "{name} 於 {when} 刪除",
-"deleted {when}": "{when} 刪除"
+"deleted {when}": "{when} 刪除",
+"Milestones": "里程碑",
+"Milestone changed for everyone in the team": "已為團隊所有人更新里程碑",
+"Milestone added for everyone in the team": "已為團隊所有人加上里程碑",
+"Milestone taken away; the version stays": "已移除里程碑；版本仍保留",
+"Milestone": "里程碑",
+"Mark as a milestone": "標為里程碑",
+"Gives {version} a name the whole team sees on the history.": "幫 {version} 取一個整個團隊都會在歷史中看到的名字。",
+"Sent to the label, v1": "交給唱片公司 v1",
+"Note": "備註",
+"What it is, for whom (optional)": "這是什麼、給誰的（選填）",
+"Take away": "移除",
+"Add milestone": "加上里程碑",
+"Give this version a name the whole team sees": "幫這個版本取一個整個團隊都看得到的名字",
+"Milestone…": "里程碑…"
 }
