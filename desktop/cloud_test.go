@@ -132,3 +132,42 @@ func TestLeavingAHostedTeamKeepsItsProjectsFirst(t *testing.T) {
 		t.Errorf("the team was left before its project was kept here: local %v", localWhenLeft)
 	}
 }
+
+// A team the account isn't in any more: removing it doesn't ask the service
+// (there's nothing to leave), and keeps its projects here as asked.
+func TestRemovingATeamWithoutAccess(t *testing.T) {
+	var mu sync.Mutex
+	var calls []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		mu.Unlock()
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+	team := hostedTeam(t, srv.URL)
+	t.Setenv("R3V_CLOUD_TOKEN", "tok")
+	root := newSong(t)
+	r, err := project.Init(root, "yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := teams.Update(func(s *teams.Store) error {
+		s.Find(team.ID).NoAccess = true
+		s.SetProjectRoot(team.ID, r.Config.ProjectID, r.Root)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := NewApp().RemoveTeam(team.ID, true, false); err != nil {
+		t.Fatal(err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(calls) != 0 {
+		t.Errorf("the service was asked: %v", calls)
+	}
+	if store, _ := teams.Load(); !slices.Contains(store.Local, r.Root) || store.Find(team.ID) != nil {
+		t.Errorf("local %v, team still listed: %v", store.Local, store.Find(team.ID) != nil)
+	}
+}

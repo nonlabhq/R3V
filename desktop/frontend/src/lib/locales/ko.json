@@ -1146,5 +1146,6 @@
 "Signed out of R3V-Cloud: sign in to share and update": "R3V-Cloud에서 로그아웃됨: 공유하고 업데이트하려면 로그인하세요",
 "Your name comes from your R3V-Cloud account.": "이름은 R3V-Cloud 계정에서 가져옵니다.",
 "Leave the team…": "팀 나가기…",
-"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "R3V-Cloud에서도 이 팀을 나갑니다. 다시 돌아오려면 누군가 다시 초대해야 합니다. 프로젝트 폴더는 디스크에 남습니다."
+"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "R3V-Cloud에서도 이 팀을 나갑니다. 다시 돌아오려면 누군가 다시 초대해야 합니다. 프로젝트 폴더는 디스크에 남습니다.",
+"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "로그인한 계정은 이 팀에 (더 이상) 없습니다. 프로젝트는 그대로 여기에 남습니다. 팀 설정에서 팀을 제거하면 로컬 프로젝트로 남길 수 있습니다."
 }

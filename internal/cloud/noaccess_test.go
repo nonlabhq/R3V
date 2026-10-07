@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/project"
@@ -16,17 +17,24 @@ import (
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
-// Taken out of a team (or the team deleted): its projects here stay, as
-// local projects that no longer point at the team, instead of vanishing
-// from the list.
-func TestSyncTeamsKeepsADroppedTeamsProjects(t *testing.T) {
+// A team the account isn't in (taken out, the team deleted, or another
+// account signed in) stays, with its projects untouched, marked NoAccess:
+// said once, and cleared once the account is in it again. Nothing in the
+// projects changes: the person decides (removing the team).
+func TestSyncTeamsMarksATeamWithoutAccess(t *testing.T) {
 	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	tid := strings.Repeat("1", 32)
+	var in atomic.Bool // is the account in the team?
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"user":{"id":"u1","email":"yi@example.test"},"teams":[]}`)) // in no team now
+		teams := `[]`
+		if in.Load() {
+			teams = `[{"id":"` + tid + `","name":"Band","memberId":"m1"}]`
+		}
+		w.Write([]byte(`{"user":{"id":"u1","email":"yi@example.test"},"teams":` + teams + `}`))
 	}))
 	defer srv.Close()
 	t.Setenv("R3V_CLOUD_TOKEN", "tok")
-	addr := TeamAddress(srv.URL, strings.Repeat("1", 32))
+	addr := TeamAddress(srv.URL, tid)
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "Song.als"), []byte("set"), 0o644)
 	r, err := project.Init(dir, "yi")
@@ -46,24 +54,37 @@ func TestSyncTeamsKeepsADroppedTeamsProjects(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	check := func(what string, noAccess bool) {
+		t.Helper()
+		store, _ := teams.Load()
+		tm := store.Find(teamID)
+		if tm == nil || tm.NoAccess != noAccess {
+			t.Fatalf("%s: team %+v", what, tm)
+		}
+		if len(store.Projects) != 1 || len(store.Local) != 0 {
+			t.Errorf("%s: projects %v, local %v", what, store.Projects, store.Local)
+		}
+		if again, _ := project.Open(r.Root); again.Config.Remote == nil || again.Config.Remote.URL != addr {
+			t.Errorf("%s: the project's team changed", what)
+		}
+	}
 
 	me, err := SyncTeams(srv.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(me.Dropped, []string{r.Root}) {
-		t.Errorf("dropped %v", me.Dropped)
+	if !slices.Equal(me.Lost, []string{teamID}) {
+		t.Errorf("lost %v", me.Lost)
 	}
-	store, _ := teams.Load()
-	if store.Find(teamID) != nil {
-		t.Error("the team is still listed")
+	check("not in it", true)
+	if me, _ := SyncTeams(srv.URL); len(me.Lost) != 0 {
+		t.Errorf("said again: %v", me.Lost)
 	}
-	if !slices.Contains(store.Local, r.Root) {
-		t.Errorf("the project isn't kept as a local one: %v", store.Local)
+	in.Store(true)
+	if _, err := SyncTeams(srv.URL); err != nil {
+		t.Fatal(err)
 	}
-	if again, _ := project.Open(r.Root); again.Config.Remote != nil {
-		t.Errorf("the project still points at the team: %v", again.Config.Remote.URL)
-	}
+	check("in it again", false)
 }
 
 // An invitation's token is in its path: an error doesn't show it.

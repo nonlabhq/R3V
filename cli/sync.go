@@ -105,6 +105,8 @@ func cmdTeams(args []string) error {
 		note := ""
 		if svc, ok := cloud.Hosted(t); ok && !cloud.SignedIn(svc) {
 			note = "  signed out: r3v login"
+		} else if ok && t.NoAccess {
+			note = "  no access: the account signed in isn't in this team (any more)"
 		}
 		fmt.Printf("%s%-24s %s  (%d project(s) on this computer)%s\n", mark, t.Name, t.Remote.Display(), n, note)
 	}
@@ -130,12 +132,7 @@ func syncHosted() {
 		if !cloud.SignedIn(svc) {
 			continue
 		}
-		if me, err := cloud.SyncTeams(svc); err == nil && len(me.Dropped) > 0 {
-			fmt.Printf("no longer in a team on %s: its projects stay here as local projects:\n", svc)
-			for _, root := range me.Dropped {
-				fmt.Println("  " + root)
-			}
-		}
+		cloud.SyncTeams(svc) // (teams the account isn't in are marked: see cmdTeams)
 	}
 }
 

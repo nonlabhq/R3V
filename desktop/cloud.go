@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/url"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -97,23 +96,30 @@ func (a *App) syncHosted() {
 }
 
 // syncTeams brings the account's teams up to date and tells the frontend.
-// Projects of a team the account is no longer in stay here, as local
-// projects: their watches stop, and the person is told why.
+// A team the account is no longer in stays, with its projects (nothing is
+// changed in them): their watches stop, and the person is told, once.
 func (a *App) syncTeams(svc string) error {
 	me, err := cloud.SyncTeams(svc)
 	if err != nil {
 		return err
 	}
-	for _, root := range me.Dropped {
-		a.stopWatch(root)
-	}
-	if len(me.Dropped) > 0 && a.notify != nil {
-		names := make([]string, len(me.Dropped))
-		for i, root := range me.Dropped {
-			names[i] = filepath.Base(root)
+	if len(me.Lost) > 0 {
+		store, _ := teams.Load()
+		var names []string
+		for _, id := range me.Lost {
+			for key, root := range store.Projects {
+				if strings.HasPrefix(key, id+"/") {
+					a.stopWatch(root)
+				}
+			}
+			if t := store.Find(id); t != nil {
+				names = append(names, t.Name)
+			}
 		}
-		a.notify("No longer in a team", "You're no longer in a team on R3V-Cloud. Its projects stay on this computer as local projects: "+
-			strings.Join(names, ", "))
+		if a.notify != nil {
+			a.notify("No access to a team", "The account signed in to R3V-Cloud isn't in "+strings.Join(names, ", ")+
+				" (any more). Its projects stay on this computer as they are; remove the team to keep them as local projects.")
+		}
 	}
 	if a.emit != nil {
 		a.emit("teams", svc)

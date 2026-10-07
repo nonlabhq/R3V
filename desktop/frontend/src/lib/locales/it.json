@@ -1146,5 +1146,6 @@
 "Signed out of R3V-Cloud: sign in to share and update": "Disconnesso da R3V-Cloud: accedi per condividere e aggiornare",
 "Your name comes from your R3V-Cloud account.": "Il tuo nome viene dal tuo account R3V-Cloud.",
 "Leave the team…": "Lascia il team…",
-"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "Lasci il team anche su R3V-Cloud: per tornare, qualcuno dovrà invitarti di nuovo. Le cartelle dei progetti restano sul disco."
+"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "Lasci il team anche su R3V-Cloud: per tornare, qualcuno dovrà invitarti di nuovo. Le cartelle dei progetti restano sul disco.",
+"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "L'account con cui hai effettuato l'accesso non è (più) in questo team. I suoi progetti restano qui così come sono: rimuovi il team nelle sue impostazioni per tenerli come progetti locali."
 }

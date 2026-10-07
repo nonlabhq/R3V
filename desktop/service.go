@@ -191,6 +191,11 @@ func (a *App) startWatch(root string) {
 	if err != nil || r.Config.Remote == nil {
 		return
 	}
+	if store, err := teams.Load(); err == nil {
+		if t := store.FindByURL(r.Config.Remote.URL); t != nil && t.NoAccess {
+			return // (a team the account isn't in: nothing to watch)
+		}
+	}
 	a.mu.Lock()
 	if _, running := a.teamWatches[root]; running {
 		a.mu.Unlock()
