@@ -625,6 +625,19 @@
         {/each}
         <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
+      <!-- folded: who you are, as your picture -->
+      {#if current?.memberName}
+        <div class="user folded-user">
+          {#if profile?.available}
+            <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName} · ${t("User settings")}`}
+              aria-label={t("User settings")}>
+              <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} size={28} />
+            </button>
+          {:else}
+            <span class="avatar" title={current.memberName}>{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
+          {/if}
+        </div>
+      {/if}
       {:else}
       <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
@@ -953,6 +966,8 @@
   .keys { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-md); color: var(--faint); }
   .keys + .prefs { margin-left: 0; }
   .shell.folded aside { padding-left: var(--sp-6); padding-right: var(--sp-6); }
+  .folded-user { justify-content: center; margin-left: calc(var(--sp-6) * -1); margin-right: calc(var(--sp-6) * -1); padding: var(--sp-10) 0; }
+  .folded-user .who { flex: none; margin: 0; padding: var(--sp-2); }
   .aside-top { display: flex; align-items: center; gap: var(--sp-4); }
   .aside-top .brand { flex: 1; min-width: 0; }
   .aside-top .version { margin-bottom: var(--sp-8); }
