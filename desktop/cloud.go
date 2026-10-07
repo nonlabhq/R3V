@@ -294,3 +294,37 @@ func (a *App) CloudSetAccess(teamID, projectID, userID, access string) error {
 	}
 	return cloud.SetAccess(svc, team, projectID, userID, access)
 }
+
+// onRecord follows a record a hosted team's service wrote (live notices):
+// the team's name or projects, the team list again; a member's look, the
+// team's looks asked again; a lock, the project's page reads again.
+func (a *App) onRecord(service, team string, r cloud.Record) {
+	switch r.Kind {
+	case "team", "project":
+		a.syncTeams(service)
+		return
+	case "member", "lock":
+	default:
+		return // a kind this build doesn't know
+	}
+	store, err := teams.Load()
+	if err != nil {
+		return
+	}
+	t := store.FindByURL(cloud.TeamAddress(service, team))
+	if t == nil {
+		return
+	}
+	if r.Kind == "member" {
+		looksCache.forget(t.Remote.URL)
+	}
+	if a.emit == nil {
+		return
+	}
+	for key, root := range store.Projects {
+		pid, ok := strings.CutPrefix(key, t.ID+"/")
+		if ok && (r.Kind == "member" || pid == r.Project) {
+			a.emit("team-watch", WatchEvent{Root: root, Kind: "record", Labels: []string{}, Versions: []Version{}})
+		}
+	}
+}

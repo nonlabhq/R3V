@@ -57,6 +57,7 @@ func NewApp() *App {
 	// People, roles or projects changed on the service: the team list
 	// follows, and the frontend is told.
 	a.live.OnTeamChange = func(service string) { a.syncTeams(service) }
+	a.live.OnRecord = a.onRecord
 	return a
 }
 
