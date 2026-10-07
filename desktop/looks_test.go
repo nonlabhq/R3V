@@ -9,7 +9,6 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -51,7 +50,8 @@ func TestLooks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// A hosted team can't keep looks yet: it's named, the others take it.
+	// A hosted team can't keep looks yet: it's left out (the app says so
+	// where it shows), the others take it.
 	teams.Update(func(s *teams.Store) error {
 		h := s.Upsert(remote.Config{URL: cloud.TeamAddress("https://cloud.example", strings.Repeat("1", 32))}, "Hosted")
 		h.MemberID, h.MemberName = strings.Repeat("a", 32), "Alice"
@@ -60,7 +60,7 @@ func TestLooks(t *testing.T) {
 	})
 
 	p, err := a.SetProfileColor("b2")
-	if err != nil || p.Color != "b2" || p.Name != "Alice" || !slices.Equal(p.NotShared, []string{"Hosted"}) {
+	if err != nil || p.Color != "b2" || p.Name != "Alice" || len(p.NotShared) != 0 {
 		t.Fatalf("SetProfileColor: %+v %v", p, err)
 	}
 	if p, err = a.SetProfilePicture(pngURL(t, 128)); err != nil || !strings.HasPrefix(p.Picture, "data:image/png;base64,") {

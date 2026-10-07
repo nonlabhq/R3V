@@ -1172,7 +1172,6 @@
 "Indigo": "Indaco",
 "Violet": "Viola",
 "Pink": "Rosa",
-"Not shown in {teams} yet: hosted teams can't keep pictures and colours.": "Non ancora visibile in {teams}: i team ospitati non possono ancora conservare immagini e colori.",
 "This file can't be read as a picture.": "Questo file non si può leggere come immagine.",
 "Upload picture…": "Carica immagine…",
 "Remove picture": "Rimuovi immagine",
@@ -1187,5 +1186,7 @@
 "Mint": "Menta",
 "Magenta": "Magenta",
 "Sky": "Celeste",
-"Lilac": "Lilla"
+"Lilac": "Lilla",
+"{teams} couldn't be reached: they get it with your next change.": "{teams} non raggiungibile: lo riceverà alla tua prossima modifica.",
+"{team} can't keep icons and colours yet: the project shows its initial there.": "{team} non può ancora salvare icone e colori: lì il progetto mostra la sua iniziale."
 }
