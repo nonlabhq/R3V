@@ -56,11 +56,7 @@ func NewApp() *App {
 		preuploadNow: make(chan string, 8), live: cloud.NewHub()}
 	// People, roles or projects changed on the service: the team list
 	// follows, and the frontend is told.
-	a.live.OnTeamChange = func(service string) {
-		if _, err := cloud.SyncTeams(service); err == nil && a.emit != nil {
-			a.emit("teams", service)
-		}
-	}
+	a.live.OnTeamChange = func(service string) { a.syncTeams(service) }
 	return a
 }
 

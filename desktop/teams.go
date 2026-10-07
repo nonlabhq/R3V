@@ -379,15 +379,8 @@ func (a *App) RemoveTeam(id string, keepProjects, fullHistory bool) error {
 	if err != nil {
 		return err
 	}
-	// A hosted team is left on the service too; otherwise it would come back
-	// with the next look at the account's teams.
-	if t := store.Find(id); t != nil {
-		if svc, ok := cloud.Hosted(*t); ok && cloud.SignedIn(svc) {
-			if err := cloud.Leave(svc, cloud.TeamID(t.Remote.URL)); err != nil {
-				return err
-			}
-		}
-	}
+	// The projects first: moving them to Local downloads what they need from
+	// the team's storage, which a hosted team no longer lets in once left.
 	for key, root := range store.Projects {
 		if !strings.HasPrefix(key, id+"/") {
 			continue
@@ -395,6 +388,16 @@ func (a *App) RemoveTeam(id string, keepProjects, fullHistory bool) error {
 		a.stopWatch(root)
 		if keepProjects {
 			if err := a.detach(root, fullHistory); err != nil {
+				return err
+			}
+		}
+	}
+	// Then a hosted team is left on the service too; otherwise it would come
+	// back with the next look at the account's teams. (Failing, it stays
+	// listed: removing it again tries again.)
+	if t := store.Find(id); t != nil {
+		if svc, ok := cloud.Hosted(*t); ok && cloud.SignedIn(svc) {
+			if err := cloud.Leave(svc, cloud.TeamID(t.Remote.URL)); err != nil {
 				return err
 			}
 		}

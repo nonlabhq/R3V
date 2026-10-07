@@ -34,10 +34,17 @@ import (
 // this. R3V_CLOUD_TOKEN stands in for it in tests.
 var SessionToken = func(service string) string { return os.Getenv("R3V_CLOUD_TOKEN") }
 
-// BrokerService is the service a hosted team's address is at (https://<host>).
+// HostedTeams: hosted teams are on in this build (the Nightly channel, see
+// broker_nightly.go). Off, a hosted team's address is no team's: nothing
+// reaches the service (sign-in, the account's teams, live notices) even with
+// the settings and the session Nightly left (both channels share them).
+var HostedTeams = false
+
+// BrokerService is the service a hosted team's address is at (https://<host>);
+// false in a build without hosted teams.
 func BrokerService(address string) (string, bool) {
 	rest, ok := strings.CutPrefix(address, "r3v-cloud+")
-	if !ok {
+	if !ok || !HostedTeams {
 		return "", false
 	}
 	u, err := url.Parse(rest)
@@ -45,6 +52,18 @@ func BrokerService(address string) (string, bool) {
 		return "", false
 	}
 	return u.Scheme + "://" + u.Host, true
+}
+
+// withoutAddress keeps a presigned address out of an error: its signature
+// is a key to the storage for a while, and errors are shown and logged.
+// (Still a *url.Error: whether to try again is told the same way.)
+func withoutAddress(err error) error {
+	if ue, ok := err.(*url.Error); ok {
+		c := *ue
+		c.URL = "(storage address)"
+		return &c
+	}
+	return err
 }
 
 // openBroker opens a hosted team's address.
@@ -76,7 +95,8 @@ var (
 type brokerBucket struct {
 	base  string // https://<host>/v1/teams/<team>
 	token string
-	http  *http.Client
+	http  *http.Client // presigned transfers (long; watched for stalls instead)
+	api   *http.Client // the service's own calls (short, with a timeout)
 	// Transfers: how many tries, the first wait between them, and how long
 	// a transfer may go without progress.
 	tries   int
@@ -91,7 +111,7 @@ func NewBroker(base, token string) (Bucket, error) {
 		return nil, ErrSignedOut
 	}
 	return &brokerBucket{
-		base: strings.TrimRight(base, "/"), token: token, http: &http.Client{},
+		base: strings.TrimRight(base, "/"), token: token, http: &http.Client{}, api: &http.Client{Timeout: time.Minute},
 		tries: 4, backoff: time.Second, stall: 20 * time.Second,
 	}, nil
 }
@@ -136,7 +156,7 @@ func (b *brokerBucket) call(method, path string, body []byte, hdr map[string]str
 		for k, v := range hdr {
 			req.Header.Set(k, v)
 		}
-		resp, err := b.http.Do(req)
+		resp, err := b.api.Do(req)
 		if err != nil {
 			last = err
 			continue
@@ -267,7 +287,7 @@ func (b *brokerBucket) transfer(method string, newURL func() (string, error), bo
 				err = fmt.Errorf("no progress for %v", b.stall)
 			}
 			cancel()
-			last = fmt.Errorf("%s: %w", method, err)
+			last = fmt.Errorf("%s: %w", method, withoutAddress(err))
 			continue
 		}
 		if resp.StatusCode >= 500 || resp.StatusCode == 429 {

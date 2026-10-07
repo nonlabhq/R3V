@@ -55,10 +55,15 @@
       await api.CloudSignIn();
       await reload();
     } catch (e) {
-      toast(errorText(e), "error");
+      if (signingIn) toast(errorText(e), "error"); // (not when cancelled)
     } finally {
       signingIn = false;
     }
+  }
+  // The browser tab left alone: stop waiting for it.
+  function cancelSignIn() {
+    signingIn = false;
+    api.CloudCancelSignIn();
   }
 
   async function select(id: string) {
@@ -139,6 +144,7 @@
     <button class="who" disabled={signingIn} onclick={signIn}>
       ⚠ {signingIn ? tr("Finish signing in in your browser…") : tr("Signed out of R3V-Cloud: sign in to share and update")}
     </button>
+    {#if signingIn}<button class="who" onclick={cancelSignIn}>{tr("Cancel")}</button>{/if}
   {/if}
   {#if current && !current.memberId}
     <button class="who" onclick={() => (identityFor = current!)}

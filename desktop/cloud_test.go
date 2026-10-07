@@ -1,13 +1,17 @@
+//go:build nightly
+
 package desktop
 
 import (
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/cloud"
+	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teams"
 )
@@ -79,5 +83,52 @@ func TestRemovingAHostedTeamLeavesIt(t *testing.T) {
 	}
 	if store, _ := teams.Load(); store.Find(team.ID) != nil {
 		t.Error("the team is still listed")
+	}
+}
+
+// Leaving a hosted team and keeping its projects: they move to Local (with
+// what they need from the team's storage) before the team is left, since a
+// team left no longer lets its storage be read.
+func TestLeavingAHostedTeamKeepsItsProjectsFirst(t *testing.T) {
+	var mu sync.Mutex
+	var localWhenLeft []string
+	left := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "DELETE" && strings.Contains(r.URL.Path, "/members/") {
+			store, _ := teams.Load()
+			mu.Lock()
+			left, localWhenLeft = true, store.Local
+			mu.Unlock()
+		}
+		if r.URL.Path == "/v1/me" {
+			w.Write([]byte(`{"user":{"id":"u1","email":"yi@example.test"},"teams":[]}`))
+			return
+		}
+		w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+	team := hostedTeam(t, srv.URL)
+	t.Setenv("R3V_CLOUD_TOKEN", "tok")
+	root := newSong(t)
+	r, err := project.Init(root, "yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := teams.Update(func(s *teams.Store) error {
+		s.SetProjectRoot(team.ID, r.Config.ProjectID, r.Root)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := NewApp().RemoveTeam(team.ID, true, false); err != nil {
+		t.Fatal(err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if !left {
+		t.Fatal("the team wasn't left on the service")
+	}
+	if !slices.Contains(localWhenLeft, r.Root) {
+		t.Errorf("the team was left before its project was kept here: local %v", localWhenLeft)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -48,7 +49,7 @@ var signIn struct {
 // CloudCancelSignIn).
 func (a *App) CloudSignIn() (CloudStatus, error) {
 	if version.Channel != "nightly" {
-		return CloudStatus{}, errors.New("R3V-Cloud is in the Nightly build for now")
+		return CloudStatus{}, cloud.ErrNotInBuild
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	signIn.Lock()
@@ -68,7 +69,7 @@ func (a *App) CloudSignIn() (CloudStatus, error) {
 	if err != nil {
 		return CloudStatus{}, err
 	}
-	if _, err := cloud.SyncTeams(svc); err != nil {
+	if err := a.syncTeams(svc); err != nil {
 		return CloudStatus{}, err
 	}
 	a.selectFirstHosted(svc)
@@ -92,9 +93,32 @@ func (a *App) syncHosted() {
 	if version.Channel != "nightly" || !cloud.SignedIn(svc) {
 		return
 	}
-	if _, err := cloud.SyncTeams(svc); err == nil && a.emit != nil {
+	a.syncTeams(svc)
+}
+
+// syncTeams brings the account's teams up to date and tells the frontend.
+// Projects of a team the account is no longer in stay here, as local
+// projects: their watches stop, and the person is told why.
+func (a *App) syncTeams(svc string) error {
+	me, err := cloud.SyncTeams(svc)
+	if err != nil {
+		return err
+	}
+	for _, root := range me.Dropped {
+		a.stopWatch(root)
+	}
+	if len(me.Dropped) > 0 && a.notify != nil {
+		names := make([]string, len(me.Dropped))
+		for i, root := range me.Dropped {
+			names[i] = filepath.Base(root)
+		}
+		a.notify("No longer in a team", "You're no longer in a team on R3V-Cloud. Its projects stay on this computer as local projects: "+
+			strings.Join(names, ", "))
+	}
+	if a.emit != nil {
 		a.emit("teams", svc)
 	}
+	return nil
 }
 
 // CloudSignOut signs this computer out; hosted teams stay listed, signed out.

@@ -45,8 +45,13 @@
   }
 
   async function signOut() {
-    await api.CloudSignOut();
-    status = await api.CloudStatus();
+    error = "";
+    try {
+      await api.CloudSignOut();
+      status = await api.CloudStatus();
+    } catch (e) {
+      error = errorText(e);
+    }
   }
 
   async function run(f: () => Promise<TeamSummary>) {

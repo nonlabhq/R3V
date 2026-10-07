@@ -13,10 +13,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/keyring"
+	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teams"
 	"github.com/nonlabhq/r3v/internal/version"
@@ -75,7 +77,16 @@ func SignedIn(service string) bool {
 var client = &http.Client{Timeout: 30 * time.Second}
 
 // call sends a request to the service with the session; out may be nil.
+var invitation = regexp.MustCompile(`/invitations/[^/?]+`)
+
+// ErrNotInBuild: this build has no hosted teams (Stable; see
+// remote.HostedTeams). Every way to the service stops here.
+var ErrNotInBuild = errors.New("R3V-Cloud is in the Nightly build for now")
+
 func call(service, token, method, path string, in, out any) error {
+	if !remote.HostedTeams {
+		return ErrNotInBuild
+	}
 	var body io.Reader
 	if in != nil {
 		data, _ := json.Marshal(in)
@@ -91,8 +102,15 @@ func call(service, token, method, path string, in, out any) error {
 	if token != "" {
 		req.Header.Set("authorization", "Bearer "+token)
 	}
+	// (an invitation's token is in its path: errors say the path without it)
+	shown := invitation.ReplaceAllString(path, "/invitations/…")
 	resp, err := client.Do(req)
 	if err != nil {
+		if ue, ok := err.(*url.Error); ok {
+			c := *ue
+			c.URL = service + shown
+			return &c
+		}
 		return err
 	}
 	defer resp.Body.Close()
@@ -107,7 +125,7 @@ func call(service, token, method, path string, in, out any) error {
 		if e.Error.Message != "" {
 			return fmt.Errorf("R3V-Cloud: %s", e.Error.Message)
 		}
-		return fmt.Errorf("R3V-Cloud: %s %s: %d", method, path, resp.StatusCode)
+		return fmt.Errorf("R3V-Cloud: %s %s: %d", method, shown, resp.StatusCode)
 	}
 	if out == nil {
 		return nil
@@ -123,6 +141,9 @@ type Me struct {
 		Name  string `json:"name"`
 	} `json:"user"`
 	Teams []MyTeam `json:"teams"`
+	// Dropped: the folders of projects of teams the account is no longer in,
+	// kept on this computer as local projects (SyncTeams).
+	Dropped []string `json:"-"`
 }
 
 // MyTeam is a team the person is in.
@@ -158,8 +179,9 @@ func Hosted(t teams.Team) (service string, ok bool) { return remote.BrokerServic
 
 // SyncTeams puts the account's teams in the teams store (new ones added,
 // names and member ids brought up to date) and removes the service's
-// teams the account is no longer in. Teams of other services, and storage
-// teams, are left alone.
+// teams the account is no longer in (taken out, or the team deleted): their
+// projects here stay, as local projects (Me.Dropped). Teams of other
+// services, and storage teams, are left alone.
 func SyncTeams(service string) (*Me, error) {
 	me, err := GetMe(service)
 	if err != nil {
@@ -179,12 +201,39 @@ func SyncTeams(service string) (*Me, error) {
 		}
 		for _, t := range append([]teams.Team(nil), s.Teams...) {
 			if svc, ok := Hosted(t); ok && strings.EqualFold(svc, service) && !keep[teams.NormalizeURL(t.Remote.URL)] {
+				for key, root := range s.Projects {
+					if strings.HasPrefix(key, t.ID+"/") {
+						me.Dropped = append(me.Dropped, root)
+						s.AddLocal(root)
+					}
+				}
 				s.Remove(t.ID)
 			}
 		}
 		return nil
 	})
+	for _, root := range me.Dropped {
+		forgetTeam(root)
+	}
 	return me, err
+}
+
+// forgetTeam makes a project of a team the account is no longer in one of
+// this computer only: its folder and the versions committed here stay;
+// what was only in the team's storage can't be fetched any more. (Busy, it
+// keeps the address, and says it can't reach the team.)
+func forgetTeam(root string) {
+	r, err := project.Open(root)
+	if err != nil || r.Config.Remote == nil {
+		return
+	}
+	release, err := r.Lock(10 * time.Second)
+	if err != nil {
+		return
+	}
+	defer release()
+	r.Config.Remote = nil
+	r.SaveConfig()
 }
 
 // SignOut ends this computer's session with service (on the service too,

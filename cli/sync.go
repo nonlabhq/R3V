@@ -115,6 +115,9 @@ func cmdTeams(args []string) error {
 // signed in to up to date (teams joined or left since). Offline, or signed
 // out, the list stays as it was.
 func syncHosted() {
+	if !remote.HostedTeams {
+		return
+	}
 	services := map[string]bool{cloud.Service(): true}
 	if store, err := teams.Load(); err == nil {
 		for _, t := range store.Teams {
@@ -124,8 +127,14 @@ func syncHosted() {
 		}
 	}
 	for svc := range services {
-		if cloud.SignedIn(svc) {
-			cloud.SyncTeams(svc)
+		if !cloud.SignedIn(svc) {
+			continue
+		}
+		if me, err := cloud.SyncTeams(svc); err == nil && len(me.Dropped) > 0 {
+			fmt.Printf("no longer in a team on %s: its projects stay here as local projects:\n", svc)
+			for _, root := range me.Dropped {
+				fmt.Println("  " + root)
+			}
 		}
 	}
 }
