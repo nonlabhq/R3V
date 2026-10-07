@@ -22,8 +22,9 @@ import (
 	"github.com/nonlabhq/r3v/internal/version"
 )
 
-// Default is the service R3V signs in to unless told otherwise.
-const Default = "https://api.r3v.so"
+// Default is the service R3V signs in to unless told otherwise; Nightly
+// builds use the test service while R3V-Cloud is built (default_nightly.go).
+var Default = "https://api.r3v.so"
 
 // Service is the service to use: R3V_CLOUD_URL, or Default.
 func Service() string {
