@@ -35,6 +35,30 @@ describe("FileExplorer", () => {
     expect(names()).toEqual(["Samples", "notes.txt", "Song.als"]);
   });
 
+  it("goes through the files with the keyboard, into folders and back up", async () => {
+    const { onselect } = show();
+    const list = screen.getByRole("grid", { name: "Files" });
+    const on = () => document.querySelector(".row.on .nm")?.textContent;
+    await fireEvent.keyDown(list, { key: "ArrowDown" }); // the first: a folder
+    expect(on()).toBe("Samples");
+    expect(onselect).not.toHaveBeenCalled();
+    await fireEvent.keyDown(list, { key: "ArrowDown" });
+    expect(onselect).toHaveBeenLastCalledWith("notes.txt");
+    await fireEvent.keyDown(list, { key: "End" });
+    expect(onselect).toHaveBeenLastCalledWith("Song.als");
+    await fireEvent.keyDown(list, { key: "Home" });
+    await fireEvent.keyDown(list, { key: "ArrowRight" }); // into Samples
+    expect(names()).toEqual(["Loops", "Kick.wav"]);
+    await fireEvent.keyDown(list, { key: "ArrowDown" });
+    await fireEvent.keyDown(list, { key: "Enter" }); // into Loops
+    expect(names()).toEqual(["Loop 2.wav", "Loop 10.wav"]);
+    await fireEvent.keyDown(list, { key: "Backspace" });
+    expect(names()).toEqual(["Loops", "Kick.wav"]);
+    expect(on()).toBe("Loops"); // (on the folder just left)
+    await fireEvent.keyDown(list, { key: "ArrowLeft" });
+    expect(names()).toEqual(["Samples", "notes.txt", "Song.als"]);
+  });
+
   it("enters one folder on a double click, not two", async () => {
     show();
     const samples = screen.getByTitle("Samples");

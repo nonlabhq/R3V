@@ -24,6 +24,7 @@
   import PreuploadIcon from "./lib/PreuploadIcon.svelte";
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
+  import KeysHelp from "./lib/KeysHelp.svelte";
 
   let overview = $state<Overview | null>(null);
   let onboarding = $state(false);
@@ -301,7 +302,19 @@
     saveTabs();
     select(p);
   }
+  function goTab(x: Tab) {
+    if (x.p) select(x.p);
+    else blank = x.key;
+  }
+  // Tabs closed, newest last: Ctrl+Shift+T opens the last one again.
+  let closedTabs: string[] = [];
+  function reopenTab() {
+    const k = closedTabs.pop();
+    const p = k && entries.find((e) => rowKey(e) === k);
+    if (p) select(p);
+  }
   function closeTabOf(x: Tab) {
+    if (x.p) closedTabs = [...closedTabs.filter((k) => k !== x.key), x.key].slice(-20);
     const wasActive = activeTab(x);
     const { next } = closeTab(tabItems.map((y) => y.key), x.key);
     tabKeys = tabKeys.filter((k) => k !== x.key);
@@ -512,6 +525,30 @@
     };
   });
 
+  // The shell's keys (not while a dialog is open): Ctrl+\ the sidebar;
+  // Ctrl+W closes the tab, Ctrl+Shift+T opens the last closed one again;
+  // Ctrl+Tab / Ctrl+Shift+Tab (or Ctrl+PageDown / PageUp) the next and
+  // previous tab, Ctrl+1…8 a tab, Ctrl+9 the last.
+  let keysHelp = $state(false);
+  function tabKeysDown(e: KeyboardEvent) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || !overview || onboarding || document.querySelector("[aria-modal='true']")) return;
+    const k = e.key.toLowerCase();
+    if (e.key === "/" || e.code === "Slash") { e.preventDefault(); keysHelp = true; return; }
+    const at = tabItems.findIndex(activeTab);
+    const go = (i: number) => { const x = tabItems[(i + tabItems.length) % tabItems.length]; if (x) goTab(x); };
+    if (e.key === "\\" || e.code === "Backslash") fold(!folded);
+    else if (k === "w" && !e.shiftKey) { if (at >= 0) closeTabOf(tabItems[at]); }
+    else if (k === "t" && e.shiftKey) reopenTab();
+    else if (e.key === "Tab" || e.key === "PageDown" || e.key === "PageUp") {
+      if (!tabItems.length) return;
+      go(at + (e.key === "PageUp" || (e.key === "Tab" && e.shiftKey) ? -1 : 1));
+    } else if (/^[1-9]$/.test(e.key) && !e.shiftKey) {
+      if (!tabItems.length) return;
+      go(e.key === "9" ? tabItems.length - 1 : Math.min(+e.key - 1, tabItems.length - 1));
+    } else return;
+    e.preventDefault();
+  }
+
   const statusText = (status: string) => ({ remote: t("not downloaded"), missing: t("folder not found") } as Record<string, string>)[status];
 </script>
 
@@ -522,6 +559,8 @@
       e.preventDefault();
       newTab();
     }
+    if (e.key === "Escape" && rowMenu) { e.preventDefault(); rowMenu = ""; }
+    tabKeysDown(e);
     // F5, Ctrl+R: the project list (an open project refreshes itself), never the page.
     if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) {
       e.preventDefault();
@@ -559,7 +598,7 @@
           <img src="/brand/r3v-icon-small.svg" alt="" />
           {#if update || current?.keysUnreadable || overview.teamError}<span class="news" title={t("Open the sidebar to see what's new")}></span>{/if}
         </button>
-        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar")} aria-label={t("Show the sidebar")}>»</button>
+        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\)"} aria-label={t("Show the sidebar")}>»</button>
       </div>
       <!-- folded: the projects as their icons -->
       <div class="folded-list">
@@ -577,7 +616,7 @@
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
         {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
-      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar")} aria-label={t("Hide the sidebar")}>«</button>
+      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       {#if update}
         {@const u = update}
@@ -627,6 +666,8 @@
           <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
           <span class="user-name">{current.memberName}</span>
         {/if}
+        <button class="ghost keys" onclick={() => (keysHelp = true)} title={t("Keyboard shortcuts") + " (Ctrl+/)"}
+          aria-label={t("Keyboard shortcuts")}>⌨</button>
         <button class="ghost prefs" onclick={() => (appSettings = true)}>{t("Preferences")}</button>
       </div>
       {/if}
@@ -799,6 +840,7 @@
 {/snippet}
 
 
+{#if keysHelp}<KeysHelp onclose={() => (keysHelp = false)} />{/if}
 {#if queue.open}
   <UploadQueue names={Object.fromEntries(entries.filter((p) => p.root).map((p) => [p.root, p.name]))} onclose={() => (queue.open = false)} />
 {/if}
@@ -873,6 +915,8 @@
     font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
   .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .prefs { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-sm); color: var(--faint); }
+  .keys { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-md); color: var(--faint); }
+  .keys + .prefs { margin-left: 0; }
   .shell.folded aside { padding-left: var(--sp-6); padding-right: var(--sp-6); }
   .aside-top { display: flex; align-items: center; gap: var(--sp-4); }
   .aside-top .brand { flex: 1; min-width: 0; }

@@ -5,6 +5,7 @@
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import { viewerFor, type Side } from "./viewers";
+  import { navKey, ownKey } from "./keynav";
   import type { Snippet } from "svelte";
 
   // A version in the Overview: what it is (header, with what can be done
@@ -40,6 +41,17 @@
     });
   });
   let current = $derived(files?.find((f) => f.path === picked));
+  // ↑ ↓ Home End through the files (see keynav.ts).
+  let aside = $state<HTMLElement>();
+  function onKey(e: KeyboardEvent) {
+    if (!ownKey(e) || !files?.length) return;
+    const nav = navKey(files.map((f) => ({ key: f.path })), picked, e.key, 10);
+    if (!nav || !("to" in nav)) return;
+    e.preventDefault();
+    picked = nav.to;
+    const to = nav.to;
+    queueMicrotask(() => [...(aside?.querySelectorAll<HTMLElement>("[data-path]") ?? [])].find((x) => x.dataset.path === to)?.focus());
+  }
   // The list's width: the same split as your changes' list.
   let bodyWidth = $state(0);
   let listWidth = $derived(splitPx("list", 0.34, bodyWidth, 240, 300));
@@ -71,7 +83,8 @@
   </header>
   <div class="body" bind:clientWidth={bodyWidth} style:grid-template-columns="{listWidth}px 1fr">
     {#if bodyWidth}<Splitter key="list" def={0.34} width={bodyWidth} minLeft={240} minRight={300} />{/if}
-    <aside>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <aside bind:this={aside} onkeydown={onKey}>
       <div class="list-h">{files ? tn(files.length, "{count} file changed", "{count} files changed", { count: files.length }) : t("Changes")}</div>
       {#if error}
         <p class="error">{error}</p>
@@ -83,7 +96,7 @@
         <ul>
           {#each files as f (f.path)}
             <li>
-              <button class:on={f.path === picked} onclick={() => (picked = f.path)} title={f.path}>
+              <button class:on={f.path === picked} onclick={() => (picked = f.path)} title={f.path} data-path={f.path}>
                 <FileIcon kind={f.kind} />
                 <span class="names"><span class="fname">{name(f.path)}</span>{#if dir(f.path)}<span class="fdir">{dir(f.path)}</span>{/if}</span>
                 <span class="st {f.status}" title={statusName(f.status)}>{sym[f.status] ?? "?"}</span>
