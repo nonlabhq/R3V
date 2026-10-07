@@ -26,6 +26,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -102,6 +103,66 @@ type brokerBucket struct {
 	tries   int
 	backoff time.Duration
 	stall   time.Duration
+
+	// Download URLs asked for ahead, many in one request (PrepareGets):
+	// each used once, by the first try of its download.
+	prepMu   sync.Mutex
+	prepared map[string]preparedURL
+}
+
+type preparedURL struct {
+	url   string
+	until time.Time
+}
+
+// PrepareGets asks for the download URLs of contents keys, up to 1,000 a
+// request, so the downloads that follow don't each ask for their own (a
+// request to the service apiece). Best effort: a key not prepared asks
+// for its URL as before.
+func (b *brokerBucket) PrepareGets(keys []string) {
+	byPID := map[string][]string{}
+	for _, k := range keys {
+		if pid, _, ok := contents(k); ok {
+			byPID[pid] = append(byPID[pid], k)
+		}
+	}
+	for pid, ks := range byPID {
+		for len(ks) > 0 {
+			n := min(len(ks), 1000)
+			batch := ks[:n]
+			ks = ks[n:]
+			rels := make([]string, len(batch))
+			for i, k := range batch {
+				_, rels[i], _ = contents(k)
+			}
+			var out struct{ Get []string }
+			if b.json("/projects/"+pid+"/urls", map[string]any{"get": rels}, &out) != nil || len(out.Get) != len(batch) {
+				continue
+			}
+			// (valid 15 minutes: used within 12)
+			until := time.Now().Add(12 * time.Minute)
+			b.prepMu.Lock()
+			if b.prepared == nil {
+				b.prepared = map[string]preparedURL{}
+			}
+			for i, k := range batch {
+				b.prepared[k] = preparedURL{out.Get[i], until}
+			}
+			b.prepMu.Unlock()
+		}
+	}
+}
+
+// preparedGet takes key's prepared URL, if there is one still good.
+func (b *brokerBucket) preparedGet(key string) string {
+	b.prepMu.Lock()
+	defer b.prepMu.Unlock()
+	p, ok := b.prepared[key]
+	delete(b.prepared, key)
+	if !ok || time.Now().After(p.until) {
+		return ""
+	}
+	return p.url
 }
 
 // NewBroker reaches the team at base (https://<host>/v1/teams/<team>) as
@@ -367,7 +428,14 @@ func (w *watched) Close() error {
 
 func (b *brokerBucket) open(key string) (*http.Response, error) {
 	if pid, rel, ok := contents(key); ok {
-		resp, err := b.transfer("GET", func() (string, error) { return b.urls(pid, nil, rel) }, nil, 0, nil)
+		first := b.preparedGet(key)
+		resp, err := b.transfer("GET", func() (string, error) {
+			if u := first; u != "" {
+				first = ""
+				return u, nil
+			}
+			return b.urls(pid, nil, rel)
+		}, nil, 0, nil)
 		if err != nil {
 			return nil, err
 		}

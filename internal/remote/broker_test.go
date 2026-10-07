@@ -367,3 +367,31 @@ func TestBrokerKeepsBranchRecords(t *testing.T) {
 		t.Error("a hosted team doesn't keep branch records")
 	}
 }
+
+// Downloads asked for ahead take one request for their URLs, not one each;
+// a key not prepared (or a retry) asks for its own as before.
+func TestBrokerPreparedDownloads(t *testing.T) {
+	f := newFakeCloud(t)
+	b := f.bucket(t)
+	var keys []string
+	for i := range 5 {
+		key, data, _ := object(fmt.Sprintf("file %d", i))
+		f.stored[strings.TrimPrefix(key, "projects/"+testPID+"/")] = data // (storage keeps them by the project's own key)
+		keys = append(keys, key)
+	}
+	b.PrepareGets(keys)
+	if n := f.urlCalls.Load(); n != 1 {
+		t.Fatalf("URL requests to prepare: %d", n)
+	}
+	for _, k := range keys {
+		if _, _, err := b.Get(k); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := f.urlCalls.Load(); n != 1 {
+		t.Errorf("URL requests after the downloads: %d, want still 1", n)
+	}
+	if _, _, err := b.Get(keys[0]); err != nil || f.urlCalls.Load() != 2 {
+		t.Errorf("a second download of a key (its URL used): %v, %d requests", err, f.urlCalls.Load())
+	}
+}

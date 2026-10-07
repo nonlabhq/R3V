@@ -55,6 +55,18 @@ func (s *BucketBackend) Bucket() Bucket { return s.b }
 // so only a project's own writers may write its contents).
 type PerProject interface{ ContentsPerProject() bool }
 
+// ThroughService reports whether b's contents go through a service (a
+// hosted team's: each transfer asks it for a URL first, so more of them
+// at once keep the line busy).
+func ThroughService(b Backend) bool {
+	s, ok := b.(*BucketBackend)
+	if !ok {
+		return false
+	}
+	pp, ok := s.b.(PerProject)
+	return ok && pp.ContentsPerProject()
+}
+
 // ForProject is the backend for working on project pid: on storage that
 // keeps contents per project, its contents go under projects/<pid>/;
 // otherwise it is b itself.
@@ -302,6 +314,31 @@ func (s *BucketBackend) UpdateBranch(pid, name, old, new string) error {
 		s.logMove(pid, name, old, new)
 	}
 	return err
+}
+
+// SnapshotLister is storage that lists a project's versions (so a long
+// history can be asked for all at once).
+type SnapshotLister interface {
+	SnapshotIDs(pid string) ([]string, error)
+}
+
+var _ SnapshotLister = (*BucketBackend)(nil)
+
+func (s *BucketBackend) SnapshotIDs(pid string) ([]string, error) {
+	if !validHex(pid, 32) {
+		return nil, errors.New("invalid project id")
+	}
+	keys, err := s.list(projectDir(pid) + "snapshots/")
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, k := range keys {
+		if id := strings.TrimSuffix(path.Base(k), ".json"); validHex(id, 64) {
+			out = append(out, id)
+		}
+	}
+	return out, nil
 }
 
 func (s *BucketBackend) MissingSnapshots(pid string, ids []string) ([]string, error) {
@@ -619,4 +656,41 @@ func (s *BucketBackend) Setups() (map[string][]byte, error) {
 		}
 	})
 	return out, err
+}
+
+// GetPreparer is storage reached through presigned URLs that can ask for
+// many at once (the hosted service): asked ahead, the downloads that follow
+// don't each ask for their own.
+type GetPreparer interface{ PrepareGets(keys []string) }
+
+// Preparer is a backend that can get many downloads ready at once.
+type Preparer interface {
+	PrepareObjects(hashes []string)
+	PrepareSnapshots(pid string, ids []string)
+}
+
+var _ Preparer = (*BucketBackend)(nil)
+
+func (s *BucketBackend) PrepareObjects(hashes []string) {
+	p, ok := s.b.(GetPreparer)
+	if !ok || len(hashes) < 2 {
+		return
+	}
+	keys := make([]string, len(hashes))
+	for i, h := range hashes {
+		keys[i] = s.objectKey(h)
+	}
+	p.PrepareGets(keys)
+}
+
+func (s *BucketBackend) PrepareSnapshots(pid string, ids []string) {
+	p, ok := s.b.(GetPreparer)
+	if !ok || len(ids) < 2 {
+		return
+	}
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = snapshotKey(pid, id)
+	}
+	p.PrepareGets(keys)
 }

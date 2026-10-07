@@ -188,15 +188,24 @@ func (r *Repo) uploadTrees(c remote.Backend, roots []string) error {
 
 // fetchTrees downloads the trees under root not stored here, a level of
 // folders at a time.
-func (r *Repo) fetchTrees(c remote.Backend, root string) error {
+func (r *Repo) fetchTrees(c remote.Backend, roots ...string) error {
 	seen := map[string]bool{}
-	level := []string{root}
+	var level []string
+	for _, h := range roots {
+		if h != "" && !seen[h] {
+			seen[h] = true
+			level = append(level, h)
+		}
+	}
 	for len(level) > 0 {
 		var need []string
 		for _, h := range level {
 			if !r.hasTree(h) {
 				need = append(need, h)
 			}
+		}
+		if p, ok := c.(remote.Preparer); ok {
+			p.PrepareObjects(need)
 		}
 		if err := inParallel(need, func(h string) error {
 			var data []byte
