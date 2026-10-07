@@ -655,6 +655,7 @@ func opts(resolutions map[string]string) project.MergeOptions {
 // Save commits (and shares) the changes; paths, when not empty, are the
 // changes to commit: the others stay uncommitted.
 func (a *App) Save(root, message string, combine bool, resolutions map[string]string, force bool, paths []string) (*Result, error) {
+	a.stopPreupload(root) // one queue: the commit takes over its uploads
 	defer a.tidyLater(root)
 	r, unlock, err := a.open(root)
 	if err != nil {
@@ -713,6 +714,7 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 // ShareVersions shares the versions committed here with the project's team
 // without committing the files (a project added to a team, shared later).
 func (a *App) ShareVersions(root string) (*Result, error) {
+	a.stopPreupload(root) // one queue: the share takes over its uploads
 	defer a.tidyLater(root)
 	r, unlock, err := a.open(root)
 	if err != nil {

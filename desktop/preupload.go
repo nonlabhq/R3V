@@ -43,8 +43,21 @@ type PreuploadFile struct {
 
 var (
 	preuploadMu  sync.Mutex
-	preuploading = map[string]Preupload{} // root
+	preuploading = map[string]Preupload{}          // root
+	preuploadEnd = map[string]context.CancelFunc{} // root: stops its upload
 )
+
+// stopPreupload stops root's background upload, if one is going: a commit
+// or a share uploads the project now, one queue. The pieces of a big file
+// already up stay there, and the commit doesn't send them again.
+func (a *App) stopPreupload(root string) {
+	preuploadMu.Lock()
+	stop := preuploadEnd[root]
+	preuploadMu.Unlock()
+	if stop != nil {
+		stop()
+	}
+}
 
 // Preuploads lists the files going up in the background now.
 func (a *App) Preuploads() []Preupload {
@@ -150,6 +163,16 @@ func (a *App) preuploadProject(ctx context.Context, root string) bool {
 	if a.busy(root) {
 		return false
 	}
+	ctx, cancel := context.WithCancel(ctx)
+	preuploadMu.Lock()
+	preuploadEnd[root] = cancel
+	preuploadMu.Unlock()
+	defer func() {
+		preuploadMu.Lock()
+		delete(preuploadEnd, root)
+		preuploadMu.Unlock()
+		cancel()
+	}()
 	r, err := project.Open(root)
 	if err != nil || r.Config.Remote == nil {
 		return true
@@ -178,10 +201,16 @@ func (a *App) preuploadProject(ctx context.Context, root string) bool {
 		if fi, err := os.Stat(r.Abs(cand.Path)); err == nil {
 			mod = fi.ModTime()
 		}
+		// (stopped at once; the file looked at every couple of seconds)
+		var looked time.Time
 		still := func() error {
-			if err := ctx.Err(); err != nil {
-				return err
+			if ctx.Err() != nil {
+				return project.ErrPreuploadStopped
 			}
+			if time.Since(looked) < 2*time.Second {
+				return nil
+			}
+			looked = time.Now()
 			return r.StillWanted(cand, mod)
 		}
 		var last time.Time
