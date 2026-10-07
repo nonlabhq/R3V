@@ -57,12 +57,30 @@ cd desktop/frontend && npx svelte-check && npm test   # after any UI change
 
 ## Working in the repository
 
+Work goes in lanes, each a session of its own (details:
+[docs/development.md](docs/development.md#lanes)):
+
+- **Core** owns `main`: it alone merges into it, changes the version, tags
+  and releases. It works on short branches in the main checkout.
+- **Cloud** owns the private R3V-Cloud service; here it works only on
+  `feat/cloud`, in its own worktree.
+- **Experiments**: one worktree each (`../R3V.wt/<name>`), on
+  `exp/<name>`.
+
+Cloud and experiments don't merge into `main`, not even small fixes: they
+hand their branch to Core, which reviews it (fixing what it finds on
+`fix/<lane>-review` on top) and merges it; then the lane merges `main`
+back. Something new arrives behind Nightly, with a Stable test showing
+Stable can't reach it. Don't touch another lane's worktree or its
+uncommitted files; say what you saw instead. Every report names the repo
+(R3V or R3V-Cloud), the branch and the commit.
+
 Several sessions may work at once (in other worktrees or the same checkout),
 so:
 
-- **Branches.** Work on a branch (`feat/…`, `fix/…`, `ui/…`) and merge it
-  into `main` with `--no-ff`. Merge `main` into a long branch often, so
-  conflicts stay small.
+- **Branches.** Work on a branch (`feat/…`, `fix/…`, `ui/…`); Core merges
+  it into `main` with `--no-ff` (other lanes hand theirs over). Merge
+  `main` into a long branch often, so conflicts stay small.
 - **Stage only your own files**, by name. Never `git add -A` a folder:
   someone else's uncommitted changes may be in it.
 - **Commit messages** in plain English, with no AI co-author or "Generated
