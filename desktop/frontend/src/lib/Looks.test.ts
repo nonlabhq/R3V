@@ -116,9 +116,11 @@ describe("Project icon and colour", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", ""));
+    expect(screen.queryByRole("dialog", { name: "Icon and colour" })).toBeNull(); // an icon picked closes it
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "Lime" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", "b5"));
-    expect(screen.getByRole("radio", { name: "drum" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("radio", { name: "drum" }).getAttribute("aria-checked")).toBe("true"); // a colour doesn't
   });
 
   it("goes back when the team doesn't take it", async () => {
@@ -127,6 +129,7 @@ describe("Project icon and colour", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringContaining("doesn't have"), "error"));
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     expect(screen.getByRole("radio", { name: "The project's initial" }).getAttribute("aria-checked")).toBe("true");
   });
 

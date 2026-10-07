@@ -94,9 +94,11 @@ func CheckPicture(data []byte) error {
 }
 
 // ValidLookName reports whether c can name a colour or an icon: a short
-// name of a-z, 0-9 and "-" ("" for none, the app's own pick).
+// name of a-z, 0-9 and "-" ("" for none, the app's own pick). An emoji
+// icon is its code points in hex ("e-1f3b5"; a family with skin tones is
+// long, hence 64).
 func ValidLookName(c string) bool {
-	if len(c) > 32 {
+	if len(c) > 64 {
 		return false
 	}
 	for _, r := range c {
