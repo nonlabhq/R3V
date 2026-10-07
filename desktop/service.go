@@ -235,6 +235,10 @@ func (a *App) stopWatch(root string) {
 func (a *App) handleEvent(root, name string, e teamwatch.Event) {
 	ev := WatchEvent{Root: root, Kind: string(e.Kind), Author: e.Author, Labels: nonNil(e.Labels), Text: e.Text,
 		Versions: toVersions(e.Versions, nil)}
+	// Something changed in the team: the history asks it for looks again.
+	if r, err := project.Open(root); err == nil && r.Config.Remote != nil {
+		looksCache.forget(r.Config.Remote.URL)
+	}
 	if a.emit != nil {
 		a.emit("team-watch", ev)
 	}

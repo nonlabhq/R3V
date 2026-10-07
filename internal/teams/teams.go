@@ -74,6 +74,17 @@ func (v Team) MarshalJSON() ([]byte, error) {
 	return jsonx.Encode(plain(v), v.Extra)
 }
 
+// Look is the user's colour (a palette name) and picture (its SHA-256: the
+// file is in PicturesDir); "" for none.
+type Look struct {
+	Color   string `json:"color,omitempty"`
+	Picture string `json:"picture,omitempty"`
+}
+
+// PicturesDir keeps pictures by their SHA-256: the user's own, and their
+// teammates' as the teams last gave them.
+func PicturesDir() string { return filepath.Join(Dir(), "pictures") }
+
 // Backup is where and how this computer backs up a team (internal/backup).
 type Backup struct {
 	// Where: a folder, or S3-compatible storage (its keys sealed like the
@@ -117,6 +128,9 @@ type Store struct {
 	// "" for the one this build is from. Stable and Nightly share this file:
 	// what either writes, the other reads.
 	Channel string `json:"channel,omitempty"`
+	// Look: how this user shows in their teams (Nightly: see remote.Looks),
+	// shared with every team they're in.
+	Look *Look `json:"look,omitempty"`
 
 	path   string
 	locked bool // inside Update: the lock is held
