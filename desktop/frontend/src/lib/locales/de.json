@@ -1263,5 +1263,19 @@
 "finishing…": "wird abgeschlossen…",
 "history…": "Verlauf…",
 "placing files": "Dateien ablegen",
-"Apps": "Programme"
+"Apps": "Programme",
+"Copied to the other team": "In das andere Team kopiert",
+"Moved: the project is in the other team now": "Verschoben: Das Projekt ist jetzt im anderen Team",
+"Stopped. Nothing changed for either team; moving again goes on from where it stopped.": "Angehalten. Für keines der Teams hat sich etwas geändert; erneutes Verschieben macht dort weiter.",
+"Move “{name}” to another team": "„{name}“ in ein anderes Team verschieben",
+"Its whole history goes to the other team, straight from one team's storage to the other's. The folder on this computer stays as it is.": "Der ganze Verlauf geht direkt vom Speicher des einen Teams in den des anderen. Der Ordner auf diesem Computer bleibt, wie er ist.",
+"Keep it in {team} too (copy it instead)": "Auch in {team} behalten (stattdessen kopieren)",
+"Both teams will have it; this folder stays with {team}.": "Beide Teams haben es; dieser Ordner bleibt bei {team}.",
+"{team} won't have it any more: its people keep their copies, as projects on their own computer. This folder goes with {to}.": "{team} hat es danach nicht mehr: seine Leute behalten ihre Kopien als Projekte auf ihrem eigenen Computer. Dieser Ordner geht mit {to}.",
+"Join or set up the other team first: it shows here then.": "Tritt dem anderen Team zuerst bei oder richte es ein: Dann erscheint es hier.",
+"Moving…": "Wird verschoben…",
+"Move": "Verschieben",
+"Move to another team…": "In ein anderes Team verschieben…",
+"Its whole history goes to another team (or a copy of it). The folder here stays as it is.": "Der ganze Verlauf geht in ein anderes Team (oder eine Kopie davon). Der Ordner hier bleibt, wie er ist.",
+"Move…": "Verschieben…"
 }

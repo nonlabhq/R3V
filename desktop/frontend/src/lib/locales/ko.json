@@ -1263,5 +1263,19 @@
 "finishing…": "마무리 중…",
 "history…": "기록…",
 "placing files": "파일 배치",
-"Apps": "앱"
+"Apps": "앱",
+"Copied to the other team": "다른 팀에 복사했습니다",
+"Moved: the project is in the other team now": "이동했습니다. 프로젝트가 이제 다른 팀에 있습니다",
+"Stopped. Nothing changed for either team; moving again goes on from where it stopped.": "중지했습니다. 두 팀 모두 변경된 것은 없으며, 다시 이동하면 멈춘 곳부터 이어집니다.",
+"Move “{name}” to another team": "“{name}”을(를) 다른 팀으로 이동",
+"Its whole history goes to the other team, straight from one team's storage to the other's. The folder on this computer stays as it is.": "전체 기록이 한 팀의 저장소에서 다른 팀의 저장소로 바로 옮겨집니다. 이 컴퓨터의 폴더는 그대로입니다.",
+"Keep it in {team} too (copy it instead)": "{team}에도 남기기 (대신 복사)",
+"Both teams will have it; this folder stays with {team}.": "두 팀 모두 갖게 되며, 이 폴더는 {team}에 남습니다.",
+"{team} won't have it any more: its people keep their copies, as projects on their own computer. This folder goes with {to}.": "{team}에는 더 이상 없습니다. 멤버들의 사본은 각자 컴퓨터의 프로젝트로 남습니다. 이 폴더는 {to}(으)로 갑니다.",
+"Join or set up the other team first: it shows here then.": "먼저 다른 팀에 참여하거나 팀을 만드세요. 그러면 여기에 표시됩니다.",
+"Moving…": "이동 중…",
+"Move": "이동",
+"Move to another team…": "다른 팀으로 이동…",
+"Its whole history goes to another team (or a copy of it). The folder here stays as it is.": "전체 기록을 다른 팀으로 옮깁니다 (또는 복사). 여기 폴더는 그대로입니다.",
+"Move…": "이동…"
 }

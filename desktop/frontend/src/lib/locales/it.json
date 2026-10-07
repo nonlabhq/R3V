@@ -1263,5 +1263,19 @@
 "finishing…": "conclusione…",
 "history…": "cronologia…",
 "placing files": "sistemazione file",
-"Apps": "App"
+"Apps": "App",
+"Copied to the other team": "Copiato nell'altro team",
+"Moved: the project is in the other team now": "Spostato: il progetto ora è nell'altro team",
+"Stopped. Nothing changed for either team; moving again goes on from where it stopped.": "Interrotto. Nulla è cambiato per i team; spostando di nuovo riprende da dove si era fermato.",
+"Move “{name}” to another team": "Sposta «{name}» in un altro team",
+"Its whole history goes to the other team, straight from one team's storage to the other's. The folder on this computer stays as it is.": "Tutta la cronologia passa all'altro team, direttamente dallo spazio di un team a quello dell'altro. La cartella su questo computer resta com'è.",
+"Keep it in {team} too (copy it instead)": "Tienilo anche in {team} (copialo invece)",
+"Both teams will have it; this folder stays with {team}.": "Entrambi i team lo avranno; questa cartella resta con {team}.",
+"{team} won't have it any more: its people keep their copies, as projects on their own computer. This folder goes with {to}.": "{team} non l'avrà più: le sue persone tengono le loro copie, come progetti sul proprio computer. Questa cartella passa a {to}.",
+"Join or set up the other team first: it shows here then.": "Prima unisciti all'altro team o crealo: poi compare qui.",
+"Moving…": "Spostamento…",
+"Move": "Sposta",
+"Move to another team…": "Sposta in un altro team…",
+"Its whole history goes to another team (or a copy of it). The folder here stays as it is.": "Tutta la cronologia passa a un altro team (o una copia). La cartella qui resta com'è.",
+"Move…": "Sposta…"
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { api, errorText, type ProjectInfo, type TeamProject, type TeamSummary } from "./api";
+  import { api, errorText, type ProjectInfo, type Progress, type TeamProject, type TeamSummary } from "./api";
   import Modal from "./Modal.svelte";
   import RulesWindow from "./RulesWindow.svelte";
   import Tx from "./Tx.svelte";
@@ -14,13 +14,14 @@
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "./emoji";
   import BranchSettings from "./BranchSettings.svelte";
+  import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import { branchLabel, branchLane } from "./branches";
   import { ago, type BranchList, type DeletedBranch } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
   // need a confirmation of their own are the caller's.
-  let { p, team, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate }: {
+  let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved }: {
     p: TeamProject;
     inline?: boolean;       // in the project's Settings tab, not a dialog
     team?: TeamSummary;     // the project's team (none: on this computer only)
@@ -28,6 +29,9 @@
     onrenamed: () => void;
     oncheck: () => void;
     ondelete: () => void;
+    teams?: TeamSummary[];     // the teams on this computer (to move it to)
+    progress?: Progress | null; // the project's step under way (a move)
+    onmoved?: (teamId: string, copied: boolean) => void;
     onunlink: () => void;
     onlocate: () => void;
   } = $props();
@@ -124,6 +128,7 @@
   // branch names: Nightly).
   let branchList = $state<BranchList | null>(null);
   let branchOpen = $state<string | null>(null);
+  let moving = $state(false); // the move dialog open
   let deleted = $state<DeletedBranch[]>([]);
   const loadBranches = () => {
     api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
@@ -320,6 +325,13 @@
         {/if}
       </div>
     {/if}
+    {#if team && here && onmoved}
+      <div class="action">
+        <div><strong>{t("Move to another team…")}</strong>
+          <p class="hint">{t("Its whole history goes to another team (or a copy of it). The folder here stays as it is.")}</p></div>
+        <button onclick={() => (moving = true)}>{t("Move…")}</button>
+      </div>
+    {/if}
     {#if team}
       <div class="action">
         <div><strong>{t("Delete from {team}…", { team: team.name })}</strong>
@@ -340,6 +352,11 @@
   {/snippet}
 </Modal>
 {/if}
+{/if}
+
+{#if moving && team && onmoved}
+  <MoveProjectDialog root={p.root} name={p.name} {team} {teams} {progress}
+    onmoved={(id, copied) => { moving = false; onmoved(id, copied); }} onclose={() => (moving = false)} />
 {/if}
 
 {#if branchOpen !== null && branchList}

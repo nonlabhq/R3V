@@ -1,11 +1,62 @@
-# Moving a team to R3V Cloud
+# Moving projects and teams
 
-Status: designed, not built. Decided with the maintainer (2026-10-08):
-self-hosting stays a bucket and a connection code (no server); a hosted
-team keeps each project's contents apart; a team on its own storage moves
-to R3V Cloud with the copying done by the service, planned by the app.
+Two different things:
+
+- **A project moves to another team** (built, Nightly only:
+  `project.MoveProjects`): one
+  project, to a team with maybe other people and another kind of storage
+  (its own storage ↔ R3V Cloud, either way). Like transferring a
+  repository.
+- **A team moves to R3V Cloud** (designed, not built): the same people and
+  projects, kept somewhere else.
+
+Both copy a project's whole history from one storage to another with the
+same steps (below); they differ in what is around it.
+
+## Copying a project's history
+
+`project.MoveToTeam` (internal/project/moveteam.go), from the computer
+that has the project, straight from one team's storage to the other's:
+nothing is kept on this computer on the way, and only what the other team
+lacks is sent. The two kinds of storage keep contents differently (one
+pool for a team's projects, or each project's apart on a hosted team), so
+the copy walks the project's versions to find what they use.
+
+1. Its versions, here (small): every branch's, every deleted branch's and
+   milestone's, with their ancestors.
+2. The files they use: folder lists, files, big files' pieces (the pieces,
+   then their mark, then their list), as they are stored (compressed or
+   not), only those the other team lacks; leased there meanwhile.
+3. The versions; the branches' names and colours; the milestones.
+4. The branches (again if a branch moved while copying: until they stay).
+5. The project's record: only now does the other team list it.
+
+| Stopped after | The other team | This team | Next |
+|---|---|---|---|
+| 1-4 | files and versions it doesn't show (cleaned up in time) | as it was | moving again goes on (nothing sent twice) |
+| 5 | has it all | has it too | moving again finishes the move |
+
+## A project moves to another team
+
+Project settings › Move to another team…: pick the team (one on this
+computer this person is in), and whether to keep it in its team too (a
+copy). Versions not shared yet must be shared first (a project moves with
+what its team has). Moved (not copied), the first team lets it go
+(`DeleteProject`: gone from its list for everyone) and this folder belongs
+to the other team; the people of the first team keep their copies, which
+their app shows as no longer on the team. Authors stay as their versions
+name them (no member of the other team is needed). The branch log and
+workspaces stay behind; names, colours, deleted branches and milestones go.
+
+# A team moves to R3V Cloud
+
+(Designed with the maintainer, 2026-10-08; not built.)
 
 ## Why not through the app
+
+Self-hosting stays a bucket and a connection code (no server); a hosted
+team keeps each project's contents apart. A team moves with the copying
+done by the service, planned by the app (the steps above, run by it).
 
 Moving through the app means every byte down to someone's computer and up
 again: twice their line, their disk for the whole history, hours for a

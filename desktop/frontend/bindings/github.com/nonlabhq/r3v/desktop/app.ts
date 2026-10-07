@@ -609,6 +609,18 @@ export function MergeVersion(root: string, id: string, message: string, resoluti
 }
 
 /**
+ * MoveProject moves project root to team teamID (copy: copies it, the
+ * project staying in its team): its whole history goes straight from one
+ * team's storage to the other's (see project.MoveToTeam), with the
+ * project's progress; CancelSave stops it (what was copied stays unseen
+ * on the other team, and moving again goes on from there). The files here
+ * are untouched.
+ */
+export function MoveProject(root: string, teamID: string, copy: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1170826645, root, teamID, copy);
+}
+
+/**
  * OpenInLive opens a set with its default application (Ableton Live).
  */
 export function OpenInLive(root: string, $set: string): $CancellablePromise<void> {
