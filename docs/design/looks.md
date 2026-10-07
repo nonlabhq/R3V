@@ -9,8 +9,12 @@ How people and projects show, the same for the whole team:
   **User settings** (click yourself at the bottom of the sidebar). One look
   for all of your teams: the app gives it to each team you're in, and to a
   team you join later.
-- **A project**: an icon (50 built in, `lib/projectIcons.ts`), else its
-  initial, on its colour. Set in the project's settings, for the whole team.
+- **A project**: an icon (50 built in, `lib/projectIcons.ts`) or an emoji,
+  else its initial, on its colour (an emoji on none). Set in the project's
+  settings (click its icon before the name), for the whole team. An emoji
+  is kept as its code points (`e-1f3b5`), so it is a name like the icons;
+  the picker (emoji-picker-element) has its data for the app's languages
+  built in.
 - **The history graph** shows each version's author as their picture, else
   their initial on their colour. The ring stays the branch's colour.
 
