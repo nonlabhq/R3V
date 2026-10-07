@@ -3,9 +3,11 @@ package project
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/als"
@@ -150,6 +152,9 @@ func (r *Repo) putFiles(m *Manifest, head, switching string) ([]string, error) {
 		if err := ix.record(r.Abs(f.Path), f.Path, f.Hash, f.Size); err != nil {
 			return nil, err
 		}
+		if fileWritten != nil {
+			fileWritten(f.Path)
+		}
 	}
 	r.forgetProfile() // the version may have brought another .r3v.yaml
 
@@ -200,6 +205,10 @@ func (r *Repo) removeEmptyFolders(path string) {
 	}
 }
 
+// fileWritten, when set, hears of each file a switch has put in place:
+// tests stop there, as a crash would (killed_test.go).
+var fileWritten func(path string)
+
 // switchingFile names the version a checkout is putting in place.
 const switchingFile = "switching"
 
@@ -236,6 +245,7 @@ func (r *Repo) RecoverSwitch() ([]string, error) {
 	if id == "" {
 		return nil, nil
 	}
+	r.removeLeftovers()
 	if work, ok := strings.CutPrefix(id, "work "); ok {
 		// Getting the team's versions into uncommitted work stopped: the
 		// work as it was, on the version the project is still on.
@@ -250,6 +260,32 @@ func (r *Repo) RecoverSwitch() ([]string, error) {
 	}
 	_, notes, err := r.Checkout(id, true)
 	return notes, err
+}
+
+// leftover: a temporary file R3V writes beside a file it puts in place
+// (store.WriteAtomic, os.CreateTemp's ".r3v-" and digits), left when it
+// stopped mid-copy.
+var leftover = regexp.MustCompile(`^\.r3v-[0-9]+$`)
+
+// removeLeftovers removes R3V's temporary files from the project folder (a
+// switch that stopped can leave one beside each file it was writing, as big
+// as that file). The rules leave them out, so nothing else would.
+func (r *Repo) removeLeftovers() {
+	filepath.WalkDir(r.Root, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			if p != r.Root && d.Name() == ".r3v" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if leftover.MatchString(d.Name()) {
+			os.Remove(p)
+		}
+		return nil
+	})
 }
 
 // relink rewrites sample paths in the checked-out sets so they resolve on this
