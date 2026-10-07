@@ -48,6 +48,9 @@
   }
   let spotsDismissed = $state(-1); // the count "Later" was said to
   let news = $derived(newsOf(st.incoming));
+  // A download that didn't finish (the connection lost, R3V closed): no
+  // version here yet, the team has some.
+  let notDownloaded = $derived(!!st.remoteUrl && !st.head && st.incoming.length > 0);
 </script>
 
 {#if progress}
@@ -73,7 +76,12 @@
   <div class="banner info"><div>{t("Sharing “{name}” with the team…", { name: st.name })}</div></div>
 {/if}
 
-{#if st.remoteUrl && !st.head && !busy && !progress}
+{#if notDownloaded && !busy && !progress}
+  <div class="banner warn">
+    <div>{t("The download didn't finish (the connection was lost or R3V closed): get the files to finish it.")}</div>
+    <button class="primary" onclick={onupdate}>{t("Finish downloading")}</button>
+  </div>
+{:else if st.remoteUrl && !st.head && !busy && !progress}
   <div class="banner info">
     <div>{t("Not shared with {team} yet. Look through the files and ignore the folders or files you don't need (right-click › Ignore), then commit a first version to share it.", { team: st.teamName || t("the team") })}</div>
   </div>
@@ -161,7 +169,7 @@
     {/if}
   </div>
 {/if}
-{#if st.incoming.length}
+{#if st.incoming.length && !notDownloaded}
   <div class="banner info">
     <div>
       <Tx text={tn(news.length, "{who} shared {n} new version:", "{who} shared {n} new versions:")}

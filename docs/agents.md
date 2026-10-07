@@ -128,6 +128,7 @@ preview first and ask the user.
 | 1 | `unshared_versions` | `r3v save -m ...` shares them |
 | 1 | `not_connected` | the project is not in a team (`save` still saves locally) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
+| 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `backup_folder_missing` | the backup folder isn't there: ask the user to connect the drive |
 | 1 | `backup_folder_not_empty` | `backup run` needs an empty folder or this team's backup |
 | 1 | `not_a_backup` | the folder holds no R3V backup |
