@@ -74,7 +74,7 @@
   // version, so no other dot is beside it; the tag goes to the side no line
   // passes on its row (else the side fewer do). Branch labels keep clear.
   const TAG_W = 180, TAG_H = 20;
-  type Tag = { id: string; text: string; dx: number; y: number; w: number; left: boolean };
+  type Tag = { id: string; text: string; dx: number; y: number; w: number; left: boolean; color: number };
   // The columns lines pass at each row.
   let passing = $derived.by(() => {
     const at = new Map<number, Set<number>>();
@@ -99,7 +99,7 @@
       const cols = [...(passing.get(row) ?? [])].filter((k) => k !== c.col);
       const right = cols.filter((k) => k > c.col).length, leftN = cols.filter((k) => k < c.col).length;
       const left = right > 0 && leftN < right;
-      out.push({ id, text, w, left, dx: left ? c.col * colW - 18 - w : c.col * colW + 18,
+      out.push({ id, text, w, left, color: c.color, dx: left ? c.col * colW - 18 - w : c.col * colW + 18,
         y: (row + off) * rowH + rowH / 2 - TAG_H / 2 });
     }
     return out;
@@ -375,7 +375,7 @@
       </svg>
 
       {#each tags as m (m.id)}
-        <button class="mtag" class:left={m.left} style:left="{center + m.dx}px" style:top="{top + m.y}px" style:width="{m.w}px"
+        <button class="mtag" class:left={m.left} style:--c="var(--lane-{m.color})" style:left="{center + m.dx}px" style:top="{top + m.y}px" style:width="{m.w}px"
           tabindex="-1" title={m.text} onclick={() => onselect(m.id)}>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 14V2.5M3.5 3h8.5l-2 3 2 3H3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
           <span>{m.text}</span>
@@ -518,17 +518,17 @@
   /* A milestone's tag: a pointed end towards its dot. */
   .mtag { position: absolute; height: 20px; display: inline-flex; align-items: center; gap: var(--sp-4);
     padding: 0 var(--sp-8) 0 var(--sp-6); margin-left: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
-    color: var(--accent); background: var(--panel); border: var(--border-width) solid var(--accent);
+    color: var(--c); background: var(--panel); border: var(--border-width) solid var(--c);
     border-left: none; border-radius: 0 var(--radius) var(--radius) 0; white-space: nowrap; z-index: 1; }
   .mtag::before { content: ""; position: absolute; left: -7px; top: -1px; width: 0; height: 0;
-    border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 7px solid var(--accent); }
+    border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 7px solid var(--c); }
   .mtag::after { content: ""; position: absolute; left: -5px; top: 0; width: 0; height: 0;
     border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 6px solid var(--panel); }
   .mtag.left { flex-direction: row-reverse; margin-left: -6px; padding: 0 var(--sp-6) 0 var(--sp-8);
-    border-left: var(--border-width) solid var(--accent); border-right: none; border-radius: var(--radius) 0 0 var(--radius); }
-  .mtag.left::before { left: auto; right: -7px; border-right: none; border-left: 7px solid var(--accent); }
+    border-left: var(--border-width) solid var(--c); border-right: none; border-radius: var(--radius) 0 0 var(--radius); }
+  .mtag.left::before { left: auto; right: -7px; border-right: none; border-left: 7px solid var(--c); }
   .mtag.left::after { left: auto; right: -5px; border-right: none; border-left: 6px solid var(--panel); }
-  .mtag:hover:not(:disabled) { background: var(--panel); border-color: var(--accent); filter: brightness(1.15); }
+  .mtag:hover:not(:disabled) { background: var(--panel); border-color: var(--c); filter: brightness(1.15); }
   .mtag svg { width: 11px; height: 11px; flex: none; }
   .mtag span { overflow: hidden; text-overflow: ellipsis; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
