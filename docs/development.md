@@ -71,7 +71,8 @@ in `src/tokens.css`.
 
 - `go test ./...` runs everything that needs no network; `go test -tags nightly ./...` the Nightly build too.
 - `npm test` (in `desktop/frontend`) runs the frontend's tests: logic in `.ts` files and components rendered in jsdom, with the Go bindings mocked (`vi.mock("./api")`; see `KeptSamples.test.ts`).
-- `internal/project/crash_test.go` cuts a share off after each of its writes in turn and checks a teammate still gets a whole version.
+- Interruptions (see below): `internal/project/crash_test.go` cuts a share off after each of its writes in turn; `resume_test.go` cuts updates and clones off at each of their reads, and resumes cut uploads; `killed_test.go` kills R3V (a child process: no deferred cleanup runs) in the middle of a commit, an update, a clone and a background upload. The fake S3 (`internal/remote/s3test`) has `CutAfter` / `CutReadsAfter` for a lost connection and `OnWrite` / `OnRead` to act at a given request.
+- The end-to-end run (real storage, two computers simulated; kept outside this repository) runs in full before every release.
 - `internal/remote/backendtest` is a contract test every storage backend must pass. It runs against an in-memory bucket and a fake S3; to run it against a real bucket:
 
   ```
@@ -83,6 +84,18 @@ in `src/tokens.css`.
 - Diff and merge must keep producing `testdata/golden` exactly (`go test ./internal/merge`). The golden data pins their output byte for byte; change it only on purpose.
 
 `go test ./internal/merge` compares Go merge/diff/validate output byte-for-byte against the golden data (skipped when absent).
+
+### Interruptions
+
+The connection can drop and R3V can be closed or crash at any moment. Every step that writes to the team's storage or to the project (commit, share, update, clone, switch, background upload) is tested both ways, failing (a lost connection: every request fails from some point) and killed (the process ends: nothing after runs), at the start, the end and points between. After each, a test checks that:
+
+1. the team's data is whole: a teammate gets a whole version, the one before or the new one;
+2. the project's files are as they were, or complete (a switch that stopped half-way says so and can be put back);
+3. what the app offers next is safe and finishes the job (no commit offered on a download that didn't finish, say), and doing it again works;
+4. doing it again doesn't send again what already went up (a few small records aside);
+5. nothing is left behind for good: temporary copies, registrations, locks.
+
+A new step lists its states in between (in its design note or pull request): where it can stop, what is on disk and in storage then, and what the app shows and allows. Reviews ask of each write: what if it stops here?
 
 ## Design notes
 

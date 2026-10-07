@@ -65,6 +65,8 @@ type Server struct {
 	// OnWrite, when set, is called before each PUT or POST is handled (the
 	// object's path): a test can hold a transfer mid-way there.
 	OnWrite func(method, path string)
+	// OnRead, the same before each GET of an object.
+	OnRead func(path string)
 
 	uploads map[string]*upload // multipart uploads in progress
 	nextID  int
@@ -99,6 +101,9 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.OnWrite != nil && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
 		s.OnWrite(r.Method, r.URL.Path)
+	}
+	if s.OnRead != nil && r.Method == http.MethodGet && r.URL.Query().Get("list-type") == "" {
+		s.OnRead(r.URL.Path)
 	}
 	parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/"), "/", 2)
 	s.mu.Lock()
@@ -189,7 +194,11 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 			w.Write(obj.data)
 		}
 	case "PUT":
-		data, _ := io.ReadAll(r.Body)
+		data, err := io.ReadAll(r.Body)
+		if err != nil { // the sender went away mid-way: nothing is stored
+			xmlError(w, http.StatusBadRequest, "IncompleteBody")
+			return
+		}
 		// Copying within storage: the body is the source object's.
 		if src := r.Header.Get("x-amz-copy-source"); src != "" {
 			p, _ := url.PathUnescape(strings.TrimPrefix(src, "/"))
@@ -271,7 +280,11 @@ func (s *Server) putPart(w http.ResponseWriter, r *http.Request, q map[string][]
 		xmlError(w, http.StatusInternalServerError, "InternalError")
 		return
 	}
-	data, _ := io.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		xmlError(w, http.StatusBadRequest, "IncompleteBody")
+		return
+	}
 	u.parts[n] = data
 	sum := md5.Sum(data)
 	w.Header().Set("ETag", `"`+hex.EncodeToString(sum[:])+`"`)
