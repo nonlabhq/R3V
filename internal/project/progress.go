@@ -1,6 +1,8 @@
 package project
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/nonlabhq/r3v/internal/remote"
 )
 
 // Stages reported while saving or downloading a project.
@@ -26,6 +30,61 @@ type Progress struct {
 	Stage             string
 	Done, Total       int
 	Bytes, TotalBytes int64
+}
+
+// ErrCancelled: the user stopped a commit before it was shared.
+var ErrCancelled = fmt.Errorf("cancelled (%w)", remote.ErrStopped)
+
+// stopped says whether the step under way is to stop (Cancel, stop).
+func (r *Repo) stopped() error {
+	if r.Cancel != nil {
+		if err := r.Cancel(); err != nil {
+			return err
+		}
+	}
+	if r.stop != nil {
+		return r.stop()
+	}
+	return nil
+}
+
+// stopReader reads rd until the step is to stop.
+type stopReader struct {
+	r  *Repo
+	rd io.Reader
+}
+
+func (s stopReader) Read(p []byte) (int, error) {
+	if err := s.r.stopped(); err != nil {
+		return 0, err
+	}
+	return s.rd.Read(p)
+}
+
+// hashFile hashes a file of the project, stopping when asked.
+func (r *Repo) hashFile(abs string) (string, int64, error) {
+	f, err := os.Open(abs)
+	if err != nil {
+		return "", 0, err
+	}
+	defer f.Close()
+	h := sha256.New()
+	n, err := io.Copy(h, stopReader{r, f})
+	if err != nil {
+		return "", 0, err
+	}
+	return hex.EncodeToString(h.Sum(nil)), n, nil
+}
+
+// storeFile copies a file of the project into the store, stopping when
+// asked.
+func (r *Repo) storeFile(abs string) (string, int64, error) {
+	f, err := os.Open(abs)
+	if err != nil {
+		return "", 0, err
+	}
+	defer f.Close()
+	return r.Store.Put(stopReader{r, f})
 }
 
 // report calls r.OnProgress when set.
@@ -109,10 +168,8 @@ func (c *countingReader) undo() {
 }
 
 func (c *countingReader) Read(p []byte) (int, error) {
-	if stop := c.t.r.stop; stop != nil {
-		if err := stop(); err != nil {
-			return 0, err
-		}
+	if err := c.t.r.stopped(); err != nil {
+		return 0, err
 	}
 	n, err := c.rd.Read(p)
 	if n > 0 {

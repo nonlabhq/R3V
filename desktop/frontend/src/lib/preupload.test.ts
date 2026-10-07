@@ -6,14 +6,14 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 const mocks = vi.hoisted(() => {
   const handlers: Record<string, (ev: { data: unknown }) => void> = {};
   let list!: (l: unknown[]) => void;
-  const api = { Preuploads: vi.fn(() => new Promise((r) => (list = r))) };
+  const api = { Preuploads: vi.fn(() => new Promise((r) => (list = r))), CancelSave: vi.fn(async () => true) };
   return { handlers, api, resolveList: (l: unknown[]) => list(l) };
 });
 vi.mock("./api", async (orig) => ({ ...(await orig<typeof import("./api")>()), api: mocks.api }));
 vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wailsio/runtime")>()),
   Events: { On: (name: string, fn: (ev: { data: unknown }) => void) => { mocks.handlers[name] = fn; return () => {}; } } }));
 
-import { preuploads, transfers, watchPreuploads } from "./preupload.svelte";
+import { cancelling, preuploads, transfers, watchPreuploads } from "./preupload.svelte";
 import UploadQueue from "./UploadQueue.svelte";
 import ProjectBanners from "./ProjectBanners.svelte";
 
@@ -54,6 +54,21 @@ describe("transfers", () => {
     expect(screen.getByText("b.mov")).toBeTruthy();
     cleanup();
     emit("preupload", pre({ root: "C:\Music\Song", done: true }));
+  });
+
+  it("cancels a commit from the queue until its step ends", async () => {
+    emit("progress", { root: "C:/Song", stage: "uploading", done: 0, total: 1, bytes: 5, totalBytes: 10, cancellable: true });
+    emit("progress", { root: "C:/Other", stage: "uploading", done: 0, total: 1, bytes: 5, totalBytes: 10 });
+    render(UploadQueue, { names: {}, onclose: () => {} });
+    const buttons = screen.getAllByRole("button", { name: "Cancel" });
+    expect(buttons).toHaveLength(1); // not the one that can't stop any more
+    await fireEvent.click(buttons[0]);
+    expect(mocks.api.CancelSave).toHaveBeenCalledWith("C:/Song");
+    expect(await screen.findByRole("button", { name: "Cancelling…" })).toBeTruthy();
+    emit("progress", { root: "C:/Song", stage: "done", done: 0, total: 0 });
+    emit("progress", { root: "C:/Other", stage: "done", done: 0, total: 0 });
+    expect(cancelling["C:/Song"]).toBeUndefined();
+    cleanup();
   });
 
   it("opens the queue from a step's banner when it can", async () => {

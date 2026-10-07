@@ -1079,5 +1079,11 @@
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（Live が Freeze ファイルを書き込み中など）。解放されたら R3V が読み込みます。",
 "in {folder}": "{folder} 内",
 "the project folder": "プロジェクトフォルダー",
-"detected": "検出"
+"detected": "検出",
+"Stop before the team gets it: your changes stay as they are": "チームに届く前に止めます：変更はそのまま残ります",
+"Cancelling…": "キャンセル中…",
+"Commit cancelled: your changes are as they were": "コミットをキャンセルしました：変更は元のままです",
+"Stopped before the team got it: the version is on this computer, not shared yet": "チームに届く前に止めました：バージョンはこのパソコンにあり、まだ共有されていません",
+"The team's versions were taken in before it stopped": "止まる前にチームのバージョンを取り込みました",
+"Stopped: your versions are on this computer, not shared yet": "止めました：バージョンはこのパソコンにあり、まだ共有されていません"
 }

@@ -1079,5 +1079,11 @@
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 和另外 {n} 个文件正被其他程序使用中（例如 Live 正在写入 Freeze 文件）：等它们被释放后 R3V 就会读入。",
 "in {folder}": "在 {folder}",
 "the project folder": "项目文件夹",
-"detected": "自动检测"
+"detected": "自动检测",
+"Stop before the team gets it: your changes stay as they are": "在团队收到之前停止：你的更改保持原样",
+"Cancelling…": "正在取消…",
+"Commit cancelled: your changes are as they were": "已取消 commit：你的更改保持原样",
+"Stopped before the team got it: the version is on this computer, not shared yet": "在团队收到之前停止了：这个版本在这台电脑上，尚未分享",
+"The team's versions were taken in before it stopped": "停止之前已先获取团队的版本",
+"Stopped: your versions are on this computer, not shared yet": "已停止：你的版本在这台电脑上，尚未分享"
 }

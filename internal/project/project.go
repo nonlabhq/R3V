@@ -65,6 +65,10 @@ type Repo struct {
 	// stop, when set, is asked as data goes up or down: an error stops the
 	// transfer with it (a background upload whose file went away).
 	stop func() error
+	// Cancel, when set, is asked as a commit goes (files read, stored, sent;
+	// before the version is made and before it is shared): an error
+	// (ErrCancelled) stops it there. See Save.
+	Cancel func() error
 	// inUse: files the last read of the folder skipped, held by another
 	// program (see InUse).
 	inUse []string

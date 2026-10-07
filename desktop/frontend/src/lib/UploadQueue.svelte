@@ -4,7 +4,7 @@
   import Modal from "./Modal.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import FileIcon from "./FileIcon.svelte";
-  import { preuploads, transfers } from "./preupload.svelte";
+  import { preuploads, transfers, cancelling, cancelSave } from "./preupload.svelte";
 
   // The upload queue: each project's commit or update under way, and the big
   // files going up in the background, with the ones waiting after them.
@@ -26,7 +26,12 @@
 
   {#each steps as s (s.root)}
     <section>
-      <h3>{name(s.root)}</h3>
+      <h3>{name(s.root)}
+        {#if s.cancellable}
+          <button class="ghost small-btn" disabled={cancelling[s.root]} title={t("Stop before the team gets it: your changes stay as they are")}
+            onclick={() => cancelSave(s.root)}>{cancelling[s.root] ? t("Cancelling…") : t("Cancel")}</button>
+        {/if}
+      </h3>
       <ProgressBar p={s} />
       {#if s.speed}<p class="faint small">{formatBytes(s.speed)}/s</p>{/if}
     </section>
@@ -64,7 +69,8 @@
 <style>
   section { padding: var(--sp-10) 0; border-top: var(--border-width) solid var(--line); }
   section:first-child { border-top: none; padding-top: 0; }
-  h3 { margin: 0 0 var(--sp-8); font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+  h3 { display: flex; align-items: center; gap: var(--sp-8); margin: 0 0 var(--sp-8); font-size: var(--fs-md); font-weight: var(--fw-semibold); }
+  .small-btn { margin-left: auto; font-size: var(--fs-sm); font-weight: normal; }
   .row { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-6) 0; }
   .what { flex: 1; min-width: 0; }
   .fname { font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

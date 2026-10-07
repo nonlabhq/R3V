@@ -451,6 +451,10 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 			return err
 		}
 	}
+	// (the last moment it can stop: then the team has it)
+	if err := r.stopped(); err != nil {
+		return err
+	}
 	return c.UpdateBranch(r.Config.ProjectID, branch, old, head)
 }
 
@@ -792,11 +796,24 @@ func (r *Repo) Save(message string, opts MergeOptions) (*Manifest, *SyncResult, 
 			return nil, nil, err
 		}
 	}
+	before := r.Head()
 	m, err := r.Snapshot(message)
 	if err != nil && !errors.Is(err, ErrNothingToSnapshot) {
-		return nil, nil, err
+		return nil, first, err
 	}
 	res, err := r.Share(opts)
+	if errors.Is(err, ErrCancelled) {
+		// Stopped before it was shared: the version is taken back here, its
+		// changes uncommitted again (the files aren't touched). One the
+		// share put after the team's (or merged) stays, not shared.
+		if m != nil && r.Head() == m.ID {
+			if err := r.setHead(before); err != nil {
+				return m, first, err
+			}
+			m = nil
+		}
+		return m, first, ErrCancelled
+	}
 	if res != nil && first != nil { // what came in first is part of it
 		if res.Action == "up-to-date" { // nothing left to commit: it was an update
 			res.Action, res.From, res.To = "fast-forward", first.From, first.To

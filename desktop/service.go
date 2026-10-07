@@ -28,7 +28,8 @@ import (
 type App struct {
 	notify      func(title, body string)
 	emit        func(name string, data any)
-	mu          sync.Mutex // guards locks, teamWatches
+	mu          sync.Mutex              // guards locks, teamWatches, saving
+	saving      map[string]*atomic.Bool // commits that can be cancelled (CancelSave)
 	locks       map[string]*sync.Mutex
 	teamWatches map[string]context.CancelFunc
 	hidden      atomic.Bool             // the window is in the tray or minimised
@@ -125,6 +126,8 @@ type ProgressEvent struct {
 	// Transfers: bytes so far and in all (0 when not known).
 	Bytes      int64 `json:"bytes"`
 	TotalBytes int64 `json:"totalBytes"`
+	// Cancellable: a commit or share that CancelSave can still stop.
+	Cancellable bool `json:"cancellable"`
 }
 
 // progressFor emits "progress" events for root, at most every 150 ms unless
@@ -140,7 +143,7 @@ func (a *App) progressFor(root string) (report func(project.Progress), done func
 		last, stage = time.Now(), p.Stage
 		a.lastProgress.Store(last.UnixNano())
 		a.emit("progress", ProgressEvent{Root: root, Stage: p.Stage, Done: p.Done, Total: p.Total,
-			Bytes: p.Bytes, TotalBytes: p.TotalBytes})
+			Bytes: p.Bytes, TotalBytes: p.TotalBytes, Cancellable: a.canCancel(root)})
 	}
 	done = func() {
 		if a.emit != nil && stage != "" {
@@ -665,6 +668,7 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 	if strings.TrimSpace(message) == "" {
 		return nil, errors.New("describe what changed")
 	}
+	defer a.cancellable(root, r)()
 	if len(paths) > 0 {
 		r.Only = paths
 	}
@@ -690,6 +694,9 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 		}
 	}
 	m, res, err := r.Save(message, opts(resolutions))
+	if errors.Is(err, project.ErrCancelled) {
+		return cancelled(res, m != nil || older != nil), nil
+	}
 	if m == nil {
 		m = older
 	}
@@ -721,7 +728,11 @@ func (a *App) ShareVersions(root string) (*Result, error) {
 		return nil, err
 	}
 	defer unlock()
+	defer a.cancellable(root, r)()
 	res, err := r.Share(opts(nil))
+	if errors.Is(err, project.ErrCancelled) {
+		return cancelled(nil, true), nil
+	}
 	if err != nil {
 		return conflictResult(err)
 	}

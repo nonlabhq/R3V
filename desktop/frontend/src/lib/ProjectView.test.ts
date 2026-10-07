@@ -254,6 +254,33 @@ describe("ProjectView: an older version without a team", () => {
 });
 
 describe("ProjectView: while a version is made", () => {
+  it("cancels a commit under way, keeping the message and the ticks", async () => {
+    await show({ changes: [change("Song.als"), change("notes.txt", "added")] });
+    let finish = (_r: unknown) => {};
+    api.Save.mockReturnValue(new Promise((ok) => (finish = ok)));
+    api.CancelSave.mockResolvedValue(true);
+    const row = (await screen.findByTitle("notes.txt")).closest("li")!;
+    await fireEvent.click(within(row).getByTitle("Commit this change"));
+    await typeMessage("Oops, wrong text");
+    await fireEvent.click(commitButton());
+    emit("progress", { root: ROOT, stage: "uploading", done: 0, total: 1, bytes: 10, totalBytes: 100, cancellable: true });
+    await fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    expect(api.CancelSave).toHaveBeenCalledWith(ROOT);
+    await screen.findByRole("button", { name: "Cancelling…" });
+    expect(api.Save).toHaveBeenCalledTimes(1); // (the click didn't open the queue or commit again)
+    finish(result("cancelled"));
+    await toasted("Commit cancelled: your changes are as they were");
+    expect((screen.getByPlaceholderText(/What did you change/) as HTMLTextAreaElement).value).toBe("Oops, wrong text");
+    expect(commitButton().textContent).toContain("Commit 1 of 2");
+  });
+
+  it("offers no cancel once the team has it (or for an update)", async () => {
+    await show({ changes: [change("Song.als")] });
+    emit("progress", { root: ROOT, stage: "uploading", done: 0, total: 1, bytes: 10, totalBytes: 100 });
+    await screen.findByText(/you can keep working while it uploads/);
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+  });
+
   it("dims the changes while it reads the files, then says to go on working", async () => {
     await show({ changes: [change("Song.als")] });
     emit("progress", { root: ROOT, stage: "storing", done: 1, total: 3 });

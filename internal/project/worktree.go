@@ -284,7 +284,7 @@ func (r *Repo) hashScanned(ix *index, files []scanned) ([]FileEntry, error) {
 				var h string
 				var n int64
 				if err == nil {
-					h, n, err = store.HashFile(abs)
+					h, n, err = r.hashFile(abs)
 				}
 				mu.Lock()
 				if err != nil && inUse(err) {

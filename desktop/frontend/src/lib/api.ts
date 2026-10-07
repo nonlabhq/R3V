@@ -61,7 +61,8 @@ export function lineKind(line: string): string {
 }
 
 // How a long step (save, upload, download) is going; "progress" events.
-export type Progress = { root: string; stage: string; done: number; total: number; bytes?: number; totalBytes?: number };
+export type Progress = { root: string; stage: string; done: number; total: number; bytes?: number; totalBytes?: number;
+  cancellable?: boolean }; // a commit or share that can still be cancelled (CancelSave)
 
 const transfers = (p: Progress) => (p.stage === "uploading" || p.stage === "downloading") && !!p.totalBytes;
 
