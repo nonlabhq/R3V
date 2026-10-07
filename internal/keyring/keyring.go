@@ -1,5 +1,6 @@
 // Package keyring keeps secrets in the system's credential store: Windows
-// Credential Manager; elsewhere, for now, a file only this user can read.
+// Credential Manager, the macOS Keychain, the Secret Service on Linux;
+// elsewhere (or without one) a file only this user can read.
 // R3V-Cloud's session tokens live here, never in teams.json.
 package keyring
 
