@@ -37,6 +37,6 @@
   .sw { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--c);
     box-shadow: inset 0 0 0 2px var(--panel); }
   .sw:hover:not(:disabled) { background: var(--c); border-color: var(--line-strong); }
-  .sw.on { border-color: var(--c); }
+  .sw.on { border-color: var(--text); }
   .sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
