@@ -113,6 +113,7 @@ describe("Project icon and colour", () => {
 
   it("picks an icon and a colour for the team", async () => {
     render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", ""));
     await fireEvent.click(screen.getByRole("radio", { name: "Lime" }));
@@ -123,6 +124,7 @@ describe("Project icon and colour", () => {
   it("goes back when the team doesn't take it", async () => {
     api.SetProjectLook.mockRejectedValue(new Error("the team doesn't have this project yet"));
     render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringContaining("doesn't have"), "error"));
     expect(screen.getByRole("radio", { name: "The project's initial" }).getAttribute("aria-checked")).toBe("true");
@@ -131,6 +133,17 @@ describe("Project icon and colour", () => {
   it("isn't offered where the team keeps no looks", () => {
     render(ProjectSettings, { ...props, team: team({ looks: false }) });
     expect(screen.queryByText("Icon and colour")).toBeNull();
+  });
+
+  it("opens the picker from the icon before the name, and Esc closes it", async () => {
+    render(ProjectSettings, { ...props, team: team() });
+    expect(screen.queryByRole("radio", { name: "drum" })).toBeNull();
+    const icon = screen.getByRole("button", { name: "Icon and colour" });
+    await fireEvent.click(icon);
+    expect(screen.getByRole("dialog", { name: "Icon and colour" })).toBeTruthy();
+    await fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Icon and colour" })).toBeNull();
+    expect(document.activeElement).toBe(icon);
   });
 
   it("says a hosted team can't keep them yet", () => {
