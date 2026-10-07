@@ -277,6 +277,9 @@
     }
     excluded = next;
   }
+  // How big the ticked changes are (what the commit takes).
+  let sizes = $derived(new Map(files.map((f) => [f.path, f.size])));
+  const tickedSize = (ticked: string[]) => ticked.reduce((n, p) => n + (sizes.get(p) ?? 0), 0);
   // The box over the list: every change ticked, none, or some.
   let allState = $derived.by((): "on" | "off" | "some" => {
     const out = changedPaths.filter((p) => excluded[p]).length;
@@ -341,10 +344,10 @@
           title={allState === "on" ? t("Deselect all changes") : t("Select all changes")}
           onchange={() => tick(changedPaths, allState !== "on")} />
       {/if}
-      <span class="title h-title">{all ? t("All files") : t("Changed files")}</span>
+      <span class="title h-title">{all ? t("All files") : t("Changes")}</span>
       {#if changedCount}
         {@const ticked = changedPaths.filter((p) => !excluded[p])}
-        <span class="total h-total">{tn(changedCount, "{count} change", "{count} changes", { count: changedCount.toLocaleString() })} · {formatBytes(tree.changedSize)}</span>
+        <span class="total h-total">{t("{done}/{total} selected", { done: ticked.length.toLocaleString(), total: changedPaths.length.toLocaleString() })} · {formatBytes(tickedSize(ticked))}</span>
         <button class="ghost revert h-revert" disabled={!ticked.length}
           title={!ticked.length ? t("Tick changes to discard them") : ticked.length === changedPaths.length
             ? t("Discard all changes…") : tn(ticked.length, "Discard the {n} ticked change…", "Discard the {n} ticked changes…")}
@@ -401,6 +404,7 @@
           {:else if view === "list"}
             {@const f = row.file!}
             <li class="two">
+              <span class="chevbtn"></span>
               {#if changedPaths.length}
                 {#if isChange(f)}
                   <input type="checkbox" class="pick" checked={!excluded[f.path]} title={t("Commit this change")}
@@ -628,7 +632,6 @@
   .views button.on { background: var(--text); color: var(--bg); }
   /* The list: a row per change, its folder under its name */
   li.two { height: 44px; }
-  li.two .pick { margin-left: var(--sp-8); margin-right: var(--sp-4); }
   li.two .file { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
   li.two .file.on { background: var(--accent-soft); }
   .names { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }

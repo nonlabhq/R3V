@@ -47,7 +47,6 @@
 "Can't show this model:": "Dieses Modell kann nicht angezeigt werden:",
 "Cancel": "Abbrechen",
 "Changed": "Geändert",
-"Changed files": "Änderungen",
 "Changed in this version.": "In dieser Version geändert.",
 "Changed since the version you're on": "Geändert seit der Version, auf der du bist",
 "Changes": "Änderungen",
@@ -695,8 +694,6 @@
 "{app} {version} is available": "{app} {version} ist verfügbar",
 "{author} saved “{message}”": "{author} hat „{message}“ gespeichert",
 "{cloud} also syncs R3V's history (the hidden .r3v folder): used from two computers it can damage it, and files kept online-only aren't really here. Best keep projects in a folder {cloud} doesn't sync: R3V and your team storage already keep them safe.": "{cloud} synchronisiert auch die Historie von R3V (den versteckten Ordner .r3v): Von zwei Computern aus benutzt, kann sie beschädigt werden, und nur online gespeicherte Dateien sind nicht wirklich hier. Leg Projekte besser in einen Ordner, den {cloud} nicht synchronisiert: R3V und der Speicher deines Teams schützen sie bereits.",
-"{count} change": "{count} Änderung",
-"{count} changes": "{count} Änderungen",
 "{count} file": "{count} Datei",
 "{count} files": "{count} Dateien",
 "{create} → a name (e.g. {example}) → keep Location {auto} and Storage Class {std} → {create}. Use a bucket just for R3V.": "{create} → ein Name (z. B. {example}) → Location auf {auto} und Storage Class auf {std} lassen → {create}. Nutze einen Bucket nur für R3V.",
@@ -1111,5 +1108,6 @@
 "Play or pause the audio shown": "Gezeigtes Audio abspielen oder pausieren",
 "Show the changes as": "Änderungen zeigen als",
 "Tree": "Baum",
-"Project folder": "Projektordner"
+"Project folder": "Projektordner",
+"{done}/{total} selected": "{done}/{total} ausgewählt"
 }

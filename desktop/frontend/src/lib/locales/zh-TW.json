@@ -47,7 +47,6 @@
 "Can't show this model:": "無法顯示這個模型：",
 "Cancel": "取消",
 "Changed": "已變更",
-"Changed files": "變更的檔案",
 "Changed in this version.": "在這個版本變更。",
 "Changed since the version you're on": "自你目前所在的版本以來已變更",
 "Changes": "變更",
@@ -695,8 +694,6 @@
 "{app} {version} is available": "{app} {version} 已推出",
 "{author} saved “{message}”": "{author} 存了「{message}」",
 "{cloud} also syncs R3V's history (the hidden .r3v folder): used from two computers it can damage it, and files kept online-only aren't really here. Best keep projects in a folder {cloud} doesn't sync: R3V and your team storage already keep them safe.": "{cloud} 也會同步 R3V 的歷史（隱藏的 .r3v 資料夾）：從兩台電腦使用可能會損壞它，而且只存在線上的檔案其實不在這台電腦上。最好把專案放在 {cloud} 不會同步的資料夾：R3V 和你團隊的儲存空間已經會保護它們。",
-"{count} change": "{count} 項變更",
-"{count} changes": "{count} 項變更",
 "{count} file": "{count} 個檔案",
 "{count} files": "{count} 個檔案",
 "{create} → a name (e.g. {example}) → keep Location {auto} and Storage Class {std} → {create}. Use a bucket just for R3V.": "{create} → 一個名稱（例如 {example}）→ Location 保持 {auto}、Storage Class 保持 {std} → {create}。請用一個只給 R3V 使用的 bucket。",
@@ -1111,5 +1108,6 @@
 "Play or pause the audio shown": "播放或暫停顯示中的音訊",
 "Show the changes as": "變更顯示方式",
 "Tree": "樹狀",
-"Project folder": "專案資料夾"
+"Project folder": "專案資料夾",
+"{done}/{total} selected": "已選 {done}/{total}"
 }
