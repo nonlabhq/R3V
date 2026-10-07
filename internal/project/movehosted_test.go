@@ -79,4 +79,3 @@ func TestMoveToHostedTeam(t *testing.T) {
 		t.Errorf("the first version's lyrics: %q", got)
 	}
 }
-
