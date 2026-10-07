@@ -1147,5 +1147,15 @@
 "Your name comes from your R3V-Cloud account.": "Tu nombre viene de tu cuenta de R3V-Cloud.",
 "Leave the team…": "Salir del equipo…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "También sales del equipo en R3V-Cloud: para volver, alguien tendrá que invitarte de nuevo. Las carpetas de los proyectos se quedan en el disco.",
-"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "La cuenta con la que has iniciado sesión no está (ya) en este equipo. Sus proyectos se quedan aquí tal cual: elimina el equipo en sus ajustes para conservarlos como proyectos locales."
+"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "La cuenta con la que has iniciado sesión no está (ya) en este equipo. Sus proyectos se quedan aquí tal cual: elimina el equipo en sus ajustes para conservarlos como proyectos locales.",
+"Remove {team}?": "¿Quitar {team}?",
+"Leave {team}?": "¿Salir de {team}?",
+"You're no longer in this team on R3V-Cloud: this computer forgets it. Project folders stay on disk.": "Ya no estás en este equipo en R3V-Cloud: este ordenador lo olvida. Las carpetas de los proyectos se quedan en el disco.",
+"Their versions stay and you can keep committing on this computer, no longer shared with the team.": "Sus versiones se quedan y puedes seguir haciendo commits en este ordenador, ya sin compartirlos con el equipo.",
+"Without them, older versions that use other samples than today's can't be opened once you've left.": "Sin ellos, las versiones antiguas que usan otras muestras que las de hoy no se podrán abrir una vez que salgas.",
+"Leaving…": "Saliendo…",
+"Leave the team": "Salir del equipo",
+"Remove the team…": "Quitar el equipo…",
+"{team} is no longer on this computer. Its projects are under Local now.": "{team} ya no está en este ordenador. Sus proyectos están ahora en Local.",
+"{team} is no longer on this computer. Project folders were left on disk.": "{team} ya no está en este ordenador. Las carpetas de los proyectos se quedaron en el disco."
 }

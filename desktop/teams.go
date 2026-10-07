@@ -353,17 +353,20 @@ func (a *App) RenameTeamForEveryone(id, name string) error {
 	if t == nil {
 		return errors.New("unknown team")
 	}
-	if svc, ok := cloud.Hosted(*t); ok { // the service keeps the team's name
+	if svc, ok := cloud.Hosted(*t); ok {
+		// The service keeps a hosted team's name (everyone gets it from
+		// there): one call, so it is renamed or it isn't, never half.
 		if err := cloud.RenameTeam(svc, cloud.TeamID(t.Remote.URL), name); err != nil {
 			return err
 		}
-	}
-	b, err := t.Open()
-	if err != nil {
-		return err
-	}
-	if err := remote.Rename(b, name); err != nil {
-		return err
+	} else {
+		b, err := t.Open()
+		if err != nil {
+			return err
+		}
+		if err := remote.Rename(b, name); err != nil {
+			return err
+		}
 	}
 	_, err = updateTeam(id, func(_ *teams.Store, t *teams.Team) error {
 		t.Name, t.CustomName = name, false
