@@ -1108,5 +1108,6 @@
 "{done}/{total} selected": "{done}/{total} ausgewählt",
 "Instrument: {name}": "Instrument: {name}",
 "View current version": "Aktuelle Version zeigen",
-"Showing only: {kinds}": "Nur: {kinds}"
+"Showing only: {kinds}": "Nur: {kinds}",
+"Undo": "Rückgängig"
 }

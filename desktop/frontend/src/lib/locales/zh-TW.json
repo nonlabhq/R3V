@@ -1108,5 +1108,6 @@
 "{done}/{total} selected": "已選 {done}/{total}",
 "Instrument: {name}": "樂器：{name}",
 "View current version": "檢視目前版本",
-"Showing only: {kinds}": "只顯示：{kinds}"
+"Showing only: {kinds}": "只顯示：{kinds}",
+"Undo": "復原"
 }

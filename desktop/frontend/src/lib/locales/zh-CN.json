@@ -1108,5 +1108,6 @@
 "{done}/{total} selected": "已选 {done}/{total}",
 "Instrument: {name}": "乐器：{name}",
 "View current version": "查看当前版本",
-"Showing only: {kinds}": "只显示：{kinds}"
+"Showing only: {kinds}": "只显示：{kinds}",
+"Undo": "撤销"
 }
