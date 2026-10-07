@@ -21,7 +21,8 @@
 <div class="branch-wrap">
   <button class="branch" onclick={() => (open = !open)} disabled={!st.remoteUrl}
     title={st.remoteUrl ? t("Branches") : t("Share the project with a team to use branches")}>
-    ⑂ {st.branch} ▾
+    <span class="cap">{t("Current branch")}</span>
+    <span class="name">⑂ {st.branch} ▾</span>
   </button>
   {#if open}
     <div class="menu surface-menu" role="menu">
@@ -55,9 +56,11 @@
 
 <style>
   .branch-wrap { position: relative; }
-  .branch { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
+  .branch { display: flex; flex-direction: column; align-items: flex-start; gap: 0; padding: var(--sp-4) var(--sp-10);
+    font-size: var(--fs-md); line-height: 1.25; }
+  .cap { font-size: var(--fs-2xs); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
   .menu {
-    position: absolute; top: 32px; left: 0; z-index: var(--z-dropdown); min-width: 260px; padding: var(--sp-6);
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-dropdown); min-width: 260px; padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
   .menu-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-6) var(--sp-8) var(--sp-2); }

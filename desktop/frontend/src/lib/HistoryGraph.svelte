@@ -25,7 +25,13 @@
     panelInset?: number; // the details' distance from the top and bottom
   } = $props();
 
-  const ROW = 40, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
+  // A row per version, a column per line of work (at 100%). Zoom spreads
+  // them out or packs them in; the dots, lines and labels keep their size.
+  const ROW = 56, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
+  // The view: pan (px on the screen) and zoom.
+  let panX = $state(0), panY = $state(0), zoom = $state(1);
+  const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
+  let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
   let g = $derived(branchGraph(versions, branches, branch, "main", head));
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
@@ -57,7 +63,7 @@
     const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
       ...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
     const clear = (dx: number, y: number, w: number, h: number) =>
-      dots.every((d) => d.col * COL + 12 < dx || d.col * COL - 12 > dx + w || d.row * ROW + ROW / 2 + 12 < y || d.row * ROW + ROW / 2 - 12 > y + h) &&
+      dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
     // (before the first version: your branch's name over your changes)
     const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: 0, empty: true }] : [];
@@ -71,49 +77,49 @@
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
       const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
       const h = title ? 32 : 24;
-      const at = c.col * COL;
+      const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
-      let place = { dx: lean[0], y: rowY * ROW + ROW / 2 - 16 - h };
+      let place = { dx: lean[0], y: rowY * rowH + rowH / 2 - 16 - h };
       search: for (let k = 0; k < 30; k++) {
-        const y = rowY * ROW + ROW / 2 - 16 - h - k * (LABEL_H - 4);
+        const y = rowY * rowH + rowH / 2 - 16 - h - k * (LABEL_H - 4);
         for (const dx of lean) if (clear(dx, y, w, h)) { place = { dx, y }; break search; }
       }
       out.push({ id: c.tip || "pending", name: c.name, title, color: c.color, ...place, w, h });
     }
     return out;
   });
-  let center = $derived(PAD - Math.min(-g.left * COL - 12, ...labels.map((l) => l.dx)));
-  let full = $derived(center + Math.max(g.right * COL + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
-  const x = (col: number) => center + col * COL;
+  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx)));
+  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
+  const x = (col: number) => center + col * colW;
   // Room at the top for the labels.
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
-  const yRow = (r: number) => top + r * ROW + ROW / 2;
+  const yRow = (r: number) => top + r * rowH + rowH / 2;
   const y = (id: string) => yRow(g.row.get(id)! + off);
-  let height = $derived(yRow(versions.length + off - 1) + ROW / 2 + 16);
+  let height = $derived(yRow(versions.length + off - 1) + rowH / 2 + 16);
 
   function path(e: { from: string; to: string; kind: string }) {
     const a = g.chainOf.get(e.from)!, b = g.chainOf.get(e.to)!;
     const xa = x(a.col), ya = y(e.from), xb = x(b.col), yb = y(e.to);
     if (e.kind === "line") return `M ${xa} ${ya} L ${xb} ${yb}`;
     if (e.kind === "fork") { // down its own column, then over to where it split
-      const turn = Math.max(ya, yb - ROW);
-      return `M ${xa} ${ya} L ${xa} ${turn} C ${xa} ${turn + ROW / 2}, ${xb} ${turn + ROW / 2}, ${xb} ${yb}`;
+      const turn = Math.max(ya, yb - rowH);
+      return `M ${xa} ${ya} L ${xa} ${turn} C ${xa} ${turn + rowH / 2}, ${xb} ${turn + rowH / 2}, ${xb} ${yb}`;
     }
     // merge: over to the branch merged in, then down its column
-    const turn = Math.min(yb, ya + ROW);
-    return `M ${xa} ${ya} C ${xa} ${ya + ROW / 2}, ${xb} ${ya + ROW / 2}, ${xb} ${turn} L ${xb} ${yb}`;
+    const turn = Math.min(yb, ya + rowH);
+    return `M ${xa} ${ya} C ${xa} ${ya + rowH / 2}, ${xb} ${ya + rowH / 2}, ${xb} ${turn} L ${xb} ${yb}`;
   }
   // Your changes down to the version you are on (over to it when your
   // branch has no versions yet).
   function pendingPath() {
     const c = headChain!;
-    const hx = x(g.chainOf.get(head)?.col ?? c.col), px = x(c.col), turn = Math.max(yRow(0), y(head) - ROW);
+    const hx = x(g.chainOf.get(head)?.col ?? c.col), px = x(c.col), turn = Math.max(yRow(0), y(head) - rowH);
     return hx === px ? `M ${px} ${yRow(0)} L ${px} ${y(head)}`
-      : `M ${px} ${yRow(0)} L ${px} ${turn} C ${px} ${turn + ROW / 2}, ${hx} ${turn + ROW / 2}, ${hx} ${y(head)}`;
+      : `M ${px} ${yRow(0)} L ${px} ${turn} C ${px} ${turn + rowH / 2}, ${hx} ${turn + rowH / 2}, ${hx} ${y(head)}`;
   }
   function stubPath(st: { c: { tip: string; col: number }; from: { col: number }; row: number }) {
     const fx = x(st.from.col), fy = y(st.c.tip), sx = x(st.c.col), sy = yRow(st.row);
-    return `M ${fx} ${fy} C ${fx} ${fy - ROW * 0.5}, ${sx} ${sy + ROW * 0.4}, ${sx} ${sy}`;
+    return `M ${fx} ${fy} C ${fx} ${fy - rowH * 0.5}, ${sx} ${sy + rowH * 0.4}, ${sx} ${sy}`;
   }
   const lineChain = (e: { from: string; to: string; kind: string }) =>
     e.kind === "merge" ? g.chainOf.get(e.to)! : g.chainOf.get(e.from)!;
@@ -143,7 +149,7 @@
     // To the left of the dot, centred on it: the pointer can go up and down
     // the versions without the card in the way. The little arrow points at
     // the dot. (In the window: over the sidebar if it comes to that.)
-    const nx = origin.left + panX + x(c.col) * zoom, ny = origin.top + panY + y(v.id) * zoom, gap = 12 * zoom + 10;
+    const nx = origin.left + panX + x(c.col), ny = origin.top + panY + y(v.id), gap = 22;
     const vh = typeof window === "undefined" ? 800 : window.innerHeight;
     const left = Math.max(8, nx - gap - CARD_W);
     const top = Math.min(Math.max(8, ny - cardHeight / 2), Math.max(8, vh - 8 - cardHeight));
@@ -155,9 +161,6 @@
     return { destroy: () => node.remove() };
   }
 
-  // The view: pan (px on the screen) and zoom.
-  let panX = $state(0), panY = $state(0), zoom = $state(1);
-  const ZOOM_MIN = 0.4, ZOOM_MAX = 2.5;
   // At first (and on double-click): main in the middle, a short history in
   // the middle too, a long one from the top.
   function resetView() {
@@ -211,7 +214,7 @@
   }
 
   function clamp() {
-    const w = full * zoom, h = height * zoom, mx = Math.min(80, width / 3), my = Math.min(80, boxHeight / 3);
+    const w = full, h = height, mx = Math.min(80, width / 3), my = Math.min(80, boxHeight / 3);
     panX = Math.min(Math.max(panX, mx - w), width - mx);
     panY = Math.min(Math.max(panY, my - h), boxHeight - my);
   }
@@ -270,7 +273,7 @@
   });
   // Keep the picked version in sight (↑ ↓).
   function reveal(id: string) {
-    const yy = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
+    const yy = panY + (id === "pending" ? yRow(0) : y(id));
     if (yy < 40) panY += 40 - yy;
     else if (yy > boxHeight - 40) panY -= yy - (boxHeight - 40);
   }
@@ -280,7 +283,7 @@
     const id = selected;
     const c = id === "pending" ? (pending ? pendAt : undefined) : g.chainOf.get(id);
     if (!c || (id !== "pending" && !byID.has(id))) return null;
-    const x1 = panX + x(c.col) * zoom + 12 * zoom, y1 = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
+    const x1 = panX + x(c.col) + 12, y1 = panY + (id === "pending" ? yRow(0) : y(id));
     const x2 = width, y2 = Math.min(Math.max(y1, panelInset + 24), boxHeight - panelInset - 24);
     return x1 < x2 - 8 ? { x1, y1, x2, y2 } : null;
   });
@@ -306,7 +309,7 @@
   {#if versions.length === 0 && !pending}
     <p class="muted empty">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
   {:else}
-    <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px) scale({zoom})">
+    <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px)">
       <svg width={full} height={height} aria-hidden="true">
         {#each g.edges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
