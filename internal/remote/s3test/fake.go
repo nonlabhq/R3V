@@ -57,6 +57,9 @@ type Server struct {
 	// Clock is when objects are written (time.Now when nil): tests set it
 	// to make objects old.
 	Clock func() time.Time
+	// OnWrite, when set, is called before each PUT or POST is handled (the
+	// object's path): a test can hold a transfer mid-way there.
+	OnWrite func(method, path string)
 
 	uploads map[string]*upload // multipart uploads in progress
 	nextID  int
@@ -88,6 +91,9 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(r.Header.Get("Authorization"), "AWS4-HMAC-SHA256 Credential=") {
 		xmlError(w, http.StatusForbidden, "AccessDenied")
 		return
+	}
+	if s.OnWrite != nil && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
+		s.OnWrite(r.Method, r.URL.Path)
 	}
 	parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/"), "/", 2)
 	s.mu.Lock()
