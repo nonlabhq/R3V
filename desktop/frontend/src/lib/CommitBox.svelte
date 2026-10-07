@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import type { State } from "./api";
+  import { branchLabel } from "./branches";
 
   // The commit box under the Changes list: the description, and the button
   // that says what it commits (all the changes, or the ticked ones) and
@@ -24,13 +25,13 @@
   onkeydown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) oncommit(); }}></textarea>
 {#if st.olderVersion}
   <p class="faint small older">{st.remoteUrl
-    ? t("You're on an older version. Committing combines your changes with the latest version of “{branch}” (you'll see a preview first) — or start a new branch from here.", { branch: st.branch })
+    ? t("You're on an older version. Committing combines your changes with the latest version of “{branch}” (you'll see a preview first) — or start a new branch from here.", { branch: branchLabel(st.branches, st.branch) })
     : t("You're on an older version. Make it the latest version to commit changes, or go back to the latest version.")}</p>
 {/if}
 <button class="primary commit-btn" disabled={!message.trim() || !!busy || (!!st.olderVersion && !st.remoteUrl)
   || (st.changes.length > 0 && leftOut === st.changes.length)} onclick={oncommit}
   title={st.remoteUrl
-    ? t("Commits the project folder and shares it with the team on “{branch}”. If others committed in the meantime, you'll see what they changed and choose how to combine first.", { branch: st.branch }) + unticked
+    ? t("Commits the project folder and shares it with the team on “{branch}”. If others committed in the meantime, you'll see what they changed and choose how to combine first.", { branch: branchLabel(st.branches, st.branch) }) + unticked
     : t("Commits on this computer. Share the project with a team to work on it together.") + unticked}
   aria-keyshortcuts="Control+Enter">
   <span>{busy === "save" || busy === "first-share" ? t("Committing…")

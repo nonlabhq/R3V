@@ -123,6 +123,10 @@ func (b *brokerBucket) ContentsPerProject() bool { return true }
 // records, and members' pictures (LooksKeeper).
 func (b *brokerBucket) KeepsLooks() bool { return true }
 
+// KeepsBranchRecords: the service keeps projects' branch records
+// (branchinfo/) and milestones, and tells of their changes.
+func (b *brokerBucket) KeepsBranchRecords() bool { return true }
+
 var brokerContents = regexp.MustCompile(`^projects/([0-9a-f]{32})/((?:objects|chunked|snapshots)/.+)$`)
 
 // contents splits a key kept in storage (handed out as URLs) into its

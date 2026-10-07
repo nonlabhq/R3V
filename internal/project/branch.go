@@ -170,7 +170,7 @@ func (r *Repo) MergeBranch(name, message string, opts MergeOptions) (*SyncResult
 		return nil, errors.New("that is the branch you are on; use `r3v update`")
 	}
 	if message == "" {
-		message = "Merge branch " + name
+		message = "Merge branch " + r.BranchLabel(name)
 	}
 	return r.mergeVersion(c, target, message, opts)
 }
@@ -218,7 +218,7 @@ func (r *Repo) MergeMessage(ref string) (string, error) {
 		if heads, err := c.Branches(r.Config.ProjectID); err == nil {
 			for name, head := range heads { // a branch's latest: name the branch
 				if head == id && name != r.BranchName() {
-					msg = "Merge branch " + name
+					msg = "Merge branch " + r.BranchLabel(name)
 				}
 			}
 		}

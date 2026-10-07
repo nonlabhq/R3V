@@ -356,3 +356,14 @@ func TestBrokerKeepsLooks(t *testing.T) {
 		t.Error("a hosted team doesn't keep looks")
 	}
 }
+
+// A hosted team keeps branch records and milestones (R3V-Cloud 5827f38).
+func TestBrokerKeepsBranchRecords(t *testing.T) {
+	b, err := NewBroker("https://cloud.example/v1/teams/t1", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if k, ok := b.(interface{ KeepsBranchRecords() bool }); !ok || !k.KeepsBranchRecords() {
+		t.Error("a hosted team doesn't keep branch records")
+	}
+}

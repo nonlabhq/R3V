@@ -12,7 +12,8 @@
   // versions, missing samples, broken rules. Each says what to do; the page
   // does it.
   let { st, busy, progress, restorable, missingSamples, onshare, onrecover, onpreset, onbranchhere, onlatest,
-    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, oncancel, cancelling = false, loadError = "" }: {
+    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, oncancel, cancelling = false, loadError = "",
+    onrestorebranch, onswitchmain }: {
     st: State;
     busy: string;
     progress: Progress | null;
@@ -34,6 +35,8 @@
     oncancel?: () => void; // cancel the commit under way (progress.cancellable)
     cancelling?: boolean;
     loadError?: string; // the project couldn't be read again just now (what is shown is from before)
+    onrestorebranch?: () => void; // the branch you are on was deleted: bring it back
+    onswitchmain?: () => void;
   } = $props();
 
   // The warning about OneDrive & co., once understood, stays away (per project).
@@ -89,6 +92,19 @@
   <div class="banner info">
     <div>{t("Not shared with {team} yet: its versions are on this computer only.", { team: st.teamName || t("the team") })}</div>
     <button class="primary" onclick={onshare}>{t("Share now")}</button>
+  </div>
+{/if}
+
+{#if st.branchGone && !busy && !progress}
+  {@const g = st.branchGone}
+  <div class="banner warn">
+    <div>
+      <Tx text={g.by ? t("{branch} was deleted from the team by {name} {when}.") : t("{branch} was deleted from the team {when}.")}
+        strong={{ branch: `“${g.label || g.name}”` }} vars={{ name: g.by, when: ago(g.time) }} />
+      <span class="muted">{t("Your files and versions here are as they were.")}</span>
+    </div>
+    {#if onswitchmain}<button onclick={onswitchmain}>{t("Switch to main")}</button>{/if}
+    {#if onrestorebranch}<button class="primary" onclick={onrestorebranch}>{t("Restore it")}</button>{/if}
   </div>
 {/if}
 
