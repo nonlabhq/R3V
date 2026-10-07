@@ -160,6 +160,16 @@ describe("ProjectView: the team", () => {
     await toasted(/^You're up to date/);
   });
 
+  it("finishes a download that was cut off, instead of asking for a first commit", async () => {
+    await show({ head: "", latest: "", history: [], incoming: [version("t1", "Team's version")] });
+    api.Update.mockResolvedValue(result("fast-forward"));
+    await screen.findByText(/The download didn't finish/);
+    expect(screen.queryByText(/Not shared with/)).toBeNull();
+    expect(screen.queryByText(/shared 1 new version/)).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Finish downloading" }));
+    await waitFor(() => expect(api.Update).toHaveBeenCalledWith(ROOT, {}, false));
+  });
+
   it("tells about a version a teammate took back", async () => {
     await show({ takenBack: [version("w1", "oops")] });
     expect(screen.getByText(/Alex took back “oops”/)).toBeTruthy();

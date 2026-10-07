@@ -1085,5 +1085,7 @@
 "Commit cancelled: your changes are as they were": "已取消 commit：你的更改保持原样",
 "Stopped before the team got it: the version is on this computer, not shared yet": "在团队收到之前停止了：这个版本在这台电脑上，尚未分享",
 "The team's versions were taken in before it stopped": "停止之前已先获取团队的版本",
-"Stopped: your versions are on this computer, not shared yet": "已停止：你的版本在这台电脑上，尚未分享"
+"Stopped: your versions are on this computer, not shared yet": "已停止：你的版本在这台电脑上，尚未分享",
+"The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "下载没有完成（网络中断或 R3V 被关闭）：获取文件以完成下载。",
+"Finish downloading": "完成下载"
 }

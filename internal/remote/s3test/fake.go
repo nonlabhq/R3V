@@ -52,6 +52,11 @@ type Server struct {
 	// fails, for good (as if the computer lost its connection or R3V
 	// stopped mid-way); 0: never. Writes counts them.
 	CutAfter, Writes int
+	// CutReadsAfter: the same for downloads, counting object reads (GET):
+	// the read after this many stops half-way through the object (the
+	// connection dropped), and every request after it fails; 0: never.
+	// Reads counts them.
+	CutReadsAfter, Reads int
 	// WriteLog lists the writes in order ("PUT key"), for tests to read.
 	WriteLog []string
 	// Clock is when objects are written (time.Now when nil): tests set it
@@ -105,6 +110,25 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if s.CutAfter > 0 && s.Writes > s.CutAfter {
 		io.Copy(io.Discard, r.Body)
+		xmlError(w, http.StatusBadRequest, "ConnectionCut")
+		return
+	}
+	reading := r.Method == "GET" && r.URL.Query().Get("list-type") == "" && !r.URL.Query().Has("uploads")
+	if reading {
+		s.Reads++
+	}
+	if s.CutReadsAfter > 0 && s.Reads > s.CutReadsAfter {
+		io.Copy(io.Discard, r.Body)
+		if reading && s.Reads == s.CutReadsAfter+1 {
+			if parts := strings.SplitN(strings.TrimPrefix(r.URL.Path, "/"), "/", 2); len(parts) == 2 {
+				if o := s.buckets[parts[0]][parts[1]]; o != nil && len(o.data) > 1 {
+					w.Header().Set("ETag", o.etag)
+					w.Header().Set("Content-Length", strconv.Itoa(len(o.data)))
+					w.Write(o.data[:len(o.data)/2])
+					panic(http.ErrAbortHandler) // the connection drops
+				}
+			}
+		}
 		xmlError(w, http.StatusBadRequest, "ConnectionCut")
 		return
 	}

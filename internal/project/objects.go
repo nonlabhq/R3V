@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -355,6 +356,37 @@ func (r *Repo) PruneObjects() (int64, error) {
 	return freed, nil
 }
 
+// leftoverAge: files in objects/tmp untouched this long were left by a step
+// that stopped mid-way (R3V closed, the computer off), not one under way.
+const leftoverAge = 24 * time.Hour
+
+// cleanLeftovers removes what in dir wasn't touched since before, and
+// returns the bytes freed.
+func cleanLeftovers(dir string, before time.Time) int64 {
+	var freed int64
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		p := filepath.Join(dir, e.Name())
+		fi, err := e.Info()
+		if err != nil || !fi.ModTime().Before(before) {
+			continue
+		}
+		var size int64
+		filepath.WalkDir(p, func(_ string, d fs.DirEntry, err error) error {
+			if err == nil && !d.IsDir() {
+				if i, err := d.Info(); err == nil {
+					size += i.Size()
+				}
+			}
+			return nil
+		})
+		if os.RemoveAll(p) == nil {
+			freed += size
+		}
+	}
+	return freed
+}
+
 // GC removes objects no version refers to (e.g. left by discarded work) and
 // forgets remote-only objects nothing refers to; it returns the bytes freed.
 func (r *Repo) GC() (int64, error) {
@@ -369,6 +401,7 @@ func (r *Repo) GC() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	freed += cleanLeftovers(filepath.Join(root, "tmp"), time.Now().Add(-leftoverAge))
 	for _, shard := range shards {
 		if !shard.IsDir() || len(shard.Name()) != 2 {
 			continue // e.g. tmp
