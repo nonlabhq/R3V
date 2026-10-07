@@ -1087,5 +1087,7 @@
 "The team's versions were taken in before it stopped": "As versões da equipe foram incorporadas antes de parar",
 "Stopped: your versions are on this computer, not shared yet": "Parado: suas versões estão neste computador, ainda não compartilhadas",
 "The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "O download não terminou (a conexão caiu ou o R3V foi fechado): obtenha os arquivos para concluí-lo.",
-"Finish downloading": "Concluir o download"
+"Finish downloading": "Concluir o download",
+"Back to 100% and to where you are": "Voltar a 100% e para onde você está",
+"Current branch": "Branch atual"
 }

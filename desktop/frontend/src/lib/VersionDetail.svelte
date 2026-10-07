@@ -19,17 +19,24 @@
   let files = $state<ProjectFile[] | null>(null);
   let error = $state("");
   let picked = $state("");
+  // By value: the project read again (on focus, say) brings the same
+  // version as a new object, and the props (getters) follow the app's lists
+  // read again too; neither must read the files again (the list and the
+  // diff would blink, the picked file go back to the first).
+  let vid = $derived(v.id);
+  let at = $derived(root);
+  let parent = $derived(v.parents[0] ?? "");
   $effect(() => {
-    const id = v.id;
+    const id = vid;
     files = null;
     error = "";
     picked = "";
-    api.VersionFiles(root, id).then((f) => {
-      if (id !== v.id) return;
+    api.VersionFiles(at, id).then((f) => {
+      if (id !== vid) return;
       files = f ?? [];
       picked = files[0]?.path ?? "";
     }).catch((e) => {
-      if (id === v.id) error = errorText(e); // (not one for a version picked before)
+      if (id === vid) error = errorText(e); // (not one for a version picked before)
     });
   });
   let current = $derived(files?.find((f) => f.path === picked));
@@ -44,9 +51,8 @@
 
   // This version (a) against the one before it (b).
   function sides(f: ProjectFile): { a: Side | null; b: Side | null } {
-    const parent = v.parents[0] ?? "";
     return {
-      a: f.status === "deleted" ? null : { path: f.path, version: v.id, label: t("In this version") },
+      a: f.status === "deleted" ? null : { path: f.path, version: vid, label: t("In this version") },
       b: f.status === "added" || !parent ? null : { path: f.status === "renamed" && f.from ? f.from : f.path, version: parent, label: t("Before") },
     };
   }
@@ -95,7 +101,7 @@
           <div class="dname"><FileIcon kind={current.kind} /> {name(current.path)}</div>
           <div class="faint small">{current.status === "renamed" ? t("Moved from {path}", { path: current.from }) : statusName(current.status)}</div>
         </div>
-        <View {root} file={current} a={s.a} b={s.b} compare={true} stamp={0} />
+        <View root={at} file={current} a={s.a} b={s.b} compare={true} stamp={0} />
       {:else if files && files.length}
         <p class="muted">{t("Pick a file on the left to see what changed.")}</p>
       {/if}

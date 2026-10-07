@@ -182,6 +182,10 @@ describe("ProjectView: the team", () => {
     await show();
     api.SwitchBranch.mockResolvedValue(result("moved"));
     await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    // The branch you are on, first; not one to switch to.
+    const menu = screen.getByRole("menu");
+    expect(menu.textContent).toMatch(/Current branch\s*⑂ main/);
+    expect(within(menu).queryByRole("button", { name: /^main/ })).toBeNull();
     // "idea" is there twice: to switch to, and to merge from (after).
     await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: /^idea/ })[0]);
     await waitFor(() => expect(api.SwitchBranch).toHaveBeenCalledWith(ROOT, "idea", false));
@@ -349,6 +353,29 @@ describe("ProjectView: Overview", () => {
 });
 
 describe("ProjectView: reloading", () => {
+  it("doesn't read a picked version's files again when the window comes back (no blinking)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const history = () => [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })];
+      await show({ changes: [change("Song.als")], history: history() });
+      api.TeamState.mockImplementation(async () => ({ history: history(), incoming: [], branches: [], takenBack: [],
+        online: true, offline: "", unshared: false }));
+      api.VersionFiles.mockResolvedValue([{ path: "a.txt", status: "modified", size: 1, kind: "other", live: "", from: "",
+        edited: false, preview: false, video: false, model: false }]);
+      await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
+      await screen.findByTitle("a.txt");
+      const calls = api.VersionFiles.mock.calls.length;
+      vi.advanceTimersByTime(4000); // (reloads on focus are spaced out)
+      window.dispatchEvent(new Event("focus"));
+      await waitFor(() => expect(api.TeamState.mock.calls.length).toBeGreaterThan(1));
+      await new Promise((r) => setTimeout(r, 50));
+      expect(screen.queryByText("Reading…")).toBeNull();
+      expect(api.VersionFiles.mock.calls.length).toBe(calls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("keeps what the team said while it reads the project again (no blinking banner)", async () => {
     api.TeamState.mockResolvedValue({ online: true, offline: "", branches: [], incoming: [], takenBack: [],
       history: [version("h1", "v1", { parents: [] })], olderVersion: null, unshared: true, capabilities: {} });

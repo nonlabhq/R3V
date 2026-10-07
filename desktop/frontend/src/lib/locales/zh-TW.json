@@ -1087,5 +1087,7 @@
 "The team's versions were taken in before it stopped": "停止之前已先取得團隊的版本",
 "Stopped: your versions are on this computer, not shared yet": "已停止：你的版本在這台電腦上，尚未分享",
 "The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "下載沒有完成（網路中斷或 R3V 被關閉）：取得檔案以完成下載。",
-"Finish downloading": "完成下載"
+"Finish downloading": "完成下載",
+"Back to 100% and to where you are": "回到 100% 並定位到目前位置",
+"Current branch": "目前分支"
 }

@@ -1087,5 +1087,7 @@
 "The team's versions were taken in before it stopped": "止まる前にチームのバージョンを取り込みました",
 "Stopped: your versions are on this computer, not shared yet": "止めました：バージョンはこのパソコンにあり、まだ共有されていません",
 "The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "ダウンロードが完了していません（接続が切れたか R3V が閉じられました）：ファイルを取得して完了させてください。",
-"Finish downloading": "ダウンロードを完了"
+"Finish downloading": "ダウンロードを完了",
+"Back to 100% and to where you are": "100% に戻して現在の位置へ",
+"Current branch": "現在のブランチ"
 }

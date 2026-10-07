@@ -1087,5 +1087,7 @@
 "The team's versions were taken in before it stopped": "멈추기 전에 팀의 버전을 먼저 가져왔습니다",
 "Stopped: your versions are on this computer, not shared yet": "멈췄습니다: 버전은 이 컴퓨터에 있고 아직 공유되지 않았습니다",
 "The download didn't finish (the connection was lost or R3V closed): get the files to finish it.": "다운로드가 끝나지 않았습니다(연결이 끊겼거나 R3V가 닫혔습니다): 파일을 받아 마무리하세요.",
-"Finish downloading": "다운로드 마치기"
+"Finish downloading": "다운로드 마치기",
+"Back to 100% and to where you are": "100%로 돌아가 현재 위치로",
+"Current branch": "현재 브랜치"
 }
