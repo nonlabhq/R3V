@@ -1,7 +1,8 @@
 # DaVinci Resolve projects
 
-Status: researching; experiments done. Findings from Resolve Studio 20.2.2
-on Windows 11, October 2026; Resolve 21.1 is current.
+Status: designed (in place, as a plugin); not built. Findings from
+Resolve Studio 20.2.2 on Windows 11, October 2026; Resolve 21.1 is
+current.
 
 ## Why
 
@@ -109,32 +110,71 @@ but external scripting needs Studio (Preferences → System → General →
 External scripting using: Local), and from 21.1 Python scripting in any
 form does. R3V can't count on it.
 
-## Design
+## Design: in place, as a plugin
 
-R3V reads and copies Resolve's files itself; it never asks Resolve to
-export, so Free works.
+Decided 2026-10-07. R3V tracks a Resolve project where Resolve keeps it,
+and the Resolve-specific logic lives in a plugin (below). R3V reads and
+copies Resolve's files itself; it never asks Resolve to export, so Free
+works, and nothing inside a project is ever changed.
 
-What a version of a Resolve project holds: `Project.db`, `Batch Renders/`,
-and the project's stills (`<gallery folder>/<id>/`). Left out: caches,
-Resolve's backups, renders and anything else users drop in the folder,
-`*-journal`.
+### What a version holds
 
-Both ways of giving it a folder work (experiments 1, 4, 6); to choose:
+The R3V project's folder is the Resolve project's own folder in its
+library, `<library>/Resolve Projects/Users/guest/Projects/<name>/`; `.r3v/`
+goes in it (experiment 6). A version holds:
 
-- **A. In place.** R3V lists the projects in the libraries Resolve knows
-  (`dblist.conf`); adding one tracks its folder where it is, and its stills
-  from the gallery folder. Nothing to set up in Resolve, and the projects
-  a user already has can be added at once. On another computer, taking a
-  project puts its folder into a library there (the default one unless
-  chosen), and Resolve lists it.
-- **B. A library per project folder.** The R3V project is an ordinary folder
-  (`D:\Work\Trailer\`) holding a Resolve library (`Resolve Projects/…`,
-  with its `Settings/` and `User.db`) and, through the project's Working
-  Folders, its stills and cache; the footage too if the user keeps it
-  there. Everything is in one place like any other R3V project. Resolve
-  needs the library connected once per computer (Add Project Library →
-  **Connect**, not Create: Create makes a new library in a subfolder of a
-  folder that isn't empty).
+- `Project.db` and `Batch Renders/`.
+- `Gallery/`: the project's stills, copied from `<gallery folder>/<id>/` by
+  the plugin before each save, and back after a version is taken (below).
+  The gallery folder is the project's Working Folders setting; each
+  library's `ProjectMetadataCache/Metadata.db` has it (`galleryPath`), and
+  empty means the first Media Storage folder.
+
+Everything else in the folder is left out: renders and other files users
+put there, `*-journal`. Caches, proxies and Resolve's own backups are
+outside the folder anyway.
+
+### Adding projects
+
+The way in for projects a user already has, and for new ones (made in
+Resolve as usual, then added):
+
+- The plugin lists the projects in every disk library Resolve knows
+  (`Preferences/dblist.conf`): name, library, size, last change, the
+  Resolve that last wrote it, whether R3V tracks it already.
+- The user ticks projects; each becomes an R3V project in place, and its
+  first version is saved. Nothing moves; Resolve sees no difference.
+- App: **Add from DaVinci Resolve…** next to adding a folder. CLI:
+  `r3v resolve list`, `r3v resolve add <name>…` (`--json` like the rest).
+
+### On another computer
+
+Taking a project from the team puts its folder into this computer's
+default library (`Local Database` in `dblist.conf`), or one the user picks,
+and its stills into this computer's gallery folder. Resolve lists it the
+next time Project Manager shows that library (experiment 1). No library to
+connect, no Resolve setting to change.
+
+A folder of that name already there:
+
+- the same project (same `SM_Project_id`): it is that project; R3V takes it
+  over like any untracked copy, without deleting anything;
+- another project: R3V stops and asks for another name (the folder name is
+  the name Resolve shows).
+
+### Rejected: a library per project folder
+
+The R3V project as an ordinary folder holding its own Resolve library
+(stills and cache pointed into it through Working Folders) fits R3V's
+"one project, one folder" best, but:
+
+- every computer must connect every project's library in Resolve (Add
+  Project Library → Connect), or R3V must edit `dblist.conf`;
+- existing projects would have to move into new libraries, and their
+  Working Folders still point at the old stills: changing that means
+  editing the project, by hand in Resolve for each one.
+
+The cost lands on exactly the users with many projects to bring in.
 
 ### Safety
 
@@ -150,19 +190,62 @@ Never lose a user's file:
 - **Writing.** R3V replaces a project's files only while Resolve doesn't
   hold its `Project.db` (asked through the Restart Manager, which opens
   nothing). Resolve may stay running: a project replaced while closed opens
-  with the new content. Otherwise it fails and says to close the project.
-  Files are written beside and renamed into place.
+  with the new content (experiment 4). Otherwise it fails and says to
+  close the project. Files are written beside and renamed into place.
 - **One id, one project.** Two folders with the same `SM_Project_id` in
   reach of the same gallery folder share stills and cache. R3V never puts
   a second copy of a project next to the first; taking a version back
   replaces the project's own folder.
 - **Newer Resolve.** Each version records the Resolve that last wrote the
-  project. Taking back a version written by a newer Resolve than this
-  computer's is refused, naming the version needed. Opening an older
-  project in a newer Resolve is allowed, with a warning that it will no
-  longer open in the older one.
+  project (read from its `Project.db`). Taking back a version written by a
+  newer Resolve than this computer's is refused, naming the version
+  needed. Opening an older project in a newer Resolve is allowed, with a
+  warning that it will no longer open in the older one.
 - **Missing footage.** Like Live's missing samples, a yellow note listing
   the folders that aren't there; nothing is changed.
+- **Resolve's own files.** R3V only reads `dblist.conf`, `Metadata.db` and
+  the preferences; it writes nothing of Resolve's outside the project's
+  folder and its stills.
+
+## The plugin
+
+Presets (`presets/`) describe a kind of project in YAML, with named Go
+handlers for a few fixed points (`ext.RegisterRunning`, `RegisterOpener`,
+`RegisterCheck`, `RegisterMerge`). Resolve needs more than that: its own
+way of adding projects, a project that isn't one plain folder, and its
+own rules around saving and taking versions. A **plugin** is a Go package,
+built in the same way (`presets/resolve`, Nightly first), that registers a
+preset and, on top of it, logic of its own through `ext`:
+
+| What | Resolve uses it for | Exists? |
+|---|---|---|
+| Preset (detect, ignore, kinds) | recognise a project folder; leave out renders, journals | yes |
+| Running check | Resolve holding `Project.db` | yes |
+| Opener | start Resolve | yes |
+| Pre-save checks (warnings) | Live Save off while the project is open | yes |
+| Before a version is made | copy stills into `Gallery/`; wait for a stable `Project.db` | new |
+| Before a version is applied (may refuse, with a reason) | newer Resolve; project open | new |
+| After a version is applied | copy `Gallery/` out to the gallery folder | new |
+| Where a project goes on this computer (clone, take from the team) | the default library's `Projects/` | new |
+| Sources of projects to add (list, add) and their CLI and app entries | **Add from DaVinci Resolve…**, `r3v resolve …` | new |
+
+The new points are general: Unity could refuse a version made by a newer
+Editor (`ProjectVersion.txt`) through the same "before applied" hook. Each
+is added when its first user needs it, not ahead of time. A plugin that
+changes what a team stores is still a team feature (see
+[channels.md](channels.md)).
+
+## Open questions
+
+- The gallery folder on another computer: when the project's Working
+  Folders name a path that doesn't exist there (another user's
+  `C:\_Video Proj\…`), what does Resolve do, and where should the plugin
+  put the stills?
+- Telling Resolve versions apart: `SM_Project.ProjectVersion` (14 for
+  older projects, 15 for 20.2) and `database_upgrade_log` (stops at 18.1);
+  needs a table across 18–21.
+- Sizes: stills are DPX, about 8 MB each; whether a project's gallery
+  grows enough to matter.
 
 ## Experiments
 

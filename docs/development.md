@@ -88,5 +88,5 @@ in `src/tokens.css`.
 
 - [docs/als-format-notes.md](als-format-notes.md) — findings about the `.als` format
 - [docs/design/storage-backends.md](design/storage-backends.md) — pluggable storage backends
-- [docs/design/resolve.md](design/resolve.md) — DaVinci Resolve projects (researching)
+- [docs/design/resolve.md](design/resolve.md) — DaVinci Resolve projects (designed)
 - [docs/cli.md](cli.md) — the command line tool
