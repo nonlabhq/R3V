@@ -311,3 +311,37 @@ func TestBrokerDownloadRoundTrip(t *testing.T) {
 		t.Errorf("Get of an unknown object: %v, want ErrNotFound", err)
 	}
 }
+
+// An empty file goes up with "content-length: 0", as its URL is signed for:
+// sent chunked (no length), storage refuses the signature.
+func TestBrokerUploadOfAnEmptyFile(t *testing.T) {
+	f := newFakeCloud(t)
+	f.storage = func(_ int32, w http.ResponseWriter, r *http.Request) bool {
+		if r.ContentLength != 0 || len(r.TransferEncoding) != 0 || r.Header.Get("content-length") == "" && r.ContentLength != 0 {
+			w.WriteHeader(403)
+			w.Write([]byte(`<?xml version="1.0"?><Error><Code>SignatureDoesNotMatch</Code><StringToSign>X-Amz-Credential=AKIA</StringToSign></Error>`))
+			return true
+		}
+		return false
+	}
+	key := "projects/" + testPID + "/chunked/" + strings.Repeat("ab", 32)
+	if err := f.bucket(t).Put(key, bytes.NewReader(nil), 0, "", ""); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Storage's XML errors are cut to their code: the rest echoes the signed
+// request.
+func TestBrokerStorageErrorsSayTheirCode(t *testing.T) {
+	f := newFakeCloud(t)
+	f.storage = func(_ int32, w http.ResponseWriter, _ *http.Request) bool {
+		w.WriteHeader(403)
+		w.Write([]byte(`<?xml version="1.0"?><Error><Code>SignatureDoesNotMatch</Code><CanonicalRequest>X-Amz-Credential=AKIA</CanonicalRequest></Error>`))
+		return true
+	}
+	key, data, sum := object("x")
+	err := f.bucket(t).Put(key, bytes.NewReader(data), int64(len(data)), sum, "")
+	if err == nil || !strings.Contains(err.Error(), "403 SignatureDoesNotMatch") || strings.Contains(err.Error(), "AKIA") {
+		t.Errorf("error %v", err)
+	}
+}
