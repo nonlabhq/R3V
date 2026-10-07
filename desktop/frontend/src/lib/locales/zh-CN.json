@@ -1042,15 +1042,12 @@
 "Project": "项目",
 "Sort": "排序",
 "Show only some kinds of file": "只显示某些类型的文件",
-"{count} kinds": "{count} 种类型",
-"All kinds": "所有类型",
 "Show all": "全部显示",
 "Columns": "列",
 "Display": "显示方式",
 "List": "列表",
 "Grid": "网格",
 "No files of these kinds here.": "这里没有这些类型的文件。",
-"{count} kind": "{count} 种类型",
 "New tab": "新标签页",
 "New tab (Ctrl+T)": "新标签页（Ctrl+T）",
 "Folder not found": "找不到文件夹",
@@ -1071,7 +1068,6 @@
 "Zoom in": "放大",
 "Back to 100%": "回到 100%",
 "View pending changes": "查看未提交的更改",
-"View latest version": "查看最新版本",
 "Open the sidebar to see what's new": "展开侧栏查看新消息",
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} 和另外 {n} 个文件正被其他程序使用中（例如 Live 正在写入 Freeze 文件）：等它们被释放后 R3V 就会读入。",
 "in {folder}": "在 {folder}",
@@ -1110,5 +1106,7 @@
 "Tree": "树状",
 "Project folder": "项目文件夹",
 "{done}/{total} selected": "已选 {done}/{total}",
-"Instrument: {name}": "乐器：{name}"
+"Instrument: {name}": "乐器：{name}",
+"View current version": "查看当前版本",
+"Showing only: {kinds}": "只显示：{kinds}"
 }

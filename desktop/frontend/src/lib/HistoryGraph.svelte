@@ -363,7 +363,7 @@
         {#if backTo === "pending"}
           <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
         {:else}
-          <button class="back light" onclick={goBack}>{t("View latest version")}</button>
+          <button class="back light" onclick={goBack}>{t("View current version")}</button>
         {/if}
       </div>
     {/if}

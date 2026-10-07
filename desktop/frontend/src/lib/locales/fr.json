@@ -1042,15 +1042,12 @@
 "Project": "Projet",
 "Sort": "Trier",
 "Show only some kinds of file": "N'afficher que certains types de fichiers",
-"{count} kinds": "{count} types",
-"All kinds": "Tous les types",
 "Show all": "Tout afficher",
 "Columns": "Colonnes",
 "Display": "Affichage",
 "List": "Liste",
 "Grid": "Grille",
 "No files of these kinds here.": "Aucun fichier de ces types ici.",
-"{count} kind": "{count} type",
 "New tab": "Nouvel onglet",
 "New tab (Ctrl+T)": "Nouvel onglet (Ctrl+T)",
 "Folder not found": "Dossier introuvable",
@@ -1071,7 +1068,6 @@
 "Zoom in": "Zoomer",
 "Back to 100%": "Revenir à 100 %",
 "View pending changes": "Voir les modifications en attente",
-"View latest version": "Voir la dernière version",
 "Open the sidebar to see what's new": "Ouvrez la barre latérale pour voir les nouveautés",
 "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.": "{file} et {n} autre fichier sont utilisés par un autre programme (Live qui écrit des fichiers Freeze, par exemple) : R3V les lira dès qu'ils seront libres.",
 "in {folder}": "dans {folder}",
@@ -1110,5 +1106,7 @@
 "Tree": "Arbre",
 "Project folder": "Dossier du projet",
 "{done}/{total} selected": "{done}/{total} sélectionnés",
-"Instrument: {name}": "Instrument : {name}"
+"Instrument: {name}": "Instrument : {name}",
+"View current version": "Voir la version actuelle",
+"Showing only: {kinds}": "Seulement : {kinds}"
 }
