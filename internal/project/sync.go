@@ -176,12 +176,15 @@ func (r *Repo) mergeBase(a, b string) (string, error) {
 // fetchSnapshots downloads id and any ancestors not stored locally.
 func (r *Repo) fetchSnapshots(c remote.Backend, id string) error {
 	stack := []string{id}
+	got := 0
 	for len(stack) > 0 {
 		cur := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 		if cur == "" || r.HasSnapshot(cur) {
 			continue
 		}
+		r.report(StageHistory, got, 0)
+		got++
 		data, err := c.GetSnapshot(r.Config.ProjectID, cur)
 		if err != nil {
 			return fmt.Errorf("download version %s: %w", short(cur), err)
@@ -342,6 +345,8 @@ func (r *Repo) publish(c remote.Backend, old string) error {
 // publishTo uploads everything HEAD needs and moves branch from old to HEAD.
 func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	head := r.Head()
+	// Asking the team what it has: said at once, not after a few requests.
+	r.report(StageChecking, 0, 0)
 	// Only a project new to the team is named here: one that is there keeps
 	// its record (someone may have renamed it, or given it a look, even
 	// before a first share stopped half-way was done).
@@ -421,10 +426,15 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	}
 	var leaseMu sync.Mutex
 	var releases []func()
+	// Released at once, not one after another: each is a request (a slow
+	// one to a hosted team), and a lease left behind only expires.
 	defer func() {
+		var wg sync.WaitGroup
 		for _, release := range releases {
-			release()
+			wg.Add(1)
+			go func() { defer wg.Done(); release() }()
 		}
+		wg.Wait()
 	}()
 	hold := func(hashes []string) error {
 		l, ok := c.(remote.Leaser)
@@ -443,10 +453,16 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	if err := r.uploadObjects(c, objects, hold); err != nil {
 		return err
 	}
+	// Finishing: folder lists, versions, the branch (each a request or a
+	// few, said one by one so the page never sits still).
+	steps, step := 2+len(need), 0
+	next := func() { step++; r.report(StageFinishing, step, steps) }
+	r.report(StageFinishing, 0, steps)
 	// The versions' folder lists, after the files they list.
 	if err := r.uploadTrees(c, roots); err != nil {
 		return err
 	}
+	next()
 	for _, id := range order {
 		if !need[id] {
 			continue
@@ -458,12 +474,17 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 		if err := c.PutSnapshot(r.Config.ProjectID, id, data); err != nil {
 			return err
 		}
+		next()
 	}
 	// (the last moment it can stop: then the team has it)
 	if err := r.stopped(); err != nil {
 		return err
 	}
-	return c.UpdateBranch(r.Config.ProjectID, branch, old, head)
+	if err := c.UpdateBranch(r.Config.ProjectID, branch, old, head); err != nil {
+		return err
+	}
+	next()
+	return nil
 }
 
 // uploadObjects uploads the files storage lacks; hold leases the pieces of
@@ -800,6 +821,7 @@ func (r *Repo) updateKeepingWork(c remote.Backend, head, target string, opts Mer
 func (r *Repo) Save(message string, opts MergeOptions) (*Manifest, *SyncResult, error) {
 	var first *SyncResult
 	if c, err := r.Client(); err == nil {
+		r.report(StageChecking, 0, 0) // (the team's branch, before looking at the files)
 		if err := r.checkDownloaded(c); err != nil {
 			return nil, nil, err
 		}

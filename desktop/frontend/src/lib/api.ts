@@ -120,7 +120,7 @@ export function progressDetail(p: Progress): string {
 }
 
 export function progressText(p: Progress, team = ""): string {
-  const files = transfers(p) || p.stage === "exporting" || p.stage === "storing";
+  const files = transfers(p) || p.stage === "exporting" || p.stage === "storing" || p.stage === "placing";
   const vars = { done: Math.min(p.done + 1, p.total), total: p.total };
   const n = !p.total ? "" : " · " + (files ? tn(p.total, "{done} of {total} file", "{done} of {total} files", vars)
     : t("{done} of {total}", vars));
@@ -131,6 +131,10 @@ export function progressText(p: Progress, team = ""): string {
     case "checking": return team ? t("Checking what's already in {team}…", { team }) : t("Checking what's already in the team's storage…");
     case "uploading": return (team ? t("Uploading to {team}", { team }) : t("Uploading to the team")) + n;
     case "downloading": return t("Downloading") + n;
+    case "finishing": return team ? t("Sharing the version with {team}…", { team }) : t("Sharing the version with the team…");
+    case "history": return p.done ? tn(p.done, "Getting the team's history · {n} version", "Getting the team's history · {n} versions", { n: p.done })
+      : t("Getting the team's history…");
+    case "placing": return t("Putting the files in place") + n;
     case "exporting": return t("Writing the copy") + n;
     case "converting": return t("Converting") + ` · ${p.total ? Math.round((100 * p.done) / p.total) : 0}%`;
   }
@@ -143,5 +147,6 @@ export function progressShort(p: Progress): string {
     : p.total ? ` ${Math.min(p.done + 1, p.total)}/${p.total}` : "…";
   return ({ scanning: p.total ? `${t("reading")} ${p.done}/${p.total}` : t("reading files…"), checking: t("checking…"),
     storing: t("saving") + n, uploading: t("uploading") + n, downloading: t("downloading") + n,
+    finishing: t("finishing…"), history: t("history…"), placing: t("placing files") + n,
     exporting: t("exporting") + n } as Record<string, string>)[p.stage] ?? t("working…");
 }

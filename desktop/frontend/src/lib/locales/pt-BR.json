@@ -1253,5 +1253,14 @@
 "Take away": "Remover",
 "Add milestone": "Adicionar marco",
 "Give this version a name the whole team sees": "Dar a esta versão um nome que toda a equipe vê",
-"Milestone…": "Marco…"
+"Milestone…": "Marco…",
+"Sharing the version with {team}…": "Compartilhando a versão com {team}…",
+"Sharing the version with the team…": "Compartilhando a versão com a equipe…",
+"Getting the team's history · {n} version": "Obtendo o histórico da equipe · {n} versão",
+"Getting the team's history · {n} versions": "Obtendo o histórico da equipe · {n} versões",
+"Getting the team's history…": "Obtendo o histórico da equipe…",
+"Putting the files in place": "Colocando os arquivos no lugar",
+"finishing…": "finalizando…",
+"history…": "histórico…",
+"placing files": "colocando arquivos"
 }

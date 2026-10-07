@@ -1253,5 +1253,14 @@
 "Take away": "제거",
 "Add milestone": "마일스톤 추가",
 "Give this version a name the whole team sees": "이 버전에 팀 모두가 볼 수 있는 이름을 붙입니다",
-"Milestone…": "마일스톤…"
+"Milestone…": "마일스톤…",
+"Sharing the version with {team}…": "{team}와(과) 버전을 공유하는 중…",
+"Sharing the version with the team…": "팀과 버전을 공유하는 중…",
+"Getting the team's history · {n} version": "팀 기록을 가져오는 중 · 버전 {n}개",
+"Getting the team's history · {n} versions": "팀 기록을 가져오는 중 · 버전 {n}개",
+"Getting the team's history…": "팀 기록을 가져오는 중…",
+"Putting the files in place": "파일을 배치하는 중",
+"finishing…": "마무리 중…",
+"history…": "기록…",
+"placing files": "파일 배치"
 }
