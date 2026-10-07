@@ -70,6 +70,40 @@
   // dot (your changes, on your branch). Placed clear of the dots and of each
   // other: centred, else leaning to the branch's side, else a row higher.
   // Positions are from the middle column (dx) and the first row (y).
+  // Milestones: a tag out from their dot, pointing at it. A row holds one
+  // version, so no other dot is beside it; the tag goes to the side no line
+  // passes on its row (else the side fewer do). Branch labels keep clear.
+  const TAG_W = 180, TAG_H = 20;
+  type Tag = { id: string; text: string; dx: number; y: number; w: number; left: boolean };
+  // The columns lines pass at each row.
+  let passing = $derived.by(() => {
+    const at = new Map<number, Set<number>>();
+    const mark = (row: number, col: number) => { if (!at.has(row)) at.set(row, new Set()); at.get(row)!.add(col); };
+    for (const e of g.edges) {
+      const a = g.row.get(e.from), b = g.row.get(e.to);
+      if (a === undefined || b === undefined) continue;
+      const cols = [g.chainOf.get(e.from)!.col, g.chainOf.get(e.to)!.col];
+      for (let r = Math.min(a, b); r <= Math.max(a, b); r++) for (const c of cols) mark(r, c);
+    }
+    return at;
+  });
+  let tags = $derived.by(() => {
+    const out: Tag[] = [];
+    for (const [id, names] of flags) {
+      const c = g.chainOf.get(id);
+      const row = g.row.get(id);
+      if (!c || row === undefined) continue;
+      const text = names.join(" · ");
+      // (wide scripts, CJK and the like, take about twice a Latin letter)
+      const w = Math.min(TAG_W, [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 13 : 7), 0) + 30);
+      const cols = [...(passing.get(row) ?? [])].filter((k) => k !== c.col);
+      const right = cols.filter((k) => k > c.col).length, leftN = cols.filter((k) => k < c.col).length;
+      const left = right > 0 && leftN < right;
+      out.push({ id, text, w, left, dx: left ? c.col * colW - 18 - w : c.col * colW + 18,
+        y: (row + off) * rowH + rowH / 2 - TAG_H / 2 });
+    }
+    return out;
+  });
   type Label = { id: string; name: string; title: string; color: number; dx: number; y: number; w: number; h: number };
   let labels = $derived.by(() => {
     const out: Label[] = [];
@@ -77,7 +111,8 @@
       ...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
     const clear = (dx: number, y: number, w: number, h: number) =>
       dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
-      out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
+      out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4) &&
+      tags.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + TAG_H + 4 < y || l.y > y + h + 4);
     // (before the first version: your branch's name over your changes)
     const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: branchLane(branches, branch), empty: true }] : [];
     for (const c of [...g.chains, ...first]) {
@@ -101,8 +136,8 @@
     }
     return out;
   });
-  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx)));
-  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
+  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx), ...tags.map((l) => l.dx - 8)));
+  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w), ...tags.map((l) => l.dx + l.w + 8)) + PAD);
   const x = (col: number) => center + col * colW;
   // Room at the top for the labels.
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
@@ -339,6 +374,13 @@
         {/each}
       </svg>
 
+      {#each tags as m (m.id)}
+        <button class="mtag" class:left={m.left} style:left="{center + m.dx}px" style:top="{top + m.y}px" style:width="{m.w}px"
+          tabindex="-1" title={m.text} onclick={() => onselect(m.id)}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 14V2.5M3.5 3h8.5l-2 3 2 3H3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <span>{m.text}</span>
+        </button>
+      {/each}
       {#each labels as l (l.name + "@" + l.id)}
         <button class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})"
           tabindex="-1" onclick={() => onselect(l.id)}>
@@ -363,8 +405,7 @@
           aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}${flags.has(v.id) ? `, ⚑ ${flags.get(v.id)!.join(", ")}` : ""}`}
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
           onclick={() => onselect(v.id)}>{#if showPic(lk)}<img src={lk!.picture} alt="" draggable="false"
-            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}{#if flags.has(v.id)}<span
-            class="flag" aria-hidden="true">⚑</span>{/if}</button>
+            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}</button>
       {/each}
 
     </div>
@@ -474,8 +515,22 @@
     -webkit-box-orient: vertical; overflow: hidden; user-select: text; }
   .card-meta { font-size: var(--fs-xs); color: var(--faint); margin-top: var(--sp-2); }
   .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
-  .flag { position: absolute; top: -9px; right: -9px; font-size: 11px; line-height: 1; color: var(--accent);
-    text-shadow: 0 0 2px var(--bg), 0 0 2px var(--bg); pointer-events: none; }
+  /* A milestone's tag: a pointed end towards its dot. */
+  .mtag { position: absolute; height: 20px; display: inline-flex; align-items: center; gap: var(--sp-4);
+    padding: 0 var(--sp-8) 0 var(--sp-6); margin-left: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+    color: var(--accent); background: var(--panel); border: var(--border-width) solid var(--accent);
+    border-left: none; border-radius: 0 var(--radius) var(--radius) 0; white-space: nowrap; z-index: 1; }
+  .mtag::before { content: ""; position: absolute; left: -7px; top: -1px; width: 0; height: 0;
+    border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 7px solid var(--accent); }
+  .mtag::after { content: ""; position: absolute; left: -5px; top: 0; width: 0; height: 0;
+    border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 6px solid var(--panel); }
+  .mtag.left { flex-direction: row-reverse; margin-left: -6px; padding: 0 var(--sp-6) 0 var(--sp-8);
+    border-left: var(--border-width) solid var(--accent); border-right: none; border-radius: var(--radius) 0 0 var(--radius); }
+  .mtag.left::before { left: auto; right: -7px; border-right: none; border-left: 7px solid var(--accent); }
+  .mtag.left::after { left: auto; right: -5px; border-right: none; border-left: 6px solid var(--panel); }
+  .mtag:hover:not(:disabled) { background: var(--panel); border-color: var(--accent); filter: brightness(1.15); }
+  .mtag svg { width: 11px; height: 11px; flex: none; }
+  .mtag span { overflow: hidden; text-overflow: ellipsis; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   .label { position: absolute; height: auto; padding: var(--sp-2) var(--sp-8);

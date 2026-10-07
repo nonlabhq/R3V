@@ -4,7 +4,7 @@ import ProgressBar from "./ProgressBar.svelte";
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-const p = (bytes: number) => ({ stage: "uploading", done: 1, total: 4, bytes, totalBytes: 1000, cancellable: false });
+const p = (bytes: number) => ({ root: "", stage: "uploading", done: 1, total: 4, bytes, totalBytes: 1000, cancellable: false });
 
 describe("ProgressBar", () => {
   it("keeps a gradient moving when the progress doesn't change for a while", async () => {
@@ -19,7 +19,7 @@ describe("ProgressBar", () => {
   });
 
   it("moves on its own while how much is to do isn't known", () => {
-    render(ProgressBar, { p: { stage: "checking", done: 0, total: 0, bytes: 0, totalBytes: 0, cancellable: false } });
+    render(ProgressBar, { p: { root: "", stage: "checking", done: 0, total: 0, bytes: 0, totalBytes: 0, cancellable: false } });
     expect(screen.getByTestId("progress-bar").classList.contains("indeterminate")).toBe(true);
   });
 });
