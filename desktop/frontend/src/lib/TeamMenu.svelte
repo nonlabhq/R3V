@@ -47,6 +47,25 @@
     }
   }
 
+  // A hosted team's computer signed out: signing in again from here.
+  let signingIn = $state(false);
+  async function signIn() {
+    signingIn = true;
+    try {
+      await api.CloudSignIn();
+      await reload();
+    } catch (e) {
+      if (signingIn) toast(errorText(e), "error"); // (not when cancelled)
+    } finally {
+      signingIn = false;
+    }
+  }
+  // The browser tab left alone: stop waiting for it.
+  function cancelSignIn() {
+    signingIn = false;
+    api.CloudCancelSignIn();
+  }
+
   async function select(id: string) {
     open = false;
     try {
@@ -121,6 +140,12 @@
     <span class="name">{current?.name ?? tr("No team")}</span>
     <span class="caret">▾</span>
   </button>
+  {#if current?.hosted && current.signedOut}
+    <button class="who" disabled={signingIn} onclick={signIn}>
+      ⚠ {signingIn ? tr("Finish signing in in your browser…") : tr("Signed out of R3V-Cloud: sign in to share and update")}
+    </button>
+    {#if signingIn}<button class="who" onclick={cancelSignIn}>{tr("Cancel")}</button>{/if}
+  {/if}
   {#if current && !current.memberId}
     <button class="who" onclick={() => (identityFor = current!)}
       title={tr("Versions you commit here show this name, for everyone in the team")}>

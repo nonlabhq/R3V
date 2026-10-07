@@ -10,6 +10,7 @@
   import IdentityForm from "./IdentityForm.svelte";
   import BackupSection from "./BackupSection.svelte";
   import Fold from "./Fold.svelte";
+  import CloudPeople from "./CloudPeople.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
@@ -94,6 +95,7 @@
 
   $effect(() => {
     const id = team.id;
+    if (team.hosted) return; // R3V-Cloud: no keys or code here
     api.TeamConnectionSettings(id).then((c) => {
       saved = c as Conn;
       conn = structuredClone($state.snapshot(c)) as Conn;
@@ -189,6 +191,15 @@
     {/if}
   </section>
 
+  {#if team.hosted}
+  <section>
+    <h3>{t("Your name in this team")}</h3>
+    <span class="myname">{team.memberName}</span>
+    <p class="faint small">{t("Your name comes from your R3V-Cloud account.")}</p>
+  </section>
+
+  <CloudPeople {team} />
+  {:else}
   <section>
     <h3>{t("Your name in this team")}</h3>
     {#if team.memberId && !editingMe}
@@ -204,6 +215,7 @@
       {#if team.memberId}<button class="ghost small" onclick={() => (editingMe = false)}>{t("Cancel")}</button>{/if}
     {/if}
   </section>
+  {/if}
 
   {#if team.isStorage}
     <section>
@@ -228,6 +240,7 @@
 
   {#if !offline}<BackupSection teamId={team.id} />{/if}
 
+  {#if !team.hosted}
   <Fold title={t("Connection")} warn={!!connError || team.keysUnreadable} bind:open={connOpen}>
     {#snippet summary()}
       {#if connError && !changed}⚠ {connError}{:else}{where}{/if}
@@ -260,6 +273,7 @@
       </div>
     {/if}
   </Fold>
+  {/if}
 
   {#if team.isStorage}
     <section>
@@ -299,7 +313,7 @@
     <button class="ghost danger-text" onclick={() => {
       keepProjects = true; fullHistory = false; historySize = 0; confirmDisconnect = true;
       api.HistoryDownloadSize("", team.id).then((n) => (historySize = n)).catch(() => {});
-    }}>{t("Disconnect…")}</button>
+    }}>{team.hosted ? t("Leave the team…") : t("Disconnect…")}</button>
     <span class="spacer"></span>
     <button onclick={onclose}>{t("Close")}</button>
   {/snippet}
@@ -307,7 +321,8 @@
 
 {#if confirmDisconnect}
   <Modal title={t("Disconnect from {team}?", { team: team.name })} onclose={() => (confirmDisconnect = false)}>
-    <p>{t("This computer forgets the team and its key. Nothing changes for your teammates, and project folders stay on disk.")}</p>
+    <p>{team.hosted ? t("You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.")
+      : t("This computer forgets the team and its key. Nothing changes for your teammates, and project folders stay on disk.")}</p>
     <label class="keep">
       <input type="checkbox" bind:checked={keepProjects} />
       <span><Tx text={t("Move this team's projects to {local}")} strong={{ local: t("Local") }} />

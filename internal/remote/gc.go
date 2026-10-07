@@ -86,9 +86,19 @@ type GCReport struct {
 	NextCleanup time.Time
 }
 
+// ErrCleanupPerProject: storage that keeps each project's contents apart
+// (a hosted team's) isn't cleaned up from here.
+var ErrCleanupPerProject = errors.New("storage cleanup isn't available for this team: its service looks after its storage")
+
 // CollectGarbage finds the files no version uses and marks them; with
 // remove it also deletes those marked at least a day before.
 func (s *BucketBackend) CollectGarbage(remove bool) (*GCReport, error) {
+	// Contents kept per project (hosted teams): this cleanup reads them as
+	// one store, so it could take one project's files for unused. The
+	// service is to clean those itself; refuse rather than guess.
+	if pp, ok := s.b.(PerProject); ok && pp.ContentsPerProject() {
+		return nil, ErrCleanupPerProject
+	}
 	now := gcNow()
 	rep := &GCReport{}
 	used, err := s.usedFiles(rep)
@@ -284,7 +294,7 @@ func (s *BucketBackend) usedFiles(rep *GCReport) (map[string]bool, error) {
 		}
 		var next []string
 		err := parallelN(checks, todo, func(h string) error {
-			data, err := s.get(objectKey(h))
+			data, err := s.get(s.objectKey(h))
 			if err != nil {
 				return fmt.Errorf("a version's folder list %s can't be read (%w): storage not cleaned up", h[:10], err)
 			}
@@ -313,7 +323,7 @@ func (s *BucketBackend) usedFiles(rep *GCReport) (map[string]bool, error) {
 
 // chunkList reads the list of pieces stored for the file h.
 func (s *BucketBackend) chunkList(h string) (*chunk.List, error) {
-	data, err := s.get(objectKey(h))
+	data, err := s.get(s.objectKey(h))
 	if err != nil {
 		return nil, err
 	}

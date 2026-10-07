@@ -12,6 +12,8 @@ export {
     Branch,
     Change,
     ChannelInfo,
+    CloudPeople,
+    CloudStatus,
     Conflict,
     ConvertFormat,
     DownloadSize,

@@ -47,7 +47,11 @@ func (r *Repo) Client() (remote.Backend, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t.Open()
+	b, err := t.Open()
+	if err != nil {
+		return nil, err
+	}
+	return remote.ForProject(b, r.Config.ProjectID), nil
 }
 
 // SetRemote connects the project to a team (its connection code).
@@ -887,6 +891,9 @@ func (r *Repo) Share(opts MergeOptions) (*SyncResult, error) {
 		return nil, err
 	}
 	res := &SyncResult{}
+	// published: a move of the branch was sent; a conflict after it may be
+	// that move, which got through with its answer lost.
+	published := false
 	for attempt := 0; attempt < 5; attempt++ {
 		branches, err := c.Branches(r.Config.ProjectID)
 		if err != nil && !errors.Is(err, remote.ErrNotFound) {
@@ -904,7 +911,9 @@ func (r *Repo) Share(opts MergeOptions) (*SyncResult, error) {
 		remoteHead := branches[r.BranchName()]
 		if remoteHead == r.Head() {
 			r.noteTeamHead(c, remoteHead)
-			if res.Action == "" && len(res.TakenBack) > 0 {
+			if published {
+				res.Action, res.To = "published", remoteHead
+			} else if res.Action == "" && len(res.TakenBack) > 0 {
 				res.Action, res.To = "taken-back", remoteHead
 			} else if res.Action == "" {
 				res.Action = "up-to-date"
@@ -944,6 +953,7 @@ func (r *Repo) Share(opts MergeOptions) (*SyncResult, error) {
 			continue // publish the merge
 		}
 		err = r.publish(c, remoteHead)
+		published = true
 		var conflict *remote.ErrConflict
 		if errors.As(err, &conflict) {
 			continue // someone saved at the same moment; merge and retry

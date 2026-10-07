@@ -523,10 +523,13 @@
       }
       if (e.root === selected.root) refreshKey++;
     });
+    // A hosted team's people, roles or projects changed (R3V-Cloud).
+    const offTeams = Events.On("teams", () => reload());
     return () => {
       offProgress();
       offUpdate();
       offWatch();
+      offTeams();
     };
   });
 

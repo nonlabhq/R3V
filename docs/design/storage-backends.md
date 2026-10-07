@@ -144,12 +144,43 @@ Every branch move is also recorded (`projects/<pid>/branchlog/<time>-<random>.js
 branch, from, to, member, time), one new key per move, after the move
 succeeded: storage itself keeps only where branches are now.
 
-## Hosted service mode (possible later)
+## Hosted service mode (R3V-Cloud, Nightly, in progress)
 
-A hosted deployment splits the work:
+A hosted team is reached through another `Bucket`, the broker bucket
+(`internal/remote/broker.go`, addresses `r3v-cloud+https://…/v1/teams/<team>`),
+so `BucketBackend` and every feature on it work unchanged:
 
-- **Metadata API**: the operations of the `Backend` interface, plus accounts, teams and permissions. It validates writes (the rules above) and can push branch and workspace changes over WebSocket instead of polling.
-- **File transfers**: `PutObject` / `GetObject` return a redirect to a short-lived presigned URL, so file contents go directly between the client and object storage.
+- **Keys that change** (branches, workspaces, members, the team's name) go
+  through the service, which keeps them with ETags (conditional writes as
+  above) and checks who may do what: people can be in a team, or only in
+  some of its projects.
+- **File contents** go straight between the client and object storage
+  through short-lived presigned URLs the service hands out. A URL writes
+  only its key, once, with the SHA-256 that was signed; transfers are
+  retried with fresh URLs and given up when they make no progress.
+- **Contents per project**: an upload can't be checked against its name
+  (blobs are stored compressed), so each project keeps its own `objects/`
+  and `chunked/` under `projects/<pid>/` (`ForProject`), where only that
+  project's writers can write. Storage teams keep the shared folder.
+- **Batches**: "which of these are missing" goes to the service's index,
+  1,000 hashes a question (`ContentsAsker`).
+
+- **Signing in** (`internal/cloud`, `r3v login`): through the browser, a
+  loopback redirect with PKCE; the app's session lives in the system's
+  credential store (`internal/keyring`), never in teams.json. The
+  account's teams are kept in the teams store as hosted teams (no keys;
+  one member id per person, given by the service) and brought up to date
+  when listed.
+- **Live notices** (`cloud.Hub`, `teamwatch.RunLive`): one WebSocket per
+  hosted team (a one-use ticket, then subscriptions to the projects open
+  here). A branch moving wakes that project's watch at once; the poll
+  stays as a safety net, every 10 minutes while notices come and as
+  before while they don't. Sockets get closed now and then: the app
+  reconnects with backoff and then looks at every project, since notices
+  sent meanwhile are lost.
+
+Still to come: file locks, the app's screens, and cleanup and backup
+project by project.
 
 Client-side encryption of file contents is compatible with this design because all diffing and merging happens in the client: the backend only ever needs hashes and bytes. Deduplication would then use a keyed hash per team.
 

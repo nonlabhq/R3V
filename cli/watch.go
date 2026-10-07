@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/cloud"
+	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teamwatch"
 )
 
@@ -52,7 +54,13 @@ func cmdWatch(args []string) error {
 	if *interval == 0 {
 		*interval = r.PollInterval()
 	}
-	teamwatch.Run(ctx, r.Root, *interval, printEvent)
+	// A hosted team tells when a branch moves; the poll is then the safety net.
+	live := cloud.NewHub()
+	defer live.Close()
+	if _, hosted := remote.BrokerService(r.Config.Remote.URL); hosted {
+		fmt.Println("live notices from R3V-Cloud: new versions show up as soon as they're shared")
+	}
+	teamwatch.RunLive(ctx, r.Root, func() time.Duration { return *interval }, live, printEvent)
 	fmt.Println("stopped")
 	return nil
 }

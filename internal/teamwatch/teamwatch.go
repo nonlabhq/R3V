@@ -81,6 +81,45 @@ func (w *Watcher) Check() []Event {
 	return events
 }
 
+// Live is where a hosted team's notices come from (cloud.Hub): nudge
+// fires when the project's branch moves (or after a reconnect), connected
+// says whether notices are coming. Teams that aren't hosted never nudge.
+type Live interface {
+	Watch(teamAddress, pid string) (nudge <-chan struct{}, connected func() bool, stop func())
+}
+
+// LiveSafetyNet is how often a project with live notices is still checked.
+const LiveSafetyNet = 10 * time.Minute
+
+// RunLive checks like Run, and at once when live says the project changed;
+// while notices come, it checks only every LiveSafetyNet. interval is
+// asked each round (the app checks less often from the tray).
+func RunLive(ctx context.Context, root string, interval func() time.Duration, live Live, emit func(Event)) {
+	var nudge <-chan struct{}
+	connected := func() bool { return false }
+	if r, err := project.Open(root); err == nil && r.Config.Remote != nil && live != nil {
+		var stop func()
+		nudge, connected, stop = live.Watch(r.Config.Remote.URL, r.Config.ProjectID)
+		defer stop()
+	}
+	w := New(root)
+	for {
+		for _, e := range w.Check() {
+			emit(e)
+		}
+		wait := interval()
+		if connected() {
+			wait = max(wait, LiveSafetyNet)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-nudge:
+		case <-time.After(wait):
+		}
+	}
+}
+
 // Run checks every interval until ctx is done, passing events to emit.
 func Run(ctx context.Context, root string, interval time.Duration, emit func(Event)) {
 	w := New(root)
