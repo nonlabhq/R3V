@@ -14,7 +14,15 @@ How people and projects show, the same for the whole team:
   settings (click its icon before the name), for the whole team. An emoji
   is kept as its code points (`e-1f3b5`), so it is a name like the icons;
   the picker (emoji-picker-element) has its data for the app's languages
-  built in.
+  built in. The project's page shows the icon before its name, under its
+  team's name (with the team's settings, ⚙).
+- **The programs' icons** come first in the picker (`lib/appIcons.ts`,
+  named `app-…`): Ableton Live, Bitwig, Pro Tools, Reason, Max, Audacity,
+  Unity, Unreal, Godot, Blender, Houdini, Cinema 4D, Maya, DaVinci Resolve,
+  Figma, Krita. A project just added gets the icon of the one program R3V
+  recognises (its preset: Live, Unity, Unreal, Godot; or design files all
+  `.blend`, `.c4d` or Maya's), once its first share makes it the team's,
+  and only when it has no icon yet.
 - **The history graph** shows each version's author as their picture, else
   their initial on their colour. The ring stays the branch's colour.
 
@@ -29,6 +37,19 @@ the numbers stay. With no pick, a colour is picked from the member's id
 
 Numbers and icon names are what a team stores: add, never reuse or rename
 one. One a build doesn't know shows as no pick.
+
+### The programs' icons and their licences
+
+The programs' icons are the [Simple Icons](https://simpleicons.org) glyphs
+(simple-icons 16.34.0), copied as path data, not a dependency: their SVG
+data is CC0, except Godot's logo (by Andrea Calabró, CC BY 4.0: credited in
+`appIcons.ts` and here). The brands and trademarks stay their owners'; the
+icons only say which program a project is made with, shown in the icon's
+colour, as Simple Icons offers them. Brands Simple Icons doesn't have (some
+taken out at their owners' request: Ableton, Adobe, FL Studio, Reaper…)
+aren't added from elsewhere: Live has a glyph of our own (a Session view's
+clips), not its logo. A new one is checked against the brand's guidelines
+(`guidelines` in simple-icons' data) and `license` first.
 
 ## What the team stores
 
