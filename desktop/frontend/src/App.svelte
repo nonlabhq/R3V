@@ -957,7 +957,17 @@
 {/if}
 
 {#snippet projectSettings(p: TeamProject, inline: boolean)}
-  <ProjectSettings {p} team={current} {inline}
+  <ProjectSettings {p} team={current} {inline} teams={overview?.teams ?? []} progress={p.root ? activity[p.root] ?? null : null}
+    onmoved={!nightly ? undefined : async (teamId, copied) => { // (Nightly, while it's new)
+      settingsFor = null;
+      toast(copied ? t("Copied to the other team") : t("Moved: the project is in the other team now"), "ok", 8000);
+      if (copied) return;
+      const root = p.root;
+      await api.SelectTeam(teamId);
+      await reload();
+      const moved = entries.find((e) => e.root === root);
+      if (moved) select(moved);
+    }}
     onclose={() => (settingsFor = null)}
     onrenamed={async () => { const key = rowKey(p); await reload(); refreshKey++; if (settingsFor) settingsFor = entries.find((e) => rowKey(e) === key) ?? null; }}
     oncheck={() => { settingsFor = null; checking = p; }}
