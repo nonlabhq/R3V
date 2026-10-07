@@ -1214,5 +1214,12 @@
 "Activities": "Aktivitäten",
 "Objects": "Objekte",
 "Symbols": "Symbole",
-"Flags": "Flaggen"
+"Flags": "Flaggen",
+"Branch settings": "Branch-Einstellungen",
+"Renamed for everyone in the team": "Für alle im Team umbenannt",
+"Any words, in any language. Renaming moves nothing: whoever is on it keeps working.": "Beliebige Wörter, in jeder Sprache. Umbenennen verschiebt nichts: wer darauf arbeitet, arbeitet weiter.",
+"The main branch keeps R3V's orange.": "Der Hauptbranch behält das Orange von R3V.",
+"The whole team sees it, on the history and in the menus.": "Das ganze Team sieht sie, im Verlauf und in den Menüs.",
+"you're on it": "du bist darauf",
+"Chorus idea": "Refrain-Idee"
 }

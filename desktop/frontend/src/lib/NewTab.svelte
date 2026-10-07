@@ -25,7 +25,7 @@
       toast(errorText(e), "error");
     }
   }
-  const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status] ?? `⑂ ${p.branch}`);
+  const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status] ?? `⑂ ${p.branchLabel || p.branch}`);
 </script>
 
 <div class="new-tab">

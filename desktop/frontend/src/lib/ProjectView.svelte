@@ -21,6 +21,8 @@
   import History from "./History.svelte";
   import HistoryGraph from "./HistoryGraph.svelte";
   import BranchMenu from "./BranchMenu.svelte";
+  import BranchSettings from "./BranchSettings.svelte";
+  import { branchLabel, freeColor } from "./branches";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";
@@ -81,6 +83,9 @@
   let conflicts = $state<{ items: Conflict[]; run: Action; force: boolean } | null>(null);
   let liveBlocked = $state<{ run: Action; resolutions: Record<string, string>; set: string } | null>(null);
   let newBranch = $state<string | null>(null);
+  // What a branch is called (its key where the team keeps no names).
+  const bl = (key: string) => branchLabel(st?.branches, key);
+  let branchSettings = $state<string | null>(null); // a branch's key: its settings open
   // Go to version: asked first when there are uncommitted changes.
   let leaving = $state<{ target: Version | null; message: string } | null>(null); // null target: latest
   let keepOpen = $state<string | null>(null); // message for "Make this the latest version"
@@ -478,13 +483,13 @@
       if (!data) return;
       mergeMessage = data.message;
       preview = {
-        title: t("Merge “{from}” into “{into}”", { from: name, into: st?.branch ?? "" }), label: t("Merge and share"), data,
+        title: t("Merge “{from}” into “{into}”", { from: bl(name), into: bl(st?.branch ?? "") }), label: t("Merge and share"), data,
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
         run: {
           name: "merge",
           call: (res, force) => api.MergeBranch(root, name, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
-            ? t("Nothing to merge from {from}", { from: name }) : t("Merged {from} into {into} and shared it", { from: name, into: st?.branch ?? "" }) + reopen(), "ok", 8000),
+            ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
         },
       };
     } catch (e) {
@@ -497,20 +502,20 @@
   // Merge any version (e.g. one in the middle of another branch) into the
   // current branch.
   async function openVersionMerge(v: Version) {
-    const label = v.branches.length ? v.branches[0] : `“${v.message || v.short}”`;
+    const label = v.branches.length ? bl(v.branches[0]) : `“${v.message || v.short}”`;
     busy = "preview";
     try {
       const data = await api.PreviewMergeVersion(root, v.id);
       if (!data) return;
       mergeMessage = data.message;
       preview = {
-        title: t("Merge {from} into “{into}”", { from: label, into: st?.branch ?? "" }), label: t("Merge and share"), data,
+        title: t("Merge {from} into “{into}”", { from: label, into: bl(st?.branch ?? "") }), label: t("Merge and share"), data,
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
         run: {
           name: "merge",
           call: (res, force) => api.MergeVersion(root, v.id, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
-            ? t("“{into}” already has {from}", { into: st?.branch ?? "", from: label }) : t("Merged {from} into {into} and shared it", { from: label, into: st?.branch ?? "" }) + reopen(), "ok", 8000),
+            ? t("“{into}” already has {from}", { into: bl(st?.branch ?? ""), from: label }) : t("Merged {from} into {into} and shared it", { from: label, into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
         },
       };
     } catch (e) {
@@ -524,7 +529,7 @@
     run({
       name: "switch",
       call: (_res, force) => api.SwitchBranch(root, name, force),
-      done: () => toast(t("Now working on “{branch}”", { branch: name }) + reopen(), "ok", 8000),
+      done: () => toast(t("Now working on “{branch}”", { branch: bl(name) }) + reopen(), "ok", 8000),
     });
   }
 
@@ -633,14 +638,14 @@
     if (!name) return;
     busy = "branch";
     try {
-      await api.CreateBranch(root, name);
+      await api.CreateBranch(root, name, freeColor(st?.branches ?? []));
       newBranch = null;
       const msg = branchThenCommit;
       branchThenCommit = "";
       if (msg) {
         busy = "";
         await run({ ...saveAction(msg), done: (r) => { saveDone(r);
-          toast(t("Your work is on the new branch “{branch}”; “{base}” is unchanged. Merge it when you're ready.", { branch: name, base: st?.branch ?? "" }), "info", 9000); } });
+          toast(t("Your work is on the new branch “{branch}”; “{base}” is unchanged. Merge it when you're ready.", { branch: name, base: bl(st?.branch ?? "") }), "info", 9000); } });
         return;
       }
       toast(t("Created “{branch}”. Versions you save now go there.", { branch: name }), "ok");
@@ -751,7 +756,8 @@
         <div class="overview" bind:clientWidth={overviewWidth}>
           <div class="graph-pane">
             <div class="graph-bar">
-              <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")} />
+              <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
+                onsettings={(key) => (branchSettings = key)} />
             </div>
             {#snippet cardActions(v: Version)}
               {@const isNew = incomingIds.has(v.id)}
@@ -764,7 +770,7 @@
               <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
                 title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
             {/snippet}
-            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
+            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
@@ -781,7 +787,7 @@
             {:else if shownVersion}
               {@const v = shownVersion}
               {#snippet acts()}{@render versionActions(v)}{/snippet}
-              <VersionDetail {root} {v} branch={v.inBranch ? st.branch : v.branches.join(", ")} actions={acts} />
+              <VersionDetail {root} {v} branch={v.inBranch ? bl(st.branch) : v.branches.map(bl).join(", ")} actions={acts} />
             {:else}
               <p class="muted pad">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
             {/if}
@@ -823,7 +829,7 @@
   {/if}
 
   {#if combine}
-    <CombineDialog {root} preview={combine.data} branch={st.branch} older={!!st.olderVersion} bind:message={combine.message} busy={!!busy}
+    <CombineDialog {root} preview={combine.data} branch={bl(st.branch)} older={!!st.olderVersion} bind:message={combine.message} busy={!!busy}
       onclose={() => (combine = null)} oncombine={combineAndShare} onbranch={() => putOnBranch(combine!.message)} />
   {/if}
 
@@ -917,10 +923,14 @@
   {/if}
 
   {#if newBranch !== null}
-    <PromptDialog title={t("New branch")} label={t("Branch name")} placeholder="yi-chorus-idea" confirm={t("Create")}
-      text={t("A branch is your own line of versions (e.g. to try an idea). The team keeps working on “{branch}”; merge back when you're happy.", { branch: st.branch })}
+    <PromptDialog title={t("New branch")} label={t("Branch name")} placeholder={st.branchNames ? t("Chorus idea") : "chorus-idea"} confirm={t("Create")}
+      text={t("A branch is your own line of versions (e.g. to try an idea). The team keeps working on “{branch}”; merge back when you're happy.", { branch: bl(st.branch) })}
       bind:value={() => newBranch ?? "", (v) => (newBranch = v)} busy={busy === "branch"}
       onconfirm={createBranch} onclose={() => (newBranch = null)} />
+  {/if}
+
+  {#if branchSettings !== null}
+    <BranchSettings {root} branch={branchSettings} branches={st.branches} onchanged={() => { load(); onchanged(); }} onclose={() => (branchSettings = null)} />
   {/if}
 {/if}
 

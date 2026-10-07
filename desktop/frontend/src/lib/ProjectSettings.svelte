@@ -12,6 +12,9 @@
   import { portal } from "./portal";
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "./emoji";
+  import BranchSettings from "./BranchSettings.svelte";
+  import { branchLabel, branchLane } from "./branches";
+  import { ago, type BranchList } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
@@ -116,6 +119,15 @@
     if (lookOpen && !el.closest(".look-pop") && !el.closest(".look-btn")) closeLook();
   }
 
+  // The project's branches, each opening its settings (where the team keeps
+  // branch names: Nightly).
+  let branchList = $state<BranchList | null>(null);
+  let branchOpen = $state<string | null>(null);
+  const loadBranches = () => api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
+  $effect(() => {
+    if (here && team) loadBranches();
+  });
+
   async function openRules() {
     try {
       await api.OpenRules(p.root);
@@ -181,6 +193,24 @@
       {/if}
       <p class="hint">{t("The whole team sees them.")}</p>
     </div>
+  {/if}
+
+  {#if branchList?.names && branchList.branches.length}
+    <section>
+      <h3>{t("Branches")}</h3>
+      <ul class="branches">
+        {#each branchList.branches as b (b.name)}
+          <li>
+            <button class="ghost brow" onclick={() => (branchOpen = b.name)} title={t("Branch settings")}>
+              <span class="bdot" style:--c="var(--lane-{branchLane(branchList.branches, b.name)})"></span>
+              <span class="bname">{branchLabel(branchList.branches, b.name)}</span>
+              {#if b.current}<span class="here">{t("you're on it")}</span>{/if}
+              <span class="faint">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </section>
   {/if}
 
   <section>
@@ -268,6 +298,11 @@
 {/if}
 {/if}
 
+{#if branchOpen !== null && branchList}
+  <BranchSettings root={p.root} branch={branchOpen} branches={branchList.branches}
+    onchanged={() => { loadBranches(); onrenamed(); }} onclose={() => (branchOpen = null)} />
+{/if}
+
 <style>
   .inline { padding-top: var(--sp-4); }
   section { padding: var(--sp-12) 0; border-top: var(--border-width) solid var(--line); }
@@ -280,6 +315,12 @@
   .look-pop { position: fixed; z-index: var(--z-menu); display: flex; flex-direction: column; gap: var(--sp-10);
     padding: var(--sp-12); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .look-pop .hint { margin: 0; }
+  .branches { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .brow { width: 100%; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-6) var(--sp-8); text-align: left; }
+  .bdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .bname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .here { font-size: var(--fs-xs); color: var(--accent); }
+  .brow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
   .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
   .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
   .kinds button.on { background: var(--panel-2); color: var(--text); }

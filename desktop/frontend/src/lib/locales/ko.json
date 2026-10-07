@@ -1214,5 +1214,12 @@
 "Activities": "활동",
 "Objects": "사물",
 "Symbols": "기호",
-"Flags": "깃발"
+"Flags": "깃발",
+"Branch settings": "브랜치 설정",
+"Renamed for everyone in the team": "팀 모두에게 이름이 바뀌었습니다",
+"Any words, in any language. Renaming moves nothing: whoever is on it keeps working.": "어떤 단어든, 어떤 언어든 괜찮습니다. 이름을 바꿔도 아무것도 옮겨지지 않아 작업 중인 사람은 계속 작업할 수 있습니다.",
+"The main branch keeps R3V's orange.": "메인 브랜치는 R3V의 주황색을 유지합니다.",
+"The whole team sees it, on the history and in the menus.": "팀 모두가 기록과 메뉴에서 볼 수 있습니다.",
+"you're on it": "작업 중",
+"Chorus idea": "후렴 아이디어"
 }

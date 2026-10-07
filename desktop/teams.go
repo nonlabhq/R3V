@@ -75,6 +75,8 @@ type TeamProject struct {
 	// "missing" (downloaded before, folder not found), "local" (no team).
 	Status string `json:"status"`
 	Branch string `json:"branch"`
+	// BranchLabel: what people called the branch, as last asked ("": its key).
+	BranchLabel string `json:"branchLabel"`
 	// Icon and Color: how the team shows it (names; "" for the app's pick).
 	Icon  string `json:"icon"`
 	Color string `json:"color"`
@@ -106,6 +108,7 @@ func folderProject(root, status string) TeamProject {
 	p := TeamProject{Root: root, Status: status, Name: filepath.Base(root)}
 	if r, err := project.Open(root); err == nil && r.Root == root {
 		p.ID, p.Name, p.Branch = r.Config.ProjectID, r.Config.Name, r.BranchName()
+		p.BranchLabel = branchRecords(r, false)[p.Branch].Name
 	} else if status != "remote" {
 		p.Status = "missing"
 	}

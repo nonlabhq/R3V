@@ -4,6 +4,7 @@
   import { colorOf, cssColor } from "./palette";
   import Avatar from "./Avatar.svelte";
   import { branchGraph, short } from "./branchGraph";
+  import { branchLabel, branchLane } from "./branches";
   import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
@@ -17,7 +18,7 @@
   // zoom, double-click the background to put it back.
   let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks }: {
     versions: Version[];
-    branches: { name: string; latest: string }[];
+    branches: { name: string; latest: string; label?: string; color?: string }[];
     branch: string;    // the branch you are on
     head: string;      // the version you are on
     incoming: Set<string>;
@@ -37,7 +38,8 @@
   let panX = $state(0), panY = $state(0), zoom = $state(1);
   const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
   let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
-  let g = $derived(branchGraph(versions, branches, branch, "main", head));
+  let g = $derived(branchGraph(versions, branches, branch, "main", head, (name) => branchLane(branches, name)));
+  const labelOf = (name: string) => branchLabel(branches, name);
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
   // Where your changes go: the branch you are on (its own column even when it
@@ -71,7 +73,7 @@
       dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
     // (before the first version: your branch's name over your changes)
-    const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: 0, empty: true }] : [];
+    const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: branchLane(branches, branch), empty: true }] : [];
     for (const c of [...g.chains, ...first]) {
       if (!c.name) continue;
       const atPending = pending && (c === headChain || !c.tip);
@@ -80,7 +82,7 @@
       // (an empty branch: just its name too; its newest version is another's)
       const title = atPending || c.empty || !tip ? "" : short(tip.message || t("(no description)"), TITLE);
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
-      const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
+      const w = Math.min(LABEL_W, Math.max(labelOf(c.name).length * 6.5, title.length * 7.5) + 20);
       const h = title ? 32 : 24;
       const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
@@ -334,7 +336,7 @@
       {#each labels as l (l.name + "@" + l.id)}
         <button class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})"
           tabindex="-1" onclick={() => onselect(l.id)}>
-          <span class="bname">{l.name}</span>
+          <span class="bname">{labelOf(l.name)}</span>
           {#if l.title}<span class="btitle">{l.title}</span>{/if}
         </button>
       {/each}
@@ -401,7 +403,7 @@
           {/if}
           <div class="card-t">
             <div class="card-msg">{v.message || t("(no description)")}</div>
-            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {card.branch}{/if} · <span class="mono">{v.short}</span></div>
+            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {labelOf(card.branch)}{/if} · <span class="mono">{v.short}</span></div>
           </div>
         </div>
         {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}

@@ -1214,5 +1214,12 @@
 "Activities": "活动",
 "Objects": "物品",
 "Symbols": "符号",
-"Flags": "旗帜"
+"Flags": "旗帜",
+"Branch settings": "分支设置",
+"Renamed for everyone in the team": "已为团队所有人重命名",
+"Any words, in any language. Renaming moves nothing: whoever is on it keeps working.": "任何文字、任何语言都可以。重命名不会移动任何东西：正在用它的人可以照常工作。",
+"The main branch keeps R3V's orange.": "主分支保持 R3V 的橙色。",
+"The whole team sees it, on the history and in the menus.": "整个团队都能在历史和菜单中看到。",
+"you're on it": "你在此分支",
+"Chorus idea": "副歌点子"
 }

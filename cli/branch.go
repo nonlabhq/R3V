@@ -23,11 +23,13 @@ func cmdBranch(args []string) error {
 		return err
 	}
 	if len(args) >= 2 && args[0] == "new" {
-		if err := r.CreateBranch(args[1]); err != nil {
+		// (the name may be several words: `r3v branch new Mia's verse`)
+		name := strings.Join(args[1:], " ")
+		if _, err := r.CreateBranchNamed(name, ""); err != nil {
 			return err
 		}
-		fmt.Printf("created branch %q from your current version and switched to it\n", args[1])
-		fmt.Println("versions you save now go to this branch; merge back with `r3v switch main` + `r3v merge " + args[1] + "`")
+		fmt.Printf("created branch %q from your current version and switched to it\n", name)
+		fmt.Printf("versions you save now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
 		return nil
 	}
 	if len(args) >= 1 && args[0] == "log" && len(args) <= 2 {
@@ -44,6 +46,7 @@ func cmdBranch(args []string) error {
 	if err != nil {
 		return err
 	}
+	recs, _ := r.BranchRecords()
 	for _, b := range branches {
 		mark := "  "
 		if b.Current {
@@ -53,7 +56,11 @@ func cmdBranch(args []string) error {
 		if b.Latest != nil {
 			latest = fmt.Sprintf("%s  %s  %-10s %s", short(b.Head), when(b.Latest), b.Latest.Author, b.Latest.Message)
 		}
-		fmt.Printf("%s%-16s %s\n", mark, b.Name, latest)
+		name := b.Name
+		if n := recs[b.Name].Name; n != "" {
+			name = n
+		}
+		fmt.Printf("%s%-16s %s\n", mark, name, latest)
 	}
 	return nil
 }
@@ -76,7 +83,11 @@ func cmdSwitch(args []string) error {
 		return err
 	}
 	defer tidy(r)
-	res, err := r.SwitchBranch(pos[0], *force)
+	key, err := r.ResolveBranch(pos[0])
+	if err != nil {
+		return err
+	}
+	res, err := r.SwitchBranch(key, *force)
 	if err != nil {
 		return err
 	}
@@ -161,8 +172,12 @@ func cmdMergeBranch(args []string) error {
 	if err != nil {
 		return err
 	}
+	key, err := r.ResolveBranch(pos[0])
+	if err != nil {
+		return err
+	}
 	if *preview {
-		p, err := r.PreviewMerge(pos[0])
+		p, err := r.PreviewMerge(key)
 		if err != nil {
 			return err
 		}
@@ -173,7 +188,7 @@ func cmdMergeBranch(args []string) error {
 		return err
 	}
 	defer tidy(r)
-	res, err := r.MergeBranch(pos[0], *message, project.Strategy(*strategy))
+	res, err := r.MergeBranch(key, *message, project.Strategy(*strategy))
 	if err != nil {
 		return err
 	}

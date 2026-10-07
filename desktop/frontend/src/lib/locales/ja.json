@@ -1214,5 +1214,12 @@
 "Activities": "アクティビティ",
 "Objects": "物",
 "Symbols": "記号",
-"Flags": "旗"
+"Flags": "旗",
+"Branch settings": "ブランチ設定",
+"Renamed for everyone in the team": "チーム全員に対して名前を変更しました",
+"Any words, in any language. Renaming moves nothing: whoever is on it keeps working.": "どんな言葉でも、どの言語でも構いません。名前を変えても何も移動しないので、作業中の人もそのまま続けられます。",
+"The main branch keeps R3V's orange.": "メインブランチは R3V のオレンジのままです。",
+"The whole team sees it, on the history and in the menus.": "チーム全員が履歴とメニューで見られます。",
+"you're on it": "作業中",
+"Chorus idea": "サビのアイデア"
 }
