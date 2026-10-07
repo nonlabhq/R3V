@@ -13,6 +13,7 @@ export {
     BranchList,
     Change,
     ChannelInfo,
+    CloudInvitation,
     CloudPeople,
     CloudStatus,
     Conflict,
