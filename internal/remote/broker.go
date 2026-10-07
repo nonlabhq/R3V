@@ -8,7 +8,8 @@ package remote
 // contents).
 //
 // Address: r3v-cloud+https://<host>/v1/teams/<team>. The session token is
-// the config's SecretKey, or R3V_CLOUD_TOKEN until signing in lands.
+// the config's SecretKey, or R3V_CLOUD_TOKEN until signing in lands. Only
+// the Nightly build opens such addresses (broker_nightly.go).
 
 import (
 	"bytes"
@@ -28,16 +29,13 @@ import (
 	"time"
 )
 
-func init() {
-	open := func(cfg Config) (Backend, error) {
-		b, err := NewBroker(cfg.URL[len("r3v-cloud+"):], firstNonEmpty(cfg.SecretKey, os.Getenv("R3V_CLOUD_TOKEN")))
-		if err != nil {
-			return nil, err
-		}
-		return NewBucketBackend(b), nil
+// openBroker opens a hosted team's address.
+func openBroker(cfg Config) (Backend, error) {
+	b, err := NewBroker(cfg.URL[len("r3v-cloud+"):], firstNonEmpty(cfg.SecretKey, os.Getenv("R3V_CLOUD_TOKEN")))
+	if err != nil {
+		return nil, err
 	}
-	Register("r3v-cloud+http://", open)
-	Register("r3v-cloud+https://", open)
+	return NewBucketBackend(b), nil
 }
 
 func firstNonEmpty(s ...string) string {
