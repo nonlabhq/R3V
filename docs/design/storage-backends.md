@@ -165,9 +165,15 @@ so `BucketBackend` and every feature on it work unchanged:
 - **Batches**: "which of these are missing" goes to the service's index,
   1,000 hashes a question (`ContentsAsker`).
 
-Still to come: signing in (the session token lives in the system's
-credential store), live notices instead of polling, file locks, and
-cleanup and backup project by project.
+- **Signing in** (`internal/cloud`, `r3v login`): through the browser, a
+  loopback redirect with PKCE; the app's session lives in the system's
+  credential store (`internal/keyring`), never in teams.json. The
+  account's teams are kept in the teams store as hosted teams (no keys;
+  one member id per person, given by the service) and brought up to date
+  when listed.
+
+Still to come: live notices instead of polling, file locks, the app's
+screens, and cleanup and backup project by project.
 
 Client-side encryption of file contents is compatible with this design because all diffing and merging happens in the client: the backend only ever needs hashes and bytes. Deduplication would then use a keyed hash per team.
 
