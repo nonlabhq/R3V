@@ -196,10 +196,21 @@ func (b *brokerBucket) json(path string, in, out any) error {
 func keyPath(key string) string { return "/keys/" + url.PathEscape(key) }
 
 func failed(resp *http.Response, what string) error {
-	data, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+	data, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	resp.Body.Close()
-	return fmt.Errorf("%s: %d %s", what, resp.StatusCode, strings.TrimSpace(string(data)))
+	text := strings.TrimSpace(string(data))
+	// Storage's errors (XML) say just their code: the rest echoes the
+	// request signed, which isn't for showing or logging.
+	if strings.HasPrefix(text, "<") {
+		text = ""
+		if m := xmlCode.FindStringSubmatch(string(data)); m != nil {
+			text = m[1]
+		}
+	}
+	return fmt.Errorf("%s: %d %s", what, resp.StatusCode, text)
 }
+
+var xmlCode = regexp.MustCompile(`<Code>([A-Za-z0-9.]+)</Code>`)
 
 type putItem struct {
 	Key    string `json:"key"`
@@ -276,6 +287,11 @@ func (b *brokerBucket) transfer(method string, newURL func() (string, error), bo
 		}
 		if body != nil {
 			req.ContentLength = size
+			if size == 0 {
+				// (an empty body of unknown length would go chunked, without
+				// the content-length the URL is signed for)
+				req.Body = http.NoBody
+			}
 		}
 		for k, v := range hdr {
 			req.Header.Set(k, v)
