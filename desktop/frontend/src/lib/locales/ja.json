@@ -1253,5 +1253,14 @@
 "Take away": "外す",
 "Add milestone": "マイルストーンを追加",
 "Give this version a name the whole team sees": "このバージョンにチーム全員が見られる名前を付ける",
-"Milestone…": "マイルストーン…"
+"Milestone…": "マイルストーン…",
+"Sharing the version with {team}…": "{team} とバージョンを共有中…",
+"Sharing the version with the team…": "チームとバージョンを共有中…",
+"Getting the team's history · {n} version": "チームの履歴を取得中 · {n} 件",
+"Getting the team's history · {n} versions": "チームの履歴を取得中 · {n} 件",
+"Getting the team's history…": "チームの履歴を取得中…",
+"Putting the files in place": "ファイルを配置中",
+"finishing…": "仕上げ中…",
+"history…": "履歴…",
+"placing files": "ファイル配置"
 }

@@ -1253,5 +1253,14 @@
 "Take away": "移除",
 "Add milestone": "添加里程碑",
 "Give this version a name the whole team sees": "为这个版本取一个整个团队都能看到的名字",
-"Milestone…": "里程碑…"
+"Milestone…": "里程碑…",
+"Sharing the version with {team}…": "正在与 {team} 共享版本…",
+"Sharing the version with the team…": "正在与团队共享版本…",
+"Getting the team's history · {n} version": "正在获取团队的历史 · {n} 个版本",
+"Getting the team's history · {n} versions": "正在获取团队的历史 · {n} 个版本",
+"Getting the team's history…": "正在获取团队的历史…",
+"Putting the files in place": "正在放置文件",
+"finishing…": "收尾中…",
+"history…": "历史…",
+"placing files": "放置文件"
 }
