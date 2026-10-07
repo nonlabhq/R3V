@@ -1187,5 +1187,6 @@
 "Mint": "ミント",
 "Magenta": "マゼンタ",
 "Sky": "スカイ",
-"Lilac": "ライラック"
+"Lilac": "ライラック",
+"Not shown in {teams} yet: R3V couldn't reach them. Change it again later to share it there.": "{teams} にはまだ表示されません：R3V から接続できませんでした。あとでもう一度変更すると共有されます。"
 }

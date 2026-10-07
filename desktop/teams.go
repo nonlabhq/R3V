@@ -55,8 +55,7 @@ type TeamSummary struct {
 	// BackupFailing: this computer's backups of the team have failed for a
 	// while (see BackupInfo).
 	BackupFailing bool `json:"backupFailing"`
-	// Looks: the team keeps pictures, icons and colours (Nightly; not yet
-	// a hosted team).
+	// Looks: the team keeps pictures, icons and colours (Nightly).
 	Looks bool `json:"looks"`
 	// Hosted: kept by R3V-Cloud (people and access managed there);
 	// SignedOut: this computer isn't signed in to it.
@@ -100,7 +99,7 @@ func teamSummary(t teams.Team) TeamSummary {
 		ShareSetup: t.ShareSetup && t.Remote.IsStorage(), CanShareSetup: t.Remote.IsStorage(),
 		Preupload:     !t.NoPreupload && t.Remote.IsStorage(),
 		AskShareSetup: t.Remote.IsStorage() && t.MemberID != "" && !t.SetupAsked && !t.ShareSetup,
-		BackupFailing: backup.Failing(t.Backup), Looks: remote.Looks && !hosted}
+		BackupFailing: backup.Failing(t.Backup), Looks: remote.Looks}
 }
 
 func folderProject(root, status string) TeamProject {

@@ -58,7 +58,8 @@ const (
 var (
 	// ErrLooksNotInBuild: this build has no looks (Stable).
 	ErrLooksNotInBuild = errors.New("pictures, icons and colours need R3V's Nightly channel")
-	// ErrNoLooks: the team's storage can't keep looks yet (a hosted team).
+	// ErrNoLooks: the team's storage can't keep looks (storage keeping
+	// contents per project that isn't a hosted team's).
 	ErrNoLooks = errors.New("this team can't keep pictures, icons and colours yet")
 	// ErrBadPicture: not a small square PNG or JPEG.
 	ErrBadPicture = errors.New("a picture must be a square PNG or JPEG of at most 256 pixels and 64 KB")
@@ -166,16 +167,21 @@ func (s *BucketBackend) PrunePictures(id string, keep ...string) error {
 	return nil
 }
 
-// keepsLooks returns b's picture store, if its team can keep looks. A
-// hosted team's records go through its service, which keeps only what it
-// knows: looks wait for it to keep pictures.
+// LooksKeeper is storage keeping contents per project that keeps looks
+// all the same: a hosted team's service keeps records as R3V writes them,
+// and checks pictures (R3V-Cloud's docs/api.md).
+type LooksKeeper interface{ KeepsLooks() bool }
+
+// keepsLooks returns b's picture store, if its team can keep looks.
 func keepsLooks(b Backend) (PictureStore, bool) {
 	s, ok := b.(*BucketBackend)
 	if !ok {
 		return nil, false
 	}
 	if pp, ok := s.b.(PerProject); ok && pp.ContentsPerProject() {
-		return nil, false
+		if lk, ok := s.b.(LooksKeeper); !ok || !lk.KeepsLooks() {
+			return nil, false
+		}
 	}
 	return s, true
 }

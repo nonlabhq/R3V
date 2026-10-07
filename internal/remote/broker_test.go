@@ -345,3 +345,14 @@ func TestBrokerStorageErrorsSayTheirCode(t *testing.T) {
 		t.Errorf("error %v", err)
 	}
 }
+
+// A hosted team keeps looks, though its contents are kept per project.
+func TestBrokerKeepsLooks(t *testing.T) {
+	b, err := NewBroker("https://cloud.example/v1/teams/t1", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := keepsLooks(NewBucketBackend(b)); !ok {
+		t.Error("a hosted team doesn't keep looks")
+	}
+}
