@@ -25,6 +25,7 @@
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
+  import Tooltip from "./lib/Tooltip.svelte";
 
   let overview = $state<Overview | null>(null);
   let onboarding = $state(false);
@@ -640,7 +641,7 @@
         <div class="section row-h">
           <span>{t("Projects")}</span>
           {#if current}
-            <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects")} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
+            <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
         {#if current && overview.teamError}
@@ -687,7 +688,8 @@
                 onclick={() => (x.p ? select(x.p) : (blank = x.key))}>
                 {#if x.p}<ProjectIcon p={x.p} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
               </button>
-              <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}>×</button>
+              <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
+                title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
             </div>
           {/each}
           <button class="tab-add" onclick={newTab} aria-label={t("New tab")} title={t("New tab (Ctrl+T)")}>+</button>
@@ -840,6 +842,7 @@
 {/snippet}
 
 
+<Tooltip />
 {#if keysHelp}<KeysHelp onclose={() => (keysHelp = false)} />{/if}
 {#if queue.open}
   <UploadQueue names={Object.fromEntries(entries.filter((p) => p.root).map((p) => [p.root, p.name]))} onclose={() => (queue.open = false)} />

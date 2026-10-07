@@ -90,9 +90,37 @@ describe("ProjectView: committing", () => {
     await toasted("Version committed and shared with the team");
   });
 
+  it("lists a few changes, makes a tree of many, keeps the one picked until the next commit", async () => {
+    const many = Array.from({ length: 11 }, (_, i) => change(`Samples/take ${i}.wav`, "added"));
+    await show({ changes: many });
+    const pressed = (name: string) => screen.getByRole("button", { name }).getAttribute("aria-pressed");
+    await screen.findByTitle("Samples/take 0.wav");
+    expect(pressed("Tree")).toBe("true"); // more than 10
+    await fireEvent.click(screen.getByRole("button", { name: "List" }));
+    expect(pressed("List")).toBe("true");
+    expect(document.querySelector("li.two")).toBeTruthy();
+    expect(screen.getAllByText("Samples").length).toBeGreaterThan(0); // the folder under each name
+    // (kept when the project is read again)
+    cleanup();
+    await show({ changes: many });
+    expect(pressed("List")).toBe("true");
+    // A commit: back to choosing by the number.
+    api.Save.mockResolvedValue(result("published"));
+    await typeMessage("Takes");
+    await fireEvent.click(commitButton());
+    await toasted("Version committed and shared with the team");
+    cleanup();
+    await show({ changes: many });
+    expect(pressed("Tree")).toBe("true");
+    cleanup();
+    await show({ changes: many.slice(0, 3) });
+    await waitFor(() => expect(pressed("List")).toBe("true")); // a few (once read: the last state shows first)
+  });
+
   it("goes through the changes with the keyboard: folders open and close", async () => {
     await show({ changes: [change("Samples/kick.wav", "added"), change("Song.als")] });
     const list = document.querySelector<HTMLElement>("aside.files")!;
+    await fireEvent.click(screen.getByRole("button", { name: "Tree" }));
     await screen.findByTitle("Samples/kick.wav");
     await fireEvent.keyDown(list, { key: "ArrowDown" }); // the folder
     await fireEvent.keyDown(list, { key: "ArrowLeft" }); // closes it

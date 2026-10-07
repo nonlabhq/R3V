@@ -13,6 +13,7 @@
   import { fileView, setFileMode, type FileMode } from "./viewmode.svelte";
   import { viewerFor, type Side } from "./viewers";
   import { navKey, ownKey, type NavRow } from "./keynav";
+  import { changesView, pickChangesView } from "./changesview.svelte";
 
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
@@ -120,8 +121,12 @@
   });
 
   type Row = { folder?: Folder; file?: ProjectFile; depth: number };
-  let rows = $derived.by(() => {
+  // The changes as a list (each with its folder under its name) or a tree;
+  // every file is a tree.
+  let view = $derived(all ? "tree" : changesView(root, st.changes.length));
+  let rows = $derived.by((): Row[] => {
     const out: Row[] = [];
+    if (view === "list") return [...files].sort((a, b) => a.path.localeCompare(b.path)).map((f) => ({ file: f, depth: 0 }));
     const walk = (node: Folder, depth: number) => {
       for (const sub of [...node.folders.values()].sort((a, b) => a.name.localeCompare(b.name))) {
         out.push({ folder: sub, depth });
@@ -135,7 +140,7 @@
 
   // Only the rows in view are drawn (a folder can hold thousands of files);
   // rows have a fixed height.
-  const ROW = 30;
+  let ROW = $derived(view === "list" ? 44 : 30);
   let scroller = $state<HTMLElement>();
   let list = $state<HTMLElement>();
   let scrollTop = $state(0);
@@ -329,7 +334,7 @@
   <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll} tabindex="-1" onkeydown={onListKey}>
     <!-- the list's header, kept at the top: the box to tick all, the title, how many and how big -->
     <!-- one line when there's room, else two: [box] title · how many, how big · revert · All files -->
-    <div class="head">
+    <div class="head" class:fixed={!!scope}>
       <span class="chevbtn h-chev"></span>
       {#if changedPaths.length}
         <input type="checkbox" class="pick h-pick" checked={allState === "on"} indeterminate={allState === "some"}
@@ -350,6 +355,12 @@
         <label class="all h-all" title={t("List every file in the project folder")}>
           {t("All files")} <input type="checkbox" class="switch" role="switch" bind:checked={all} onchange={rememberAll} />
         </label>
+      {/if}
+      {#if !all && changedPaths.length}
+        <div class="views h-views" role="group" aria-label={t("Show the changes as")}>
+          <button class:on={view === "list"} aria-pressed={view === "list"} onclick={() => pickChangesView(root, "list")}>{t("List")}</button>
+          <button class:on={view === "tree"} aria-pressed={view === "tree"} onclick={() => pickChangesView(root, "tree")}>{t("Tree")}</button>
+        </div>
       {/if}
     </div>
     {#if files.length === 0}
@@ -386,6 +397,32 @@
                   title={tn(d.changed, "{n} changed file inside, {size}", "{n} changed files inside, {size}", { size: formatBytes(d.changedSize) })}>{d.changed}</span></span>{/if}
               </button>
               <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, d.path, true); }}>⋯</button>
+            </li>
+          {:else if view === "list"}
+            {@const f = row.file!}
+            <li class="two">
+              {#if changedPaths.length}
+                {#if isChange(f)}
+                  <input type="checkbox" class="pick" checked={!excluded[f.path]} title={t("Commit this change")}
+                    onchange={(e) => tick([f.path], (e.currentTarget as HTMLInputElement).checked)} />
+                {:else}<span class="pick"></span>{/if}
+              {/if}
+              <button class="file {f.status}" class:on={f.path === selected}
+                onclick={() => select(f.path)} oncontextmenu={(e) => openMenu(e, f.path)} title={f.path}>
+                <FileIcon kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
+                <span class="names">
+                  <span class="fname">{name(f.path)}</span>
+                  <span class="fdir">{f.status === "renamed" ? `← ${f.from}` : f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : t("Project folder")}</span>
+                </span>
+                <span class="right">
+                  {#if f.live}
+                    {@const v = liveShort(f.live)}
+                    <span class="live" class:odd={usualLive && v !== usualLive} title={t("Saved with {app}", { app: f.live })}>{v}</span>
+                  {/if}
+                  {#if sym[f.status]}<span class="sym" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
+                </span>
+              </button>
+              <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, f.path); }}>⋯</button>
             </li>
           {:else}
             {@const f = row.file!}
@@ -567,10 +604,12 @@
     background: var(--panel); border-bottom: var(--border-width) solid var(--line); font-size: var(--fs-sm); color: var(--muted);
     display: grid; align-items: center; row-gap: var(--sp-4);
     grid-template-columns: 22px 20px minmax(0, 1fr) auto auto;
-    grid-template-areas: "chev pick title title title" ". . total discard all"; }
+    grid-template-areas: "chev pick title views views" ". . total discard all"; }
+  /* (no All files switch: the total takes its room) */
+  .head.fixed { grid-template-areas: "chev pick title views views" ". . total total discard"; }
   @container (min-width: 380px) {
-    .head { grid-template-columns: 22px 20px auto minmax(0, 1fr) auto auto;
-      grid-template-areas: "chev pick title total discard all"; }
+    .head, .head.fixed { grid-template-columns: 22px 20px auto minmax(0, 1fr) auto auto auto;
+      grid-template-areas: "chev pick title total discard all views"; }
     .h-total { padding-left: var(--sp-10); }
     .h-revert { margin-right: var(--sp-10); }
   }
@@ -581,6 +620,20 @@
   .h-total { grid-area: total; padding-left: var(--sp-4); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .h-revert { grid-area: discard; justify-self: end; } /* (not "revert": a CSS keyword) */
   .h-all { grid-area: all; justify-self: end; }
+  .h-views { grid-area: views; justify-self: end; margin-left: var(--sp-8); }
+  /* List or tree: two small segments */
+  .views { display: flex; border: var(--border-width) solid var(--line-strong); border-radius: var(--radius-pill); padding: 1px; }
+  .views button { border: none; background: transparent; padding: 1px var(--sp-6); border-radius: var(--radius-pill);
+    font-size: var(--fs-xs); color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .views button.on { background: var(--text); color: var(--bg); }
+  /* The list: a row per change, its folder under its name */
+  li.two { height: 44px; }
+  li.two .pick { margin-left: var(--sp-8); margin-right: var(--sp-4); }
+  li.two .file { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+  li.two .file.on { background: var(--accent-soft); }
+  .names { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+  .names .fname { font-weight: var(--fw-semibold); }
+  .fdir { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .revert { flex: none; display: inline-flex; padding: var(--sp-4); border-radius: var(--radius-sm); color: var(--muted); }
   .revert svg { width: 14px; height: 14px; }
   .revert:hover:not(:disabled) { color: var(--danger); background: var(--hover); }

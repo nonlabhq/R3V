@@ -1108,5 +1108,8 @@
 "Commit (in the commit box)": "커밋 (커밋 상자에서)",
 "Close a dialog or a menu": "대화상자나 메뉴 닫기",
 "This list": "이 목록",
-"Play or pause the audio shown": "표시된 오디오 재생·일시정지"
+"Play or pause the audio shown": "표시된 오디오 재생·일시정지",
+"Show the changes as": "변경 표시 방식",
+"Tree": "트리",
+"Project folder": "프로젝트 폴더"
 }

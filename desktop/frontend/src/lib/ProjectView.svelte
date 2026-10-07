@@ -6,6 +6,7 @@
   import { toast } from "./notify.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
+  import { resetChangesView } from "./changesview.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
   import CommitBox from "./CommitBox.svelte";
@@ -263,7 +264,10 @@
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
       if (r.log.length && r.action.startsWith("cancelled")) toast(t("The team's versions were taken in before it stopped") + reopen(), "info", 9000);
-      if (r.action !== "nothing" && r.action !== "cancelled") message = "";
+      if (r.action !== "nothing" && r.action !== "cancelled") {
+        message = "";
+        resetChangesView(root); // (back to list or tree by the number of changes)
+      }
   };
 
   // Changes left out of the next commit (unticked in the Changes list),
