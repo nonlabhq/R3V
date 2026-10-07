@@ -525,6 +525,23 @@
     }
   }
 
+  // The branch you are on was deleted from the team: back where it was.
+  async function restoreGoneBranch() {
+    const g = st?.branchGone;
+    if (!g) return;
+    busy = "restore-branch";
+    try {
+      await api.RestoreBranch(root, g.name);
+      toast(t("“{branch}” is back, where it was.", { branch: g.label || g.name }), "ok");
+      await load();
+      onchanged();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      busy = "";
+    }
+  }
+
   function switchTo(name: string) {
     run({
       name: "switch",
@@ -697,6 +714,7 @@
 
     <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
       oncancel={() => cancelSave(root)} cancelling={!!cancelling[root]}
+      onswitchmain={() => switchTo("main")} onrestorebranch={restoreGoneBranch}
       onrecover={() => run({ name: "goto", message: "",
         call: (_res, force) => api.RecoverSwitch(root, force),
         done: () => toast(t("Files put back as they were"), "ok") })}

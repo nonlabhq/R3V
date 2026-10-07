@@ -38,7 +38,14 @@ r3v switch main
 r3v merge yi-ideas --preview  # what would come in and what conflicts
 r3v merge yi-ideas            # merge into your branch and share
 r3v branch log main           # who moved the branch, when, from which version to which
+r3v branch delete yi-ideas    # take it off the team: its versions stay
+r3v branch deleted            # what was deleted, by whom, when
+r3v branch restore yi-ideas   # back where it was
 ```
+
+On a team that keeps branch names (Nightly), a branch can be called anything
+(`r3v branch new Mia's verse`, `r3v switch "Mia 的主歌"`); commands take its
+name or its key.
 
 Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and save from there.
 

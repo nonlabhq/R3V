@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -44,6 +45,10 @@ const MaxBranchName = 64
 type BranchRecord struct {
 	Name  string `json:"name"`
 	Color string `json:"color,omitempty"` // a palette number ("b3"), "" for the app's pick
+	// Deleted: where the branch was when it was deleted, written before
+	// the delete (the branch log is written after, as well as it can be),
+	// so a branch deleted can always come back.
+	Deleted *BranchDeleted `json:"deleted,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
 }
@@ -56,6 +61,21 @@ func (v *BranchRecord) UnmarshalJSON(b []byte) error {
 func (v BranchRecord) MarshalJSON() ([]byte, error) {
 	type plain BranchRecord
 	return jsonx.Encode(plain(v), v.Extra)
+}
+
+// BranchDeleted is a branch's deletion.
+type BranchDeleted struct {
+	Head string    `json:"head"`
+	By   string    `json:"by,omitempty"` // member id
+	Time time.Time `json:"time"`
+}
+
+// ActorOf names who b's writes are by (a member id, "" unknown).
+func ActorOf(b Backend) string {
+	if s, ok := b.(*BucketBackend); ok {
+		return s.actor
+	}
+	return ""
 }
 
 // BranchRecordStore is storage that keeps branch records.

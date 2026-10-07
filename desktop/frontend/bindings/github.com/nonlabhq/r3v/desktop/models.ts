@@ -557,6 +557,65 @@ export class ConvertFormat {
 }
 
 /**
+ * DeletedBranch is a branch deleted from the team, for getting it back.
+ */
+export class DeletedBranch {
+    /**
+     * its key
+     */
+    "name": string;
+    "label": string;
+    "color": string;
+
+    /**
+     * who deleted it ("" unknown)
+     */
+    "by": string;
+    "time": string;
+
+    /**
+     * Latest: its latest version then (nil when not on this computer).
+     */
+    "latest": Version | null;
+
+    /** Creates a new DeletedBranch instance. */
+    constructor($$source: Partial<DeletedBranch> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("label" in $$source)) {
+            this["label"] = "";
+        }
+        if (!("color" in $$source)) {
+            this["color"] = "";
+        }
+        if (!("by" in $$source)) {
+            this["by"] = "";
+        }
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+        if (!("latest" in $$source)) {
+            this["latest"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DeletedBranch instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DeletedBranch {
+        const $$createField5_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("latest" in $$parsedSource) {
+            $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
+        }
+        return new DeletedBranch($$parsedSource as Partial<DeletedBranch>);
+    }
+}
+
+/**
  * DownloadSize is the size of a team project's latest version, shown
  * before downloading it.
  */
@@ -1983,6 +2042,11 @@ export class State {
      */
     "branchNames": boolean;
 
+    /**
+     * BranchGone: from TeamState (TeamPart.BranchGone).
+     */
+    "branchGone": DeletedBranch | null;
+
     /** Creates a new State instance. */
     constructor($$source: Partial<State> = {}) {
         if (!("rules" in $$source)) {
@@ -2069,6 +2133,9 @@ export class State {
         if (!("branchNames" in $$source)) {
             this["branchNames"] = false;
         }
+        if (!("branchGone" in $$source)) {
+            this["branchGone"] = null;
+        }
 
         Object.assign(this, $$source);
     }
@@ -2088,6 +2155,7 @@ export class State {
         const $$createField24_0 = $$createType22;
         const $$createField25_0 = $$createType22;
         const $$createField26_0 = $$createType5;
+        const $$createField28_0 = $$createType49;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rules" in $$parsedSource) {
             $$parsedSource["rules"] = $$createField0_0($$parsedSource["rules"]);
@@ -2121,6 +2189,9 @@ export class State {
         }
         if ("branches" in $$parsedSource) {
             $$parsedSource["branches"] = $$createField26_0($$parsedSource["branches"]);
+        }
+        if ("branchGone" in $$parsedSource) {
+            $$parsedSource["branchGone"] = $$createField28_0($$parsedSource["branchGone"]);
         }
         return new State($$parsedSource as Partial<State>);
     }
@@ -2345,6 +2416,12 @@ export class TeamPart {
      */
     "branchNames": boolean;
 
+    /**
+     * BranchGone: the branch you are on was deleted from the team (nil
+     * otherwise): the page says so and offers it back.
+     */
+    "branchGone": DeletedBranch | null;
+
     /** Creates a new TeamPart instance. */
     constructor($$source: Partial<TeamPart> = {}) {
         if (!("online" in $$source)) {
@@ -2377,6 +2454,9 @@ export class TeamPart {
         if (!("branchNames" in $$source)) {
             this["branchNames"] = false;
         }
+        if (!("branchGone" in $$source)) {
+            this["branchGone"] = null;
+        }
 
         Object.assign(this, $$source);
     }
@@ -2390,7 +2470,8 @@ export class TeamPart {
         const $$createField4_0 = $$createType22;
         const $$createField5_0 = $$createType22;
         const $$createField6_0 = $$createType3;
-        const $$createField8_0 = $$createType48;
+        const $$createField8_0 = $$createType50;
+        const $$createField10_0 = $$createType49;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("branches" in $$parsedSource) {
             $$parsedSource["branches"] = $$createField2_0($$parsedSource["branches"]);
@@ -2409,6 +2490,9 @@ export class TeamPart {
         }
         if ("capabilities" in $$parsedSource) {
             $$parsedSource["capabilities"] = $$createField8_0($$parsedSource["capabilities"]);
+        }
+        if ("branchGone" in $$parsedSource) {
+            $$parsedSource["branchGone"] = $$createField10_0($$parsedSource["branchGone"]);
         }
         return new TeamPart($$parsedSource as Partial<TeamPart>);
     }
@@ -2665,7 +2749,7 @@ export class TextChanges {
      * Creates a new TextChanges instance from a string or object.
      */
     static createFrom($$source: any = {}): TextChanges {
-        const $$createField4_0 = $$createType50;
+        const $$createField4_0 = $$createType52;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hunks" in $$parsedSource) {
             $$parsedSource["hunks"] = $$createField4_0($$parsedSource["hunks"]);
@@ -2805,7 +2889,7 @@ export class UndoPlan {
         const $$createField0_0 = $$createType6;
         const $$createField1_0 = $$createType6;
         const $$createField2_0 = $$createType26;
-        const $$createField4_0 = $$createType51;
+        const $$createField4_0 = $$createType53;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changed" in $$parsedSource) {
             $$parsedSource["changed"] = $$createField0_0($$parsedSource["changed"]);
@@ -3016,7 +3100,7 @@ export class VerifyResult {
      * Creates a new VerifyResult instance from a string or object.
      */
     static createFrom($$source: any = {}): VerifyResult {
-        const $$createField3_0 = $$createType53;
+        const $$createField3_0 = $$createType55;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("problems" in $$parsedSource) {
             $$parsedSource["problems"] = $$createField3_0($$parsedSource["problems"]);
@@ -3161,9 +3245,11 @@ const $$createType44 = SetTrackChange.createFrom;
 const $$createType45 = $Create.Array($$createType44);
 const $$createType46 = project$0.TrackEdit.createFrom;
 const $$createType47 = $Create.Array($$createType46);
-const $$createType48 = remote$0.Capabilities.createFrom;
-const $$createType49 = textdiff$0.Hunk.createFrom;
-const $$createType50 = $Create.Array($$createType49);
-const $$createType51 = TakeBack.createFrom;
-const $$createType52 = VerifyProblem.createFrom;
-const $$createType53 = $Create.Array($$createType52);
+const $$createType48 = DeletedBranch.createFrom;
+const $$createType49 = $Create.Nullable($$createType48);
+const $$createType50 = remote$0.Capabilities.createFrom;
+const $$createType51 = textdiff$0.Hunk.createFrom;
+const $$createType52 = $Create.Array($$createType51);
+const $$createType53 = TakeBack.createFrom;
+const $$createType54 = VerifyProblem.createFrom;
+const $$createType55 = $Create.Array($$createType54);

@@ -133,6 +133,8 @@ type State struct {
 	// BranchNames: the team keeps branch names and colours (Nightly): any
 	// name, renaming and colours are offered.
 	BranchNames bool `json:"branchNames"`
+	// BranchGone: from TeamState (TeamPart.BranchGone).
+	BranchGone *DeletedBranch `json:"branchGone"`
 }
 
 // Result of save / update / merge / switch.

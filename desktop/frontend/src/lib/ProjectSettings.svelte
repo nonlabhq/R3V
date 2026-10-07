@@ -14,7 +14,7 @@
   import { emojiName, emojiOf } from "./emoji";
   import BranchSettings from "./BranchSettings.svelte";
   import { branchLabel, branchLane } from "./branches";
-  import { ago, type BranchList } from "./api";
+  import { ago, type BranchList, type DeletedBranch } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
@@ -123,7 +123,25 @@
   // branch names: Nightly).
   let branchList = $state<BranchList | null>(null);
   let branchOpen = $state<string | null>(null);
-  const loadBranches = () => api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
+  let deleted = $state<DeletedBranch[]>([]);
+  const loadBranches = () => {
+    api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
+    api.DeletedBranches(p.root).then((d) => (deleted = d ?? [])).catch(() => {});
+  };
+  let restoring = $state("");
+  async function restore(d: DeletedBranch) {
+    restoring = d.name;
+    try {
+      await api.RestoreBranch(p.root, d.name);
+      toast(t("“{branch}” is back, where it was.", { branch: d.label || d.name }), "ok");
+      loadBranches();
+      onrenamed();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      restoring = "";
+    }
+  }
   $effect(() => {
     if (here && team) loadBranches();
   });
@@ -210,6 +228,19 @@
           </li>
         {/each}
       </ul>
+      {#if deleted.length}
+        <h4>{t("Deleted branches")}</h4>
+        <ul class="branches">
+          {#each deleted as d (d.name)}
+            <li class="drow">
+              <span class="bdot gone" style:--c="var(--lane-{branchLane([d], d.name)})"></span>
+              <span class="bname">{d.label || d.name}</span>
+              <span class="faint">{d.by ? t("deleted by {name} {when}", { name: d.by, when: ago(d.time) }) : t("deleted {when}", { when: ago(d.time) })}</span>
+              <button class="small" onclick={() => restore(d)} disabled={!!restoring}>{restoring === d.name ? t("Restoring…") : t("Restore")}</button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </section>
   {/if}
 
@@ -321,6 +352,12 @@
   .bname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .here { font-size: var(--fs-xs); color: var(--accent); }
   .brow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
+  h4 { margin: var(--sp-12) 0 var(--sp-4); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
+  .drow { display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4) var(--sp-8); }
+  .drow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
+  .drow .bname { color: var(--muted); }
+  .bdot.gone { opacity: .5; }
+  button.small { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); }
   .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
   .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
   .kinds button.on { background: var(--panel-2); color: var(--text); }

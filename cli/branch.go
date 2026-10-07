@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/remote"
 )
 
 func when(m *project.Manifest) string {
@@ -32,6 +33,53 @@ func cmdBranch(args []string) error {
 		fmt.Printf("versions you save now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
 		return nil
 	}
+	if len(args) >= 2 && args[0] == "delete" {
+		key, err := r.ResolveBranch(strings.Join(args[1:], " "))
+		if err != nil {
+			return err
+		}
+		if err := r.DeleteBranch(key); err != nil {
+			return err
+		}
+		fmt.Printf("deleted branch %q from the team; its versions stay (`r3v branch restore %s` brings it back)\n", key, key)
+		return nil
+	}
+	if len(args) >= 2 && args[0] == "restore" {
+		key := strings.Join(args[1:], " ")
+		if gone, err := r.DeletedBranches(); err == nil {
+			recs, _ := r.BranchRecords()
+			for _, d := range gone {
+				if remote.SameBranchName(recs[d.Key].Name, key) {
+					key = d.Key
+				}
+			}
+		}
+		if err := r.RestoreBranch(key); err != nil {
+			return err
+		}
+		fmt.Printf("branch %q is back where it was\n", key)
+		return nil
+	}
+	if len(args) == 1 && args[0] == "deleted" {
+		gone, err := r.DeletedBranches()
+		if err != nil {
+			return err
+		}
+		recs, _ := r.BranchRecords()
+		names := r.MemberNames()
+		for _, d := range gone {
+			label := d.Key
+			if n := recs[d.Key].Name; n != "" {
+				label = n
+			}
+			by := names[d.By]
+			if by == "" {
+				by = "someone"
+			}
+			fmt.Printf("%-16s %s  deleted by %s %s\n", label, short(d.Head), by, d.Time.Local().Format("2006-01-02 15:04"))
+		}
+		return nil
+	}
 	if len(args) >= 1 && args[0] == "log" && len(args) <= 2 {
 		name := ""
 		if len(args) == 2 {
@@ -40,7 +88,7 @@ func cmdBranch(args []string) error {
 		return branchLog(r, name)
 	}
 	if len(args) > 0 {
-		return errors.New("usage: r3v branch [new NAME | log [NAME]]")
+		return errors.New("usage: r3v branch [new NAME | delete NAME | deleted | restore NAME | log [NAME]]")
 	}
 	branches, err := r.Branches()
 	if err != nil {

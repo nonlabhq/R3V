@@ -264,6 +264,39 @@ describe("ProjectView: the team", () => {
     await waitFor(() => expect(api.SetBranchRecord).toHaveBeenLastCalledWith(ROOT, "b-1a2b3c4d", "Verse, take 2", "b7"));
   });
 
+  it("deletes a branch, saying what stays", async () => {
+    await show({ branchNames: true, branches: [{ name: "main", label: "", color: "", current: true, latest: null },
+      { name: "idea", label: "Idea", color: "", current: false, latest: null }] });
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: "Branch settings" })[1]);
+    api.VersionsOnlyOnBranch.mockResolvedValue(2);
+    api.DeleteBranch.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Delete branch…" }));
+    expect(await screen.findByText(/2 versions are only on this branch/)).toBeTruthy();
+    await fireEvent.click(screen.getByRole("button", { name: "Delete branch" }));
+    await waitFor(() => expect(api.DeleteBranch).toHaveBeenCalledWith(ROOT, "idea"));
+    await toasted(/Deleted “Idea”/);
+  });
+
+  it("can't delete the branch you're on, nor main", async () => {
+    await show({ branchNames: true, branch: "idea", branches: [{ name: "main", label: "", color: "", current: false, latest: null },
+      { name: "idea", label: "", color: "", current: true, latest: null }] });
+    await fireEvent.click(screen.getByRole("button", { name: /idea ▾/ }));
+    const gears = within(screen.getByRole("menu")).getAllByRole("button", { name: "Branch settings" });
+    await fireEvent.click(gears[0]); // the one you're on
+    expect(screen.getByText(/switch to another one to delete it/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Delete branch…" })).toBeNull();
+  });
+
+  it("says the branch you're on was deleted, and brings it back", async () => {
+    await show({ branch: "idea", branchGone: { name: "idea", label: "Idea", color: "", by: "Mia", time: new Date().toISOString(), latest: null } });
+    expect(screen.getByText(/was deleted from the team by Mia/)).toBeTruthy();
+    api.RestoreBranch.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Restore it" }));
+    await waitFor(() => expect(api.RestoreBranch).toHaveBeenCalledWith(ROOT, "idea"));
+    await toasted(/“Idea” is back/);
+  });
+
   it("offers no branch settings where the team keeps no names", async () => {
     await show();
     await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));

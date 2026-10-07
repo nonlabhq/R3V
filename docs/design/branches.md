@@ -1,8 +1,8 @@
 # Branch names, colours, deletes and milestones
 
-Status: names and colours built, Nightly only (`remote.BranchRecords`, set
-in `internal/remote/branches_nightly.go`). Deleting and recovering
-branches, and milestones, follow.
+Status: names, colours, deleting and getting branches back built, Nightly
+only (`remote.BranchRecords`, set in `internal/remote/branches_nightly.go`).
+Milestones follow.
 
 ## Names apart from keys
 
@@ -47,6 +47,33 @@ come and go. The main branch alone has the brand orange (`--lane-0`).
 - Anyone in the team can change a branch's colour and name: **Branch
   settings**, from the branch menu (⋯) or the project's settings
   (Branches).
+
+## Deleting and getting back
+
+Anyone in the team can delete a branch other than main and the one they
+are on (Branch settings, `r3v branch delete`). The versions stay: storage
+cleanup never deletes a version, so a branch always comes back
+(`RestoreBranch`: the key put back where it was, only if no branch has it).
+
+Deleting (`Repo.DeleteBranch`):
+
+1. Write where it is into its record (`deleted: {head, by, time}`).
+2. Delete the key (conditional: only if it hasn't moved since read; it did:
+   "someone shared on it just now", and step 1 is undone).
+3. The branch log gets the move (as well as it can, like every move).
+
+| Stopped after | The team has | The app shows | Next time |
+|---|---|---|---|
+| 1 | the branch, its record marked deleted | the branch (a branch there is never listed deleted) | deleting again |
+| 2 | no branch; record and maybe not the log | it among Deleted branches (from the record) | Restore |
+
+The list of deleted branches (`DeletedBranches`) is the branch log's
+deletes and the records' marks, of keys not there now. Before deleting,
+the app says how many versions are on no other branch (`OnlyOnBranch`).
+
+A teammate on a branch deleted meanwhile sees it said on the project's
+page (who, when; their files and versions as they were), with **Restore
+it** and **Switch to main**. Committing there would make the branch again.
 
 ## Hosted teams (R3V-Cloud)
 

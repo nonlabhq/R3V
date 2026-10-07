@@ -464,6 +464,9 @@ type TeamPart struct {
 	// BranchNames: the team keeps branch names and colours (Nightly): they
 	// can be renamed and coloured.
 	BranchNames bool `json:"branchNames"`
+	// BranchGone: the branch you are on was deleted from the team (nil
+	// otherwise): the page says so and offers it back.
+	BranchGone *DeletedBranch `json:"branchGone"`
 }
 
 // TeamState asks the team for its branches and new versions. It runs
@@ -496,6 +499,16 @@ func (a *App) TeamState(root string) (*TeamPart, error) {
 			part.Capabilities = remote.CapabilitiesOf(c)
 		}
 		part.BranchNames = keepsBranchRecords(r)
+		if b := r.BranchName(); view.Heads[b] == "" && b != "main" {
+			if gone, err := a.deletedBranches(r); err == nil {
+				for i := range gone {
+					if gone[i].Name == b {
+						part.BranchGone = &gone[i]
+						part.Unshared = false // (not "not shared yet": deleted)
+					}
+				}
+			}
+		}
 	}
 	return part, err
 }

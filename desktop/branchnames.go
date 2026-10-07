@@ -3,6 +3,7 @@ package desktop
 import (
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -115,4 +116,96 @@ func (a *App) BranchList(root string) (*BranchList, error) {
 		out.Branches = append(out.Branches, br)
 	}
 	return out, nil
+}
+
+// DeletedBranch is a branch deleted from the team, for getting it back.
+type DeletedBranch struct {
+	Name  string `json:"name"` // its key
+	Label string `json:"label"`
+	Color string `json:"color"`
+	By    string `json:"by"` // who deleted it ("" unknown)
+	Time  string `json:"time"`
+	// Latest: its latest version then (nil when not on this computer).
+	Latest *Version `json:"latest"`
+}
+
+func (a *App) deletedBranches(r *project.Repo) ([]DeletedBranch, error) {
+	gone, err := r.DeletedBranches()
+	if err != nil {
+		return nil, err
+	}
+	recs := branchRecords(r, true)
+	names := a.memberNames(r)
+	out := []DeletedBranch{}
+	for _, d := range gone {
+		db := DeletedBranch{Name: d.Key, Label: recs[d.Key].Name, Color: recs[d.Key].Color, By: names[d.By],
+			Time: d.Time.Format(time.RFC3339)}
+		if r.HasSnapshot(d.Head) {
+			if m, err := r.Load(d.Head); err == nil {
+				v := toVersion(m, nil)
+				db.Latest = &v
+			}
+		}
+		out = append(out, db)
+	}
+	return out, nil
+}
+
+// DeletedBranches lists project root's branches deleted from the team, the
+// last deleted first.
+func (a *App) DeletedBranches(root string) ([]DeletedBranch, error) {
+	r, err := project.Open(root)
+	if err != nil {
+		return nil, err
+	}
+	return a.deletedBranches(r)
+}
+
+// VersionsOnlyOnBranch counts the versions of branch key no other branch
+// has (what deleting it leaves on no branch: they stay recoverable).
+func (a *App) VersionsOnlyOnBranch(root, key string) (int, error) {
+	r, err := project.Open(root)
+	if err != nil {
+		return 0, err
+	}
+	return r.OnlyOnBranch(key)
+}
+
+// DeleteBranch deletes branch key from the team (not main, not the one
+// you are on); it can be got back (RestoreBranch).
+func (a *App) DeleteBranch(root, key string) error {
+	r, unlock, err := a.open(root)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if err := r.DeleteBranch(key); err != nil {
+		return err
+	}
+	a.refetchTeam(r)
+	branchRecords(r, true)
+	return nil
+}
+
+// RestoreBranch puts deleted branch key back where it was.
+func (a *App) RestoreBranch(root, key string) error {
+	r, unlock, err := a.open(root)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if err := r.RestoreBranch(key); err != nil {
+		return err
+	}
+	a.refetchTeam(r)
+	branchRecords(r, true)
+	return nil
+}
+
+// refetchTeam asks the team again after a change of its branches, so the
+// page shows them at once.
+func (a *App) refetchTeam(r *project.Repo) {
+	if view, err := r.FetchTeam(); err == nil {
+		a.storeTeam(r.Root, view, nil)
+	}
 }
