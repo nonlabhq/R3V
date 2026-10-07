@@ -1,16 +1,21 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { api, errorText, type State } from "./api";
+  import { api, errorText, type State, type TeamProject, type TeamSummary } from "./api";
+  import ProjectIcon from "./ProjectIcon.svelte";
   import { toast } from "./notify.svelte";
   import PreuploadIcon from "./PreuploadIcon.svelte";
   import { preuploads } from "./preupload.svelte";
   import { spinner } from "./spin.svelte";
 
-  // The top of a project's page: its name, and opening it in its tool.
-  // (Branches are above the Overview's graph; settings are a tab.)
-  let { st, refreshing, oncheck, onrefresh }: {
+  // The top of a project's page: its team (and its settings), its icon and
+  // name, and opening it in its tool. (Branches are above the Overview's
+  // graph; settings are a tab.)
+  let { st, refreshing, team, entry, onteamsettings, oncheck, onrefresh }: {
     st: State;
     refreshing: boolean;
+    team?: TeamSummary; // none: on this computer only
+    entry?: Pick<TeamProject, "id" | "icon" | "color">; // the team's look for it
+    onteamsettings?: (team: TeamSummary) => void;
     oncheck: () => void;
     onrefresh: () => void;
   } = $props();
@@ -30,7 +35,24 @@
 
 <header>
   <div class="title">
-    <h1>{st.name}{#if preuploads[st.root]} <PreuploadIcon p={preuploads[st.root]} />{/if}</h1>
+    {#if team}
+      <div class="team">
+        <span class="team-name" title={team.name}>{team.name}</span>
+        {#if onteamsettings}
+          <button class="ghost gear" title={t("Team settings: names, connection code, keys")} aria-label={t("Team settings: names, connection code, keys")}
+            onclick={() => onteamsettings(team)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        {/if}
+      </div>
+    {/if}
+    <div class="name">
+      <ProjectIcon p={{ id: entry?.id, name: st.name, status: "downloaded", icon: entry?.icon, color: entry?.color }} size={30} />
+      <h1>{st.name}{#if preuploads[st.root]} <PreuploadIcon p={preuploads[st.root]} />{/if}</h1>
+    </div>
   </div>
   <div class="actions">
     {#if st.openable.length === 1}
@@ -63,7 +85,13 @@
 <style>
   header { display: flex; align-items: flex-start; padding: var(--sp-18) var(--sp-24) var(--sp-10); gap: var(--sp-16); }
   .title { flex: 1; min-width: 0; }
-  h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .team { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; margin-bottom: var(--sp-2); }
+  .team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--muted); }
+  .gear { flex: none; padding: var(--sp-2); line-height: 0; color: var(--faint); }
+  .gear:hover:not(:disabled) { color: var(--text); }
+  .gear svg { width: 14px; height: 14px; }
+  .name { display: flex; align-items: center; gap: var(--sp-10); min-width: 0; }
+  h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   h1 { margin: 0; font-size: var(--fs-2xl); font-weight: var(--fw-semibold); }
   .actions { display: flex; gap: var(--sp-8); flex: none; }
   .icon { display: inline-flex; align-items: center; justify-content: center; padding: var(--sp-6) var(--sp-8); color: var(--muted); }

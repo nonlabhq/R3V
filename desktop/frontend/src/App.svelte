@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, type Overview, type Progress, type ProjectInfo, type TeamProject, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -14,6 +14,7 @@
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
   import TeamMenu from "./lib/TeamMenu.svelte";
+  import TeamSettings from "./lib/TeamSettings.svelte";
   import VerifyDialog from "./lib/VerifyDialog.svelte";
   import Modal from "./lib/Modal.svelte";
   import Toasts from "./lib/Toasts.svelte";
@@ -45,6 +46,8 @@
   let deleteWord = $state("");
   const rowKey = (p: TeamProject) => p.root || p.id;
   let settingsFor = $state<TeamProject | null>(null); // Project settings
+  // A team's settings: from its ⚙ in the sidebar, or a project's header.
+  let teamSettingsFor = $state<TeamSummary | null>(null);
   // Closes the settings and gives their project: read it first (what the
   // dialog shows goes with settingsFor).
   function closeSettings(): TeamProject {
@@ -665,7 +668,7 @@
           {@render updateActions(u)}
         </div>
       {/if}
-      <TeamMenu {overview} {reload} />
+      <TeamMenu {overview} {reload} bind:settingsFor={teamSettingsFor} />
       {#if current?.keysUnreadable}
         <p class="keys-warn">{t("This computer can't read the keys of “{team}” (R3V's settings came from another computer or Windows user). Enter them again in the team's settings (⚙).", { team: current.name })}</p>
       {/if}
@@ -742,6 +745,7 @@
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
             onsettings={() => (settingsFor = selectedEntry ?? null)}
+            entry={selectedEntry} onteamsettings={(team) => (teamSettingsFor = team)}
             settings={settingsTab}
             firstShare={firstShare === selectedEntry.root} onfirstshared={() => (firstShare = "")}
             downloaded={justDownloaded === selectedEntry.root} ondownloadseen={() => (justDownloaded = "")} />
@@ -907,6 +911,13 @@
     onlocate={() => { settingsFor = null; locate(p); }} />
 {/snippet}
 {#snippet settingsTab()}{#if selectedEntry}{@render projectSettings(selectedEntry, true)}{/if}{/snippet}
+
+{#if teamSettingsFor && overview}
+  {@const tm = overview.teams.find((x) => x.id === teamSettingsFor!.id) ?? teamSettingsFor}
+  <TeamSettings team={tm} author={overview.author} {reload} onclose={() => (teamSettingsFor = null)}
+    offline={tm.id === overview.currentTeam && !!overview.teamError}
+    roots={tm.id === overview.currentTeam ? overview.projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root) : []} />
+{/if}
 
 {#if settingsFor}
   {@render projectSettings(settingsFor, false)}
