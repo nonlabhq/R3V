@@ -133,6 +133,9 @@
   // How a version's author shows (null: initials as they always were).
   const lookOf = (v: Version) => looks && {
     color: colorOf(looks[v.authorId]?.color ?? "", v.authorId || v.author), picture: looks[v.authorId]?.picture ?? "" };
+  // Pictures that can't be shown (bad data from the team): initials.
+  let broken = $state(new Set<string>());
+  const showPic = (lk: ReturnType<typeof lookOf>) => !!lk && !!lk.picture && !broken.has(lk.picture);
 
   // The card for the version under the pointer: what it is, and what can be
   // done with it. It stays while the pointer is on the dot or the card.
@@ -348,10 +351,11 @@
         <button class="node" class:on={selected === v.id} class:here={v.id === head} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
-          class:tinted={!!lk} class:pic={!!lk?.picture} style:--m={lk ? cssColor(lk.color) : undefined}
+          class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
           aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}`}
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
-          onclick={() => onselect(v.id)}>{#if lk?.picture}<img src={lk.picture} alt="" draggable="false" />{:else}{initial(v.author)}{/if}</button>
+          onclick={() => onselect(v.id)}>{#if showPic(lk)}<img src={lk!.picture} alt="" draggable="false"
+            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}</button>
       {/each}
 
     </div>

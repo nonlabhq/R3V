@@ -1187,5 +1187,6 @@
 "Random": "Al azar",
 "Shown when your picture can't be.": "Se muestra cuando no se puede mostrar tu imagen.",
 "Your initial shows on this colour.": "Tu inicial se muestra sobre este color.",
-"{team} can't keep pictures and colours yet: your initial shows there.": "{team} todavía no puede guardar imágenes ni colores: allí se muestra tu inicial."
+"{team} can't keep pictures and colours yet: your initial shows there.": "{team} todavía no puede guardar imágenes ni colores: allí se muestra tu inicial.",
+"This picture is too big: pick one under {size} MB.": "Esta imagen es demasiado grande: elige una de menos de {size} MB."
 }

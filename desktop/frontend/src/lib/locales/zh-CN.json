@@ -1187,5 +1187,6 @@
 "Random": "随机",
 "Shown when your picture can't be.": "图片无法显示时使用。",
 "Your initial shows on this colour.": "你的名字首字会显示在这个颜色上。",
-"{team} can't keep pictures and colours yet: your initial shows there.": "{team} 目前还无法保存头像和颜色：在那里会显示你的首字。"
+"{team} can't keep pictures and colours yet: your initial shows there.": "{team} 目前还无法保存头像和颜色：在那里会显示你的首字。",
+"This picture is too big: pick one under {size} MB.": "这张图片太大了：请选择小于 {size} MB 的图片。"
 }

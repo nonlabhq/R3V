@@ -1187,5 +1187,6 @@
 "Random": "무작위",
 "Shown when your picture can't be.": "사진을 표시할 수 없을 때 사용됩니다.",
 "Your initial shows on this colour.": "이름의 첫 글자가 이 색상 위에 표시됩니다.",
-"{team} can't keep pictures and colours yet: your initial shows there.": "{team}은(는) 아직 사진과 색상을 저장할 수 없습니다: 그곳에서는 이름의 첫 글자가 표시됩니다."
+"{team} can't keep pictures and colours yet: your initial shows there.": "{team}은(는) 아직 사진과 색상을 저장할 수 없습니다: 그곳에서는 이름의 첫 글자가 표시됩니다.",
+"This picture is too big: pick one under {size} MB.": "이 사진은 너무 큽니다. {size}MB 미만의 사진을 고르세요."
 }

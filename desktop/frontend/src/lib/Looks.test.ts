@@ -83,6 +83,23 @@ describe("User settings", () => {
     expect(api.SetProfilePicture).not.toHaveBeenCalled();
   });
 
+  it("takes one pick at a time, and refuses a huge file before reading it", async () => {
+    api.Profile.mockResolvedValue(profile({ color: "teal" }));
+    let done!: () => void;
+    api.SetProfileColor.mockImplementation((c: string) => new Promise((ok) => (done = () => ok(profile({ color: c })))));
+    render(UserSettings, { team: team(), onchanged: () => {}, onclose: () => {} });
+    await fireEvent.click(await screen.findByRole("radio", { name: "Pink" }));
+    await fireEvent.click(screen.getByRole("radio", { name: "Blue" }));
+    expect(api.SetProfileColor).toHaveBeenCalledTimes(1);
+    done();
+    await waitFor(() => expect(screen.getByRole("radio", { name: "Pink" }).getAttribute("aria-checked")).toBe("true"));
+    const huge = new File(["x"], "huge.jpg");
+    Object.defineProperty(huge, "size", { value: 100 << 20 });
+    await pickFile(huge);
+    expect((await screen.findByRole("alert")).textContent).toMatch(/too big/);
+    expect(mocks.square).not.toHaveBeenCalled();
+  });
+
   it("says a hosted team shows the initial", async () => {
     api.Profile.mockResolvedValue(profile());
     render(UserSettings, { team: team({ looks: false, name: "Cloud band" }), onchanged: () => {}, onclose: () => {} });
@@ -134,6 +151,14 @@ describe("History graph with looks", () => {
     expect(robin.querySelector("img")).toBeNull();
     expect(robin.textContent).toBe("R");
     expect(robin.style.getPropertyValue("--m")).toBe("var(--palette-pink)");
+  });
+
+  it("shows the initial when a picture can't be shown", async () => {
+    show({ y1: { color: "", picture: PIC } });
+    const yi = screen.getByRole("option", { name: /^v1,/ });
+    await fireEvent.error(yi.querySelector("img")!);
+    expect(yi.querySelector("img")).toBeNull();
+    expect(yi.textContent).toBe("Y");
   });
 
   it("falls back to the initial for someone the team has no look for", () => {

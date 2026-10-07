@@ -2,8 +2,11 @@
   import { t } from "./i18n.svelte";
   import { palette, cssColor } from "./palette";
 
-  // The palette to pick a colour from (tokens.css --palette-*).
-  let { value, label, onpick }: { value: string; label: string; onpick: (name: string) => void } = $props();
+  // The palette to pick a colour from (tokens.css --palette-*). Disabled
+  // (a pick being saved), the swatches keep the focus but take no pick.
+  let { value, label, disabled = false, onpick }: {
+    value: string; label: string; disabled?: boolean; onpick: (name: string) => void;
+  } = $props();
 
   function nameOf(c: string): string {
     switch (c) {
@@ -28,7 +31,7 @@
 <div class="swatches" role="radiogroup" aria-label={label}>
   {#each palette as c (c)}
     <button class="sw" class:on={value === c} style:--c={cssColor(c)} role="radio" aria-checked={value === c}
-      aria-label={nameOf(c)} title={nameOf(c)} onclick={() => onpick(c)}></button>
+      aria-label={nameOf(c)} title={nameOf(c)} aria-disabled={disabled} onclick={() => disabled || onpick(c)}></button>
   {/each}
 </div>
 
@@ -38,5 +41,6 @@
     box-shadow: inset 0 0 0 2px var(--panel); }
   .sw:hover:not(:disabled) { background: var(--c); border-color: var(--line-strong); }
   .sw.on { border-color: var(--text); }
+  .sw[aria-disabled="true"] { cursor: progress; }
   .sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>

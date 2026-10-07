@@ -43,6 +43,7 @@
   }
 
   async function change(set: () => Promise<Profile>) {
+    if (busy) return; // one at a time: the teams keep the last pick
     busy = true;
     error = "";
     try {
@@ -59,16 +60,25 @@
   const pickColor = (c: string) => change(() => api.SetProfileColor(c));
 
   let fileInput = $state<HTMLInputElement>();
+  // Bigger photos take long to read, for a 128-pixel picture.
+  const MAX_FILE = 40 << 20;
   async function upload(e: Event) {
     const file = (e.currentTarget as HTMLInputElement).files?.[0];
     (e.currentTarget as HTMLInputElement).value = "";
-    if (!file) return;
+    if (!file || busy) return;
+    if (file.size > MAX_FILE) {
+      error = t("This picture is too big: pick one under {size} MB.", { size: MAX_FILE >> 20 });
+      return;
+    }
     let url: string;
+    busy = true;
     try {
       url = await squarePicture(file);
     } catch {
       error = t("This file can't be read as a picture.");
       return;
+    } finally {
+      busy = false;
     }
     change(() => api.SetProfilePicture(url));
   }
@@ -106,7 +116,7 @@
     <section>
       <h3>{t("Colour")}</h3>
       <div class="line">
-        <Swatches value={shown} label={t("Colour")} onpick={pickColor} />
+        <Swatches value={shown} label={t("Colour")} disabled={busy} onpick={pickColor} />
         <button class="small ghost" onclick={() => pickColor(randomColor(shown))} disabled={busy} title={t("Pick a colour at random")}>
           {t("Random")}</button>
       </div>

@@ -11,7 +11,8 @@
   // pictures of their own.
   let { p, size = 22 }: { p: Pick<TeamProject, "name" | "status"> & { icon?: string; color?: string }; size?: number } = $props();
 
-  let icon = $derived(projectIcons[p.icon ?? ""]);
+  // (Object.hasOwn: a name from the team's records is never a built-in key.)
+  let icon = $derived(p.icon && Object.hasOwn(projectIcons, p.icon) ? projectIcons[p.icon] : "");
 </script>
 
 <span class="pi {p.status}" style:--c={cssColor(projectColor(p.name, p.color))} style:--s="{size}px" aria-hidden="true">

@@ -1187,5 +1187,6 @@
 "Random": "ランダム",
 "Shown when your picture can't be.": "画像を表示できないときに使われます。",
 "Your initial shows on this colour.": "あなたの頭文字がこの色の上に表示されます。",
-"{team} can't keep pictures and colours yet: your initial shows there.": "{team} はまだ画像と色を保存できません：そこではあなたの頭文字が表示されます。"
+"{team} can't keep pictures and colours yet: your initial shows there.": "{team} はまだ画像と色を保存できません：そこではあなたの頭文字が表示されます。",
+"This picture is too big: pick one under {size} MB.": "この画像は大きすぎます。{size} MB 未満のものを選んでください。"
 }

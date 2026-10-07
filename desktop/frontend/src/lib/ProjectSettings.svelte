@@ -54,6 +54,7 @@
   let look = $state({ icon: p.icon ?? "", color: p.color ?? "" });
   let lookBusy = $state(false);
   async function setLook(icon: string, color: string) {
+    if (lookBusy) return; // one at a time: the team keeps the last pick
     const was = look;
     look = { icon, color };
     lookBusy = true;
@@ -102,14 +103,14 @@
       <h3>{t("Icon and colour")}</h3>
       <div class="look">
         <ProjectIcon p={{ name: p.name, status: "downloaded", icon: look.icon, color: look.color }} size={40} />
-        <Swatches value={projectColor(p.name, look.color)} label={t("Colour")} onpick={(c) => setLook(look.icon, c)} />
+        <Swatches value={projectColor(p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
       </div>
       <div class="icons" role="radiogroup" aria-label={t("Icon")}>
-        <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} disabled={lookBusy}
+        <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
           title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => setLook("", look.color)}>
           {([...p.name.trim()][0] ?? "?").toUpperCase()}</button>
         {#each projectIconNames as name (name)}
-          <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} disabled={lookBusy}
+          <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
             aria-label={name} onclick={() => setLook(name, look.color)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html projectIcons[name]}</svg>
           </button>
