@@ -7,9 +7,9 @@ package remote
 // checked against its name, so only a project's own writers may write its
 // contents).
 //
-// Address: r3v-cloud+https://<host>/v1/teams/<team>. The session token is
-// the config's SecretKey, or R3V_CLOUD_TOKEN until signing in lands. Only
-// the Nightly build opens such addresses (broker_nightly.go).
+// Address: r3v-cloud+https://<host>/v1/teams/<team>; the session comes from
+// SessionToken. Only the Nightly build opens such addresses
+// (broker_nightly.go).
 
 import (
 	"bytes"
@@ -29,9 +29,28 @@ import (
 	"time"
 )
 
+// SessionToken finds the session for a service (https://<host>): signing
+// in (package cloud) keeps it in the system's credential store and sets
+// this. R3V_CLOUD_TOKEN stands in for it in tests.
+var SessionToken = func(service string) string { return os.Getenv("R3V_CLOUD_TOKEN") }
+
+// BrokerService is the service a hosted team's address is at (https://<host>).
+func BrokerService(address string) (string, bool) {
+	rest, ok := strings.CutPrefix(address, "r3v-cloud+")
+	if !ok {
+		return "", false
+	}
+	u, err := url.Parse(rest)
+	if err != nil || u.Host == "" {
+		return "", false
+	}
+	return u.Scheme + "://" + u.Host, true
+}
+
 // openBroker opens a hosted team's address.
 func openBroker(cfg Config) (Backend, error) {
-	b, err := NewBroker(cfg.URL[len("r3v-cloud+"):], firstNonEmpty(cfg.SecretKey, os.Getenv("R3V_CLOUD_TOKEN")))
+	service, _ := BrokerService(cfg.URL)
+	b, err := NewBroker(cfg.URL[len("r3v-cloud+"):], firstNonEmpty(cfg.SecretKey, SessionToken(service)))
 	if err != nil {
 		return nil, err
 	}

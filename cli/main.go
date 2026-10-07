@@ -76,6 +76,13 @@ for programs and AI agents:
                                          AGENTS.md)
 `
 
+// extraCommands are commands only some builds have (the Nightly channel's),
+// and extraUsage their lines in the usage.
+var (
+	extraCommands = map[string]func(args []string) error{}
+	extraUsage    string
+)
+
 // Main runs the r3v command line tool with os.Args (extensions register
 // what they add first; see github.com/nonlabhq/r3v/ext).
 func Main() { os.Exit(Run(os.Args[1:])) }
@@ -87,7 +94,7 @@ func Run(args []string) int {
 		if jsonMode {
 			return fail("", usageError("usage: r3v <command> [args] (r3v help)"))
 		}
-		fmt.Fprint(os.Stderr, usage)
+		fmt.Fprint(os.Stderr, usage+extraUsage)
 		return exitUsage
 	}
 	command, rest := args[0], args[1:]
@@ -154,10 +161,14 @@ func Run(args []string) int {
 	case "path":
 		err = cmdPath(rest)
 	default:
+		if f, ok := extraCommands[command]; ok {
+			err = f(rest)
+			break
+		}
 		if jsonMode {
 			return fail(command, usageError("unknown command %q", command))
 		}
-		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", command, usage)
+		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", command, usage+extraUsage)
 		return exitUsage
 	}
 	if err != nil {
@@ -290,7 +301,7 @@ func cmdMerge(args []string) (int, error) {
 func cmdHelp(args []string) error {
 	switch {
 	case len(args) == 0:
-		fmt.Print(usage)
+		fmt.Print(usage + extraUsage)
 	case args[0] == "agents" && len(args) == 1:
 		fmt.Print(docs.Agents)
 	case args[0] == "agents" && len(args) == 2 && args[1] == "--snippet":

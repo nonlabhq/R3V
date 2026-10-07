@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/livecheck"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -78,6 +79,7 @@ func refreshTeamName(id string) string {
 }
 
 func cmdTeams(args []string) error {
+	syncHosted()
 	store, err := teams.Load()
 	if err != nil {
 		return err
@@ -100,9 +102,32 @@ func cmdTeams(args []string) error {
 				n++
 			}
 		}
-		fmt.Printf("%s%-24s %s  (%d project(s) on this computer)\n", mark, t.Name, t.Remote.Display(), n)
+		note := ""
+		if svc, ok := cloud.Hosted(t); ok && !cloud.SignedIn(svc) {
+			note = "  signed out: r3v login"
+		}
+		fmt.Printf("%s%-24s %s  (%d project(s) on this computer)%s\n", mark, t.Name, t.Remote.Display(), n, note)
 	}
 	return nil
+}
+
+// syncHosted brings the hosted teams of every service this computer is
+// signed in to up to date (teams joined or left since). Offline, or signed
+// out, the list stays as it was.
+func syncHosted() {
+	services := map[string]bool{cloud.Service(): true}
+	if store, err := teams.Load(); err == nil {
+		for _, t := range store.Teams {
+			if svc, ok := cloud.Hosted(t); ok {
+				services[svc] = true
+			}
+		}
+	}
+	for svc := range services {
+		if cloud.SignedIn(svc) {
+			cloud.SyncTeams(svc)
+		}
+	}
 }
 
 func cmdClone(args []string) error {
