@@ -95,10 +95,38 @@ Not yet: their records go through the service, which keeps only what it
 knows. The app shows initials there, and User settings says the team can't
 keep pictures yet. What R3V-Cloud needs to add:
 
-- keep a member's `color` and `picture` (names and a hash) and a project's
-  `icon` and `color` in its records, returning them in the lists;
+- keep a member's `color` (a palette number, `b3`) and `picture` (a hash)
+  and a project's `icon` and `color` in its records, returning them in the
+  lists;
 - an API to upload a member's picture (checked: square PNG/JPEG, 256 pixels,
-  64 KB, its SHA-256) and to read one by member and hash;
-- the `looks` feature in the team's features.
+  64 KB, its SHA-256) and to read one by member and hash, at an address
+  named by the hash (cached for good: a new picture is a new address).
 
-The client side is then a `PictureStore` for the broker.
+No team feature (see above). The client side is then a `PictureStore` for
+the broker.
+
+## Seeing changes
+
+A storage team (S3, R2) has no way to tell: the app asks for looks again
+when the team watch sees something (a new version), and at most once a
+minute. That is enough for looks.
+
+A hosted team tells at once. The service already sends `key` (a branch
+moved) and `team`/`access` on its live connection; it should send one more
+kind for every record it writes, so the app needn't poll for any of them:
+
+    {"type": "record", "kind": "member" | "project" | "team" | "lock",
+     "id": "<member, project or file id>", "sum": "<picture hash, if any>"}
+
+| Kind | When | The app |
+|---|---|---|
+| `member` | a name, colour or picture changed | asks for looks again; the history and sidebar redraw |
+| `project` | a project added, deleted, renamed, or its icon or colour changed | the team's project list again |
+| `team` | the team renamed, or a feature turned on | the team again (a feature this build lacks: says to update at once) |
+| `lock` | a file locked or unlocked | the project's locks again |
+
+A project added or deleted goes to everyone in the team (they aren't
+listening to a project they don't have yet); the others to whoever
+listens to that project, or to the team for `member` and `team`. The
+Durable Object that writes a record holds the connections, so it sends
+the message after the write, in order.
