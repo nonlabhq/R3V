@@ -1109,5 +1109,6 @@
 "Show the changes as": "變更顯示方式",
 "Tree": "樹狀",
 "Project folder": "專案資料夾",
-"{done}/{total} selected": "已選 {done}/{total}"
+"{done}/{total} selected": "已選 {done}/{total}",
+"Instrument: {name}": "樂器：{name}"
 }

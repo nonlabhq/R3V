@@ -1109,5 +1109,6 @@
 "Show the changes as": "Mostra le modifiche come",
 "Tree": "Albero",
 "Project folder": "Cartella del progetto",
-"{done}/{total} selected": "{done}/{total} selezionati"
+"{done}/{total} selected": "{done}/{total} selezionati",
+"Instrument: {name}": "Strumento: {name}"
 }

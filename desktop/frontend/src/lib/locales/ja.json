@@ -1109,5 +1109,6 @@
 "Show the changes as": "変更の表示",
 "Tree": "ツリー",
 "Project folder": "プロジェクトフォルダー",
-"{done}/{total} selected": "{done}/{total} 件を選択"
+"{done}/{total} selected": "{done}/{total} 件を選択",
+"Instrument: {name}": "楽器：{name}"
 }

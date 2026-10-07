@@ -122,7 +122,7 @@
       cursor = to;
       if (!entries.find((x) => x.path === to)?.dir) onselect(to);
       const el = () => [...(box?.querySelectorAll<HTMLElement>("[data-path]") ?? [])].find((x) => x.dataset.path === to);
-      queueMicrotask(() => el()?.scrollIntoView?.({ block: "nearest" }));
+      queueMicrotask(() => el()?.scrollIntoView?.({ block: "nearest", inline: "start" }));
     }
     box?.focus({ preventScroll: true });
   }

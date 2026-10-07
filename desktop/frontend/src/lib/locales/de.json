@@ -1109,5 +1109,6 @@
 "Show the changes as": "Änderungen zeigen als",
 "Tree": "Baum",
 "Project folder": "Projektordner",
-"{done}/{total} selected": "{done}/{total} ausgewählt"
+"{done}/{total} selected": "{done}/{total} ausgewählt",
+"Instrument: {name}": "Instrument: {name}"
 }
