@@ -82,6 +82,7 @@ describe("App: tabs", () => {
     await fireEvent.keyDown(window, { key: "T", ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(tabs()).toHaveLength(2));
     expect(on()).toContain("Beat");
+    expect(screen.getByRole("button", { name: "Hide the sidebar" }).title).toBe("Hide the sidebar (Ctrl+\\)");
     const shell = document.querySelector(".shell")!;
     expect(shell.classList.contains("folded")).toBe(false);
     await fireEvent.keyDown(window, { key: "\\", code: "Backslash", ctrlKey: true });

@@ -599,7 +599,7 @@
           <img src="/brand/r3v-icon-small.svg" alt="" />
           {#if update || current?.keysUnreadable || overview.teamError}<span class="news" title={t("Open the sidebar to see what's new")}></span>{/if}
         </button>
-        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\)"} aria-label={t("Show the sidebar")}>»</button>
+        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\\)"} aria-label={t("Show the sidebar")}>»</button>
       </div>
       <!-- folded: the projects as their icons -->
       <div class="folded-list">
@@ -617,7 +617,7 @@
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
         {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
-      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\)"} aria-label={t("Hide the sidebar")}>«</button>
+      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       {#if update}
         {@const u = update}
