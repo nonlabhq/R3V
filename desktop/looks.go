@@ -33,8 +33,8 @@ type Profile struct {
 	MemberID  string `json:"memberId"` // in the current team ("" for none)
 	Color     string `json:"color"`
 	Picture   string `json:"picture"` // a data: URL, "" for none
-	// NotShared names the teams that didn't take the last change (a hosted
-	// team, or one that couldn't be reached).
+	// NotShared names the teams that didn't take the last change (couldn't
+	// be reached).
 	NotShared []string `json:"notShared"`
 }
 

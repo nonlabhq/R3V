@@ -51,7 +51,8 @@ func TestLooks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// A hosted team can't keep looks yet: it's named, the others take it.
+	// A hosted team that can't be reached (not signed in) is named; the
+	// others take it.
 	teams.Update(func(s *teams.Store) error {
 		h := s.Upsert(remote.Config{URL: cloud.TeamAddress("https://cloud.example", strings.Repeat("1", 32))}, "Hosted")
 		h.MemberID, h.MemberName = strings.Repeat("a", 32), "Alice"

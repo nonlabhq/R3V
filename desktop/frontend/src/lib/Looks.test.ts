@@ -99,12 +99,6 @@ describe("User settings", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(/too big/);
     expect(mocks.square).not.toHaveBeenCalled();
   });
-
-  it("says a hosted team shows the initial", async () => {
-    api.Profile.mockResolvedValue(profile());
-    render(UserSettings, { team: team({ looks: false, name: "Cloud band" }), onchanged: () => {}, onclose: () => {} });
-    expect(await screen.findByText(/Cloud band can't keep pictures and colours yet/)).toBeTruthy();
-  });
 });
 
 describe("Project icon and colour", () => {
@@ -113,24 +107,50 @@ describe("Project icon and colour", () => {
 
   it("picks an icon and a colour for the team", async () => {
     render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", ""));
+    expect(screen.queryByRole("dialog", { name: "Icon and colour" })).toBeNull(); // an icon picked closes it
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "Lime" }));
     await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", "b5"));
-    expect(screen.getByRole("radio", { name: "drum" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("radio", { name: "drum" }).getAttribute("aria-checked")).toBe("true"); // a colour doesn't
   });
 
   it("goes back when the team doesn't take it", async () => {
     api.SetProjectLook.mockRejectedValue(new Error("the team doesn't have this project yet"));
     render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
     await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringContaining("doesn't have"), "error"));
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     expect(screen.getByRole("radio", { name: "The project's initial" }).getAttribute("aria-checked")).toBe("true");
   });
 
   it("isn't offered where the team keeps no looks", () => {
     render(ProjectSettings, { ...props, team: team({ looks: false }) });
     expect(screen.queryByText("Icon and colour")).toBeNull();
+  });
+
+  it("opens the picker from the icon before the name, and Esc closes it", async () => {
+    render(ProjectSettings, { ...props, team: team() });
+    expect(screen.queryByRole("radio", { name: "drum" })).toBeNull();
+    const icon = screen.getByRole("button", { name: "Icon and colour" });
+    await fireEvent.click(icon);
+    expect(screen.getByRole("dialog", { name: "Icon and colour" })).toBeTruthy();
+    await fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Icon and colour" })).toBeNull();
+    expect(document.activeElement).toBe(icon);
+  });
+
+  it("keeps the colours for the icons: the emoji tab has none", async () => {
+    render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((b) => b.textContent)).toEqual(["Icons", "Emoji"]);
+    expect(screen.getByRole("radio", { name: "Lime" })).toBeTruthy();
+    await fireEvent.click(tabs[1]);
+    expect(screen.queryByRole("radio", { name: "Lime" })).toBeNull();
   });
 });
 

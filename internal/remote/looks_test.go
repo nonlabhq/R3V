@@ -302,6 +302,13 @@ func TestProjectLook(t *testing.T) {
 	if info, _ := b.Info(); len(info.Features) != 0 {
 		t.Errorf("the team's features: %v", info.Features)
 	}
+	family := "e-1f468-1f3fb-200d-1f469-1f3fb-200d-1f467-1f3fb" // 👨🏻‍👩🏻‍👧🏻
+	if err := remote.SetProjectLook(b, song, family, ""); err != nil {
+		t.Errorf("an emoji icon: %v", err)
+	}
+	if err := remote.SetProjectLook(b, song, "e-"+strings.Repeat("1f3b5-", 11), ""); err == nil {
+		t.Error("an icon name longer than 64 was taken")
+	}
 	if err := remote.SetProjectLook(b, song, "<svg>", ""); err == nil {
 		t.Error("an icon that isn't a name was taken")
 	}

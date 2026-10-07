@@ -50,7 +50,7 @@
       profile = await set();
       onchanged(profile);
       if (profile.notShared.length)
-        toast(t("Not shown in {teams} yet: R3V couldn't reach them. Change it again later to share it there.", { teams: profile.notShared.join(", ") }), "info", 8000);
+        toast(t("{teams} couldn't be reached: they get it with your next change.", { teams: profile.notShared.join(", ") }), "info", 8000);
     } catch (e) {
       error = errorText(e);
     } finally {
@@ -123,9 +123,6 @@
       <span class="hint">{profile.picture ? t("Shown when your picture can't be.") : t("Your initial shows on this colour.")}</span>
     </section>
 
-    {#if team && !team.looks}
-      <p class="hint">{t("{team} can't keep pictures and colours yet: your initial shows there.", { team: team.name })}</p>
-    {/if}
   {/if}
   {#if error}<p class="hint err" role="alert">{error}</p>{/if}
 
