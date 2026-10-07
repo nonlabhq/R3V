@@ -80,13 +80,18 @@ describe("HistoryGraph", () => {
 
   it("zooms from the top right; the crosshair goes back to 100% and to where you are", async () => {
     const { onselect } = show({ selected: "m1" });
+    // Zoom spreads the versions out; the dots keep their size (no scaling).
+    const gap = () => parseFloat(screen.getByRole("option", { name: /^Bass,/ }).style.top) -
+      parseFloat(screen.getByRole("option", { name: /^Mix,/ }).style.top);
+    const at100 = gap();
     const canvas = screen.getByRole("listbox").querySelector<HTMLElement>(".canvas")!;
     await fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
     expect(screen.getByTitle("Back to 100%").textContent).toBe("120%");
-    expect(canvas.style.transform).toContain("scale(1.2)");
+    expect(gap()).toBeCloseTo(at100 * 1.2);
+    expect(canvas.style.transform).not.toContain("scale");
     await fireEvent.click(screen.getByRole("button", { name: "Back to 100% and to where you are" }));
     expect(screen.getByTitle("Back to 100%").textContent).toBe("100%");
-    expect(canvas.style.transform).toContain("scale(1)");
+    expect(gap()).toBeCloseTo(at100);
     expect(onselect).not.toHaveBeenCalled(); // (what is picked stays picked)
   });
 
