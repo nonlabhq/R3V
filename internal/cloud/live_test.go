@@ -24,6 +24,7 @@ type fakeLive struct {
 	socks      []*websocket.Conn
 	subscribed chan []string
 	tickets    atomic.Int32
+	mute       atomic.Bool // pings go unanswered (a connection gone silently)
 }
 
 func newFakeLive(t *testing.T) *fakeLive {
@@ -51,6 +52,9 @@ func newFakeLive(t *testing.T) *fakeLive {
 				return
 			}
 			if string(data) == "ping" {
+				if f.mute.Load() {
+					continue
+				}
 				ws.Write(context.Background(), websocket.MessageText, []byte("pong"))
 				continue
 			}
@@ -227,5 +231,49 @@ func TestLiveStopsWithTheLastWatch(t *testing.T) {
 	h.mu.Unlock()
 	if left != 0 {
 		t.Errorf("%d connections left after the last watch stopped", left)
+	}
+}
+
+// A connection whose pings go unanswered is gone (sleep, a network change):
+// R3V connects again rather than wait for notices that never come.
+func TestLiveReconnectsWhenPingsGoUnanswered(t *testing.T) {
+	f := newFakeLive(t)
+	h := testHub()
+	defer h.Close()
+	nudge, _, stop := h.Watch("r3v-cloud+"+f.URL+"/v1/teams/t1", "p1")
+	defer stop()
+	waitFor(t, "connected", nudge)
+	f.mute.Store(true)
+	deadline := time.Now().Add(3 * time.Second)
+	for f.tickets.Load() < 2 {
+		if time.Now().After(deadline) {
+			t.Fatal("no new connection after pings went unanswered")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// A watch added while the team's last other watch stops still gets its
+// notices: the stop doesn't end the connection under it.
+func TestLiveWatchWhileAnotherStops(t *testing.T) {
+	f := newFakeLive(t)
+	h := testHub()
+	defer h.Close()
+	addr := "r3v-cloud+" + f.URL + "/v1/teams/t1"
+	for i := 0; i < 50; i++ {
+		_, _, stopA := h.Watch(addr, "pa")
+		var wg sync.WaitGroup
+		var stopB func()
+		wg.Add(2)
+		go func() { defer wg.Done(); stopA() }()
+		go func() { defer wg.Done(); _, _, stopB = h.Watch(addr, "pb") }()
+		wg.Wait()
+		h.mu.Lock()
+		c := h.conns[addr]
+		h.mu.Unlock()
+		if c == nil || len(c.projects()) != 1 {
+			t.Fatalf("try %d: the watch left on no connection", i)
+		}
+		stopB()
 	}
 }
