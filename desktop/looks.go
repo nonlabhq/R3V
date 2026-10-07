@@ -153,10 +153,11 @@ func shareLook(t teams.Team, l teams.Look) error {
 	return err
 }
 
-// shareLookWith gives a team the user joined their look, if they have one.
+// shareLookWith gives a team the user joined their look, if they have one
+// (none would clear a look this member set on another computer).
 func shareLookWith(t teams.Team) {
 	s, err := teams.Load()
-	if err != nil || s.Look == nil || !remote.Looks || t.MemberID == "" {
+	if err != nil || s.Look == nil || *s.Look == (teams.Look{}) || !remote.Looks || t.MemberID == "" {
 		return
 	}
 	shareLook(t, *s.Look)
@@ -294,19 +295,64 @@ func keepPicture(data []byte) (string, error) {
 }
 
 // readPicture reads a kept picture, nil when it's missing or not what its
-// name says.
+// name says. (The name comes from the team's records: only a SHA-256 in
+// lowercase hex names a file.)
 func readPicture(sum string) []byte {
-	if len(sum) != 64 || strings.ContainsAny(sum, `/\.`) {
+	if !isSum(sum) {
 		return nil
 	}
-	data, err := os.ReadFile(filepath.Join(teams.PicturesDir(), sum))
+	path := filepath.Join(teams.PicturesDir(), sum)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}
 	if h := sha256.Sum256(data); hex.EncodeToString(h[:]) != sum {
 		return nil
 	}
+	now := time.Now()
+	os.Chtimes(path, now, now) // in use: prunePictures keeps it
 	return data
+}
+
+func isSum(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	for _, r := range s {
+		if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+// pictureAge is how long a kept picture nothing showed stays: teammates'
+// come again from their teams when needed.
+const pictureAge = 30 * 24 * time.Hour
+
+// prunePictures deletes the kept pictures not shown for pictureAge, except
+// the user's own, and what a write stopped half-way left.
+func prunePictures() {
+	s, err := teams.Load()
+	if err != nil {
+		return
+	}
+	own := ""
+	if s.Look != nil {
+		own = s.Look.Picture
+	}
+	dir := teams.PicturesDir()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		info, err := e.Info()
+		if err != nil || e.IsDir() || e.Name() == own || time.Since(info.ModTime()) < pictureAge {
+			continue
+		}
+		os.Remove(filepath.Join(dir, e.Name()))
+	}
 }
 
 func dataURL(data []byte) string {

@@ -39,33 +39,38 @@ Records are rewritten whole by every R3V, keeping fields it doesn't know
 
 Changing a picture (`remote.SetMemberLook`):
 
-1. Turn the team feature on (see below).
-2. Put the picture: one request, checked by storage against its SHA-256.
+1. Put the picture: one request, checked by storage against its SHA-256.
    One cut off is never there.
-3. Write the member's record naming it.
-4. Delete that member's other pictures.
+2. Write the member's record naming it.
+3. Delete that member's other pictures, except the one the record names
+   when read again (the same member may have changed theirs on another
+   computer meanwhile: `TestMemberLookOnTwoComputers`).
 
 | Stopped after | The team has | The app shows | Next time |
 |---|---|---|---|
-| 1 | the feature on, the old look | the old look | as new |
-| 2 | a new picture no record names | the old look | step 4 deletes it |
-| 3 | the new look, the old picture too | the new look | step 4 deletes it |
+| 1 | a new picture no record names | the old look | step 3 deletes it |
+| 2 | the new look, the old picture too | the new look | step 3 deletes it |
 
 Nothing is sent twice that matters: the picture's key is its hash.
 Storage cleanup (`gc.go`) only looks under `objects/` and `chunked/`, so
 it never deletes a picture (`TestCleanupKeepsPictures`). Backups copy
 `pictures/` with everything else.
 
+A first share that stopped after writing the project's record keeps that
+record when it's done again (a look or a name given meanwhile stays).
+
 A project's own picture (later) would go the same way under
 `pictures/projects/<pid>/`, named by the record's `picture`.
 
-## The team feature
+## Not a team feature
 
-Looks change what a team stores, so they are a team feature (`looks`, see
-[channels.md](channels.md)). The first change in a team turns it on, with
-no question asked (the maintainer's choice): from then on, a Stable R3V
-stops before working with that team and says to update or switch to
-Nightly.
+Looks only add to what a team stores, and every R3V since 0.1.0 works
+with them as before: it rewrites records whole keeping the fields it
+doesn't know, its storage cleanup never looks under `pictures/`, and it
+shows initials. So they are not a team feature (see
+[channels.md](channels.md)): a Nightly member picking a colour never stops
+Stable teammates. (A test build turned a `looks` feature on; every build
+knows the name, so such a team still opens.)
 
 Stable doesn't reach looks: `remote.Looks` is false, `SetMemberLook`,
 `SetProjectLook` and the pictures refuse (`ErrLooksNotInBuild`), the app's
@@ -78,7 +83,9 @@ Stable doesn't reach looks: `remote.Looks` is false, `SetMemberLook`,
   Stable keeps it untouched.
 - `pictures/<sha256>` in the settings folder: your picture, and teammates'
   as their teams gave them (named by their hash, so never stale). Written
-  whole (`store.WriteAtomic`), checked against the name when read.
+  whole (`store.WriteAtomic`), checked against the name when read. The app
+  deletes those not shown for 30 days when it starts (not yours): they
+  come again from the team.
 - `MemberLooks(root)` maps a project's team members to their looks, asking
   the team at most once a minute; the team watch makes it ask sooner.
 

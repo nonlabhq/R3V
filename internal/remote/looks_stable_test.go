@@ -10,9 +10,9 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
-// Stable has no looks: it writes none, reads none, and stops
-// before working with a team that turned them on (its records it still
-// rewrites whole: renaming keeps a look Nightly set).
+// Stable has no looks: it writes none and reads none, and works with a
+// team that has them as before (it rewrites records whole: renaming keeps
+// a look Nightly set).
 func TestStableHasNoPictures(t *testing.T) {
 	if remote.Looks {
 		t.Fatal("member pictures are on in Stable")
@@ -34,8 +34,8 @@ func TestStableHasNoPictures(t *testing.T) {
 	if info, _ := b.Info(); len(info.Features) != 0 {
 		t.Errorf("features turned on: %v", info.Features)
 	}
-	var e *remote.ErrTeamFeatures
-	if err := remote.Supports(remote.TeamInfo{Features: []string{remote.FeatureLooks}}); !errors.As(err, &e) {
-		t.Errorf("a team with pictures: %v", err)
+	// A team a test build turned the looks feature on for still opens.
+	if err := remote.Supports(remote.TeamInfo{Features: []string{remote.FeatureLooks}}); err != nil {
+		t.Errorf("a team with looks: %v", err)
 	}
 }

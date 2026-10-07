@@ -343,11 +343,15 @@ func (r *Repo) publish(c remote.Backend, old string) error {
 func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	head := r.Head()
 	// Only a project new to the team is named here: one that is there keeps
-	// the name the team has (someone may have renamed it).
+	// its record (someone may have renamed it, or given it a look, even
+	// before a first share stopped half-way was done).
 	if old == "" {
 		if bs, err := c.Branches(r.Config.ProjectID); err != nil || len(bs) == 0 {
-			if err := c.PutProject(remote.Project{ID: r.Config.ProjectID, Name: r.Config.Name}); err != nil {
-				return err
+			ps, err := c.Projects()
+			if err != nil || !slices.ContainsFunc(ps, func(p remote.Project) bool { return p.ID == r.Config.ProjectID }) {
+				if err := c.PutProject(remote.Project{ID: r.Config.ProjectID, Name: r.Config.Name}); err != nil {
+					return err
+				}
 			}
 		}
 	}

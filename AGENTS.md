@@ -14,8 +14,9 @@ adds extensions through `ext/`; keep `cli` and `desktop` usable as libraries
 
 Two release lines come from `main`: Stable, and Nightly (`-tags nightly`),
 which adds the project kinds still in testing from `presets/`. Anything
-that changes what a team stores must be a team feature (see
-[docs/design/channels.md](docs/design/channels.md)).
+that changes what a team stores so an older R3V would misread, lose or
+delete it must be a team feature; data older versions keep and ignore
+safely needn't (see [docs/design/channels.md](docs/design/channels.md)).
 
 [docs/development.md](docs/development.md) has the layout and how to build;
 `docs/design/` has the design notes (storage backends, tree manifests,

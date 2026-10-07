@@ -28,11 +28,18 @@ import (
 // pictures/projects/<project id>/, named by its record's picture, the same
 // way.)
 //
-// Looks change what a team stores, so they are a team feature, on in
-// Nightly builds only (looks_nightly.go); the first change turns it on.
+// Looks only add to what a team stores: every R3V rewrites a record whole,
+// keeping the fields it doesn't know, and older ones never look under
+// pictures/, so an R3V without looks works with the team as before and
+// shows initials. They are not a team feature, so a Nightly member picking
+// a colour never shuts Stable teammates out. They are built in Nightly
+// only (looks_nightly.go).
 
-// FeatureLooks is the team feature for looks.
+// FeatureLooks is the team feature a test build of looks turned on; teams
+// that have it still open everywhere (see init).
 const FeatureLooks = "looks"
+
+func init() { RegisterFeature(FeatureLooks) }
 
 // Looks: looks are on in this build (the Nightly channel). Off, nothing
 // reads or writes them.
@@ -64,8 +71,8 @@ type PictureStore interface {
 	PutPicture(id string, data []byte) (string, error)
 	// GetPicture reads member id's picture sum, checked against its sum.
 	GetPicture(id, sum string) ([]byte, error)
-	// PrunePictures deletes member id's pictures other than keep.
-	PrunePictures(id, keep string) error
+	// PrunePictures deletes member id's pictures other than those in keep.
+	PrunePictures(id string, keep ...string) error
 }
 
 var _ PictureStore = (*BucketBackend)(nil)
@@ -137,7 +144,7 @@ func (s *BucketBackend) GetPicture(id, sum string) ([]byte, error) {
 	return data, nil
 }
 
-func (s *BucketBackend) PrunePictures(id, keep string) error {
+func (s *BucketBackend) PrunePictures(id string, keep ...string) error {
 	if !Looks {
 		return ErrLooksNotInBuild
 	}
@@ -149,7 +156,7 @@ func (s *BucketBackend) PrunePictures(id, keep string) error {
 		return err
 	}
 	for _, k := range keys {
-		if keep != "" && strings.HasSuffix(k, "/"+keep) {
+		if slices.Contains(keep, k[strings.LastIndexByte(k, '/')+1:]) {
 			continue
 		}
 		if err := s.delete(k); err != nil {
@@ -159,16 +166,28 @@ func (s *BucketBackend) PrunePictures(id, keep string) error {
 	return nil
 }
 
+// keepsLooks returns b's picture store, if its team can keep looks. A
+// hosted team's records go through its service, which keeps only what it
+// knows: looks wait for it to keep pictures.
+func keepsLooks(b Backend) (PictureStore, bool) {
+	s, ok := b.(*BucketBackend)
+	if !ok {
+		return nil, false
+	}
+	if pp, ok := s.b.(PerProject); ok && pp.ContentsPerProject() {
+		return nil, false
+	}
+	return s, true
+}
+
 // SetMemberLook sets how member id shows in the team: color (a palette
 // name, "" for the app's pick) and picture (nil for none, the initial on
-// the colour). It turns member pictures on for the team first.
+// the colour).
 func SetMemberLook(b Backend, id, color string, picture []byte) error {
 	if !Looks {
 		return ErrLooksNotInBuild
 	}
-	// A hosted team's records go through its service, which keeps only
-	// what it knows: looks wait for it to keep pictures.
-	ps, ok := b.(PictureStore)
+	ps, ok := keepsLooks(b)
 	if !ok {
 		return ErrNoLooks
 	}
@@ -183,11 +202,6 @@ func SetMemberLook(b Backend, id, color string, picture []byte) error {
 	if i < 0 {
 		return errors.New("not a member of this team")
 	}
-	// Before anything is written: from here on, a R3V without pictures
-	// stops before working with the team.
-	if err := EnableFeature(b, FeatureLooks); err != nil {
-		return err
-	}
 	sum := ""
 	if picture != nil {
 		if sum, err = ps.PutPicture(id, picture); err != nil {
@@ -199,16 +213,24 @@ func SetMemberLook(b Backend, id, color string, picture []byte) error {
 	if err := b.PutMember(m); err != nil {
 		return err
 	}
-	return ps.PrunePictures(id, sum)
+	// The same member on another computer may have changed theirs
+	// meanwhile: keep the picture the record names now too.
+	keep := []string{sum}
+	if ms, err := b.Members(); err != nil {
+		return err
+	} else if i := slices.IndexFunc(ms, func(m Member) bool { return m.ID == id }); i >= 0 {
+		keep = append(keep, ms[i].Picture)
+	}
+	return ps.PrunePictures(id, keep...)
 }
 
 // SetProjectLook sets how project pid shows in the team: icon and color
-// (names, "" for the app's pick). It turns looks on for the team first.
+// (names, "" for the app's pick).
 func SetProjectLook(b Backend, pid, icon, color string) error {
 	if !Looks {
 		return ErrLooksNotInBuild
 	}
-	if _, ok := b.(PictureStore); !ok {
+	if _, ok := keepsLooks(b); !ok {
 		return ErrNoLooks
 	}
 	if !ValidLookName(icon) || !ValidLookName(color) {
@@ -221,9 +243,6 @@ func SetProjectLook(b Backend, pid, icon, color string) error {
 	i := slices.IndexFunc(ps, func(p Project) bool { return p.ID == pid })
 	if i < 0 {
 		return ErrNotFound
-	}
-	if err := EnableFeature(b, FeatureLooks); err != nil {
-		return err
 	}
 	p := ps[i]
 	p.Icon, p.Color = icon, color

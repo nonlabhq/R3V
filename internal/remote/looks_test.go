@@ -44,13 +44,7 @@ func withLooks(t *testing.T) {
 	t.Helper()
 	was := remote.Looks
 	remote.Looks = true
-	remote.RegisterFeature(remote.FeatureLooks)
-	t.Cleanup(func() {
-		remote.Looks = was
-		if !was {
-			remote.ForgetFeature(remote.FeatureLooks)
-		}
-	})
+	t.Cleanup(func() { remote.Looks = was })
 }
 
 // failing is a bucket that stops at a write: the first Put or Delete whose
@@ -58,9 +52,18 @@ func withLooks(t *testing.T) {
 type failing struct {
 	*membucket.Bucket
 	at string
+	// after, when set, runs once after a Put whose key starts with
+	// afterAt (another computer writing meanwhile).
+	after   func()
+	afterAt string
 }
 
 func (f *failing) Put(key string, r io.Reader, size int64, sum, cond string) error {
+	if f.after != nil && strings.HasPrefix(key, f.afterAt) {
+		after := f.after
+		f.after = nil
+		defer after()
+	}
 	if f.at != "" && strings.HasPrefix(key, f.at) {
 		half, _ := io.ReadAll(io.LimitReader(r, size/2))
 		f.Bucket.Put(key, bytes.NewReader(half), size, sum, cond) // refused: too short
@@ -128,8 +131,8 @@ func TestMemberLook(t *testing.T) {
 	if err != nil || !bytes.Equal(got, red) {
 		t.Fatalf("GetPicture: %v", err)
 	}
-	info, _ := b.Info()
-	if !slices.Contains(info.Features, remote.FeatureLooks) {
+	// Not a team feature: an R3V without looks keeps working with the team.
+	if info, _ := b.Info(); len(info.Features) != 0 {
 		t.Errorf("the team's features: %v", info.Features)
 	}
 
@@ -203,16 +206,6 @@ func TestMemberLookInterrupted(t *testing.T) {
 	withLooks(t)
 	old := picture(t, 128, color.RGBA{255, 0, 0, 255})
 	next := picture(t, 128, color.RGBA{0, 255, 0, 255})
-	// Turning the feature on, before anything else is written.
-	f, b := newTeam(t)
-	f.at = "team.json"
-	if err := remote.SetMemberLook(b, alice, "1", old); err == nil {
-		t.Fatal("team.json: no failure")
-	}
-	if m := member(t, b); m.Picture != "" || len(pictureKeys(t, f)) != 0 {
-		t.Errorf("stopped turning pictures on: %+v, %v", m, pictureKeys(t, f))
-	}
-
 	for _, at := range []string{"pictures/", "members/", "pictures/members/" + alice + "/"} {
 		f, b := newTeam(t)
 		if err := remote.SetMemberLook(b, alice, "1", old); err != nil {
@@ -240,6 +233,28 @@ func TestMemberLookInterrupted(t *testing.T) {
 	}
 }
 
+// The same member changing their picture on two computers at once: the
+// cleanup after one change keeps the picture the other one's record names.
+func TestMemberLookOnTwoComputers(t *testing.T) {
+	withLooks(t)
+	f, b := newTeam(t)
+	mine := picture(t, 128, color.RGBA{255, 0, 0, 255})
+	theirs := picture(t, 128, color.RGBA{0, 0, 255, 255})
+	f.afterAt = "members/"
+	f.after = func() { // the other computer, right after this one's record
+		if err := remote.SetMemberLook(b, alice, "2", theirs); err != nil {
+			t.Error(err)
+		}
+	}
+	if err := remote.SetMemberLook(b, alice, "1", mine); err != nil {
+		t.Fatal(err)
+	}
+	m := member(t, b)
+	if got, err := b.GetPicture(alice, m.Picture); err != nil || !bytes.Equal(got, theirs) {
+		t.Errorf("the record's picture: %v", err)
+	}
+}
+
 func TestCleanupKeepsPictures(t *testing.T) {
 	withLooks(t)
 	f, b := newTeam(t)
@@ -260,9 +275,13 @@ func TestCleanupKeepsPictures(t *testing.T) {
 // A hosted team's storage keeps no pictures: the app shows the initial.
 func TestNoPicturesWithoutStore(t *testing.T) {
 	withLooks(t)
-	_, b := newTeam(t)
-	if err := remote.SetMemberLook(struct{ remote.Backend }{b}, alice, "", nil); !errors.Is(err, remote.ErrNoLooks) {
+	f, _ := newTeam(t)
+	b := remote.NewBucketBackend(perProject{f})
+	if err := remote.SetMemberLook(b, alice, "", nil); !errors.Is(err, remote.ErrNoLooks) {
 		t.Errorf("SetMemberLook: %v", err)
+	}
+	if err := remote.SetMemberLook(struct{ remote.Backend }{b}, alice, "", nil); !errors.Is(err, remote.ErrNoLooks) {
+		t.Errorf("SetMemberLook, another backend: %v", err)
 	}
 }
 
@@ -280,7 +299,7 @@ func TestProjectLook(t *testing.T) {
 	if len(ps) != 1 || ps[0].Name != "Song 2" || ps[0].Icon != "drum" || ps[0].Color != "palette-3" {
 		t.Errorf("record: %+v", ps)
 	}
-	if info, _ := b.Info(); !slices.Contains(info.Features, remote.FeatureLooks) {
+	if info, _ := b.Info(); len(info.Features) != 0 {
 		t.Errorf("the team's features: %v", info.Features)
 	}
 	if err := remote.SetProjectLook(b, song, "<svg>", ""); err == nil {
@@ -289,7 +308,8 @@ func TestProjectLook(t *testing.T) {
 	if err := remote.SetProjectLook(b, "fedcba9876543210fedcba9876543210", "drum", ""); !errors.Is(err, remote.ErrNotFound) {
 		t.Errorf("a project not in the team: %v", err)
 	}
-	if err := remote.SetProjectLook(struct{ remote.Backend }{b}, song, "drum", ""); !errors.Is(err, remote.ErrNoLooks) {
+	f, _ := newTeam(t)
+	if err := remote.SetProjectLook(remote.NewBucketBackend(perProject{f}), song, "drum", ""); !errors.Is(err, remote.ErrNoLooks) {
 		t.Errorf("a team that can't keep looks: %v", err)
 	}
 }

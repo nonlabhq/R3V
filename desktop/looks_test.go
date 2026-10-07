@@ -8,9 +8,11 @@ import (
 	"image"
 	"image/png"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -102,6 +104,37 @@ func TestLooks(t *testing.T) {
 		ov, err := overview()
 		if err != nil || len(ov.Projects) != 1 || ov.Projects[0].Icon != "drum" || ov.Projects[0].Color != "palette-4" {
 			t.Errorf("overview: %+v %v", ov, err)
+		}
+	}
+}
+
+// Kept pictures: named by their sum only; ones nothing showed for a while
+// go, the user's own stays.
+func TestKeptPictures(t *testing.T) {
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	own, _ := keepPicture([]byte("own"))
+	used, _ := keepPicture([]byte("used"))
+	old, _ := keepPicture([]byte("old"))
+	teams.Update(func(s *teams.Store) error {
+		s.Look = &teams.Look{Picture: own}
+		return nil
+	})
+	long := time.Now().Add(-2 * pictureAge)
+	for _, sum := range []string{own, used, old} {
+		os.Chtimes(filepath.Join(teams.PicturesDir(), sum), long, long)
+	}
+	if readPicture(used) == nil {
+		t.Fatal("a kept picture wasn't read")
+	}
+	prunePictures()
+	for sum, want := range map[string]bool{own: true, used: true, old: false} {
+		if _, err := os.Stat(filepath.Join(teams.PicturesDir(), sum)); (err == nil) != want {
+			t.Errorf("%s kept: %v, want %v", sum[:8], err == nil, want)
+		}
+	}
+	for _, bad := range []string{strings.ToUpper(used), used[:62] + ":x", "../" + used[3:]} {
+		if readPicture(bad) != nil {
+			t.Errorf("%q was read", bad)
 		}
 	}
 }
