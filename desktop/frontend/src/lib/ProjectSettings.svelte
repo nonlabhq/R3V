@@ -9,6 +9,7 @@
   import Swatches from "./Swatches.svelte";
   import { projectColor } from "./palette";
   import { projectIconNames, projectIcons } from "./projectIcons";
+  import { appIconNames, appIcons } from "./appIcons";
   import { portal } from "./portal";
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "./emoji";
@@ -195,6 +196,18 @@
       {#if lookTab === "icons"}
         <!-- (an emoji has its own colours: the colour is for the icons) -->
         <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
+        <!-- the programs first (brand names: not translated), then the drawn icons -->
+        <div class="group">
+          <h4>{t("Apps")}</h4>
+          <div class="icons" role="radiogroup" aria-label={t("Apps")}>
+            {#each appIconNames as name (name)}
+              <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
+                title={appIcons[name].title} aria-label={appIcons[name].title} onclick={() => pickIcon(name)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html appIcons[name].svg}</svg>
+              </button>
+            {/each}
+          </div>
+        </div>
         <div class="icons" role="radiogroup" aria-label={t("Icon")}>
           <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
             title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => pickIcon("")}>
@@ -361,6 +374,8 @@
   .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
   .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
   .kinds button.on { background: var(--panel-2); color: var(--text); }
+  .group { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .group h4 { margin: 0; }
   .icons { display: grid; grid-template-columns: repeat(auto-fill, 32px); gap: var(--sp-4); }
   .ic { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
     font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--muted); }

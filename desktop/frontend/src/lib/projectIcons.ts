@@ -1,8 +1,11 @@
 // The icons a project can have (drawn on a 24 grid, in the current colour).
 // The names are what a team stores: add icons, never rename or remove one.
-// A name this build doesn't know shows as the project's initial.
+// A name this build doesn't know shows as the project's initial. The
+// programs' icons are in appIcons.ts.
 
-export const projectIcons: Record<string, string> = {
+import { appIcons } from "./appIcons";
+
+const drawn: Record<string, string> = {
   note: `<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>`,
   quaver: `<path d="M12 17V3l6 3"/><circle cx="9" cy="17" r="3"/>`,
   mic: `<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/>`,
@@ -55,4 +58,10 @@ export const projectIcons: Record<string, string> = {
   triangle: `<path d="M12 3l10 18H2z"/>`,
 };
 
-export const projectIconNames = Object.keys(projectIcons);
+// The drawn ones, in the picker after the programs'.
+export const projectIconNames = Object.keys(drawn);
+
+export const projectIcons: Record<string, string> = {
+  ...drawn,
+  ...Object.fromEntries(Object.entries(appIcons).map(([name, a]) => [name, a.svg])),
+};
