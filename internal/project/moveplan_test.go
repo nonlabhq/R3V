@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,5 +92,40 @@ func TestPlanTeamMove(t *testing.T) {
 	}
 	if marks == 0 {
 		t.Error("the big file's mark isn't planned")
+	}
+}
+
+// A team moving to R3V Cloud takes no shares (the version stays here);
+// moved, it says where to.
+func TestNoSharesWhileMoving(t *testing.T) {
+	fake := s3test.New("one")
+	defer fake.Close()
+	code := storageCode(fake, "one")
+	a, _ := Init(newProject(t), "yi")
+	a.SetRemote(code)
+	write(t, a.Root, "Notes/lyrics.txt", lyrics)
+	if _, _, err := a.Save("first", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := remote.Open(mustConfig(t, code))
+	info, _ := b.Info()
+	info.Moving = &remote.TeamMove{To: "r3v-cloud+https://api.example/v1/teams/x"}
+	if err := b.SetInfo(info); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, "Notes/lyrics.txt", lyrics+"while moving\n")
+	m, _, err := a.Save("while moving", Strategy("fail"))
+	if !errors.Is(err, remote.ErrTeamMoving) || m == nil || a.Head() != m.ID {
+		t.Fatalf("save while moving: %v (kept here: %v)", err, m != nil)
+	}
+	c, _ := a.Client()
+	if heads, _ := c.Branches(a.Config.ProjectID); heads["main"] == m.ID {
+		t.Error("shared while moving")
+	}
+	info.Moving, info.MovedTo = nil, "r3v-cloud+https://api.example/v1/teams/x"
+	b.SetInfo(info)
+	var moved *remote.ErrTeamMoved
+	if _, err := a.Share(Strategy("fail")); !errors.As(err, &moved) || moved.To == "" {
+		t.Errorf("share once moved: %v", err)
 	}
 }

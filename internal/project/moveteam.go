@@ -237,43 +237,13 @@ func (r *Repo) copyTo(c, d remote.Backend, heads, before map[string]string) erro
 	}); err != nil {
 		return err
 	}
-	if from, ok := remote.BranchRecordsOf(c); ok {
-		if to, ok := remote.BranchRecordsOf(d); ok {
-			recs, err := from.BranchRecords(pid)
-			if err != nil {
-				return err
-			}
-			for key, rec := range recs {
-				if err := to.PutBranchRecord(pid, key, rec); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	if to, ok := remote.MilestonesOf(d); ok {
-		if from, ok := remote.MilestonesOf(c); ok {
-			all, err := from.Milestones(pid)
-			if err != nil {
-				return err
-			}
-			for id, m := range all {
-				if err := to.PutMilestone(pid, id, m); err != nil {
-					return err
-				}
-			}
-		}
+	if err := copyRecords(c, d, pid); err != nil {
+		return err
 	}
 	r.report(StageFinishing, 1, 2)
-	// 4. The branches (one gone meanwhile is left: the team moving it said so).
-	for key, h := range heads {
-		err := d.UpdateBranch(pid, key, before[key], h)
-		var conflict *remote.ErrConflict
-		if errors.As(err, &conflict) && conflict.Current == h {
-			err = nil // there already (a move done again)
-		}
-		if err != nil {
-			return fmt.Errorf("branch %s: %w", key, err)
-		}
+	// 4. The branches.
+	if err := copyBranches(d, pid, heads, before); err != nil {
+		return err
 	}
 	r.report(StageFinishing, 2, 2)
 	return nil
@@ -335,4 +305,53 @@ func copyObject(c, d remote.Backend, h string) error {
 	}
 	sum := sha256.Sum256(data)
 	return bs.PutObjectBody(h, bytes.NewReader(data), int64(len(data)), hex.EncodeToString(sum[:]))
+}
+
+// copyRecords gives d project pid's branch names and colours and its
+// milestones, where both teams keep them.
+func copyRecords(c, d remote.Backend, pid string) error {
+	if from, ok := remote.BranchRecordsOf(c); ok {
+		if to, ok := remote.BranchRecordsOf(d); ok {
+			recs, err := from.BranchRecords(pid)
+			if err != nil {
+				return err
+			}
+			for key, rec := range recs {
+				if err := to.PutBranchRecord(pid, key, rec); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	if to, ok := remote.MilestonesOf(d); ok {
+		if from, ok := remote.MilestonesOf(c); ok {
+			all, err := from.Milestones(pid)
+			if err != nil {
+				return err
+			}
+			for id, m := range all {
+				if err := to.PutMilestone(pid, id, m); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// copyBranches moves d's branches of pid from before (nil: none there yet)
+// to heads; one there already where it is to go is fine (a move done
+// again).
+func copyBranches(d remote.Backend, pid string, heads, before map[string]string) error {
+	for key, h := range heads {
+		err := d.UpdateBranch(pid, key, before[key], h)
+		var conflict *remote.ErrConflict
+		if errors.As(err, &conflict) && conflict.Current == h {
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("branch %s: %w", key, err)
+		}
+	}
+	return nil
 }

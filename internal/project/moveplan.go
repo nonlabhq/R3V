@@ -273,3 +273,42 @@ func EstimateMove(t *teams.Team) (*MoveEstimate, error) {
 	}
 	return out, nil
 }
+
+// ErrNotCopied: the service hasn't copied what a project's branches need.
+var ErrNotCopied = errors.New("not all of the project is on R3V Cloud yet")
+
+// FinishMove is a team move's last step for project p (docs/design/
+// moving.md), once the service copied its plan: its branch names and
+// colours and milestones, then its branches, then its record, on hosted
+// team to. Safe to do again.
+func FinishMove(from, to *teams.Team, p remote.Project) error {
+	fb, err := from.Open()
+	if err != nil {
+		return err
+	}
+	tb, err := to.Open()
+	if err != nil {
+		return err
+	}
+	c, d := remote.ForProject(fb, p.ID), remote.ForProject(tb, p.ID)
+	heads, err := c.Branches(p.ID)
+	if err != nil && !errors.Is(err, remote.ErrNotFound) {
+		return err
+	}
+	var tips []string
+	for _, h := range heads {
+		tips = append(tips, h)
+	}
+	if missing, err := d.MissingSnapshots(p.ID, dedupe(tips)); err != nil {
+		return err
+	} else if len(missing) > 0 {
+		return ErrNotCopied
+	}
+	if err := copyRecords(c, d, p.ID); err != nil {
+		return err
+	}
+	if err := copyBranches(d, p.ID, heads, nil); err != nil {
+		return err
+	}
+	return d.PutProject(p) // listed from now on
+}
