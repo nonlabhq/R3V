@@ -5,6 +5,7 @@
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import { viewerFor, type Side } from "./viewers";
+  import { navKey, ownKey } from "./keynav";
   import type { Snippet } from "svelte";
 
   // A version in the Overview: what it is (header, with what can be done
@@ -19,20 +20,38 @@
   let files = $state<ProjectFile[] | null>(null);
   let error = $state("");
   let picked = $state("");
+  // By value: the project read again (on focus, say) brings the same
+  // version as a new object, and the props (getters) follow the app's lists
+  // read again too; neither must read the files again (the list and the
+  // diff would blink, the picked file go back to the first).
+  let vid = $derived(v.id);
+  let at = $derived(root);
+  let parent = $derived(v.parents[0] ?? "");
   $effect(() => {
-    const id = v.id;
+    const id = vid;
     files = null;
     error = "";
     picked = "";
-    api.VersionFiles(root, id).then((f) => {
-      if (id !== v.id) return;
+    api.VersionFiles(at, id).then((f) => {
+      if (id !== vid) return;
       files = f ?? [];
       picked = files[0]?.path ?? "";
     }).catch((e) => {
-      if (id === v.id) error = errorText(e); // (not one for a version picked before)
+      if (id === vid) error = errorText(e); // (not one for a version picked before)
     });
   });
   let current = $derived(files?.find((f) => f.path === picked));
+  // ↑ ↓ Home End through the files (see keynav.ts).
+  let aside = $state<HTMLElement>();
+  function onKey(e: KeyboardEvent) {
+    if (!ownKey(e) || !files?.length) return;
+    const nav = navKey(files.map((f) => ({ key: f.path })), picked, e.key, 10);
+    if (!nav || !("to" in nav)) return;
+    e.preventDefault();
+    picked = nav.to;
+    const to = nav.to;
+    queueMicrotask(() => [...(aside?.querySelectorAll<HTMLElement>("[data-path]") ?? [])].find((x) => x.dataset.path === to)?.focus());
+  }
   // The list's width: the same split as your changes' list.
   let bodyWidth = $state(0);
   let listWidth = $derived(splitPx("list", 0.34, bodyWidth, 240, 300));
@@ -44,9 +63,8 @@
 
   // This version (a) against the one before it (b).
   function sides(f: ProjectFile): { a: Side | null; b: Side | null } {
-    const parent = v.parents[0] ?? "";
     return {
-      a: f.status === "deleted" ? null : { path: f.path, version: v.id, label: t("In this version") },
+      a: f.status === "deleted" ? null : { path: f.path, version: vid, label: t("In this version") },
       b: f.status === "added" || !parent ? null : { path: f.status === "renamed" && f.from ? f.from : f.path, version: parent, label: t("Before") },
     };
   }
@@ -65,7 +83,8 @@
   </header>
   <div class="body" bind:clientWidth={bodyWidth} style:grid-template-columns="{listWidth}px 1fr">
     {#if bodyWidth}<Splitter key="list" def={0.34} width={bodyWidth} minLeft={240} minRight={300} />{/if}
-    <aside>
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <aside bind:this={aside} onkeydown={onKey}>
       <div class="list-h">{files ? tn(files.length, "{count} file changed", "{count} files changed", { count: files.length }) : t("Changes")}</div>
       {#if error}
         <p class="error">{error}</p>
@@ -77,7 +96,7 @@
         <ul>
           {#each files as f (f.path)}
             <li>
-              <button class:on={f.path === picked} onclick={() => (picked = f.path)} title={f.path}>
+              <button class:on={f.path === picked} onclick={() => (picked = f.path)} title={f.path} data-path={f.path}>
                 <FileIcon kind={f.kind} />
                 <span class="names"><span class="fname">{name(f.path)}</span>{#if dir(f.path)}<span class="fdir">{dir(f.path)}</span>{/if}</span>
                 <span class="st {f.status}" title={statusName(f.status)}>{sym[f.status] ?? "?"}</span>
@@ -95,7 +114,7 @@
           <div class="dname"><FileIcon kind={current.kind} /> {name(current.path)}</div>
           <div class="faint small">{current.status === "renamed" ? t("Moved from {path}", { path: current.from }) : statusName(current.status)}</div>
         </div>
-        <View {root} file={current} a={s.a} b={s.b} compare={true} stamp={0} />
+        <View root={at} file={current} a={s.a} b={s.b} compare={true} stamp={0} />
       {:else if files && files.length}
         <p class="muted">{t("Pick a file on the left to see what changed.")}</p>
       {/if}

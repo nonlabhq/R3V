@@ -6,6 +6,7 @@
   import { toast } from "./notify.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
+  import { resetChangesView } from "./changesview.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
   import CommitBox from "./CommitBox.svelte";
@@ -23,6 +24,7 @@
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";
+  import ActionIcon from "./ActionIcon.svelte";
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
@@ -263,7 +265,10 @@
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
       if (r.log.length && r.action.startsWith("cancelled")) toast(t("The team's versions were taken in before it stopped") + reopen(), "info", 9000);
-      if (r.action !== "nothing" && r.action !== "cancelled") message = "";
+      if (r.action !== "nothing" && r.action !== "cancelled") {
+        message = "";
+        resetChangesView(root); // (back to list or tree by the number of changes)
+      }
   };
 
   // Changes left out of the next commit (unticked in the Changes list),
@@ -714,20 +719,20 @@
 
     {#snippet versionActions(v: Version)}
       {#if st!.remoteUrl && !st!.olderVersion && !v.inBranch && !incomingIds.has(v.id)}
-        <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}>{t("Merge")}</button>
+        <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge")}</button>
       {/if}
       {#if v.id !== st!.head && !incomingIds.has(v.id) && !v.notHere}
-        <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}>{t("Go to")}</button>
+        <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to")}</button>
       {/if}
       {#if !st!.olderVersion && v.inBranch && !incomingIds.has(v.id) && v.parents.length}
-        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+        <button onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
       {/if}
       {#if !v.notHere}
-        <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}>{t("Export…")}</button>
+        <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}><ActionIcon name="export" />{t("Export…")}</button>
       {/if}
     {/snippet}
 
-    <main class:flush={tab !== "history" && tab !== "settings"} class:reading inert={reading}>
+    <main class:flush={tab !== "history"} class:reading inert={reading}>
       {#if tab === "overview"}
         <div class="overview" bind:clientWidth={overviewWidth}>
           <div class="graph-pane">
@@ -737,13 +742,13 @@
             {#snippet cardActions(v: Version)}
               {@const isNew = incomingIds.has(v.id)}
               <button disabled={v.id === st!.head || isNew || v.notHere} onclick={() => goTo(v)}
-                title={v.id === st!.head ? t("You are on this version") : isNew ? t("Get updates first") : t("Put the project in the state of this version")}>{t("Go to")}</button>
+                title={v.id === st!.head ? t("You are on this version") : isNew ? t("Get updates first") : t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to")}</button>
               <button disabled={!st!.remoteUrl || !!st!.olderVersion || v.inBranch || isNew} onclick={() => openVersionMerge(v)}
-                title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}>{t("Merge")}</button>
+                title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge")}</button>
               <button disabled={!!st!.olderVersion || !v.inBranch || isNew || !v.parents.length} onclick={() => (undoing = v)}
-                title={t("Make a new version that takes back what this version changed")}>{t("Undo commit")}</button>
+                title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
               <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
-                title={t("Start a branch from this version")}>{t("New branch")}</button>
+                title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "" }))}
               branch={st.branch} head={st.head} incoming={incomingIds}
@@ -769,9 +774,9 @@
           </div>
         </div>
       {:else if tab === "files"}
-        {@render changesPanel("all")}
+        <div class="pane">{@render changesPanel("all")}</div>
       {:else if tab === "settings" && settings}
-        <div class="settings">{@render settings()}</div>
+        <div class="pane scroll"><div class="settings">{@render settings()}</div></div>
       {:else if tab === "changes"}
         {@render changesPanel(undefined)}
       {:else if tab === "history"}
@@ -950,6 +955,11 @@
   .pending-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .pending-body > :global(*) { flex: 1; min-height: 0; }
   .settings { max-width: 680px; }
+  /* Files and Settings: in a card like the Overview's graph */
+  .pane { height: calc(100% - 32px); margin: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    border-radius: var(--radius-card); background-color: var(--panel); box-shadow: var(--shadow-card); }
+  .pane > :global(*) { flex: 1; min-height: 0; }
+  .pane.scroll { display: block; overflow: auto; padding: var(--sp-20) var(--sp-24) var(--sp-32); }
   .pad { padding: var(--sp-16); }
 
 </style>

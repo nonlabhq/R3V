@@ -71,11 +71,39 @@ describe("HistoryGraph", () => {
     cleanup();
     const b = show({ selected: "m1" });
     expect(screen.queryByRole("button", { name: "View pending changes" })).toBeNull();
-    await fireEvent.click(screen.getByRole("button", { name: "View latest version" }));
+    await fireEvent.click(screen.getByRole("button", { name: "View current version" }));
     expect(b.onselect).toHaveBeenLastCalledWith("m3");
     cleanup();
     show();
     expect(screen.queryByRole("button", { name: /^View / })).toBeNull();
+  });
+
+  it("zooms from the top right; the crosshair goes back to 100% and to where you are", async () => {
+    const { onselect } = show({ selected: "m1" });
+    // Zoom spreads the versions out; the dots keep their size (no scaling).
+    const gap = () => parseFloat(screen.getByRole("option", { name: /^Bass,/ }).style.top) -
+      parseFloat(screen.getByRole("option", { name: /^Mix,/ }).style.top);
+    const at100 = gap();
+    const canvas = screen.getByRole("listbox").querySelector<HTMLElement>(".canvas")!;
+    await fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    expect(screen.getByTitle("Back to 100%").textContent).toBe("120%");
+    expect(gap()).toBeCloseTo(at100 * 1.2);
+    expect(canvas.style.transform).not.toContain("scale");
+    await fireEvent.click(screen.getByRole("button", { name: "Back to 100% and to where you are" }));
+    expect(screen.getByTitle("Back to 100%").textContent).toBe("100%");
+    expect(gap()).toBeCloseTo(at100);
+    expect(onselect).not.toHaveBeenCalled(); // (what is picked stays picked)
+  });
+
+  it("shows a version's card beside it, over everything (outside the graph, which clips)", async () => {
+    show({ actions: undefined });
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^Bass,/ }));
+    const card = screen.getByRole("group", { name: "Bass" });
+    expect(card.parentElement).toBe(document.body);
+    expect(screen.getByRole("listbox").contains(card)).toBe(false);
+    expect(card.querySelector(".arrow")).toBeTruthy();
+    cleanup();
+    expect(document.body.contains(card)).toBe(false); // (gone with the graph)
   });
 
   it("doesn't pick a version at the end of a drag, and stops dragging once the button is up", async () => {

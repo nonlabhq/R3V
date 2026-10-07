@@ -12,6 +12,9 @@
   import ConvertDialog from "./ConvertDialog.svelte";
   import { fileView, setFileMode, type FileMode } from "./viewmode.svelte";
   import { viewerFor, type Side } from "./viewers";
+  import { navKey, ownKey, type NavRow } from "./keynav";
+  import { changesView, pickChangesView } from "./changesview.svelte";
+  import { portal } from "./portal";
 
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
@@ -47,6 +50,7 @@
   // leave it out of versions.
   let menu = $state<{ path: string; x: number; y: number; dir: boolean; ignore: IgnoreOption[] } | null>(null);
   let ignoreOpen = $state(false); // the Ignore submenu
+  let menuW = $state(220), menuH = $state(200); // (kept inside the window)
 
   // history of the selected file
   let history = $state<FileVersion[] | null>(null);
@@ -119,8 +123,12 @@
   });
 
   type Row = { folder?: Folder; file?: ProjectFile; depth: number };
-  let rows = $derived.by(() => {
+  // The changes as a list (each with its folder under its name) or a tree;
+  // every file is a tree.
+  let view = $derived(all ? "tree" : changesView(root, st.changes.length));
+  let rows = $derived.by((): Row[] => {
     const out: Row[] = [];
+    if (view === "list") return [...files].sort((a, b) => a.path.localeCompare(b.path)).map((f) => ({ file: f, depth: 0 }));
     const walk = (node: Folder, depth: number) => {
       for (const sub of [...node.folders.values()].sort((a, b) => a.name.localeCompare(b.name))) {
         out.push({ folder: sub, depth });
@@ -134,7 +142,7 @@
 
   // Only the rows in view are drawn (a folder can hold thousands of files);
   // rows have a fixed height.
-  const ROW = 30;
+  let ROW = $derived(view === "list" ? 44 : 30);
   let scroller = $state<HTMLElement>();
   let list = $state<HTMLElement>();
   let scrollTop = $state(0);
@@ -157,6 +165,39 @@
 
   function select(p: string) {
     selected = p;
+    cursor = p;
+  }
+
+  // The keyboard (see keynav.ts): the row it is on (a file, or "dir:" and
+  // a folder), ↑ ↓ through the rows, → ← open and close folders, Enter too.
+  // (Space is the audio player's: it plays or pauses the file shown.)
+  let cursor = $state("");
+  let navRows = $derived(rows.map((r): NavRow => r.folder
+    ? { key: "dir:" + r.folder.path, dir: true, open: isOpen(r.folder.path), depth: r.depth }
+    : { key: r.file!.path, depth: r.depth }));
+  function onListKey(e: KeyboardEvent) {
+    if (!ownKey(e) || (e.target as HTMLElement).closest(".head")) return;
+    const at = cursor || selected;
+    if (e.key === "Enter") {
+      if (!at.startsWith("dir:") || (e.target as HTMLElement).matches("input")) return;
+      e.preventDefault();
+      toggleFolder(at.slice(4));
+      return;
+    }
+    const nav = navKey(navRows, at, e.key, Math.max(1, Math.floor(viewH / ROW) - 1));
+    if (!nav) return;
+    e.preventDefault();
+    if ("toggle" in nav) toggleFolder(nav.toggle.slice(4));
+    else if (nav.to.startsWith("dir:")) cursor = nav.to;
+    else select(nav.to);
+    keepInView(navRows.findIndex((r) => r.key === ("to" in nav ? nav.to : nav.toggle)));
+    scroller?.focus({ preventScroll: true }); // (the row's button may scroll out of the drawn ones)
+  }
+  function keepInView(i: number) {
+    if (!scroller || i < 0) return;
+    const top = listOffset + i * ROW, head = 40;
+    if (top - head < scroller.scrollTop) scroller.scrollTop = top - head;
+    else if (top + ROW > scroller.scrollTop + viewH) scroller.scrollTop = top + ROW - viewH;
   }
 
   // The list and the file side by side, the line between them dragged to
@@ -238,6 +279,9 @@
     }
     excluded = next;
   }
+  // How big the ticked changes are (what the commit takes).
+  let sizes = $derived(new Map(files.map((f) => [f.path, f.size])));
+  const tickedSize = (ticked: string[]) => ticked.reduce((n, p) => n + (sizes.get(p) ?? 0), 0);
   // The box over the list: every change ticked, none, or some.
   let allState = $derived.by((): "on" | "off" | "some" => {
     const out = changedPaths.filter((p) => excluded[p]).length;
@@ -291,20 +335,21 @@
   </div>
   {:else}
   <div class="side">
-  <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll}>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+  <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll} tabindex="-1" onkeydown={onListKey}>
     <!-- the list's header, kept at the top: the box to tick all, the title, how many and how big -->
     <!-- one line when there's room, else two: [box] title · how many, how big · revert · All files -->
-    <div class="head">
+    <div class="head" class:fixed={!!scope}>
       <span class="chevbtn h-chev"></span>
       {#if changedPaths.length}
         <input type="checkbox" class="pick h-pick" checked={allState === "on"} indeterminate={allState === "some"}
           title={allState === "on" ? t("Deselect all changes") : t("Select all changes")}
           onchange={() => tick(changedPaths, allState !== "on")} />
       {/if}
-      <span class="title h-title">{all ? t("All files") : t("Changed files")}</span>
+      <span class="title h-title">{all ? t("All files") : t("Changes")}</span>
       {#if changedCount}
         {@const ticked = changedPaths.filter((p) => !excluded[p])}
-        <span class="total h-total">{tn(changedCount, "{count} change", "{count} changes", { count: changedCount.toLocaleString() })} · {formatBytes(tree.changedSize)}</span>
+        <span class="total h-total">{t("{done}/{total} selected", { done: ticked.length.toLocaleString(), total: changedPaths.length.toLocaleString() })} · {formatBytes(tickedSize(ticked))}</span>
         <button class="ghost revert h-revert" disabled={!ticked.length}
           title={!ticked.length ? t("Tick changes to discard them") : ticked.length === changedPaths.length
             ? t("Discard all changes…") : tn(ticked.length, "Discard the {n} ticked change…", "Discard the {n} ticked changes…")}
@@ -315,6 +360,12 @@
         <label class="all h-all" title={t("List every file in the project folder")}>
           {t("All files")} <input type="checkbox" class="switch" role="switch" bind:checked={all} onchange={rememberAll} />
         </label>
+      {/if}
+      {#if !all && changedPaths.length}
+        <div class="views h-views" role="group" aria-label={t("Show the changes as")}>
+          <button class:on={view === "list"} aria-pressed={view === "list"} onclick={() => pickChangesView(root, "list")}>{t("List")}</button>
+          <button class:on={view === "tree"} aria-pressed={view === "tree"} onclick={() => pickChangesView(root, "tree")}>{t("Tree")}</button>
+        </div>
       {/if}
     </div>
     {#if files.length === 0}
@@ -339,18 +390,45 @@
                     onchange={() => tick(inside(d.path), fs !== "on")} />
                 {:else}<span class="pick"></span>{/if}
               {/if}
-              <button class="file dir" class:untracked={!d.tracked} class:changed={d.changed > 0}
-                onclick={() => toggleFolder(d.path)} oncontextmenu={(e) => openMenu(e, d.path, true)} title={d.path}>
+              <button class="file dir" class:untracked={!d.tracked} class:changed={d.changed > 0} class:on={cursor === "dir:" + d.path}
+                onclick={() => { cursor = "dir:" + d.path; toggleFolder(d.path); }} oncontextmenu={(e) => openMenu(e, d.path, true)} title={d.path}>
                 <FileIcon kind="folder" open={isOpen(d.path)} faint={!d.tracked} />
                 <span class="fname">{d.name}</span>
                 {#if d.changed}
                   {@const ff = moves.movedFrom(d.path)}
                   {#if ff}<span class="from" title={t("Moved from {path}", { path: `${ff}/` })}>← {ff}/</span>{/if}
                 {/if}
-                {#if d.changed && !isOpen(d.path)}<span class="right"><span class="count"
-                  title={tn(d.changed, "{n} changed file inside, {size}", "{n} changed files inside, {size}", { size: formatBytes(d.changedSize) })}>{d.changed}</span></span>{/if}
+                <span class="right">{#if d.changed && !isOpen(d.path)}<span class="count"
+                  title={tn(d.changed, "{n} changed file inside, {size}", "{n} changed files inside, {size}", { size: formatBytes(d.changedSize) })}>{d.changed}</span>{/if}</span>
               </button>
               <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, d.path, true); }}>⋯</button>
+            </li>
+          {:else if view === "list"}
+            {@const f = row.file!}
+            <li class="two">
+              <span class="chevbtn"></span>
+              {#if changedPaths.length}
+                {#if isChange(f)}
+                  <input type="checkbox" class="pick" checked={!excluded[f.path]} title={t("Commit this change")}
+                    onchange={(e) => tick([f.path], (e.currentTarget as HTMLInputElement).checked)} />
+                {:else}<span class="pick"></span>{/if}
+              {/if}
+              <button class="file {f.status}" class:on={f.path === selected}
+                onclick={() => select(f.path)} oncontextmenu={(e) => openMenu(e, f.path)} title={f.path}>
+                <FileIcon kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
+                <span class="names">
+                  <span class="fname">{name(f.path)}</span>
+                  <span class="fdir">{f.status === "renamed" ? `← ${f.from}` : f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : t("Project folder")}</span>
+                </span>
+                <span class="right">
+                  {#if f.live}
+                    {@const v = liveShort(f.live)}
+                    <span class="live" class:odd={usualLive && v !== usualLive} title={t("Saved with {app}", { app: f.live })}>{v}</span>
+                  {/if}
+                  {#if sym[f.status]}<span class="sym" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
+                </span>
+              </button>
+              <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, f.path); }}>⋯</button>
             </li>
           {:else}
             {@const f = row.file!}
@@ -477,7 +555,8 @@
 {#if menu}
   {@const m = menu}
   {@const f = m.dir ? undefined : files.find((x) => x.path === m.path)}
-  <div class="ctx surface-menu" role="menu" style:left="{Math.min(m.x, window.innerWidth - 240)}px" style:top="{Math.min(m.y, window.innerHeight - 260)}px">
+  <div class="ctx surface-menu" role="menu" use:portal bind:offsetWidth={menuW} bind:offsetHeight={menuH}
+    style:left="{Math.max(8, Math.min(m.x, window.innerWidth - menuW - 8))}px" style:top="{Math.max(8, Math.min(m.y, window.innerHeight - menuH - 8))}px">
     {#if !m.dir && f && f.status !== "deleted"}
       <button class="item" onclick={() => openFile(m.path)}>{f.kind === "set" ? t("Open in {tool}", { tool: "Live" }) : f.kind === "audio" ? t("Open in default player") : t("Open")}</button>
     {/if}
@@ -500,7 +579,7 @@
           {t("Ignore")}<span class="arrow">›</span>
         </button>
         {#if ignoreOpen}
-          <div class="ctx submenu surface-menu" role="menu" class:left={m.x > window.innerWidth - 480}>
+          <div class="ctx submenu surface-menu" role="menu" class:left={m.x > window.innerWidth - menuW - 270}>
             {#each m.ignore as o}
               <button class="item" onclick={() => ignore(o.pattern)}>{o.label}<span class="faint pat mono">{o.pattern}</span></button>
             {/each}
@@ -518,6 +597,7 @@
 {/if}
 
 <style>
+  aside.files:focus { outline: none; }
   .panel { position: relative; display: grid; grid-template-columns: minmax(240px, 34%) 1fr; height: 100%; min-height: 0; }
   .side { display: flex; flex-direction: column; min-height: 0; border-right: var(--border-width) solid var(--line); }
   .files { flex: 1; overflow: auto; min-height: 0; padding: 0 var(--sp-8) var(--sp-16) 0; }
@@ -531,10 +611,12 @@
     background: var(--panel); border-bottom: var(--border-width) solid var(--line); font-size: var(--fs-sm); color: var(--muted);
     display: grid; align-items: center; row-gap: var(--sp-4);
     grid-template-columns: 22px 20px minmax(0, 1fr) auto auto;
-    grid-template-areas: "chev pick title title title" ". . total discard all"; }
+    grid-template-areas: "chev pick title views views" ". . total discard all"; }
+  /* (no All files switch: the total takes its room) */
+  .head.fixed { grid-template-areas: "chev pick title views views" ". . total total discard"; }
   @container (min-width: 380px) {
-    .head { grid-template-columns: 22px 20px auto minmax(0, 1fr) auto auto;
-      grid-template-areas: "chev pick title total discard all"; }
+    .head, .head.fixed { grid-template-columns: 22px 20px auto minmax(0, 1fr) auto auto auto;
+      grid-template-areas: "chev pick title total discard all views"; }
     .h-total { padding-left: var(--sp-10); }
     .h-revert { margin-right: var(--sp-10); }
   }
@@ -545,6 +627,25 @@
   .h-total { grid-area: total; padding-left: var(--sp-4); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .h-revert { grid-area: discard; justify-self: end; } /* (not "revert": a CSS keyword) */
   .h-all { grid-area: all; justify-self: end; }
+  .h-views { grid-area: views; justify-self: end; margin-left: var(--sp-8); }
+  /* List or tree: two small segments */
+  .views { display: flex; border: var(--border-width) solid var(--line-strong); border-radius: var(--radius-pill); padding: 1px; }
+  .views button { border: none; background: transparent; padding: 1px var(--sp-6); border-radius: var(--radius-pill);
+    font-size: var(--fs-xs); color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .views button.on { background: var(--text); color: var(--bg); }
+  /* The list: a row per change, its folder under its name */
+  li.two { height: 44px; }
+  li.two .file { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+  /* (hovered or picked: the whole row, its box too) */
+  li.two::before { content: ""; position: absolute; inset: 2px 0 2px 18px; border-radius: var(--radius); pointer-events: none; }
+  li.two:hover::before { background: var(--panel); }
+  li.two:has(.file.on)::before { background: var(--accent-soft); }
+  li.two .file:hover, li.two .file.on { background: transparent; }
+  li.two > :not(.more) { position: relative; }
+  li.two .more { z-index: 1; }
+  .names { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+  .names .fname { font-weight: var(--fw-semibold); }
+  .fdir { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .revert { flex: none; display: inline-flex; padding: var(--sp-4); border-radius: var(--radius-sm); color: var(--muted); }
   .revert svg { width: 14px; height: 14px; }
   .revert:hover:not(:disabled) { color: var(--danger); background: var(--hover); }
@@ -585,11 +686,13 @@
   .dir.untracked .fname { color: var(--faint); }
   .count { font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
   .file { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
-    padding: var(--sp-4) var(--sp-32) var(--sp-4) var(--sp-4); border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
+    padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-4); border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
   .file:hover { background: var(--panel); }
   .file.on { background: var(--panel-2); }
   /* What changed, at the end of the row: a small colored square. */
-  .right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-6); flex: none; }
+  /* What changed at the far right; ⋯ (on hover) just left of it, in room kept for it. */
+  .right { margin-left: auto; display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-6); flex: none; min-width: 56px; }
+  .right .sym, .right .count { margin-left: 22px; }
   .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
     font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
   .file.added .sym { background: var(--add-soft); }
@@ -610,7 +713,7 @@
   .live { font-size: var(--fs-xs); padding: 0 var(--sp-4); border-radius: var(--radius-pill); background: var(--hover); color: var(--muted);
     font-variant-numeric: tabular-nums; flex: none; }
   .live.odd { background: var(--warn-bg); color: var(--warn); }
-  .more { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 var(--sp-6); }
+  .more { position: absolute; right: 28px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 var(--sp-6); }
   li:hover .more { visibility: visible; }
 
   .detail { overflow: auto; min-height: 0; padding: var(--sp-12) var(--sp-4) var(--sp-16) var(--sp-20); }

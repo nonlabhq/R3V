@@ -90,6 +90,59 @@ describe("ProjectView: committing", () => {
     await toasted("Version committed and shared with the team");
   });
 
+  it("lists a few changes, makes a tree of many, keeps the one picked until the next commit", async () => {
+    const many = Array.from({ length: 11 }, (_, i) => change(`Samples/take ${i}.wav`, "added"));
+    await show({ changes: many });
+    const pressed = (name: string) => screen.getByRole("button", { name }).getAttribute("aria-pressed");
+    await screen.findByTitle("Samples/take 0.wav");
+    expect(pressed("Tree")).toBe("true"); // more than 10
+    await fireEvent.click(screen.getByRole("button", { name: "List" }));
+    expect(pressed("List")).toBe("true");
+    expect(document.querySelector("li.two")).toBeTruthy();
+    expect(screen.getAllByText("Samples").length).toBeGreaterThan(0); // the folder under each name
+    // (kept when the project is read again)
+    cleanup();
+    await show({ changes: many });
+    expect(pressed("List")).toBe("true");
+    // A commit: back to choosing by the number.
+    api.Save.mockResolvedValue(result("published"));
+    await typeMessage("Takes");
+    await fireEvent.click(commitButton());
+    await toasted("Version committed and shared with the team");
+    cleanup();
+    await show({ changes: many });
+    expect(pressed("Tree")).toBe("true");
+    cleanup();
+    await show({ changes: many.slice(0, 3) });
+    await waitFor(() => expect(pressed("List")).toBe("true")); // a few (once read: the last state shows first)
+  });
+
+  it("says how many changes are ticked, and how big they are", async () => {
+    await show({ changes: [change("Song.als"), change("notes.txt", "added"), change("kick.wav", "added")] });
+    const total = () => document.querySelector(".h-total")?.textContent?.replace(/\s+/g, " ").trim();
+    await waitFor(() => expect(total()).toBe("3/3 selected · 3 B"));
+    const row = (await screen.findByTitle("notes.txt")).closest("li")!;
+    await fireEvent.click(within(row).getByTitle("Commit this change"));
+    expect(total()).toBe("2/3 selected · 2 B");
+    expect(document.querySelector(".h-title")?.textContent).toBe("Changes");
+  });
+
+  it("goes through the changes with the keyboard: folders open and close", async () => {
+    await show({ changes: [change("Samples/kick.wav", "added"), change("Song.als")] });
+    const list = document.querySelector<HTMLElement>("aside.files")!;
+    await fireEvent.click(screen.getByRole("button", { name: "Tree" }));
+    await screen.findByTitle("Samples/kick.wav");
+    await fireEvent.keyDown(list, { key: "ArrowDown" }); // the folder
+    await fireEvent.keyDown(list, { key: "ArrowLeft" }); // closes it
+    expect(screen.queryByTitle("Samples/kick.wav")).toBeNull();
+    await fireEvent.keyDown(list, { key: "ArrowRight" }); // opens it
+    await fireEvent.keyDown(list, { key: "ArrowDown" });
+    expect(screen.getByTitle("Samples/kick.wav").classList.contains("on")).toBe(true);
+    await fireEvent.keyDown(list, { key: "ArrowLeft" }); // up to its folder
+    await fireEvent.keyDown(list, { key: "Enter" }); // closes it
+    expect(screen.queryByTitle("Samples/kick.wav")).toBeNull();
+  });
+
   it("commits only the ticked changes", async () => {
     await show({ changes: [change("Song.als"), change("notes.txt", "added")] });
     api.Save.mockResolvedValue(result("published"));
@@ -182,6 +235,10 @@ describe("ProjectView: the team", () => {
     await show();
     api.SwitchBranch.mockResolvedValue(result("moved"));
     await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    // The branch you are on, first; not one to switch to.
+    const menu = screen.getByRole("menu");
+    expect(menu.textContent).toMatch(/Current branch\s*⑂ main/);
+    expect(within(menu).queryByRole("button", { name: /^main/ })).toBeNull();
     // "idea" is there twice: to switch to, and to merge from (after).
     await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: /^idea/ })[0]);
     await waitFor(() => expect(api.SwitchBranch).toHaveBeenCalledWith(ROOT, "idea", false));
@@ -223,7 +280,7 @@ describe("ProjectView: versions", () => {
       takeBack: { ok: true, why: "", haveIt: [], branches: [], shared: true, featureOff: false } });
     api.TakeBackVersion.mockResolvedValue(result("taken-back"));
     await fireEvent.click(screen.getByRole("button", { name: "History" }));
-    await fireEvent.click(await screen.findByRole("button", { name: "Undo commit" }));
+    await fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
     await screen.findByText(/Removes it from the history, yours and the team's/);
     await fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Undo commit" }));
     await waitFor(() => expect(api.TakeBackVersion).toHaveBeenCalledWith(ROOT, "h1", true));
@@ -349,6 +406,29 @@ describe("ProjectView: Overview", () => {
 });
 
 describe("ProjectView: reloading", () => {
+  it("doesn't read a picked version's files again when the window comes back (no blinking)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const history = () => [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })];
+      await show({ changes: [change("Song.als")], history: history() });
+      api.TeamState.mockImplementation(async () => ({ history: history(), incoming: [], branches: [], takenBack: [],
+        online: true, offline: "", unshared: false }));
+      api.VersionFiles.mockResolvedValue([{ path: "a.txt", status: "modified", size: 1, kind: "other", live: "", from: "",
+        edited: false, preview: false, video: false, model: false }]);
+      await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
+      await screen.findByTitle("a.txt");
+      const calls = api.VersionFiles.mock.calls.length;
+      vi.advanceTimersByTime(4000); // (reloads on focus are spaced out)
+      window.dispatchEvent(new Event("focus"));
+      await waitFor(() => expect(api.TeamState.mock.calls.length).toBeGreaterThan(1));
+      await new Promise((r) => setTimeout(r, 50));
+      expect(screen.queryByText("Reading…")).toBeNull();
+      expect(api.VersionFiles.mock.calls.length).toBe(calls);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("keeps what the team said while it reads the project again (no blinking banner)", async () => {
     api.TeamState.mockResolvedValue({ online: true, offline: "", branches: [], incoming: [], takenBack: [],
       history: [version("h1", "v1", { parents: [] })], olderVersion: null, unshared: true, capabilities: {} });

@@ -35,6 +35,30 @@ describe("FileExplorer", () => {
     expect(names()).toEqual(["Samples", "notes.txt", "Song.als"]);
   });
 
+  it("goes through the files with the keyboard, into folders and back up", async () => {
+    const { onselect } = show();
+    const list = screen.getByRole("grid", { name: "Files" });
+    const on = () => document.querySelector(".row.on .nm")?.textContent;
+    await fireEvent.keyDown(list, { key: "ArrowDown" }); // the first: a folder
+    expect(on()).toBe("Samples");
+    expect(onselect).not.toHaveBeenCalled();
+    await fireEvent.keyDown(list, { key: "ArrowDown" });
+    expect(onselect).toHaveBeenLastCalledWith("notes.txt");
+    await fireEvent.keyDown(list, { key: "End" });
+    expect(onselect).toHaveBeenLastCalledWith("Song.als");
+    await fireEvent.keyDown(list, { key: "Home" });
+    await fireEvent.keyDown(list, { key: "ArrowRight" }); // into Samples
+    expect(names()).toEqual(["Loops", "Kick.wav"]);
+    await fireEvent.keyDown(list, { key: "ArrowDown" });
+    await fireEvent.keyDown(list, { key: "Enter" }); // into Loops
+    expect(names()).toEqual(["Loop 2.wav", "Loop 10.wav"]);
+    await fireEvent.keyDown(list, { key: "Backspace" });
+    expect(names()).toEqual(["Loops", "Kick.wav"]);
+    expect(on()).toBe("Loops"); // (on the folder just left)
+    await fireEvent.keyDown(list, { key: "ArrowLeft" });
+    expect(names()).toEqual(["Samples", "notes.txt", "Song.als"]);
+  });
+
   it("enters one folder on a double click, not two", async () => {
     show();
     const samples = screen.getByTitle("Samples");
@@ -57,6 +81,12 @@ describe("FileExplorer", () => {
     await fireEvent.click(screen.getByTitle("Show only some kinds of file"));
     await fireEvent.click(screen.getByRole("checkbox", { name: /Live Set/ }));
     expect(names()).toEqual(["Song.als"]);
+    // The filter's button: the kinds picked, as icons (just the funnel when none).
+    const filter = screen.getByRole("button", { name: "Show only some kinds of file" });
+    expect(filter.title).toBe("Showing only: Live Set");
+    expect(filter.querySelector("svg path")?.getAttribute("d")).not.toBe("M2.5 3h11L9.5 8.5v4l-3 1.5V8.5z");
+    // Sorting says how in its tooltip only.
+    expect(screen.getByRole("button", { name: "Sort" }).title).toMatch(/^Sort: Size/);
   });
 
   it("remembers how it looks", async () => {

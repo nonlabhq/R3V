@@ -2,6 +2,7 @@
   import { t, tn } from "./i18n.svelte";
   import { formatBytes, previewURL, type ProjectFile } from "./api";
   import FileIcon from "./FileIcon.svelte";
+  import { gridKey, navKey, ownKey } from "./keynav";
 
   // The Files tab's list, like a file explorer: one folder at a time (the
   // path above goes back up), as a list with columns or as a grid, sorted
@@ -83,8 +84,53 @@
   // only the first opens)
   function open(e: Entry, ev?: MouseEvent) {
     if (ev && ev.detail > 1) return;
-    if (e.dir) cwd = e.path;
+    cursor = e.path;
+    if (e.dir) enter(e.path);
     else onselect(e.path);
+  }
+  function enter(dir: string) {
+    cwd = dir;
+    cursor = "";
+  }
+  function up() {
+    if (!cwd) return;
+    const was = cwd;
+    cwd = cwd.includes("/") ? cwd.slice(0, cwd.lastIndexOf("/")) : "";
+    cursor = was; // (on the folder just left)
+  }
+
+  // The keyboard, as in a file explorer (see keynav.ts): ↑ ↓ (and ← → in
+  // the grid) through the entries; → or Enter goes into a folder (in the
+  // list), ← or Backspace up to the folder it is in.
+  let cursor = $state("");
+  let box = $state<HTMLElement>();
+  function onKey(e: KeyboardEvent) {
+    if (!ownKey(e)) return;
+    const at = cursor || selected;
+    const entry = entries.find((x) => x.path === at);
+    let to: string | null = null;
+    if (e.key === "Backspace" || (e.key === "ArrowLeft" && look.mode === "list")) up();
+    else if ((e.key === "Enter" || (e.key === "ArrowRight" && look.mode === "list")) && entry?.dir) enter(entry.path);
+    else if (look.mode === "grid") to = gridKey(entries.map((x) => x.path), at, e.key, gridCols());
+    else {
+      const nav = navKey(entries.map((x) => ({ key: x.path })), at, e.key, 10);
+      to = nav && "to" in nav ? nav.to : null;
+      if (!to) return;
+    }
+    e.preventDefault();
+    if (to) {
+      cursor = to;
+      if (!entries.find((x) => x.path === to)?.dir) onselect(to);
+      const el = () => [...(box?.querySelectorAll<HTMLElement>("[data-path]") ?? [])].find((x) => x.dataset.path === to);
+      queueMicrotask(() => el()?.scrollIntoView?.({ block: "nearest", inline: "start" }));
+    }
+    box?.focus({ preventScroll: true });
+  }
+  // How many tiles a row of the grid holds.
+  function gridCols(): number {
+    const tiles = [...(box?.querySelectorAll<HTMLElement>(".tile") ?? [])];
+    const top = tiles[0]?.offsetTop;
+    return Math.max(1, tiles.filter((x) => x.offsetTop === top).length);
   }
   function sortBy(k: SortKey) {
     if (look.sort === k) look.desc = !look.desc;
@@ -100,7 +146,8 @@
   let rowMin = $derived(160 + (look.cols.modified ? 140 : 0) + (look.cols.size ? 86 : 0) + (look.cols.type ? 120 : 0) + 16);
 </script>
 
-<svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".tool-wrap")) menu = ""; }} />
+<svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".tool-wrap")) menu = ""; }}
+  onkeydown={(e) => { if (menu && e.key === "Escape") { e.preventDefault(); menu = ""; } }} />
 
 <div class="explorer">
   <div class="toolbar">
@@ -112,8 +159,11 @@
     </nav>
     <div class="tools">
       <div class="tool-wrap">
-        <button class="tool" onclick={() => (menu = menu === "sort" ? "" : "sort")} title={t("Sort")}>
-          ⇅ {sortNames()[look.sort]}
+        <button class="tool icon" onclick={() => (menu = menu === "sort" ? "" : "sort")}
+          title={`${t("Sort")}: ${sortNames()[look.sort]} ${look.desc ? "↓" : "↑"}`} aria-label={t("Sort")}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 2.5v11M2.5 11 5 13.5 7.5 11M11 13.5v-11M8.5 5 11 2.5 13.5 5" />
+          </svg>
         </button>
         {#if menu === "sort"}
           <div class="menu surface-menu" role="menu">
@@ -126,8 +176,17 @@
         {/if}
       </div>
       <div class="tool-wrap">
-        <button class="tool" class:active={kinds.length > 0} onclick={() => (menu = menu === "filter" ? "" : "filter")} title={t("Show only some kinds of file")}>
-          ⏷ {kinds.length ? tn(kinds.length, "{count} kind", "{count} kinds", { count: kinds.length }) : t("All kinds")}
+        <!-- just the funnel; the kinds shown, when some are picked -->
+        <button class="tool icon" class:active={kinds.length > 0} onclick={() => (menu = menu === "filter" ? "" : "filter")}
+          title={kinds.length ? t("Showing only: {kinds}", { kinds: kinds.map(kindName).join(", ") }) : t("Show only some kinds of file")}
+          aria-label={t("Show only some kinds of file")}>
+          {#if kinds.length}
+            {#each kinds.slice(0, 3) as k (k)}<FileIcon kind={k} />{/each}{#if kinds.length > 3}<span class="more-kinds">+{kinds.length - 3}</span>{/if}
+          {:else}
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2.5 3h11L9.5 8.5v4l-3 1.5V8.5z" />
+            </svg>
+          {/if}
         </button>
         {#if menu === "filter"}
           <div class="menu surface-menu" role="menu">
@@ -159,7 +218,7 @@
   </div>
 
   {#if look.mode === "list"}
-    <div class="list" role="grid" aria-label={t("Files")}>
+    <div class="list" role="grid" aria-label={t("Files")} tabindex="-1" bind:this={box} onkeydown={onKey}>
       <div class="row head" role="row" style:grid-template-columns={cols} style:min-width="{rowMin}px">
         <button role="columnheader" onclick={() => sortBy("name")}>{t("Name")}{#if look.sort === "name"} {look.desc ? "↓" : "↑"}{/if}</button>
         {#if look.cols.modified}<button role="columnheader" onclick={() => sortBy("modified")}>{t("Date modified")}{#if look.sort === "modified"} {look.desc ? "↓" : "↑"}{/if}</button>{/if}
@@ -167,7 +226,7 @@
         {#if look.cols.type}<button role="columnheader" onclick={() => sortBy("type")}>{t("Type")}{#if look.sort === "type"} {look.desc ? "↓" : "↑"}{/if}</button>{/if}
       </div>
       {#each entries as e (e.path)}
-        <button class="row" role="row" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
+        <button class="row" role="row" data-path={e.path} class:on={e.dir ? e.path === cursor : e.path === selected} class:gone={e.file?.status === "deleted"}
           style:grid-template-columns={cols} style:min-width="{rowMin}px" onclick={(ev) => open(e, ev)}
           oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="cell name"><FileIcon kind={e.kind} open={false} /><span class="nm">{e.name}</span>
@@ -181,9 +240,10 @@
       {/each}
     </div>
   {:else}
-    <div class="grid" aria-label={t("Files")}>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
+    <div class="grid" aria-label={t("Files")} tabindex="-1" bind:this={box} onkeydown={onKey}>
       {#each entries as e (e.path)}
-        <button class="tile" class:on={!e.dir && e.path === selected} class:gone={e.file?.status === "deleted"}
+        <button class="tile" data-path={e.path} class:on={e.dir ? e.path === cursor : e.path === selected} class:gone={e.file?.status === "deleted"}
           onclick={(ev) => open(e, ev)} oncontextmenu={(ev) => { ev.preventDefault(); onmenu?.(ev, e.path, e.dir); }} title={e.path}>
           <span class="thumb">
             {#if e.file?.preview && e.file.status !== "deleted"}
@@ -203,6 +263,7 @@
 </div>
 
 <style>
+  .list:focus, .grid:focus { outline: none; }
   .explorer { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   .toolbar { flex: none; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-8) var(--sp-10);
     border-bottom: var(--border-width) solid var(--line); flex-wrap: wrap; }
@@ -213,6 +274,9 @@
   .tools { display: flex; align-items: center; gap: var(--sp-4); }
   .tool-wrap { position: relative; }
   .tool { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
+  .tool.icon { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 26px; padding: var(--sp-4) var(--sp-6); }
+  .tool.icon svg { width: 14px; height: 14px; }
+  .more-kinds { font-size: var(--fs-2xs); color: var(--muted); }
   .tool.active { border-color: var(--accent); color: var(--accent); }
   .modes { display: flex; }
   .modes button { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); border-radius: 0; color: var(--muted); }

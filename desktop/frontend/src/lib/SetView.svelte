@@ -161,7 +161,13 @@
     return Math.max(4, Math.ceil(end / beatsPerBar));
   });
   let total = $derived(bars * beatsPerBar);
-  let step = $derived([1, 2, 4, 8, 16, 32, 64, 128, 256].find((s) => bars / s <= 16) ?? 512);
+  // Bars between the ruler's numbers: as many numbers as fit (34px each),
+  // 16 at most.
+  let rulerW = $state(0);
+  let step = $derived.by(() => {
+    const most = Math.min(16, rulerW ? Math.max(2, Math.floor(rulerW / 34)) : 16);
+    return [1, 2, 4, 8, 16, 32, 64, 128, 256].find((s) => Math.ceil(bars / s) <= most) ?? 512;
+  });
   const pct = (beats: number) => `${(beats / total) * 100}%`;
 
   const arrClips = (t: TrackSummary | undefined) => (t?.clips ?? []).filter((c) => c.slot < 0);
@@ -209,6 +215,22 @@
     const a = t.clips.filter((c) => c.slot < 0).length, s = t.clips.length - a;
     return [a ? tn(a, "{n} clip in arrangement", "{n} clips in arrangement") : "", s ? tn(s, "{n} clip in session", "{n} clips in session") : ""]
       .filter(Boolean).join(", ") || tr("no clips");
+  };
+  // A track's tooltip: its name, the instrument it plays (where, with its
+  // preset), then what kind of track it is, its clips and devices.
+  const trackTip = (t: TrackSummary) => {
+    // (the devices less the instrument: itself, or the rack holding it)
+    const inst = t.instrumentFull || t.instrument;
+    const others = t.devices.filter((d) => {
+      const rack = d.match(/"([^"]+)"/)?.[1];
+      return d !== inst && !(rack && inst.includes(`"${rack}"`));
+    });
+    return [
+      t.name,
+      inst ? tr("Instrument: {name}", { name: inst }) : "",
+      `${kindName[t.kind]} · ${clipCount(t)}`,
+      others.join(", "),
+    ].filter(Boolean).join("\n");
   };
   let counts = $derived.by(() => {
     if (!shown) return "";
@@ -329,6 +351,16 @@
   {/if}
 {/snippet}
 
+<!-- Arrangement: just whether the track is on (its number), as in Live's track head -->
+{#snippet activator(t: TrackSummary, label: string, w: Was = {})}
+  {#if t.kind !== "main"}
+    <span class="ctl">
+      <span class="act" class:off={t.muted} title={t.muted ? tr("Track off (muted)") : tr("Track on")}>{label}</span>
+      {#if w.muted !== undefined}{@render dot(w.muted ? tr("Was off (muted)") : tr("Was on"))}{/if}
+    </span>
+  {/if}
+{/snippet}
+
 {#snippet trackName(r: Row, w: Was)}
   <span class="nm pin"><span class="tname">{r.t.name}</span>
     {#if w.name !== undefined}{@render dot(tr("Renamed, was “{name}”", { name: w.name }))}{/if}</span>
@@ -410,7 +442,7 @@
       {#if rows.length || !compare}
         <div class="arr" style:--grid={pct(step * beatsPerBar)}>
           <div class="row ruler">
-            <div class="lane">
+            <div class="lane" bind:clientWidth={rulerW}>
               {#each Array.from({ length: Math.ceil(bars / step) }, (_, i) => i * step) as b}
                 <span class="tick" style:left={pct(b * beatsPerBar)}>{b + 1}</span>
               {/each}
@@ -449,7 +481,7 @@
                 {/each}
               </div>
               <div class="head" style:padding-left="{r.depth * 10}px"
-                title={`${kindName[t.kind]} · ${clipCount(t)}${t.devices.length ? ` · ${t.devices.join(", ")}` : ""}${compare && r.details.length ? ` · ${tr("click for what changed")}` : ""}`}>
+                title={trackTip(t) + (compare && r.details.length ? `\n${tr("click for what changed")}` : "")}>
                 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
                 <div class="hname" class:clickable={compare && r.details.length > 0} onclick={() => toggleDetails(r)}
                   style:background={liveColor(t.color)} style:color={inkOn(t.color)}>
@@ -462,7 +494,7 @@
                   <span class="grow"></span>
                   {#if t.clips.length && !compare}<span class="nclips" title={clipCount(t)}>{t.clips.length}</span>{/if}
                 </div>
-                {@render mixer(t, r.label, w)}
+                {@render activator(t, r.label, w)}
               </div>
             </div>
             {#if r.details.length && showDetails(r)}
@@ -478,7 +510,6 @@
                 <div class="hname" style:background={liveColor(shown.main.color)} style:color={inkOn(shown.main.color)}>
                   {@render icon("main")}<span class="tname">{tr("Main")}</span>
                 </div>
-                {@render mixer(shown.main, "")}
               </div>
             </div>
           {/if}
@@ -492,7 +523,7 @@
             {@const inner = r.t.kind !== "group" && !!band}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
             <div class="ctitle {r.status ?? ''}" class:small={compare && small(r)} class:clickable={compare && r.details.length > 0} onclick={() => toggleDetails(r)}
-              class:inner title={`${kindName[r.t.kind]} · ${clipCount(r.t)}${r.t.instrumentFull ? ` · ${r.t.instrumentFull}` : ""}`}>
+              class:inner title={trackTip(r.t)}>
               <!-- a track in a group: under the band of the group's color, which runs on from the group's title -->
               {#if inner}<i class="band" style:background={band}></i>{/if}
               <div class="tt" style:background={liveColor(r.t.color)} style:color={inkOn(r.t.color)}>
@@ -520,21 +551,18 @@
                   <div class="sclip" class:off={c.disabled}
                     style:background={c.disabled ? "" : liveColor(c.color)} style:color={c.disabled ? "" : inkOn(c.color)}
                     title={`${c.name || tr("clip")}${c.disabled ? ` · ${tr("deactivated")}` : ""}${m ? ` · ${m.tip}` : ""}`}>
-                    ▶ {c.name}{@render clipDot(m)}</div>
+                    {c.name}{@render clipDot(m)}</div>
                 {:else if old}
                   <div class="sclip ghost" style:border-color={liveColor(old.color)} title={`Deleted: ${old.name || "clip"}`}>{old.name}{@render clipDot({ kind: "del", tip: `Deleted: ${old.name || "clip"}` })}</div>
                 {:else if r.t.kind === "group" && groupHasSlot(setOf(r), r.t, i)}
-                  <!-- as Live: the scene's play button for the group, and its tracks' clips in small -->
+                  <!-- as Live: its tracks' clips in small -->
                   <div class="gslot" title={tr("Its tracks have clips in this scene")}>
-                    <span class="gplay">▶</span>
                     <span class="gmini">{#each groupClips(setOf(r), r.t, i).slice(0, 4) as gc}<i style:background={liveColor(gc.color)}></i>{/each}</span>
                   </div>
-                {:else if r.t.kind !== "return"}
-                  <span class="stop"></span>
                 {/if}
               </div>
             {/each}
-            <div class="scene" title={sceneNames[i] || `Scene ${i + 1}`}>▶ {sceneNames[i] || i + 1}</div>
+            <div class="scene" title={sceneNames[i] || `Scene ${i + 1}`}>{sceneNames[i] || i + 1}</div>
           {/each}
           {#each rows as r}
             <div class="cmix" class:muted={r.t.muted}>{@render mixer(r.t, r.label, wasOf(r))}</div>
@@ -657,7 +685,6 @@
     white-space: nowrap; text-overflow: ellipsis; font-size: var(--fs-xs); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35); }
   /* a group's slot: play button and its tracks' clips, small and hatched */
   .gslot { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--sp-4) 0 var(--sp-4); min-width: 0; }
-  .gplay { font-size: var(--fs-2xs); color: #9a9a9a; }
   .gmini { display: flex; gap: var(--sp-2); }
   .gmini i { width: 9px; height: 12px; border-radius: 1px;
     background-image: repeating-linear-gradient(135deg, rgba(0, 0, 0, .38) 0 1.5px, transparent 1.5px 3.5px); }
@@ -665,7 +692,6 @@
   /* the band reaches over the 1px gap to its left, so it runs on unbroken from the group's title */
   .ctitle .band { display: block; flex: none; height: 5px; margin: 0 0 var(--sp-2) -1px; }
   .gfold { margin-left: auto; font-size: var(--fs-2xs); line-height: 1; padding: 0 var(--sp-2); opacity: .85; }
-  .stop { width: 7px; height: 7px; background: #4a4a4a; margin-left: var(--sp-4); border-radius: 1px; }
   .scene { height: 20px; line-height: 20px; padding: 0 var(--sp-6); background: #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .cmix { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-4); padding: var(--sp-4); background: #333; }
   .cmix.muted { background: #2b2b2b; }

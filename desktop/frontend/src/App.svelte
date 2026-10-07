@@ -24,6 +24,8 @@
   import PreuploadIcon from "./lib/PreuploadIcon.svelte";
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
+  import KeysHelp from "./lib/KeysHelp.svelte";
+  import Tooltip from "./lib/Tooltip.svelte";
 
   let overview = $state<Overview | null>(null);
   let onboarding = $state(false);
@@ -145,6 +147,10 @@
   let firstShare = $state("");
   let justDownloaded = $state(""); // show its check when it opens
   let appVersion = $state("");
+  function copyVersion() {
+    navigator.clipboard?.writeText(appVersion).then(() => toast(t("Copied {version}", { version: appVersion }), "ok"),
+      () => toast(appVersion, "info"));
+  }
   let edition = $state(""); // a build with extensions, e.g. "Pro"
   let nightly = $state(false); // the Style lab is there to try looks
 
@@ -301,7 +307,19 @@
     saveTabs();
     select(p);
   }
+  function goTab(x: Tab) {
+    if (x.p) select(x.p);
+    else blank = x.key;
+  }
+  // Tabs closed, newest last: Ctrl+Shift+T opens the last one again.
+  let closedTabs: string[] = [];
+  function reopenTab() {
+    const k = closedTabs.pop();
+    const p = k && entries.find((e) => rowKey(e) === k);
+    if (p) select(p);
+  }
   function closeTabOf(x: Tab) {
+    if (x.p) closedTabs = [...closedTabs.filter((k) => k !== x.key), x.key].slice(-20);
     const wasActive = activeTab(x);
     const { next } = closeTab(tabItems.map((y) => y.key), x.key);
     tabKeys = tabKeys.filter((k) => k !== x.key);
@@ -515,6 +533,30 @@
     };
   });
 
+  // The shell's keys (not while a dialog is open): Ctrl+\ the sidebar;
+  // Ctrl+W closes the tab, Ctrl+Shift+T opens the last closed one again;
+  // Ctrl+Tab / Ctrl+Shift+Tab (or Ctrl+PageDown / PageUp) the next and
+  // previous tab, Ctrl+1…8 a tab, Ctrl+9 the last.
+  let keysHelp = $state(false);
+  function tabKeysDown(e: KeyboardEvent) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || !overview || onboarding || document.querySelector("[aria-modal='true']")) return;
+    const k = e.key.toLowerCase();
+    if (e.key === "/" || e.code === "Slash") { e.preventDefault(); keysHelp = true; return; }
+    const at = tabItems.findIndex(activeTab);
+    const go = (i: number) => { const x = tabItems[(i + tabItems.length) % tabItems.length]; if (x) goTab(x); };
+    if (e.key === "\\" || e.code === "Backslash") fold(!folded);
+    else if (k === "w" && !e.shiftKey) { if (at >= 0) closeTabOf(tabItems[at]); }
+    else if (k === "t" && e.shiftKey) reopenTab();
+    else if (e.key === "Tab" || e.key === "PageDown" || e.key === "PageUp") {
+      if (!tabItems.length) return;
+      go(at + (e.key === "PageUp" || (e.key === "Tab" && e.shiftKey) ? -1 : 1));
+    } else if (/^[1-9]$/.test(e.key) && !e.shiftKey) {
+      if (!tabItems.length) return;
+      go(e.key === "9" ? tabItems.length - 1 : Math.min(+e.key - 1, tabItems.length - 1));
+    } else return;
+    e.preventDefault();
+  }
+
   const statusText = (status: string) => ({ remote: t("not downloaded"), missing: t("folder not found") } as Record<string, string>)[status];
 </script>
 
@@ -525,6 +567,8 @@
       e.preventDefault();
       newTab();
     }
+    if (e.key === "Escape" && rowMenu) { e.preventDefault(); rowMenu = ""; }
+    tabKeysDown(e);
     // F5, Ctrl+R: the project list (an open project refreshes itself), never the page.
     if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) {
       e.preventDefault();
@@ -562,7 +606,7 @@
           <img src="/brand/r3v-icon-small.svg" alt="" />
           {#if update || current?.keysUnreadable || overview.teamError}<span class="news" title={t("Open the sidebar to see what's new")}></span>{/if}
         </button>
-        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar")} aria-label={t("Show the sidebar")}>»</button>
+        <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\\)"} aria-label={t("Show the sidebar")}>»</button>
       </div>
       <!-- folded: the projects as their icons -->
       <div class="folded-list">
@@ -578,9 +622,14 @@
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
         <img src="/brand/r3v-icon-small.svg" alt="" /><img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
-        {#if appVersion}<span class="version faint">v{appVersion}</span>{/if}
       </button>
-      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar")} aria-label={t("Hide the sidebar")}>«</button>
+      <!-- the version, short (0.1.3, and Nightly); in full in its tooltip, copied on a click -->
+      {#if appVersion}
+        <button class="ghost version" onclick={copyVersion} title={t("R3V {version} — click to copy", { version: appVersion })}>
+          v{appVersion.split("-")[0]}{#if appVersion.includes("-nightly")}<span class="channel">Nightly</span>{/if}
+        </button>
+      {/if}
+      <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       {#if update}
         {@const u = update}
@@ -604,7 +653,7 @@
         <div class="section row-h">
           <span>{t("Projects")}</span>
           {#if current}
-            <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects")} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
+            <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
         {#if current && overview.teamError}
@@ -630,6 +679,8 @@
           <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
           <span class="user-name">{current.memberName}</span>
         {/if}
+        <button class="ghost keys" onclick={() => (keysHelp = true)} title={t("Keyboard shortcuts") + " (Ctrl+/)"}
+          aria-label={t("Keyboard shortcuts")}>⌨</button>
         <button class="ghost prefs" onclick={() => (appSettings = true)}>{t("Preferences")}</button>
       </div>
       {/if}
@@ -649,7 +700,8 @@
                 onclick={() => (x.p ? select(x.p) : (blank = x.key))}>
                 {#if x.p}<ProjectIcon p={x.p} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
               </button>
-              <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}>×</button>
+              <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
+                title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
             </div>
           {/each}
           <button class="tab-add" onclick={newTab} aria-label={t("New tab")} title={t("New tab (Ctrl+T)")}>+</button>
@@ -802,6 +854,8 @@
 {/snippet}
 
 
+<Tooltip />
+{#if keysHelp}<KeysHelp onclose={() => (keysHelp = false)} />{/if}
 {#if queue.open}
   <UploadQueue names={Object.fromEntries(entries.filter((p) => p.root).map((p) => [p.root, p.name]))} onclose={() => (queue.open = false)} />
 {/if}
@@ -876,9 +930,12 @@
     font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
   .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .prefs { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-sm); color: var(--faint); }
+  .keys { margin-left: auto; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-md); color: var(--faint); }
+  .keys + .prefs { margin-left: 0; }
   .shell.folded aside { padding-left: var(--sp-6); padding-right: var(--sp-6); }
   .aside-top { display: flex; align-items: center; gap: var(--sp-4); }
   .aside-top .brand { flex: 1; min-width: 0; }
+  .aside-top .version { margin-bottom: var(--sp-8); }
   .fold { flex: none; padding: var(--sp-2) var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; margin-bottom: var(--sp-8); }
   .fold:hover:not(:disabled) { color: var(--text); }
   .folded-top { flex-direction: column; margin-left: calc(var(--sp-6) * -1); margin-right: calc(var(--sp-6) * -1); }
@@ -960,7 +1017,11 @@
   .add .hint { font-size: var(--fs-xs); color: var(--faint); font-weight: 400; }
   .pad { padding: 0 var(--sp-8); }
   .link { border: none; background: none; color: var(--muted); text-decoration: underline; padding: 0; font-size: var(--fs-md); text-align: left; }
-  .version { margin-left: auto; font-size: var(--fs-xs); font-weight: 400; }
+  .version { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-2) var(--sp-4);
+    font-size: var(--fs-xs); font-weight: 400; color: var(--faint); white-space: nowrap; }
+  .version:hover { color: var(--muted); }
+  .channel { padding: 0 var(--sp-6); border-radius: var(--radius-pill); background: var(--accent-soft); color: var(--accent);
+    font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: .04em; text-transform: uppercase; line-height: 1.5; }
   .edition { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; padding: 1px var(--sp-6);
     border-radius: var(--radius); color: var(--accent-ink); background: var(--accent); }
   .update { margin: 0 0 var(--sp-10); padding: var(--sp-8) var(--sp-10); border-radius: var(--radius-lg); background: var(--accent-bg); border: var(--border-width) solid var(--accent-line); font-size: var(--fs-md); }

@@ -2,6 +2,7 @@
   import { t } from "./i18n.svelte";
   import { ago, type Version } from "./api";
   import { branchGraph, short } from "./branchGraph";
+  import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
   // The Overview's left column: the branch graph (see branchGraph.ts), main
@@ -25,7 +26,13 @@
     panelInset?: number; // the details' distance from the top and bottom
   } = $props();
 
-  const ROW = 40, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
+  // A row per version, a column per line of work (at 100%). Zoom spreads
+  // them out or packs them in; the dots, lines and labels keep their size.
+  const ROW = 56, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
+  // The view: pan (px on the screen) and zoom.
+  let panX = $state(0), panY = $state(0), zoom = $state(1);
+  const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
+  let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
   let g = $derived(branchGraph(versions, branches, branch, "main", head));
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
@@ -57,7 +64,7 @@
     const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
       ...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
     const clear = (dx: number, y: number, w: number, h: number) =>
-      dots.every((d) => d.col * COL + 12 < dx || d.col * COL - 12 > dx + w || d.row * ROW + ROW / 2 + 12 < y || d.row * ROW + ROW / 2 - 12 > y + h) &&
+      dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
     // (before the first version: your branch's name over your changes)
     const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: 0, empty: true }] : [];
@@ -71,49 +78,49 @@
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
       const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
       const h = title ? 32 : 24;
-      const at = c.col * COL;
+      const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
-      let place = { dx: lean[0], y: rowY * ROW + ROW / 2 - 16 - h };
+      let place = { dx: lean[0], y: rowY * rowH + rowH / 2 - 16 - h };
       search: for (let k = 0; k < 30; k++) {
-        const y = rowY * ROW + ROW / 2 - 16 - h - k * (LABEL_H - 4);
+        const y = rowY * rowH + rowH / 2 - 16 - h - k * (LABEL_H - 4);
         for (const dx of lean) if (clear(dx, y, w, h)) { place = { dx, y }; break search; }
       }
       out.push({ id: c.tip || "pending", name: c.name, title, color: c.color, ...place, w, h });
     }
     return out;
   });
-  let center = $derived(PAD - Math.min(-g.left * COL - 12, ...labels.map((l) => l.dx)));
-  let full = $derived(center + Math.max(g.right * COL + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
-  const x = (col: number) => center + col * COL;
+  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx)));
+  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
+  const x = (col: number) => center + col * colW;
   // Room at the top for the labels.
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
-  const yRow = (r: number) => top + r * ROW + ROW / 2;
+  const yRow = (r: number) => top + r * rowH + rowH / 2;
   const y = (id: string) => yRow(g.row.get(id)! + off);
-  let height = $derived(yRow(versions.length + off - 1) + ROW / 2 + 16);
+  let height = $derived(yRow(versions.length + off - 1) + rowH / 2 + 16);
 
   function path(e: { from: string; to: string; kind: string }) {
     const a = g.chainOf.get(e.from)!, b = g.chainOf.get(e.to)!;
     const xa = x(a.col), ya = y(e.from), xb = x(b.col), yb = y(e.to);
     if (e.kind === "line") return `M ${xa} ${ya} L ${xb} ${yb}`;
     if (e.kind === "fork") { // down its own column, then over to where it split
-      const turn = Math.max(ya, yb - ROW);
-      return `M ${xa} ${ya} L ${xa} ${turn} C ${xa} ${turn + ROW / 2}, ${xb} ${turn + ROW / 2}, ${xb} ${yb}`;
+      const turn = Math.max(ya, yb - rowH);
+      return `M ${xa} ${ya} L ${xa} ${turn} C ${xa} ${turn + rowH / 2}, ${xb} ${turn + rowH / 2}, ${xb} ${yb}`;
     }
     // merge: over to the branch merged in, then down its column
-    const turn = Math.min(yb, ya + ROW);
-    return `M ${xa} ${ya} C ${xa} ${ya + ROW / 2}, ${xb} ${ya + ROW / 2}, ${xb} ${turn} L ${xb} ${yb}`;
+    const turn = Math.min(yb, ya + rowH);
+    return `M ${xa} ${ya} C ${xa} ${ya + rowH / 2}, ${xb} ${ya + rowH / 2}, ${xb} ${turn} L ${xb} ${yb}`;
   }
   // Your changes down to the version you are on (over to it when your
   // branch has no versions yet).
   function pendingPath() {
     const c = headChain!;
-    const hx = x(g.chainOf.get(head)?.col ?? c.col), px = x(c.col), turn = Math.max(yRow(0), y(head) - ROW);
+    const hx = x(g.chainOf.get(head)?.col ?? c.col), px = x(c.col), turn = Math.max(yRow(0), y(head) - rowH);
     return hx === px ? `M ${px} ${yRow(0)} L ${px} ${y(head)}`
-      : `M ${px} ${yRow(0)} L ${px} ${turn} C ${px} ${turn + ROW / 2}, ${hx} ${turn + ROW / 2}, ${hx} ${y(head)}`;
+      : `M ${px} ${yRow(0)} L ${px} ${turn} C ${px} ${turn + rowH / 2}, ${hx} ${turn + rowH / 2}, ${hx} ${y(head)}`;
   }
   function stubPath(st: { c: { tip: string; col: number }; from: { col: number }; row: number }) {
     const fx = x(st.from.col), fy = y(st.c.tip), sx = x(st.c.col), sy = yRow(st.row);
-    return `M ${fx} ${fy} C ${fx} ${fy - ROW * 0.5}, ${sx} ${sy + ROW * 0.4}, ${sx} ${sy}`;
+    return `M ${fx} ${fy} C ${fx} ${fy - rowH * 0.5}, ${sx} ${sy + rowH * 0.4}, ${sx} ${sy}`;
   }
   const lineChain = (e: { from: string; to: string; kind: string }) =>
     e.kind === "merge" ? g.chainOf.get(e.to)! : g.chainOf.get(e.from)!;
@@ -126,24 +133,30 @@
   let hovered = $state<string | null>(null);
   let cardHeight = $state(140);
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
-  function hover(id: string) { clearTimeout(hideTimer); hovered = id; }
+  // Where the graph is in the window when a card opens (the card is put
+  // over everything, the sidebar included: see portal).
+  let origin = $state({ left: 0, top: 0 });
+  function hover(id: string) {
+    clearTimeout(hideTimer);
+    const r = box?.getBoundingClientRect();
+    if (r) origin = { left: r.left, top: r.top };
+    hovered = id;
+  }
   function unhover() { clearTimeout(hideTimer); hideTimer = setTimeout(() => (hovered = null), 180); }
   let card = $derived.by(() => {
     const v = hovered ? byID.get(hovered) : undefined;
     if (!v) return null;
     const c = g.chainOf.get(v.id)!;
-    // Below the dot, centred on it, clear of the pointer; above it when
-    // there's no room below. The little arrow points at the dot.
-    const nx = panX + x(c.col) * zoom, ny = panY + y(v.id) * zoom, gap = 12 * zoom + 12;
-    const left = Math.min(Math.max(4, nx - CARD_W / 2), Math.max(4, width - 4 - CARD_W));
-    const below = ny + gap + cardHeight <= boxHeight - 4 || ny - gap - cardHeight < 4;
-    return { v, branch: c.name, left, below, top: below ? ny + gap : ny - gap - cardHeight,
-      arrow: Math.min(Math.max(14, nx - left), CARD_W - 14) };
+    // To the left of the dot, centred on it: the pointer can go up and down
+    // the versions without the card in the way. The little arrow points at
+    // the dot. (In the window: over the sidebar if it comes to that.)
+    const nx = origin.left + panX + x(c.col), ny = origin.top + panY + y(v.id), gap = 22;
+    const vh = typeof window === "undefined" ? 800 : window.innerHeight;
+    const left = Math.max(8, nx - gap - CARD_W);
+    const top = Math.min(Math.max(8, ny - cardHeight / 2), Math.max(8, vh - 8 - cardHeight));
+    return { v, branch: c.name, left, top, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
   });
 
-  // The view: pan (px on the screen) and zoom.
-  let panX = $state(0), panY = $state(0), zoom = $state(1);
-  const ZOOM_MIN = 0.4, ZOOM_MAX = 2.5;
   // At first (and on double-click): main in the middle, a short history in
   // the middle too, a long one from the top.
   function resetView() {
@@ -175,6 +188,19 @@
     if (zoom === 1) { moved = false; resetView(); return; }
     zoomBy(1 / zoom);
   }
+  // The crosshair: back to 100% and the first view, with your changes (or
+  // the version you are on) in sight; what is picked stays picked.
+  function locate() {
+    moved = false;
+    resetView();
+    const id = pending ? "pending" : head;
+    const c = id === "pending" ? pendAt : g.chainOf.get(id);
+    if (!id || !c) return;
+    const nx = panX + x(c.col), ny = panY + (id === "pending" ? yRow(0) : y(id));
+    if (nx < 40 || nx > width - 40) { panX = width / 2 - x(c.col); moved = true; }
+    if (ny < 40 || ny > boxHeight - 40) { panY = boxHeight / 3 - (ny - panY); moved = true; }
+    clamp();
+  }
   // Back to what matters now: your changes when you have some, else the
   // version you are on (the toolbar offers it when something else is picked).
   let backTo = $derived(pending ? (selected !== "pending" ? "pending" : "") : head && selected !== head ? head : "");
@@ -184,7 +210,7 @@
   }
 
   function clamp() {
-    const w = full * zoom, h = height * zoom, mx = Math.min(80, width / 3), my = Math.min(80, boxHeight / 3);
+    const w = full, h = height, mx = Math.min(80, width / 3), my = Math.min(80, boxHeight / 3);
     panX = Math.min(Math.max(panX, mx - w), width - mx);
     panY = Math.min(Math.max(panY, my - h), boxHeight - my);
   }
@@ -193,7 +219,7 @@
   let drag: { x: number; y: number; px: number; py: number; moved: boolean; id: number } | null = null;
   let dragging = $state(false);
   function onpointerdown(e: PointerEvent) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".card, .toolbar")) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".card, .toolbar, .zoombar")) return;
     drag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false, id: e.pointerId };
   }
   function onpointermove(e: PointerEvent) {
@@ -243,7 +269,7 @@
   });
   // Keep the picked version in sight (↑ ↓).
   function reveal(id: string) {
-    const yy = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
+    const yy = panY + (id === "pending" ? yRow(0) : y(id));
     if (yy < 40) panY += 40 - yy;
     else if (yy > boxHeight - 40) panY -= yy - (boxHeight - 40);
   }
@@ -253,7 +279,7 @@
     const id = selected;
     const c = id === "pending" ? (pending ? pendAt : undefined) : g.chainOf.get(id);
     if (!c || (id !== "pending" && !byID.has(id))) return null;
-    const x1 = panX + x(c.col) * zoom + 12 * zoom, y1 = panY + (id === "pending" ? yRow(0) : y(id)) * zoom;
+    const x1 = panX + x(c.col) + 12, y1 = panY + (id === "pending" ? yRow(0) : y(id));
     const x2 = width, y2 = Math.min(Math.max(y1, panelInset + 24), boxHeight - panelInset - 24);
     return x1 < x2 - 8 ? { x1, y1, x2, y2 } : null;
   });
@@ -279,7 +305,7 @@
   {#if versions.length === 0 && !pending}
     <p class="muted empty">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
   {:else}
-    <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px) scale({zoom})">
+    <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px)">
       <svg width={full} height={height} aria-hidden="true">
         {#each g.edges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
@@ -320,18 +346,27 @@
       {/each}
 
     </div>
-    <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
-      <button class="ghost zoom" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out")}>−</button>
+    <div class="zoombar" style:left="{width - 14}px">
+      <button class="ghost" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out") + " (Ctrl+scroll)"}>−</button>
       <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>
-      <button class="ghost zoom" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in")}>+</button>
-      {#if backTo === "pending"}
-        <span class="sep" aria-hidden="true"></span>
-        <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
-      {:else if backTo}
-        <span class="sep" aria-hidden="true"></span>
-        <button class="back light" onclick={goBack}>{t("View latest version")}</button>
-      {/if}
+      <button class="ghost" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in") + " (Ctrl+scroll)"}>+</button>
+      <button class="ghost locate" onclick={locate} aria-label={t("Back to 100% and to where you are")}
+        title={t("Back to 100% and to where you are")}>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <circle cx="8" cy="8" r="5" /><circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" />
+          <path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15" />
+        </svg>
+      </button>
     </div>
+    {#if backTo}
+      <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
+        {#if backTo === "pending"}
+          <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
+        {:else}
+          <button class="back light" onclick={goBack}>{t("View current version")}</button>
+        {/if}
+      </div>
+    {/if}
     {#if link}
       <svg class="link" aria-hidden="true">
         <path d="M {link.x1} {link.y1} C {(link.x1 + link.x2) / 2} {link.y1}, {(link.x1 + link.x2) / 2} {link.y2}, {link.x2} {link.y2}"
@@ -340,8 +375,8 @@
     {/if}
     {#if card}
       {@const v = card.v}
-      <div class="card surface-menu" class:above={!card.below} role="group" aria-label={v.message || t("(no description)")}
-        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ax="{card.arrow}px"
+      <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")} use:portal
+        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
         bind:clientHeight={cardHeight} onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
         <span class="arrow" aria-hidden="true"></span>
         <div class="card-h">
@@ -366,9 +401,16 @@
     gap: var(--sp-2); padding: var(--sp-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-pill);
     box-shadow: var(--shadow-pop); white-space: nowrap; cursor: default; }
   .toolbar button { border-radius: var(--radius-pill); padding: var(--sp-6) var(--sp-12); font-size: var(--fs-md); }
-  .toolbar .zoom { padding: var(--sp-6) var(--sp-10); color: var(--muted); }
-  .toolbar .pct { min-width: 56px; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text); }
-  .toolbar .sep { width: var(--border-width); height: 20px; margin: 0 var(--sp-6); background: var(--line-strong); }
+  /* Zoom: small and quiet, top right of what the details leave. */
+  .zoombar { position: absolute; top: var(--sp-14); transform: translateX(-100%); z-index: 3; display: flex; align-items: center;
+    gap: 0; cursor: default; opacity: .7; transition: opacity .15s; }
+  .zoombar:hover, .zoombar:focus-within { opacity: 1; }
+  .zoombar button { display: flex; align-items: center; justify-content: center; min-width: 22px; height: 22px;
+    padding: 0 var(--sp-4); border: none; border-radius: var(--radius-sm); font-size: var(--fs-sm); color: var(--muted); }
+  .zoombar button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
+  .zoombar .pct { min-width: 40px; font-family: var(--font-mono); font-size: var(--fs-xs); }
+  .zoombar .locate { margin-left: var(--sp-2); }
+  .zoombar svg { position: static; }
   .toolbar .back { font-weight: var(--fw-semibold); }
   .toolbar .light { background: var(--text); color: var(--bg); border-color: var(--text); }
   .toolbar .light:hover:not(:disabled) { background: var(--switch-knob); border-color: var(--switch-knob); }
@@ -387,13 +429,11 @@
   .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-  .card { position: absolute; z-index: 2; padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
+  .card { position: fixed; z-index: var(--z-menu); padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
-  .arrow { position: absolute; left: var(--ax); top: -6px; width: 10px; height: 10px; margin-left: -5px;
+  .arrow { position: absolute; right: -6px; top: var(--ay); width: 10px; height: 10px; margin-top: -5px;
     transform: rotate(45deg); background: var(--surface-menu);
-    border-left: var(--border-width) solid var(--line); border-top: var(--border-width) solid var(--line); }
-  .card.above .arrow { top: auto; bottom: -6px; border: none;
-    border-right: var(--border-width) solid var(--line); border-bottom: var(--border-width) solid var(--line); }
+    border-right: var(--border-width) solid var(--line); border-top: var(--border-width) solid var(--line); }
   .card-h { display: flex; gap: var(--sp-10); align-items: flex-start; }
   .avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--c); display: flex;
     align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }

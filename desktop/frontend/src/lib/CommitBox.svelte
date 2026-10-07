@@ -31,7 +31,8 @@
   || (st.changes.length > 0 && leftOut === st.changes.length)} onclick={oncommit}
   title={st.remoteUrl
     ? t("Commits the project folder and shares it with the team on “{branch}”. If others committed in the meantime, you'll see what they changed and choose how to combine first.", { branch: st.branch }) + unticked
-    : t("Commits on this computer. Share the project with a team to work on it together.") + unticked}>
+    : t("Commits on this computer. Share the project with a team to work on it together.") + unticked}
+  aria-keyshortcuts="Control+Enter">
   <span>{busy === "save" || busy === "first-share" ? t("Committing…")
     : leftOut ? t(st.remoteUrl ? "Commit {done} of {total} & Share" : "Commit {done} of {total}", { done: st.changes.length - leftOut, total: st.changes.length })
     : st.remoteUrl ? t("Commit & Share") : t("Commit")}</span>
