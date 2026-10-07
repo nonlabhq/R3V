@@ -518,17 +518,18 @@
   /* A milestone's tag: a pointed end towards its dot. */
   .mtag { position: absolute; height: 20px; display: inline-flex; align-items: center; gap: var(--sp-4);
     padding: 0 var(--sp-8) 0 var(--sp-6); margin-left: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
-    color: var(--c); background: var(--panel); border: var(--border-width) solid var(--c);
+    --tint: color-mix(in srgb, var(--c) 18%, var(--panel)); /* (opaque: the lines stay under it) */
+    color: var(--c); background: var(--tint); border: var(--border-width) solid var(--c);
     border-left: none; border-radius: 0 var(--radius) var(--radius) 0; white-space: nowrap; z-index: 1; }
   .mtag::before { content: ""; position: absolute; left: -7px; top: -1px; width: 0; height: 0;
     border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 7px solid var(--c); }
   .mtag::after { content: ""; position: absolute; left: -5px; top: 0; width: 0; height: 0;
-    border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 6px solid var(--panel); }
+    border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 6px solid var(--tint); }
   .mtag.left { flex-direction: row-reverse; margin-left: -6px; padding: 0 var(--sp-6) 0 var(--sp-8);
     border-left: var(--border-width) solid var(--c); border-right: none; border-radius: var(--radius) 0 0 var(--radius); }
   .mtag.left::before { left: auto; right: -7px; border-right: none; border-left: 7px solid var(--c); }
-  .mtag.left::after { left: auto; right: -5px; border-right: none; border-left: 6px solid var(--panel); }
-  .mtag:hover:not(:disabled) { background: var(--panel); border-color: var(--c); filter: brightness(1.15); }
+  .mtag.left::after { left: auto; right: -5px; border-right: none; border-left: 6px solid var(--tint); }
+  .mtag:hover:not(:disabled) { background: var(--tint); border-color: var(--c); filter: brightness(1.15); }
   .mtag svg { width: 11px; height: 11px; flex: none; }
   .mtag span { overflow: hidden; text-overflow: ellipsis; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
