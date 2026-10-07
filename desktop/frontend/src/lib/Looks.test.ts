@@ -142,6 +142,16 @@ describe("Project icon and colour", () => {
     expect(screen.queryByRole("dialog", { name: "Icon and colour" })).toBeNull();
     expect(document.activeElement).toBe(icon);
   });
+
+  it("keeps the colours for the icons: the emoji tab has none", async () => {
+    render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((b) => b.textContent)).toEqual(["Icons", "Emoji"]);
+    expect(screen.getByRole("radio", { name: "Lime" })).toBeTruthy();
+    await fireEvent.click(tabs[1]);
+    expect(screen.queryByRole("radio", { name: "Lime" })).toBeNull();
+  });
 });
 
 describe("History graph with looks", () => {

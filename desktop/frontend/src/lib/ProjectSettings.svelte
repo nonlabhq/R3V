@@ -158,12 +158,13 @@
   {#if lookOpen && team?.looks}
     <div class="look-pop surface-menu" role="dialog" aria-label={t("Icon and colour")} use:portal bind:offsetHeight={popH}
       style:left="{popAt.left}px" style:top="{popAt.top}px" style:width="{POP_W}px">
-      <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
       <div class="kinds" role="tablist" aria-label={t("Icon")}>
         <button role="tab" class:on={lookTab === "icons"} aria-selected={lookTab === "icons"} onclick={() => (lookTab = "icons")}>{t("Icons")}</button>
         <button role="tab" class:on={lookTab === "emoji"} aria-selected={lookTab === "emoji"} onclick={() => (lookTab = "emoji")}>{t("Emoji")}</button>
       </div>
       {#if lookTab === "icons"}
+        <!-- (an emoji has its own colours: the colour is for the icons) -->
+        <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
         <div class="icons" role="radiogroup" aria-label={t("Icon")}>
           <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
             title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => pickIcon("")}>
