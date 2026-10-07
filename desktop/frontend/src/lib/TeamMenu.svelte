@@ -55,10 +55,15 @@
       await api.CloudSignIn();
       await reload();
     } catch (e) {
-      toast(errorText(e), "error");
+      if (signingIn) toast(errorText(e), "error"); // (not when cancelled)
     } finally {
       signingIn = false;
     }
+  }
+  // The browser tab left alone: stop waiting for it.
+  function cancelSignIn() {
+    signingIn = false;
+    api.CloudCancelSignIn();
   }
 
   async function select(id: string) {
@@ -139,6 +144,11 @@
     <button class="who" disabled={signingIn} onclick={signIn}>
       ⚠ {signingIn ? tr("Finish signing in in your browser…") : tr("Signed out of R3V-Cloud: sign in to share and update")}
     </button>
+    {#if signingIn}<button class="who" onclick={cancelSignIn}>{tr("Cancel")}</button>{/if}
+  {/if}
+  {#if current?.hosted && current.noAccess && !current.signedOut}
+    <!-- the account signed in isn't in it (any more): the person decides -->
+    <p class="who noaccess">⚠ {tr("The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.")}</p>
   {/if}
   {#if current && !current.memberId}
     <button class="who" onclick={() => (identityFor = current!)}
@@ -230,6 +240,7 @@
 {/if}
 
 <style>
+  .noaccess { margin: 0; cursor: default; white-space: normal; line-height: 1.35; }
   .team-menu { position: relative; margin-bottom: var(--sp-10); }
   .backup { display: flex; align-items: flex-start; gap: var(--sp-4); width: 100%; margin-top: var(--sp-6); padding: var(--sp-6) var(--sp-8); border-radius: var(--radius);
     background: var(--panel); font-size: var(--fs-sm); text-align: left; line-height: 1.4; }

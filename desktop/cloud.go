@@ -48,7 +48,7 @@ var signIn struct {
 // CloudCancelSignIn).
 func (a *App) CloudSignIn() (CloudStatus, error) {
 	if version.Channel != "nightly" {
-		return CloudStatus{}, errors.New("R3V-Cloud is in the Nightly build for now")
+		return CloudStatus{}, cloud.ErrNotInBuild
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	signIn.Lock()
@@ -68,7 +68,7 @@ func (a *App) CloudSignIn() (CloudStatus, error) {
 	if err != nil {
 		return CloudStatus{}, err
 	}
-	if _, err := cloud.SyncTeams(svc); err != nil {
+	if err := a.syncTeams(svc); err != nil {
 		return CloudStatus{}, err
 	}
 	a.selectFirstHosted(svc)
@@ -92,9 +92,39 @@ func (a *App) syncHosted() {
 	if version.Channel != "nightly" || !cloud.SignedIn(svc) {
 		return
 	}
-	if _, err := cloud.SyncTeams(svc); err == nil && a.emit != nil {
+	a.syncTeams(svc)
+}
+
+// syncTeams brings the account's teams up to date and tells the frontend.
+// A team the account is no longer in stays, with its projects (nothing is
+// changed in them): their watches stop, and the person is told, once.
+func (a *App) syncTeams(svc string) error {
+	me, err := cloud.SyncTeams(svc)
+	if err != nil {
+		return err
+	}
+	if len(me.Lost) > 0 {
+		store, _ := teams.Load()
+		var names []string
+		for _, id := range me.Lost {
+			for key, root := range store.Projects {
+				if strings.HasPrefix(key, id+"/") {
+					a.stopWatch(root)
+				}
+			}
+			if t := store.Find(id); t != nil {
+				names = append(names, t.Name)
+			}
+		}
+		if a.notify != nil {
+			a.notify("No access to a team", "The account signed in to R3V-Cloud isn't in "+strings.Join(names, ", ")+
+				" (any more). Its projects stay on this computer as they are; remove the team to keep them as local projects.")
+		}
+	}
+	if a.emit != nil {
 		a.emit("teams", svc)
 	}
+	return nil
 }
 
 // CloudSignOut signs this computer out; hosted teams stay listed, signed out.

@@ -86,9 +86,19 @@ type GCReport struct {
 	NextCleanup time.Time
 }
 
+// ErrCleanupPerProject: storage that keeps each project's contents apart
+// (a hosted team's) isn't cleaned up from here.
+var ErrCleanupPerProject = errors.New("storage cleanup isn't available for this team: its service looks after its storage")
+
 // CollectGarbage finds the files no version uses and marks them; with
 // remove it also deletes those marked at least a day before.
 func (s *BucketBackend) CollectGarbage(remove bool) (*GCReport, error) {
+	// Contents kept per project (hosted teams): this cleanup reads them as
+	// one store, so it could take one project's files for unused. The
+	// service is to clean those itself; refuse rather than guess.
+	if pp, ok := s.b.(PerProject); ok && pp.ContentsPerProject() {
+		return nil, ErrCleanupPerProject
+	}
 	now := gcNow()
 	rep := &GCReport{}
 	used, err := s.usedFiles(rep)

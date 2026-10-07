@@ -2347,6 +2347,12 @@ export class TeamSummary {
     "hosted": boolean;
     "signedOut": boolean;
 
+    /**
+     * NoAccess: a hosted team the account signed in isn't in (any more): it
+     * stays, with its projects, until removed.
+     */
+    "noAccess": boolean;
+
     /** Creates a new TeamSummary instance. */
     constructor($$source: Partial<TeamSummary> = {}) {
         if (!("id" in $$source)) {
@@ -2390,6 +2396,9 @@ export class TeamSummary {
         }
         if (!("signedOut" in $$source)) {
             this["signedOut"] = false;
+        }
+        if (!("noAccess" in $$source)) {
+            this["noAccess"] = false;
         }
 
         Object.assign(this, $$source);

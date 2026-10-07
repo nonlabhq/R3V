@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -74,8 +75,18 @@ func SignedIn(service string) bool {
 
 var client = &http.Client{Timeout: 30 * time.Second}
 
+// ErrNotInBuild: this build has no hosted teams (Stable; see
+// remote.HostedTeams). Every way to the service stops here.
+var ErrNotInBuild = errors.New("R3V-Cloud is in the Nightly build for now")
+
+// invitation: an invitation's token in a path (kept out of errors).
+var invitation = regexp.MustCompile(`/invitations/[^/?]+`)
+
 // call sends a request to the service with the session; out may be nil.
 func call(service, token, method, path string, in, out any) error {
+	if !remote.HostedTeams {
+		return ErrNotInBuild
+	}
 	var body io.Reader
 	if in != nil {
 		data, _ := json.Marshal(in)
@@ -91,8 +102,15 @@ func call(service, token, method, path string, in, out any) error {
 	if token != "" {
 		req.Header.Set("authorization", "Bearer "+token)
 	}
+	// (an invitation's token is in its path: errors say the path without it)
+	shown := invitation.ReplaceAllString(path, "/invitations/…")
 	resp, err := client.Do(req)
 	if err != nil {
+		if ue, ok := err.(*url.Error); ok {
+			c := *ue
+			c.URL = service + shown
+			return &c
+		}
 		return err
 	}
 	defer resp.Body.Close()
@@ -107,7 +125,7 @@ func call(service, token, method, path string, in, out any) error {
 		if e.Error.Message != "" {
 			return fmt.Errorf("R3V-Cloud: %s", e.Error.Message)
 		}
-		return fmt.Errorf("R3V-Cloud: %s %s: %d", method, path, resp.StatusCode)
+		return fmt.Errorf("R3V-Cloud: %s %s: %d", method, shown, resp.StatusCode)
 	}
 	if out == nil {
 		return nil
@@ -123,6 +141,9 @@ type Me struct {
 		Name  string `json:"name"`
 	} `json:"user"`
 	Teams []MyTeam `json:"teams"`
+	// Lost: the teams (ids) SyncTeams found the account no longer in, just
+	// now: marked NoAccess.
+	Lost []string `json:"-"`
 }
 
 // MyTeam is a team the person is in.
@@ -157,9 +178,11 @@ func TeamAddress(service, team string) string {
 func Hosted(t teams.Team) (service string, ok bool) { return remote.BrokerService(t.Remote.URL) }
 
 // SyncTeams puts the account's teams in the teams store (new ones added,
-// names and member ids brought up to date) and removes the service's
-// teams the account is no longer in. Teams of other services, and storage
-// teams, are left alone.
+// names and member ids brought up to date) and marks NoAccess the service's
+// teams the account isn't in (taken out, the team deleted, or another
+// account signed in): they stay listed, their projects untouched, until
+// the person removes them (Me.Lost: those just marked). Teams of other
+// services, and storage teams, are left alone.
 func SyncTeams(service string) (*Me, error) {
 	me, err := GetMe(service)
 	if err != nil {
@@ -169,22 +192,32 @@ func SyncTeams(service string) (*Me, error) {
 	if name == "" {
 		name, _, _ = strings.Cut(me.User.Email, "@")
 	}
+	var lost []string
 	_, err = teams.Update(func(s *teams.Store) error {
+		lost = nil
 		keep := map[string]bool{}
 		for _, mt := range me.Teams {
 			addr := teams.NormalizeURL(TeamAddress(service, mt.ID))
 			keep[addr] = true
 			t := s.Upsert(remote.Config{URL: addr}, mt.Name)
-			t.MemberID, t.MemberName = mt.MemberID, name
+			t.MemberID, t.MemberName, t.NoAccess = mt.MemberID, name, false
 		}
-		for _, t := range append([]teams.Team(nil), s.Teams...) {
-			if svc, ok := Hosted(t); ok && strings.EqualFold(svc, service) && !keep[teams.NormalizeURL(t.Remote.URL)] {
-				s.Remove(t.ID)
+		for i := range s.Teams {
+			t := &s.Teams[i]
+			if svc, ok := Hosted(*t); ok && strings.EqualFold(svc, service) && !keep[teams.NormalizeURL(t.Remote.URL)] {
+				if !t.NoAccess {
+					lost = append(lost, t.ID)
+				}
+				t.NoAccess = true
 			}
 		}
 		return nil
 	})
-	return me, err
+	if err != nil {
+		return nil, err
+	}
+	me.Lost = lost
+	return me, nil
 }
 
 // SignOut ends this computer's session with service (on the service too,

@@ -59,6 +59,9 @@ type TeamSummary struct {
 	// SignedOut: this computer isn't signed in to it.
 	Hosted    bool `json:"hosted"`
 	SignedOut bool `json:"signedOut"`
+	// NoAccess: a hosted team the account signed in isn't in (any more): it
+	// stays, with its projects, until removed.
+	NoAccess bool `json:"noAccess"`
 }
 
 // TeamProject is a project as the sidebar shows it.
@@ -379,22 +382,30 @@ func (a *App) RemoveTeam(id string, keepProjects, fullHistory bool) error {
 	if err != nil {
 		return err
 	}
-	// A hosted team is left on the service too; otherwise it would come back
-	// with the next look at the account's teams.
+	// (a hosted team the account isn't in: its storage won't let us in)
+	gone := false
 	if t := store.Find(id); t != nil {
-		if svc, ok := cloud.Hosted(*t); ok && cloud.SignedIn(svc) {
-			if err := cloud.Leave(svc, cloud.TeamID(t.Remote.URL)); err != nil {
-				return err
-			}
-		}
+		gone = t.NoAccess
 	}
+	// The projects first: moving them to Local downloads what they need from
+	// the team's storage, which a hosted team no longer lets in once left.
 	for key, root := range store.Projects {
 		if !strings.HasPrefix(key, id+"/") {
 			continue
 		}
 		a.stopWatch(root)
 		if keepProjects {
-			if err := a.detach(root, fullHistory); err != nil {
+			if err := a.detach(root, fullHistory, gone); err != nil {
+				return err
+			}
+		}
+	}
+	// Then a hosted team is left on the service too; otherwise it would come
+	// back with the next look at the account's teams. (Failing, it stays
+	// listed: removing it again tries again.)
+	if t := store.Find(id); t != nil {
+		if svc, ok := cloud.Hosted(*t); ok && cloud.SignedIn(svc) && !t.NoAccess {
+			if err := cloud.Leave(svc, cloud.TeamID(t.Remote.URL)); err != nil {
 				return err
 			}
 		}
@@ -412,7 +423,9 @@ func (a *App) RemoveTeam(id string, keepProjects, fullHistory bool) error {
 // complete here first, and with fullHistory every older one too (else those
 // keep needing the team's storage). The downloads happen before the
 // settings are changed (they can take long).
-func (a *App) detach(root string, fullHistory bool) error {
+// gone: the team's storage refuses us for good (a hosted team the account
+// isn't in): what can't be downloaded stays out, the rest is kept as asked.
+func (a *App) detach(root string, fullHistory, gone bool) error {
 	a.stopWatch(root)
 	unlisted := func(local string) error {
 		_, err := teams.Update(func(s *teams.Store) error {
@@ -434,7 +447,7 @@ func (a *App) detach(root string, fullHistory bool) error {
 	}
 	defer unlock()
 	if r.Config.Remote != nil {
-		if err := r.PrepareDetach(fullHistory); err != nil {
+		if err := r.PrepareDetach(fullHistory); err != nil && !(gone && errors.Is(err, remote.ErrForbidden)) {
 			return fmt.Errorf("%s: %w", filepath.Base(root), err)
 		}
 	}
@@ -677,7 +690,7 @@ func (a *App) DeleteProjectFromTeam(teamID, projectID string) error {
 	// Deleted for everyone: first bring what isn't here yet (the copy here is
 	// kept under Local with its whole history).
 	if root := store.ProjectRoot(teamID, projectID); root != "" {
-		if err := a.detach(root, true); err != nil {
+		if err := a.detach(root, true, false); err != nil {
 			return err
 		}
 	}

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/keyring"
+	"github.com/nonlabhq/r3v/internal/remote"
 )
 
 // SignIn signs this computer in to service through the browser: open is
@@ -24,6 +25,9 @@ import (
 // (loopback redirect with PKCE). The session goes in the credential store.
 // Waits up to 10 minutes unless ctx ends sooner.
 func SignIn(ctx context.Context, service string, open func(address string) error) (*Me, error) {
+	if !remote.HostedTeams {
+		return nil, ErrNotInBuild
+	}
 	verifier := random(32)
 	sum := sha256.Sum256([]byte(verifier))
 	challenge := base64.RawURLEncoding.EncodeToString(sum[:])

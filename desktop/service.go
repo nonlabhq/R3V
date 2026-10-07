@@ -56,11 +56,7 @@ func NewApp() *App {
 		preuploadNow: make(chan string, 8), live: cloud.NewHub()}
 	// People, roles or projects changed on the service: the team list
 	// follows, and the frontend is told.
-	a.live.OnTeamChange = func(service string) {
-		if _, err := cloud.SyncTeams(service); err == nil && a.emit != nil {
-			a.emit("teams", service)
-		}
-	}
+	a.live.OnTeamChange = func(service string) { a.syncTeams(service) }
 	return a
 }
 
@@ -194,6 +190,11 @@ func (a *App) startWatch(root string) {
 	r, err := project.Open(root)
 	if err != nil || r.Config.Remote == nil {
 		return
+	}
+	if store, err := teams.Load(); err == nil {
+		if t := store.FindByURL(r.Config.Remote.URL); t != nil && t.NoAccess {
+			return // (a team the account isn't in: nothing to watch)
+		}
 	}
 	a.mu.Lock()
 	if _, running := a.teamWatches[root]; running {

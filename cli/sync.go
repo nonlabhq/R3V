@@ -105,6 +105,8 @@ func cmdTeams(args []string) error {
 		note := ""
 		if svc, ok := cloud.Hosted(t); ok && !cloud.SignedIn(svc) {
 			note = "  signed out: r3v login"
+		} else if ok && t.NoAccess {
+			note = "  no access: the account signed in isn't in this team (any more)"
 		}
 		fmt.Printf("%s%-24s %s  (%d project(s) on this computer)%s\n", mark, t.Name, t.Remote.Display(), n, note)
 	}
@@ -115,6 +117,9 @@ func cmdTeams(args []string) error {
 // signed in to up to date (teams joined or left since). Offline, or signed
 // out, the list stays as it was.
 func syncHosted() {
+	if !remote.HostedTeams {
+		return
+	}
 	services := map[string]bool{cloud.Service(): true}
 	if store, err := teams.Load(); err == nil {
 		for _, t := range store.Teams {
@@ -124,9 +129,10 @@ func syncHosted() {
 		}
 	}
 	for svc := range services {
-		if cloud.SignedIn(svc) {
-			cloud.SyncTeams(svc)
+		if !cloud.SignedIn(svc) {
+			continue
 		}
+		cloud.SyncTeams(svc) // (teams the account isn't in are marked: see cmdTeams)
 	}
 }
 

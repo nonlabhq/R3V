@@ -1,3 +1,5 @@
+//go:build nightly
+
 package cloud
 
 import (
@@ -150,7 +152,8 @@ func TestSignInKeepsTheSessionAndSyncsTeams(t *testing.T) {
 		t.Errorf("%d teams, want 3", len(store.Teams))
 	}
 
-	// Taken out of Label: it goes; Band and the storage team stay.
+	// Taken out of Label: it stays, marked no access (the person decides);
+	// Band and the storage team are as they were.
 	f.mu.Lock()
 	f.teams = f.teams[:1]
 	f.mu.Unlock()
@@ -158,9 +161,10 @@ func TestSignInKeepsTheSessionAndSyncsTeams(t *testing.T) {
 		t.Fatal(err)
 	}
 	store, _ = teams.Load()
-	if len(store.Teams) != 2 || store.FindByURL(TeamAddress(f.URL, strings.Repeat("2", 32))) != nil ||
+	label, band := store.FindByURL(TeamAddress(f.URL, strings.Repeat("2", 32))), store.FindByURL(TeamAddress(f.URL, strings.Repeat("1", 32)))
+	if len(store.Teams) != 3 || label == nil || !label.NoAccess || band == nil || band.NoAccess ||
 		store.FindByURL("s3+https://storage.example/bucket/r3v") == nil {
-		t.Errorf("teams after leaving Label: %+v", store.Teams)
+		t.Errorf("teams after being taken out of Label: %+v", store.Teams)
 	}
 
 	// Signing out ends the session here and there; the teams stay listed.
@@ -176,7 +180,7 @@ func TestSignInKeepsTheSessionAndSyncsTeams(t *testing.T) {
 	if _, err := SyncTeams(f.URL); !errors.Is(err, remote.ErrSignedOut) {
 		t.Errorf("sync when signed out: %v", err)
 	}
-	if store, _ = teams.Load(); len(store.Teams) != 2 {
+	if store, _ = teams.Load(); len(store.Teams) != 3 {
 		t.Errorf("teams after signing out: %d", len(store.Teams))
 	}
 }

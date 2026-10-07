@@ -50,6 +50,10 @@ type Team struct {
 	// NoPreupload: big files aren't put in the team's storage before they
 	// are committed (see project.Preupload); on unless turned off.
 	NoPreupload bool `json:"noPreupload,omitempty"`
+	// NoAccess: a hosted team the signed-in account isn't in (taken out,
+	// the team deleted, or another account signed in). It stays listed with
+	// its projects until the person removes it; back in, it's cleared.
+	NoAccess bool `json:"noAccess,omitempty"`
 	// KeysUnreadable: the team's keys were sealed by another Windows user
 	// or on another computer (teams.json copied): connect again with the
 	// team's connection code.

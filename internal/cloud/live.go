@@ -29,10 +29,15 @@ type Hub struct {
 	conns map[string]*liveConn // by team address
 	// Waits, for tests: first wait between reconnects, longest wait, ping.
 	backoff, maxBackoff, ping time.Duration
+	// steady: how long a connection lasts before it counts as working (one
+	// the service takes and drops at once mustn't start the waiting over:
+	// that would reconnect every second, for good)
+	steady time.Duration
 }
 
 func NewHub() *Hub {
-	return &Hub{conns: map[string]*liveConn{}, backoff: time.Second, maxBackoff: time.Minute, ping: 30 * time.Second}
+	return &Hub{conns: map[string]*liveConn{}, backoff: time.Second, maxBackoff: time.Minute, ping: 30 * time.Second,
+		steady: 30 * time.Second}
 }
 
 // Watch subscribes to a hosted project's changes: nudge receives (never
@@ -162,12 +167,13 @@ func poke(ch chan struct{}) {
 func (c *liveConn) run(ctx context.Context) {
 	wait := c.hub.backoff
 	for ctx.Err() == nil {
+		began := time.Now()
 		up, err := c.session(ctx)
 		c.setConnected(false)
 		if ctx.Err() != nil {
 			return
 		}
-		if up {
+		if up && time.Since(began) >= c.hub.steady {
 			wait = c.hub.backoff // it worked a while: start over
 		}
 		if errors.Is(err, remote.ErrSignedOut) {
