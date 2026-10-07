@@ -135,11 +135,22 @@
 <svelte:window onclick={(e) => { if (open && !(e.target as HTMLElement).closest(".team-menu")) open = false; }} />
 
 <div class="team-menu">
-  <button class="current" onclick={() => (open = !open)} title={current?.address ?? ""}>
-    <span class="label">{tr("Team")}</span>
-    <span class="name">{current?.name ?? tr("No team")}</span>
-    <span class="caret">▾</span>
-  </button>
+  <!-- the team (a click lists the others), and its settings right there -->
+  <div class="current">
+    <button class="switch" onclick={() => (open = !open)} title={current?.address ?? ""} aria-haspopup="menu" aria-expanded={open}>
+      <span class="label">{tr("Team")}</span>
+      <span class="name">{current?.name ?? tr("No team")}</span>
+    </button>
+    {#if current}
+      <button class="ghost settings" title={tr("Team settings: names, connection code, keys")} aria-label={tr("Team settings: names, connection code, keys")}
+        onclick={() => { open = false; settingsFor = current!; }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    {/if}
+  </div>
   {#if current?.hosted && current.signedOut}
     <button class="who" disabled={signingIn} onclick={signIn}>
       ⚠ {signingIn ? tr("Finish signing in in your browser…") : tr("Signed out of R3V-Cloud: sign in to share and update")}
@@ -247,13 +258,17 @@
   .backup.warn { display: block; background: var(--warn-bg); color: var(--warn); }
   .backup .go { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); padding: 0; background: none; text-align: left; font-size: var(--fs-sm); color: var(--text); }
   .backup .x { padding: 0 var(--sp-4); line-height: 16px; color: var(--muted); }
-  .current {
-    width: 100%; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto;
-    text-align: left; padding: var(--sp-8) var(--sp-10); background: var(--panel); border-radius: var(--radius-lg);
+  .current { display: flex; align-items: stretch; background: var(--panel); border-radius: var(--radius-lg); }
+  .switch {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; padding: var(--sp-8) var(--sp-10);
+    background: transparent; border-color: transparent; border-radius: var(--radius-lg);
   }
-  .label { grid-column: 1; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
-  .name { grid-column: 1; font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .caret { grid-column: 2; grid-row: 1 / 3; align-self: center; color: var(--muted); }
+  .switch:hover:not(:disabled) { background: var(--hover); border-color: transparent; }
+  .label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
+  .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .settings { flex: none; align-self: center; margin-right: var(--sp-6); padding: var(--sp-6); line-height: 0; color: var(--muted); }
+  .settings:hover:not(:disabled) { color: var(--text); }
+  .settings svg { width: 18px; height: 18px; }
   .menu {
     position: absolute; top: calc(100% + 4px); left: 0; right: -60px; z-index: var(--z-menu); padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
