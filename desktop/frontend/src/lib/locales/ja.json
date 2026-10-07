@@ -1146,5 +1146,6 @@
 "Signed out of R3V-Cloud: sign in to share and update": "R3V-Cloud からサインアウトしています：共有と更新にはサインインしてください",
 "Your name comes from your R3V-Cloud account.": "名前は R3V-Cloud のアカウントのものです。",
 "Leave the team…": "チームを抜ける…",
-"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "R3V-Cloud 上のこのチームからも抜けます。戻るには、もう一度招待してもらう必要があります。プロジェクトのフォルダーはディスクに残ります。"
+"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "R3V-Cloud 上のこのチームからも抜けます。戻るには、もう一度招待してもらう必要があります。プロジェクトのフォルダーはディスクに残ります。",
+"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "サインイン中のアカウントはこのチームに（もう）いません。プロジェクトはそのままここに残ります。チームの設定でチームを削除すると、ローカルのプロジェクトとして残せます。"
 }

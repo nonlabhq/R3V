@@ -1146,5 +1146,6 @@
 "Signed out of R3V-Cloud: sign in to share and update": "已退出 R3V-Cloud：请登录后再分享和更新",
 "Your name comes from your R3V-Cloud account.": "你的名字来自 R3V-Cloud 账号。",
 "Leave the team…": "离开团队…",
-"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "你也会离开 R3V-Cloud 上的这个团队：之后需要有人重新邀请你才能回来。项目文件夹会留在磁盘上。"
+"You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "你也会离开 R3V-Cloud 上的这个团队：之后需要有人重新邀请你才能回来。项目文件夹会留在磁盘上。",
+"The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "当前登录的账号不在这个团队里（或已不在）。它的项目会原样留在这里；到团队设置移除团队，即可把项目保留为本地项目。"
 }

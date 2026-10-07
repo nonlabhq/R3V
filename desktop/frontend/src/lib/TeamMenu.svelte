@@ -146,6 +146,10 @@
     </button>
     {#if signingIn}<button class="who" onclick={cancelSignIn}>{tr("Cancel")}</button>{/if}
   {/if}
+  {#if current?.hosted && current.noAccess && !current.signedOut}
+    <!-- the account signed in isn't in it (any more): the person decides -->
+    <p class="who noaccess">⚠ {tr("The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.")}</p>
+  {/if}
   {#if current && !current.memberId}
     <button class="who" onclick={() => (identityFor = current!)}
       title={tr("Versions you commit here show this name, for everyone in the team")}>
@@ -236,6 +240,7 @@
 {/if}
 
 <style>
+  .noaccess { margin: 0; cursor: default; white-space: normal; line-height: 1.35; }
   .team-menu { position: relative; margin-bottom: var(--sp-10); }
   .backup { display: flex; align-items: flex-start; gap: var(--sp-4); width: 100%; margin-top: var(--sp-6); padding: var(--sp-6) var(--sp-8); border-radius: var(--radius);
     background: var(--panel); font-size: var(--fs-sm); text-align: left; line-height: 1.4; }

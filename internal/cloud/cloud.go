@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/keyring"
-	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teams"
 	"github.com/nonlabhq/r3v/internal/version"
@@ -76,13 +75,14 @@ func SignedIn(service string) bool {
 
 var client = &http.Client{Timeout: 30 * time.Second}
 
-// call sends a request to the service with the session; out may be nil.
-var invitation = regexp.MustCompile(`/invitations/[^/?]+`)
-
 // ErrNotInBuild: this build has no hosted teams (Stable; see
 // remote.HostedTeams). Every way to the service stops here.
 var ErrNotInBuild = errors.New("R3V-Cloud is in the Nightly build for now")
 
+// invitation: an invitation's token in a path (kept out of errors).
+var invitation = regexp.MustCompile(`/invitations/[^/?]+`)
+
+// call sends a request to the service with the session; out may be nil.
 func call(service, token, method, path string, in, out any) error {
 	if !remote.HostedTeams {
 		return ErrNotInBuild
@@ -141,9 +141,9 @@ type Me struct {
 		Name  string `json:"name"`
 	} `json:"user"`
 	Teams []MyTeam `json:"teams"`
-	// Dropped: the folders of projects of teams the account is no longer in,
-	// kept on this computer as local projects (SyncTeams).
-	Dropped []string `json:"-"`
+	// Lost: the teams (ids) SyncTeams found the account no longer in, just
+	// now: marked NoAccess.
+	Lost []string `json:"-"`
 }
 
 // MyTeam is a team the person is in.
@@ -178,9 +178,10 @@ func TeamAddress(service, team string) string {
 func Hosted(t teams.Team) (service string, ok bool) { return remote.BrokerService(t.Remote.URL) }
 
 // SyncTeams puts the account's teams in the teams store (new ones added,
-// names and member ids brought up to date) and removes the service's
-// teams the account is no longer in (taken out, or the team deleted): their
-// projects here stay, as local projects (Me.Dropped). Teams of other
+// names and member ids brought up to date) and marks NoAccess the service's
+// teams the account isn't in (taken out, the team deleted, or another
+// account signed in): they stay listed, their projects untouched, until
+// the person removes them (Me.Lost: those just marked). Teams of other
 // services, and storage teams, are left alone.
 func SyncTeams(service string) (*Me, error) {
 	me, err := GetMe(service)
@@ -191,49 +192,32 @@ func SyncTeams(service string) (*Me, error) {
 	if name == "" {
 		name, _, _ = strings.Cut(me.User.Email, "@")
 	}
+	var lost []string
 	_, err = teams.Update(func(s *teams.Store) error {
+		lost = nil
 		keep := map[string]bool{}
 		for _, mt := range me.Teams {
 			addr := teams.NormalizeURL(TeamAddress(service, mt.ID))
 			keep[addr] = true
 			t := s.Upsert(remote.Config{URL: addr}, mt.Name)
-			t.MemberID, t.MemberName = mt.MemberID, name
+			t.MemberID, t.MemberName, t.NoAccess = mt.MemberID, name, false
 		}
-		for _, t := range append([]teams.Team(nil), s.Teams...) {
-			if svc, ok := Hosted(t); ok && strings.EqualFold(svc, service) && !keep[teams.NormalizeURL(t.Remote.URL)] {
-				for key, root := range s.Projects {
-					if strings.HasPrefix(key, t.ID+"/") {
-						me.Dropped = append(me.Dropped, root)
-						s.AddLocal(root)
-					}
+		for i := range s.Teams {
+			t := &s.Teams[i]
+			if svc, ok := Hosted(*t); ok && strings.EqualFold(svc, service) && !keep[teams.NormalizeURL(t.Remote.URL)] {
+				if !t.NoAccess {
+					lost = append(lost, t.ID)
 				}
-				s.Remove(t.ID)
+				t.NoAccess = true
 			}
 		}
 		return nil
 	})
-	for _, root := range me.Dropped {
-		forgetTeam(root)
-	}
-	return me, err
-}
-
-// forgetTeam makes a project of a team the account is no longer in one of
-// this computer only: its folder and the versions committed here stay;
-// what was only in the team's storage can't be fetched any more. (Busy, it
-// keeps the address, and says it can't reach the team.)
-func forgetTeam(root string) {
-	r, err := project.Open(root)
-	if err != nil || r.Config.Remote == nil {
-		return
-	}
-	release, err := r.Lock(10 * time.Second)
 	if err != nil {
-		return
+		return nil, err
 	}
-	defer release()
-	r.Config.Remote = nil
-	r.SaveConfig()
+	me.Lost = lost
+	return me, nil
 }
 
 // SignOut ends this computer's session with service (on the service too,
