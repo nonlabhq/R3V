@@ -28,7 +28,7 @@ func security(stdin string, args ...string) (string, error) {
 
 // quote makes s one argument of security's interactive mode.
 func quote(s string) string {
-	return `"` + strings.NewReplacer(`\`, `\`, `"`, `\"`).Replace(s) + `"`
+	return `"` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(s) + `"`
 }
 
 func set(target, user string, secret string) error {
