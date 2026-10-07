@@ -1,8 +1,30 @@
 # DaVinci Resolve projects
 
-Status: designed (in place, as a plugin); not built. Findings from
-Resolve Studio 20.2.2 on Windows 11, October 2026; Resolve 21.1 is
-current.
+Status: parked (2026-10-07). Designed (in place, as a plugin), not built.
+Findings from Resolve Studio 20.2.2 on Windows 11, October 2026; Resolve
+21.1 is current.
+
+## Parked
+
+Video isn't where R3V should spend its effort now; music, games and 3D are.
+
+- What hurts video teams most is footage (terabytes to store, move and
+  stream), relinking, and several people on one project. Footage never
+  changes once shot, so it needs storage, not versions; the rest is
+  covered by fixed drive letters, Mapped Mount, Blackmagic Cloud (US$5 a
+  month a library) and PostgreSQL.
+- What R3V could do is narrow: versions and hand-over of a ~3 MB project
+  for teams of one to five on disk libraries. They already duplicate
+  timelines inside the project (v01, v02…), export `.drp`s, or use
+  Resolve's Project Backups; R3V adds history, own storage and working
+  offline, without the merge that sets it apart for Live.
+- The cost is high for one program: five new plugin hooks, stills outside
+  the project folder, a table of Resolve versions. And editors use Macs a
+  lot; R3V is Windows only.
+
+Look again when one of these holds: the plugin interface gets built for
+another kind of project anyway; R3V runs on macOS; several users ask.
+The research and experiments below stay valid for Resolve 18–20.
 
 ## Why
 
