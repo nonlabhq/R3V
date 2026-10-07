@@ -1,7 +1,7 @@
 # DaVinci Resolve projects
 
-Status: researching. Findings from Resolve 20.2 (Free) on Windows, October
-2026; Resolve 21.1 is current.
+Status: researching; experiments done. Findings from Resolve Studio 20.2.2
+on Windows 11, October 2026; Resolve 21.1 is current.
 
 ## Why
 
@@ -63,11 +63,21 @@ project. Its schema is Resolve's PostgreSQL one (`uuid`,
 name, start, duration, `MediaFilePath`), `Sm2MpFolder`/`Sm2MpMedia` (the
 media pool), `database_upgrade_log`. Blobs are `0x81` followed by a zstd
 frame, sometimes after an 8-byte header: grades and effects are protobuf
-without a published schema, clip metadata Qt `QDataStream` maps. Resolve
-running doesn't stop another program reading the file.
+without a published schema, clip metadata Qt `QDataStream` maps.
 
-Outside the library, under the first Media Storage folder (or the
-project's Working Folders), named by `SM_Project_id`:
+Resolve holds `Project.db` open exactly while that project is open, and
+writes it in place (a `Project.db-journal` appears for the moment of a
+write). Other programs can read it meanwhile. Each library also has
+`ProjectMetadataCache/Metadata.db`, a cache of what Project Manager shows,
+keyed by folder name; Resolve brings it up to date by itself.
+
+Project Manager lists a project by its **folder** name, not `ProjectName`.
+`Preferences/activedb.conf` names the library in use; `recentprojects.conf`
+the recent projects.
+
+Outside the library, under the first Media Storage folder, or wherever the
+project's Working Folders (Project Settings → Master Settings) put them,
+named by `SM_Project_id`:
 
 | Folder | Holds | Keep? |
 |---|---|---|
@@ -95,29 +105,36 @@ library can hold projects of several versions.
 - `.drt` (timeline), `.drb` (bin), `.drx` (grade still).
 
 Only Resolve writes them. Scripting can (`ProjectManager.ExportProject`),
-but external scripting needs Studio, and from 21.1 Python scripting in any
+but external scripting needs Studio (Preferences → System → General →
+External scripting using: Local), and from 21.1 Python scripting in any
 form does. R3V can't count on it.
 
-## Design (to be settled by the experiments)
+## Design
 
 R3V reads and copies Resolve's files itself; it never asks Resolve to
 export, so Free works.
 
 What a version of a Resolve project holds: `Project.db`, `Batch Renders/`,
-and the project's `.gallery/<id>/`. Left out: caches, Resolve's backups,
-renders, `*-journal`.
+and the project's stills (`<gallery folder>/<id>/`). Left out: caches,
+Resolve's backups, renders and anything else users drop in the folder,
+`*-journal`.
 
-Two ways to give it a folder, decided by experiments 1 and 4:
+Both ways of giving it a folder work (experiments 1, 4, 6); to choose:
 
-- **A. In place.** R3V lists the projects in the libraries Resolve knows;
-  adding one tracks its folder where it is, the gallery folder alongside.
-  Nothing to set up in Resolve. Taking a project to another computer
-  puts it into that computer's default library.
+- **A. In place.** R3V lists the projects in the libraries Resolve knows
+  (`dblist.conf`); adding one tracks its folder where it is, and its stills
+  from the gallery folder. Nothing to set up in Resolve, and the projects
+  a user already has can be added at once. On another computer, taking a
+  project puts its folder into a library there (the default one unless
+  chosen), and Resolve lists it.
 - **B. A library per project folder.** The R3V project is an ordinary folder
-  (`D:\Work\Trailer\`) holding a Resolve library and the project's Working
-  Folders, and the footage if the user keeps it there. Everything about the
-  project is in one place, like any other R3V project; Resolve needs the
-  library added once per computer.
+  (`D:\Work\Trailer\`) holding a Resolve library (`Resolve Projects/…`,
+  with its `Settings/` and `User.db`) and, through the project's Working
+  Folders, its stills and cache; the footage too if the user keeps it
+  there. Everything is in one place like any other R3V project. Resolve
+  needs the library connected once per computer (Add Project Library →
+  **Connect**, not Create: Create makes a new library in a subfolder of a
+  folder that isn't empty).
 
 ### Safety
 
@@ -126,12 +143,19 @@ Never lose a user's file:
 - **Reading.** A copy is good only if the file didn't change while it was
   read: no `Project.db-journal`, same size and time before and after, and
   the copy opens as SQLite. Otherwise try again later.
-- **Saving while Resolve is open.** What's on disk may lag what's on
-  screen (experiment 3). R3V saves what's on disk and says so; it doesn't
-  pretend to have the latest edit.
-- **Writing.** R3V replaces a project's files only when Resolve isn't
-  running, or (if experiment 2 finds a reliable sign) when that project
-  isn't open. Otherwise it fails and says to close Resolve.
+- **Saving while the project is open.** With Live Save on (Preferences →
+  User → Project Save and Load) every edit is on disk within a second;
+  with it off, only what was last saved. R3V saves what's on disk, and
+  says so when Live Save is off and the project is open.
+- **Writing.** R3V replaces a project's files only while Resolve doesn't
+  hold its `Project.db` (asked through the Restart Manager, which opens
+  nothing). Resolve may stay running: a project replaced while closed opens
+  with the new content. Otherwise it fails and says to close the project.
+  Files are written beside and renamed into place.
+- **One id, one project.** Two folders with the same `SM_Project_id` in
+  reach of the same gallery folder share stills and cache. R3V never puts
+  a second copy of a project next to the first; taking a version back
+  replaces the project's own folder.
 - **Newer Resolve.** Each version records the Resolve that last wrote the
   project. Taking back a version written by a newer Resolve than this
   computer's is refused, naming the version needed. Opening an older
@@ -142,14 +166,15 @@ Never lose a user's file:
 
 ## Experiments
 
-Run on Resolve 20.2 (Free), Windows 11, with a throwaway project in a
-throwaway library.
+Resolve Studio 20.2.2, Windows 11, 2026-10-07, in throwaway libraries
+under `D:\_ResolveLab`. A watcher logged every file change and which
+processes held the databases (Restart Manager).
 
 | # | Question | Result |
 |---|---|---|
-| 1 | A project folder copied into another library's `Projects/`: does Resolve list it and open it? Does the folder name or `ProjectName` win? | |
-| 2 | While a project is open, is there a reliable sign of it on disk (handle on `Project.db`, a lock row, `recentprojects.conf`)? | |
-| 3 | When does `Project.db` change: on every edit, on save, with Live Save on and off? | |
-| 4 | `Project.db` replaced while Resolve runs and the project is closed: does opening it show the new content, or a cached one (`ProjectMetadataCache`)? | |
-| 5 | Can a project's gallery and cache live in its own folder (Working Folders)? | |
-| 6 | Does a `.r3v` folder (or other unknown files) in a library or project folder bother Resolve? | |
+| 1 | A project copied into another library: listed, opened? | **Yes**, into a connected library (`Lab1` copied as `Lab1-moved`, listed as `Lab1-moved`: the folder name wins). A whole library folder copied and connected (**Connect**) lists and opens its projects. A bare `Resolve Projects/Users/guest/Projects/<x>/` without the library's `Settings/` and `User.db` isn't recognised. |
+| 2 | A reliable sign that a project is open? | **Yes**: Resolve holds `Project.db` open from opening the project until going back to Project Manager, and not otherwise. `SM_Project.LockId` stays empty. |
+| 3 | When does `Project.db` change? | Live Save on: within a second of each edit (a cut, a grabbed still). Off: only on Save. |
+| 4 | `Project.db` replaced while Resolve runs, project closed? | Opens with the new content, no warning; Project Manager's cache catches up by itself. |
+| 5 | Stills and cache in the project's own folder? | **Yes**: Working Folders → Gallery stills / Cache files location; stills land in `<that folder>/<id>/`. |
+| 6 | Unknown files (`.r3v/`, a `.txt`) in a library or project folder? | Ignored, no warnings. |
