@@ -55,6 +55,18 @@ func (s *BucketBackend) Bucket() Bucket { return s.b }
 // so only a project's own writers may write its contents).
 type PerProject interface{ ContentsPerProject() bool }
 
+// ThroughService reports whether b's contents go through a service (a
+// hosted team's: each transfer asks it for a URL first, so more of them
+// at once keep the line busy).
+func ThroughService(b Backend) bool {
+	s, ok := b.(*BucketBackend)
+	if !ok {
+		return false
+	}
+	pp, ok := s.b.(PerProject)
+	return ok && pp.ContentsPerProject()
+}
+
 // ForProject is the backend for working on project pid: on storage that
 // keeps contents per project, its contents go under projects/<pid>/;
 // otherwise it is b itself.
