@@ -471,7 +471,9 @@ describe("ProjectView: Overview", () => {
     await fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sent to the label/ }));
     await screen.findByRole("heading", { name: "v1" });
     // On the version: the milestone, which opens to be changed or taken away.
-    await fireEvent.click(screen.getByRole("button", { name: /^Sent to the label$/ }));
+    const tags = screen.getAllByRole("button", { name: /^Sent to the label$/ }); // on the graph, and on the version
+    expect(tags.length).toBe(2);
+    await fireEvent.click(tags[1]);
     const dialog = screen.getByRole("dialog", { name: "Milestone" });
     api.EditMilestone.mockResolvedValue(undefined);
     await fireEvent.input(within(dialog).getByRole("textbox", { name: "Name" }), { target: { value: "Sent to the label, v1" } });
