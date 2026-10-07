@@ -398,8 +398,8 @@
                   {@const ff = moves.movedFrom(d.path)}
                   {#if ff}<span class="from" title={t("Moved from {path}", { path: `${ff}/` })}>← {ff}/</span>{/if}
                 {/if}
-                {#if d.changed && !isOpen(d.path)}<span class="right"><span class="count"
-                  title={tn(d.changed, "{n} changed file inside, {size}", "{n} changed files inside, {size}", { size: formatBytes(d.changedSize) })}>{d.changed}</span></span>{/if}
+                <span class="right">{#if d.changed && !isOpen(d.path)}<span class="count"
+                  title={tn(d.changed, "{n} changed file inside, {size}", "{n} changed files inside, {size}", { size: formatBytes(d.changedSize) })}>{d.changed}</span>{/if}</span>
               </button>
               <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, d.path, true); }}>⋯</button>
             </li>
@@ -686,11 +686,13 @@
   .dir.untracked .fname { color: var(--faint); }
   .count { font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
   .file { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
-    padding: var(--sp-4) var(--sp-32) var(--sp-4) var(--sp-4); border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
+    padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-4); border-radius: var(--radius); text-align: left; font-size: var(--fs-base); }
   .file:hover { background: var(--panel); }
   .file.on { background: var(--panel-2); }
   /* What changed, at the end of the row: a small colored square. */
-  .right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-6); flex: none; }
+  /* What changed at the far right; ⋯ (on hover) just left of it, in room kept for it. */
+  .right { margin-left: auto; display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-6); flex: none; min-width: 56px; }
+  .right .sym, .right .count { margin-left: 22px; }
   .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
     font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
   .file.added .sym { background: var(--add-soft); }
@@ -711,7 +713,7 @@
   .live { font-size: var(--fs-xs); padding: 0 var(--sp-4); border-radius: var(--radius-pill); background: var(--hover); color: var(--muted);
     font-variant-numeric: tabular-nums; flex: none; }
   .live.odd { background: var(--warn-bg); color: var(--warn); }
-  .more { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 var(--sp-6); }
+  .more { position: absolute; right: 28px; top: 50%; transform: translateY(-50%); visibility: hidden; padding: 0 var(--sp-6); }
   li:hover .more { visibility: visible; }
 
   .detail { overflow: auto; min-height: 0; padding: var(--sp-12) var(--sp-4) var(--sp-16) var(--sp-20); }
