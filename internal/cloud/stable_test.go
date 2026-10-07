@@ -30,6 +30,14 @@ func TestStableReachesNoService(t *testing.T) {
 	if err := call(srv.URL, "a-session", "GET", "/v1/me", nil, nil); !errors.Is(err, ErrNotInBuild) {
 		t.Errorf("call: %v", err)
 	}
+	// A team moving in, and claiming who one was, too.
+	t.Setenv("R3V_CLOUD_TOKEN", "a-session")
+	if _, err := StartMove(srv.URL, "t1", MoveSource{Endpoint: "https://old.example", Bucket: "b", AccessKey: "k", SecretKey: "s"}); !errors.Is(err, ErrNotInBuild) {
+		t.Errorf("start a move: %v", err)
+	}
+	if _, err := AcceptAs(srv.URL, "tok", "m1"); !errors.Is(err, ErrNotInBuild) {
+		t.Errorf("accept as: %v", err)
+	}
 	if _, err := SignIn(context.Background(), srv.URL, func(string) error { return nil }); !errors.Is(err, ErrNotInBuild) {
 		t.Errorf("sign in: %v", err)
 	}
