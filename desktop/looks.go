@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -33,8 +34,7 @@ type Profile struct {
 	Color     string `json:"color"`
 	Picture   string `json:"picture"` // a data: URL, "" for none
 	// NotShared names the teams that didn't take the last change (couldn't
-	// be reached). Hosted teams can't keep looks yet and aren't named: the
-	// app says so where they show.
+	// be reached).
 	NotShared []string `json:"notShared"`
 }
 
@@ -117,7 +117,7 @@ func (a *App) setLook(change func(*teams.Look)) (Profile, error) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for _, t := range s.Teams {
-		if _, hosted := cloud.Hosted(t); hosted || t.MemberID == "" {
+		if t.MemberID == "" {
 			continue
 		}
 		wg.Add(1)
@@ -136,9 +136,6 @@ func (a *App) setLook(change func(*teams.Look)) (Profile, error) {
 
 // shareLook gives team t the user's look.
 func shareLook(t teams.Team, l teams.Look) error {
-	if _, hosted := cloud.Hosted(t); hosted {
-		return remote.ErrNoLooks
-	}
 	var pic []byte
 	if l.Picture != "" {
 		if pic = readPicture(l.Picture); pic == nil {
@@ -148,6 +145,19 @@ func shareLook(t teams.Team, l teams.Look) error {
 	b, err := t.Open()
 	if err != nil {
 		return err
+	}
+	if _, hosted := cloud.Hosted(t); hosted {
+		// A hosted team keeps its people in the service: the member's record
+		// holds their name and look, written by them the first time.
+		ms, err := b.Members()
+		if err != nil {
+			return err
+		}
+		if !slices.ContainsFunc(ms, func(m remote.Member) bool { return m.ID == t.MemberID }) {
+			if err := b.PutMember(remote.Member{ID: t.MemberID, Name: t.MemberName}); err != nil {
+				return err
+			}
+		}
 	}
 	err = remote.SetMemberLook(b, t.MemberID, l.Color, pic)
 	looksCache.forget(t.Remote.URL)
@@ -177,9 +187,6 @@ func (a *App) SetProjectLook(teamID, projectID, icon, color string) error {
 	t := s.Find(teamID)
 	if t == nil {
 		return errors.New("unknown team")
-	}
-	if _, hosted := cloud.Hosted(*t); hosted {
-		return remote.ErrNoLooks
 	}
 	b, err := t.Open()
 	if err != nil {
@@ -253,9 +260,6 @@ func (a *App) MemberLooks(root string) (map[string]MemberLook, error) {
 
 func fetchLooks(t teams.Team) (map[string]MemberLook, error) {
 	out := map[string]MemberLook{}
-	if _, hosted := cloud.Hosted(t); hosted {
-		return out, nil
-	}
 	b, err := t.Open()
 	if err != nil {
 		return nil, err
