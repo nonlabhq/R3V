@@ -47,7 +47,6 @@
 "Can't show this model:": "이 모델을 표시할 수 없습니다:",
 "Cancel": "취소",
 "Changed": "변경됨",
-"Changed files": "변경된 파일",
 "Changed in this version.": "이 버전에서 변경됨.",
 "Changed since the version you're on": "현재 버전 이후 변경됨",
 "Changes": "변경 사항",
@@ -695,8 +694,6 @@
 "{app} {version} is available": "{app} {version} 사용 가능",
 "{author} saved “{message}”": "{author}님이 “{message}”을(를) 저장했습니다",
 "{cloud} also syncs R3V's history (the hidden .r3v folder): used from two computers it can damage it, and files kept online-only aren't really here. Best keep projects in a folder {cloud} doesn't sync: R3V and your team storage already keep them safe.": "{cloud}은(는) R3V의 기록(숨겨진 .r3v 폴더)도 동기화합니다: 두 컴퓨터에서 쓰면 손상될 수 있고, 온라인 전용 파일은 실제로 여기 있지 않습니다. {cloud}이(가) 동기화하지 않는 폴더에 프로젝트를 두는 것이 좋습니다: R3V과 팀 스토리지가 이미 안전하게 보관합니다.",
-"{count} change": "변경 사항 {count}개",
-"{count} changes": "변경 사항 {count}개",
 "{count} file": "파일 {count}개",
 "{count} files": "파일 {count}개",
 "{create} → a name (e.g. {example}) → keep Location {auto} and Storage Class {std} → {create}. Use a bucket just for R3V.": "{create} → 이름(예: {example}) → Location은 {auto}, Storage Class는 {std} 그대로 → {create}. R3V 전용 버킷을 쓰세요.",
@@ -1111,5 +1108,6 @@
 "Play or pause the audio shown": "표시된 오디오 재생·일시정지",
 "Show the changes as": "변경 표시 방식",
 "Tree": "트리",
-"Project folder": "프로젝트 폴더"
+"Project folder": "프로젝트 폴더",
+"{done}/{total} selected": "{done}/{total}개 선택"
 }

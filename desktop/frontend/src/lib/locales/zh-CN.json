@@ -47,7 +47,6 @@
 "Can't show this model:": "无法显示此模型：",
 "Cancel": "取消",
 "Changed": "已更改",
-"Changed files": "更改的文件",
 "Changed in this version.": "在此版本中更改。",
 "Changed since the version you're on": "自你当前所在的版本以来已更改",
 "Changes": "更改",
@@ -695,8 +694,6 @@
 "{app} {version} is available": "{app} {version} 已发布",
 "{author} saved “{message}”": "{author} 保存了“{message}”",
 "{cloud} also syncs R3V's history (the hidden .r3v folder): used from two computers it can damage it, and files kept online-only aren't really here. Best keep projects in a folder {cloud} doesn't sync: R3V and your team storage already keep them safe.": "{cloud} 也会同步 R3V 的历史（隐藏的 .r3v 文件夹）：从两台电脑使用可能会损坏它，而且仅在线的文件其实不在这台电脑上。最好把项目放在 {cloud} 不同步的文件夹：R3V 和你团队的存储空间已经会保护它们。",
-"{count} change": "{count} 项更改",
-"{count} changes": "{count} 项更改",
 "{count} file": "{count} 个文件",
 "{count} files": "{count} 个文件",
 "{create} → a name (e.g. {example}) → keep Location {auto} and Storage Class {std} → {create}. Use a bucket just for R3V.": "{create} → 一个名称（例如 {example}）→ Location 保持 {auto}、Storage Class 保持 {std} → {create}。请使用一个只给 R3V 用的 bucket。",
@@ -1111,5 +1108,6 @@
 "Play or pause the audio shown": "播放或暂停显示中的音频",
 "Show the changes as": "更改显示方式",
 "Tree": "树状",
-"Project folder": "项目文件夹"
+"Project folder": "项目文件夹",
+"{done}/{total} selected": "已选 {done}/{total}"
 }

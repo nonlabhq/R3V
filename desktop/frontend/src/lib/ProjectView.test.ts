@@ -117,6 +117,16 @@ describe("ProjectView: committing", () => {
     await waitFor(() => expect(pressed("List")).toBe("true")); // a few (once read: the last state shows first)
   });
 
+  it("says how many changes are ticked, and how big they are", async () => {
+    await show({ changes: [change("Song.als"), change("notes.txt", "added"), change("kick.wav", "added")] });
+    const total = () => document.querySelector(".h-total")?.textContent?.replace(/\s+/g, " ").trim();
+    await waitFor(() => expect(total()).toBe("3/3 selected · 3 B"));
+    const row = (await screen.findByTitle("notes.txt")).closest("li")!;
+    await fireEvent.click(within(row).getByTitle("Commit this change"));
+    expect(total()).toBe("2/3 selected · 2 B");
+    expect(document.querySelector(".h-title")?.textContent).toBe("Changes");
+  });
+
   it("goes through the changes with the keyboard: folders open and close", async () => {
     await show({ changes: [change("Samples/kick.wav", "added"), change("Song.als")] });
     const list = document.querySelector<HTMLElement>("aside.files")!;
