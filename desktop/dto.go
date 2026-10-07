@@ -59,7 +59,11 @@ func toChange(path, status, from string, edited bool, d *diff.SetDiff) Change {
 }
 
 type Branch struct {
-	Name    string   `json:"name"`
+	Name string `json:"name"` // its key: what the app passes back
+	// Label and Color: what people called it and its colour (a palette
+	// number), where the team keeps them ("": its key, the app's pick).
+	Label   string   `json:"label"`
+	Color   string   `json:"color"`
 	Current bool     `json:"current"`
 	Latest  *Version `json:"latest"`
 }
@@ -126,6 +130,12 @@ type State struct {
 	TakenBack []Version `json:"takenBack"`
 	History   []Version `json:"history"`
 	Branches  []Branch  `json:"branches"`
+	// BranchNames: the team keeps branch names and colours (Nightly): any
+	// name, renaming and colours are offered.
+	BranchNames bool `json:"branchNames"`
+	// BranchGone: from TeamState (TeamPart.BranchGone).
+	BranchGone *DeletedBranch `json:"branchGone"`
+	Milestones []Milestone    `json:"milestones"` // (TeamPart.Milestones)
 }
 
 // Result of save / update / merge / switch.

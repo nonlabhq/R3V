@@ -4,6 +4,7 @@
   import { colorOf, cssColor } from "./palette";
   import Avatar from "./Avatar.svelte";
   import { branchGraph, short } from "./branchGraph";
+  import { branchLabel, branchLane } from "./branches";
   import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
@@ -15,9 +16,9 @@
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks }: {
+  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones }: {
     versions: Version[];
-    branches: { name: string; latest: string }[];
+    branches: { name: string; latest: string; label?: string; color?: string }[];
     branch: string;    // the branch you are on
     head: string;      // the version you are on
     incoming: Set<string>;
@@ -28,6 +29,7 @@
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
+    milestones?: { version: string; name: string }[]; // versions the team named: a flag on their dot
   } = $props();
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
@@ -37,7 +39,13 @@
   let panX = $state(0), panY = $state(0), zoom = $state(1);
   const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
   let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
-  let g = $derived(branchGraph(versions, branches, branch, "main", head));
+  let g = $derived(branchGraph(versions, branches, branch, "main", head, (name) => branchLane(branches, name)));
+  const labelOf = (name: string) => branchLabel(branches, name);
+  let flags = $derived.by(() => {
+    const m = new Map<string, string[]>();
+    for (const ms of milestones ?? []) m.set(ms.version, [...(m.get(ms.version) ?? []), ms.name]);
+    return m;
+  });
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
   // Where your changes go: the branch you are on (its own column even when it
@@ -71,7 +79,7 @@
       dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
       out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
     // (before the first version: your branch's name over your changes)
-    const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: 0, empty: true }] : [];
+    const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: branchLane(branches, branch), empty: true }] : [];
     for (const c of [...g.chains, ...first]) {
       if (!c.name) continue;
       const atPending = pending && (c === headChain || !c.tip);
@@ -80,7 +88,7 @@
       // (an empty branch: just its name too; its newest version is another's)
       const title = atPending || c.empty || !tip ? "" : short(tip.message || t("(no description)"), TITLE);
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
-      const w = Math.min(LABEL_W, Math.max(c.name.length * 6.5, title.length * 7.5) + 20);
+      const w = Math.min(LABEL_W, Math.max(labelOf(c.name).length * 6.5, title.length * 7.5) + 20);
       const h = title ? 32 : 24;
       const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
@@ -334,7 +342,7 @@
       {#each labels as l (l.name + "@" + l.id)}
         <button class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})"
           tabindex="-1" onclick={() => onselect(l.id)}>
-          <span class="bname">{l.name}</span>
+          <span class="bname">{labelOf(l.name)}</span>
           {#if l.title}<span class="btitle">{l.title}</span>{/if}
         </button>
       {/each}
@@ -352,10 +360,11 @@
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
-          aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}`}
+          aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}${flags.has(v.id) ? `, ⚑ ${flags.get(v.id)!.join(", ")}` : ""}`}
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
           onclick={() => onselect(v.id)}>{#if showPic(lk)}<img src={lk!.picture} alt="" draggable="false"
-            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}</button>
+            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}{#if flags.has(v.id)}<span
+            class="flag" aria-hidden="true">⚑</span>{/if}</button>
       {/each}
 
     </div>
@@ -401,7 +410,8 @@
           {/if}
           <div class="card-t">
             <div class="card-msg">{v.message || t("(no description)")}</div>
-            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {card.branch}{/if} · <span class="mono">{v.short}</span></div>
+            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {labelOf(card.branch)}{/if} · <span class="mono">{v.short}</span></div>
+            {#if flags.has(v.id)}<div class="card-flag">⚑ {flags.get(v.id)!.join(" · ")}</div>{/if}
           </div>
         </div>
         {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}
@@ -441,7 +451,7 @@
     font-weight: var(--fw-semibold); line-height: 20px; text-align: center; }
   .node:hover:not(:disabled) { border-color: var(--c); background: var(--hover); }
   .node.tinted { color: var(--m); background: color-mix(in srgb, var(--m) 22%, var(--panel)); }
-  .node.pic { overflow: hidden; line-height: 0; }
+  .node.pic { line-height: 0; } /* (the img is round itself: the flag may stick out) */
   .node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
   .node.here { background: var(--c); color: var(--bg); }
   .node.here.pic { box-shadow: 0 0 0 2px var(--c); }
@@ -463,6 +473,9 @@
   .card-msg { font-size: var(--fs-md); font-weight: var(--fw-semibold); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
     -webkit-box-orient: vertical; overflow: hidden; user-select: text; }
   .card-meta { font-size: var(--fs-xs); color: var(--faint); margin-top: var(--sp-2); }
+  .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
+  .flag { position: absolute; top: -9px; right: -9px; font-size: 11px; line-height: 1; color: var(--accent);
+    text-shadow: 0 0 2px var(--bg), 0 0 2px var(--bg); pointer-events: none; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   .label { position: absolute; height: auto; padding: var(--sp-2) var(--sp-8);

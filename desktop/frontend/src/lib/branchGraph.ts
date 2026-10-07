@@ -31,9 +31,11 @@ export type BranchGraph = {
 };
 
 // branches: name and newest version of each; current: the branch you are on.
-// mainName: the middle column (the team's main branch).
+// mainName: the middle column (the team's main branch). laneOf: a branch's
+// own colour (its lane index), when branches have one; lines of no branch
+// any more take the palette's in order.
 export function branchGraph(versions: GraphVersion[], branches: { name: string; latest: string }[],
-  current: string, mainName = "main", head = ""): BranchGraph {
+  current: string, mainName = "main", head = "", laneOf?: (name: string) => number): BranchGraph {
   const byID = new Map(versions.map((v) => [v.id, v]));
   const row = new Map(versions.map((v, i) => [v.id, i]));
   const chainOf = new Map<string, Chain>();
@@ -110,7 +112,7 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
   }
   // The main branch's colour, then the palette's in order (tokens.css).
   let n = 0;
-  for (const c of chains) c.color = c.main ? 0 : (n++ % 12) + 1;
+  for (const c of chains) c.color = c.main ? 0 : c.name && laneOf ? laneOf(c.name) : (n++ % 12) + 1;
 
   const edges: Edge[] = [];
   for (const v of versions) {

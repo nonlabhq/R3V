@@ -12,6 +12,9 @@
   import { portal } from "./portal";
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "./emoji";
+  import BranchSettings from "./BranchSettings.svelte";
+  import { branchLabel, branchLane } from "./branches";
+  import { ago, type BranchList, type DeletedBranch } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
@@ -116,6 +119,33 @@
     if (lookOpen && !el.closest(".look-pop") && !el.closest(".look-btn")) closeLook();
   }
 
+  // The project's branches, each opening its settings (where the team keeps
+  // branch names: Nightly).
+  let branchList = $state<BranchList | null>(null);
+  let branchOpen = $state<string | null>(null);
+  let deleted = $state<DeletedBranch[]>([]);
+  const loadBranches = () => {
+    api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
+    api.DeletedBranches(p.root).then((d) => (deleted = d ?? [])).catch(() => {});
+  };
+  let restoring = $state("");
+  async function restore(d: DeletedBranch) {
+    restoring = d.name;
+    try {
+      await api.RestoreBranch(p.root, d.name);
+      toast(t("“{branch}” is back, where it was.", { branch: d.label || d.name }), "ok");
+      loadBranches();
+      onrenamed();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      restoring = "";
+    }
+  }
+  $effect(() => {
+    if (here && team) loadBranches();
+  });
+
   async function openRules() {
     try {
       await api.OpenRules(p.root);
@@ -181,6 +211,37 @@
       {/if}
       <p class="hint">{t("The whole team sees them.")}</p>
     </div>
+  {/if}
+
+  {#if branchList?.names && branchList.branches.length}
+    <section>
+      <h3>{t("Branches")}</h3>
+      <ul class="branches">
+        {#each branchList.branches as b (b.name)}
+          <li>
+            <button class="ghost brow" onclick={() => (branchOpen = b.name)} title={t("Branch settings")}>
+              <span class="bdot" style:--c="var(--lane-{branchLane(branchList.branches, b.name)})"></span>
+              <span class="bname">{branchLabel(branchList.branches, b.name)}</span>
+              {#if b.current}<span class="here">{t("you're on it")}</span>{/if}
+              <span class="faint">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+      {#if deleted.length}
+        <h4>{t("Deleted branches")}</h4>
+        <ul class="branches">
+          {#each deleted as d (d.name)}
+            <li class="drow">
+              <span class="bdot gone" style:--c="var(--lane-{branchLane([d], d.name)})"></span>
+              <span class="bname">{d.label || d.name}</span>
+              <span class="faint">{d.by ? t("deleted by {name} {when}", { name: d.by, when: ago(d.time) }) : t("deleted {when}", { when: ago(d.time) })}</span>
+              <button class="small" onclick={() => restore(d)} disabled={!!restoring}>{restoring === d.name ? t("Restoring…") : t("Restore")}</button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </section>
   {/if}
 
   <section>
@@ -268,6 +329,11 @@
 {/if}
 {/if}
 
+{#if branchOpen !== null && branchList}
+  <BranchSettings root={p.root} branch={branchOpen} branches={branchList.branches}
+    onchanged={() => { loadBranches(); onrenamed(); }} onclose={() => (branchOpen = null)} />
+{/if}
+
 <style>
   .inline { padding-top: var(--sp-4); }
   section { padding: var(--sp-12) 0; border-top: var(--border-width) solid var(--line); }
@@ -280,6 +346,18 @@
   .look-pop { position: fixed; z-index: var(--z-menu); display: flex; flex-direction: column; gap: var(--sp-10);
     padding: var(--sp-12); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .look-pop .hint { margin: 0; }
+  .branches { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .brow { width: 100%; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-6) var(--sp-8); text-align: left; }
+  .bdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+  .bname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .here { font-size: var(--fs-xs); color: var(--accent); }
+  .brow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
+  h4 { margin: var(--sp-12) 0 var(--sp-4); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
+  .drow { display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4) var(--sp-8); }
+  .drow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
+  .drow .bname { color: var(--muted); }
+  .bdot.gone { opacity: .5; }
+  button.small { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); }
   .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
   .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
   .kinds button.on { background: var(--panel-2); color: var(--text); }

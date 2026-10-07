@@ -11,10 +11,11 @@
   // A version in the Overview: what it is (header, with what can be done
   // with it), the files it changed, and the picked one against the version
   // before it, shown by its kind's viewer.
-  let { root, v, branch, actions }: {
+  let { root, v, branch, actions, marks }: {
     root: string; v: Version;
     branch: string;   // the branch it is on, when known
     actions?: Snippet; // buttons for this version (Merge, Go to, …)
+    marks?: Snippet;   // under the title: its milestones
   } = $props();
 
   let files = $state<ProjectFile[] | null>(null);
@@ -78,6 +79,7 @@
         {v.author} · {new Date(v.time).toLocaleString()}{#if branch} · {branch}{/if} · <span class="mono">{v.short}</span>
         {#if v.parents.length > 1} · {t("merge")}{/if}
       </div>
+      {#if marks}{@render marks()}{/if}
     </div>
     {#if actions}<div class="acts">{@render actions()}</div>{/if}
   </header>

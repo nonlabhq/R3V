@@ -439,6 +439,8 @@ func (a *App) State(root string) (*State, error) {
 	}
 	sw.lap("log")
 	st.Branches, st.Incoming, st.TakenBack, st.History = part.Branches, part.Incoming, part.TakenBack, part.History
+	st.BranchNames = keepsBranchRecords(r)
+	st.Milestones = part.Milestones
 	if part.OlderVersion != nil {
 		st.OlderVersion = part.OlderVersion
 	}
@@ -460,6 +462,14 @@ type TeamPart struct {
 	// Capabilities of the team's backend (locks, presence…): the app shows
 	// what goes with them only when it has them.
 	Capabilities remote.Capabilities `json:"capabilities"`
+	// BranchNames: the team keeps branch names and colours (Nightly): they
+	// can be renamed and coloured.
+	BranchNames bool `json:"branchNames"`
+	// BranchGone: the branch you are on was deleted from the team (nil
+	// otherwise): the page says so and offers it back.
+	BranchGone *DeletedBranch `json:"branchGone"`
+	// Milestones: versions given a name for the team, newest first.
+	Milestones []Milestone `json:"milestones"`
 }
 
 // TeamState asks the team for its branches and new versions. It runs
@@ -491,6 +501,17 @@ func (a *App) TeamState(root string) (*TeamPart, error) {
 		if c, cerr := r.Client(); cerr == nil {
 			part.Capabilities = remote.CapabilitiesOf(c)
 		}
+		part.BranchNames = keepsBranchRecords(r)
+		if b := r.BranchName(); view.Heads[b] == "" && b != "main" {
+			if gone, err := a.deletedBranches(r); err == nil {
+				for i := range gone {
+					if gone[i].Name == b {
+						part.BranchGone = &gone[i]
+						part.Unshared = false // (not "not shared yet": deleted)
+					}
+				}
+			}
+		}
 	}
 	return part, err
 }
@@ -498,13 +519,14 @@ func (a *App) TeamState(root string) (*TeamPart, error) {
 // teamPart works out the team's side from a fetched view (nil: none), with
 // no network except, when fetchNames, the member list (cached a minute).
 func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool) (*TeamPart, error) {
-	part := &TeamPart{Online: view != nil, Branches: []Branch{}, Incoming: []Version{}, TakenBack: []Version{}}
+	part := &TeamPart{Online: view != nil, Branches: []Branch{}, Incoming: []Version{}, TakenBack: []Version{}, Milestones: []Milestone{}}
 	part.Unshared = view != nil && view.Heads[r.BranchName()] == "" && r.Head() != ""
 	tips := map[string][]string{}
 	if view != nil {
+		recs := branchRecords(r, fetchNames)
 		for _, b := range r.BranchesFrom(view.Heads) {
 			tips[b.Head] = append(tips[b.Head], b.Name)
-			br := Branch{Name: b.Name, Current: b.Current}
+			br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Current: b.Current}
 			if b.Latest != nil {
 				v := toVersion(b.Latest, nil)
 				br.Latest = &v
@@ -550,6 +572,7 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 		} else {
 			names = cachedMemberNames(r)
 		}
+		part.Milestones = a.milestonesOf(r, fetchNames, names)
 		renameAuthors(names, part.History)
 		renameAuthors(names, part.Incoming)
 		renameAuthors(names, part.TakenBack)
@@ -919,15 +942,6 @@ func (a *App) DiscardAndUpdate(root string, resolutions map[string]string, force
 	return syncResult(res), nil
 }
 
-func (a *App) CreateBranch(root, name string) error {
-	r, unlock, err := a.open(root)
-	if err != nil {
-		return err
-	}
-	defer unlock()
-	return r.CreateBranch(strings.TrimSpace(name))
-}
-
 func (a *App) SwitchBranch(root, name string, force bool) (*Result, error) {
 	defer a.tidyLater(root)
 	r, unlock, err := a.open(root)
@@ -956,7 +970,11 @@ func (a *App) PreviewMerge(root, name string) (*Preview, error) {
 		return nil, err
 	}
 	out := toPreview(p, a.memberNames(r))
-	out.Message = "Merge branch " + name
+	label := name
+	if n := branchRecords(r, false)[name].Name; n != "" {
+		label = n
+	}
+	out.Message = "Merge branch " + label
 	return out, nil
 }
 

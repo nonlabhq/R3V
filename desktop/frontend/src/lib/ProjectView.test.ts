@@ -237,12 +237,70 @@ describe("ProjectView: the team", () => {
     await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
     // The branch you are on, first; not one to switch to.
     const menu = screen.getByRole("menu");
-    expect(menu.textContent).toMatch(/Current branch\s*⑂ main/);
+    expect(menu.textContent).toMatch(/Current branch\s*main/);
     expect(within(menu).queryByRole("button", { name: /^main/ })).toBeNull();
     // "idea" is there twice: to switch to, and to merge from (after).
     await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: /^idea/ })[0]);
     await waitFor(() => expect(api.SwitchBranch).toHaveBeenCalledWith(ROOT, "idea", false));
     await toasted(/Now working on “idea”/);
+  });
+
+  it("calls branches by their names, and opens a branch's settings", async () => {
+    await show({ branchNames: true, branches: [{ name: "main", label: "", color: "", current: true, latest: null },
+      { name: "b-1a2b3c4d", label: "Mia 的主歌", color: "b4", current: false, latest: null }] });
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    const menu = screen.getByRole("menu");
+    expect(menu.textContent).toContain("Mia 的主歌");
+    expect(menu.textContent).not.toContain("b-1a2b3c4d");
+    await fireEvent.click(within(menu).getAllByRole("button", { name: "Branch settings" })[1]);
+    const dialog = screen.getByRole("dialog", { name: "Branch settings" });
+    expect((within(dialog).getByLabelText("Branch name") as HTMLInputElement).value).toBe("Mia 的主歌");
+    expect(within(dialog).getByRole("radio", { name: "Pink" }).getAttribute("aria-checked")).toBe("true");
+    api.SetBranchRecord.mockResolvedValue(undefined);
+    await fireEvent.click(within(dialog).getByRole("radio", { name: "Mint" }));
+    await waitFor(() => expect(api.SetBranchRecord).toHaveBeenCalledWith(ROOT, "b-1a2b3c4d", "Mia 的主歌", "b7"));
+    await fireEvent.input(within(dialog).getByLabelText("Branch name"), { target: { value: "Verse, take 2" } });
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Rename" }));
+    await waitFor(() => expect(api.SetBranchRecord).toHaveBeenLastCalledWith(ROOT, "b-1a2b3c4d", "Verse, take 2", "b7"));
+  });
+
+  it("deletes a branch, saying what stays", async () => {
+    await show({ branchNames: true, branches: [{ name: "main", label: "", color: "", current: true, latest: null },
+      { name: "idea", label: "Idea", color: "", current: false, latest: null }] });
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: "Branch settings" })[1]);
+    api.VersionsOnlyOnBranch.mockResolvedValue(2);
+    api.DeleteBranch.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Delete branch…" }));
+    expect(await screen.findByText(/2 versions are only on this branch/)).toBeTruthy();
+    await fireEvent.click(screen.getByRole("button", { name: "Delete branch" }));
+    await waitFor(() => expect(api.DeleteBranch).toHaveBeenCalledWith(ROOT, "idea"));
+    await toasted(/Deleted “Idea”/);
+  });
+
+  it("can't delete the branch you're on, nor main", async () => {
+    await show({ branchNames: true, branch: "idea", branches: [{ name: "main", label: "", color: "", current: false, latest: null },
+      { name: "idea", label: "", color: "", current: true, latest: null }] });
+    await fireEvent.click(screen.getByRole("button", { name: /idea ▾/ }));
+    const gears = within(screen.getByRole("menu")).getAllByRole("button", { name: "Branch settings" });
+    await fireEvent.click(gears[0]); // the one you're on
+    expect(screen.getByText(/switch to another one to delete it/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Delete branch…" })).toBeNull();
+  });
+
+  it("says the branch you're on was deleted, and brings it back", async () => {
+    await show({ branch: "idea", branchGone: { name: "idea", label: "Idea", color: "", by: "Mia", time: new Date().toISOString(), latest: null } });
+    expect(screen.getByText(/was deleted from the team by Mia/)).toBeTruthy();
+    api.RestoreBranch.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Restore it" }));
+    await waitFor(() => expect(api.RestoreBranch).toHaveBeenCalledWith(ROOT, "idea"));
+    await toasted(/“Idea” is back/);
+  });
+
+  it("offers no branch settings where the team keeps no names", async () => {
+    await show();
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    expect(within(screen.getByRole("menu")).queryByRole("button", { name: "Branch settings" })).toBeNull();
   });
 
   it("makes a new branch", async () => {
@@ -251,7 +309,7 @@ describe("ProjectView: the team", () => {
     await fireEvent.click(screen.getByRole("button", { name: "New branch from here…" }));
     await fireEvent.input(screen.getByLabelText("Branch name"), { target: { value: "yi-idea" } });
     await fireEvent.click(screen.getByRole("button", { name: "Create" }));
-    await waitFor(() => expect(api.CreateBranch).toHaveBeenCalledWith(ROOT, "yi-idea"));
+    await waitFor(() => expect(api.CreateBranch).toHaveBeenCalledWith(ROOT, "yi-idea", "b1")); // the palette's first colour no branch has
   });
 });
 
@@ -401,6 +459,35 @@ describe("ProjectView: discarding", () => {
 });
 
 describe("ProjectView: Overview", () => {
+  it("names a version as a milestone, shows it, and goes to it from the branch menu", async () => {
+    const ms = { id: "m1", version: "h0", name: "Sent to the label", note: "long intro", by: "Mia", time: "2026-10-05T10:00:00Z" };
+    await show({ branchNames: true, milestones: [ms],
+      history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    // The flag on its dot.
+    expect(screen.getByRole("option", { name: /^v1,.*⚑ Sent to the label/ })).toBeTruthy();
+    // From the branch menu, to its version.
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getByRole("button", { name: /Sent to the label/ }));
+    await screen.findByRole("heading", { name: "v1" });
+    // On the version: the milestone, which opens to be changed or taken away.
+    await fireEvent.click(screen.getByRole("button", { name: /^Sent to the label$/ }));
+    const dialog = screen.getByRole("dialog", { name: "Milestone" });
+    api.EditMilestone.mockResolvedValue(undefined);
+    await fireEvent.input(within(dialog).getByRole("textbox", { name: "Name" }), { target: { value: "Sent to the label, v1" } });
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.EditMilestone).toHaveBeenCalledWith(ROOT, "m1", "Sent to the label, v1", "long intro"));
+    // A new one, on the other version.
+    await fireEvent.click(screen.getByRole("option", { name: /^v2,/ }));
+    await screen.findByRole("heading", { name: "v2" });
+    api.AddMilestone.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Milestone…" }));
+    await fireEvent.input(within(screen.getByRole("dialog", { name: "Mark as a milestone" })).getByRole("textbox", { name: "Name" }),
+      { target: { value: "Final mix" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Add milestone" }));
+    await waitFor(() => expect(api.AddMilestone).toHaveBeenCalledWith(ROOT, "h1", "Final mix", ""));
+  });
+
   it("starts on your changes, and shows a version picked in the graph", async () => {
     await show({ changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     expect(screen.getByRole("option", { name: /Your changes/ }).getAttribute("aria-selected")).toBe("true");

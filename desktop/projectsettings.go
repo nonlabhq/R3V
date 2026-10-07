@@ -30,7 +30,11 @@ func (a *App) ProjectInfo(root string) (*ProjectInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	info := &ProjectInfo{Root: r.Root, Name: r.Config.Name, ID: r.Config.ProjectID, Branch: r.BranchName(),
+	branch := r.BranchName()
+	if n := branchRecords(r, false)[branch].Name; n != "" {
+		branch = n
+	}
+	info := &ProjectInfo{Root: r.Root, Name: r.Config.Name, ID: r.Config.ProjectID, Branch: branch,
 		Openable: []string{}}
 	rules, err := r.Profile()
 	if err != nil {
