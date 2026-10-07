@@ -10,6 +10,8 @@
   import { projectColor } from "./palette";
   import { projectIconNames, projectIcons } from "./projectIcons";
   import { portal } from "./portal";
+  import EmojiPicker from "./EmojiPicker.svelte";
+  import { emojiName, emojiOf } from "./emoji";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
@@ -83,9 +85,19 @@
     const below = anchor.bottom + 6;
     return { left, top: below + popH > innerHeight - 8 && anchor.top - popH - 6 > 8 ? anchor.top - popH - 6 : below };
   });
+  // Built-in icons or emoji: the picker opens on the kind the project has.
+  let lookTab = $state<"icons" | "emoji">("icons");
   function toggleLook() {
     anchor = iconBtn?.getBoundingClientRect() ?? null;
+    if (!lookOpen) lookTab = emojiOf(look.icon) ? "emoji" : "icons";
     lookOpen = !lookOpen;
+  }
+  // An icon or an emoji picked: saved, and the picker closes (a colour
+  // keeps it open, for an icon next).
+  async function pickIcon(icon: string) {
+    if (lookBusy) return;
+    closeLook(true);
+    await setLook(icon, look.color);
   }
   function closeLook(refocus = false) {
     lookOpen = false;
@@ -151,17 +163,25 @@
     <div class="look-pop surface-menu" role="dialog" aria-label={t("Icon and colour")} use:portal bind:offsetHeight={popH}
       style:left="{popAt.left}px" style:top="{popAt.top}px" style:width="{POP_W}px">
       <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
-      <div class="icons" role="radiogroup" aria-label={t("Icon")}>
-        <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
-          title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => setLook("", look.color)}>
-          {([...p.name.trim()][0] ?? "?").toUpperCase()}</button>
-        {#each projectIconNames as name (name)}
-          <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
-            aria-label={name} onclick={() => setLook(name, look.color)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html projectIcons[name]}</svg>
-          </button>
-        {/each}
+      <div class="kinds" role="tablist" aria-label={t("Icon")}>
+        <button role="tab" class:on={lookTab === "icons"} aria-selected={lookTab === "icons"} onclick={() => (lookTab = "icons")}>{t("Icons")}</button>
+        <button role="tab" class:on={lookTab === "emoji"} aria-selected={lookTab === "emoji"} onclick={() => (lookTab = "emoji")}>{t("Emoji")}</button>
       </div>
+      {#if lookTab === "icons"}
+        <div class="icons" role="radiogroup" aria-label={t("Icon")}>
+          <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
+            title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => pickIcon("")}>
+            {([...p.name.trim()][0] ?? "?").toUpperCase()}</button>
+          {#each projectIconNames as name (name)}
+            <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
+              aria-label={name} onclick={() => pickIcon(name)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html projectIcons[name]}</svg>
+            </button>
+          {/each}
+        </div>
+      {:else}
+        <EmojiPicker onpick={(e) => { const n = emojiName(e); if (n) pickIcon(n); }} />
+      {/if}
       <p class="hint">{t("The whole team sees them.")}</p>
     </div>
   {/if}
@@ -263,6 +283,9 @@
   .look-pop { position: fixed; z-index: var(--z-menu); display: flex; flex-direction: column; gap: var(--sp-10);
     padding: var(--sp-12); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .look-pop .hint { margin: 0; }
+  .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
+  .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
+  .kinds button.on { background: var(--panel-2); color: var(--text); }
   .icons { display: grid; grid-template-columns: repeat(auto-fill, 32px); gap: var(--sp-4); }
   .ic { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
     font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--muted); }
