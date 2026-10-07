@@ -83,12 +83,29 @@
   --del-soft: rgba(217, 84, 26, .18);
   --mod-soft: rgba(245, 184, 61, .16);
 
-  /* The lanes of the history graph, in order. */
-  --lane-0: #ff4a1c;
-  --lane-1: #a98bff;
-  --lane-2: #3fd4c0;
-  --lane-3: #6fa8ff;
-  --lane-4: #ff7ac6;
+  /* The palette: the colours people pick for themselves and their projects
+     (lib/palette.ts names them: the names are stored, keep them), and the
+     branches' colours. */
+  --palette-orange: #ff4a1c;
+  --palette-amber: #f5b83d;
+  --palette-lime: #a8d84e;
+  --palette-green: #4cc76b;
+  --palette-teal: #3fd4c0;
+  --palette-cyan: #4cc3f0;
+  --palette-blue: #6fa8ff;
+  --palette-indigo: #8b8dff;
+  --palette-violet: #a98bff;
+  --palette-pink: #ff7ac6;
+  --palette-red: #f0565a;
+  --palette-sand: #c9a27a;
+  --palette-slate: #8f98a8;
+
+  /* The lanes of the history graph, in order: from the palette. */
+  --lane-0: var(--palette-orange);
+  --lane-1: var(--palette-violet);
+  --lane-2: var(--palette-teal);
+  --lane-3: var(--palette-blue);
+  --lane-4: var(--palette-pink);
 
   /* Syntax colours in text files. */
   --syntax-comment: #6f7685;

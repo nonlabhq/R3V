@@ -1,18 +1,21 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { ago, type Version } from "./api";
+  import { ago, type MemberLook, type Version } from "./api";
+  import { colorOf, cssColor } from "./palette";
+  import Avatar from "./Avatar.svelte";
   import { branchGraph, short } from "./branchGraph";
   import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
   // The Overview's left column: the branch graph (see branchGraph.ts), main
   // in the middle. Each branch's newest version is labelled with the branch
-  // and its title; every other version is a dot with its author's initial
-  // (its title on hover). Your changes not committed yet are a dashed dot
+  // and its title; every other version is a dot with its author's picture,
+  // else their initial (on their colour, when the team keeps looks); its
+  // title on hover. Your changes not committed yet are a dashed dot
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0 }: {
+  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks }: {
     versions: Version[];
     branches: { name: string; latest: string }[];
     branch: string;    // the branch you are on
@@ -24,6 +27,7 @@
     actions?: Snippet<[Version]>; // the hover card's buttons for a version
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
+    looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
   } = $props();
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
@@ -126,6 +130,9 @@
     e.kind === "merge" ? g.chainOf.get(e.to)! : g.chainOf.get(e.from)!;
 
   const initial = (name: string) => ([...name.trim()][0] ?? "?").toUpperCase();
+  // How a version's author shows (null: initials as they always were).
+  const lookOf = (v: Version) => looks && {
+    color: colorOf(looks[v.authorId]?.color ?? "", v.authorId || v.author), picture: looks[v.authorId]?.picture ?? "" };
 
   // The card for the version under the pointer: what it is, and what can be
   // done with it. It stays while the pointer is on the dot or the card.
@@ -337,12 +344,14 @@
       {/if}
       {#each versions as v (v.id)}
         {@const c = g.chainOf.get(v.id)!}
+        {@const lk = lookOf(v)}
         <button class="node" class:on={selected === v.id} class:here={v.id === head} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
+          class:tinted={!!lk} class:pic={!!lk?.picture} style:--m={lk ? cssColor(lk.color) : undefined}
           aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}`}
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
-          onclick={() => onselect(v.id)}>{initial(v.author)}</button>
+          onclick={() => onselect(v.id)}>{#if lk?.picture}<img src={lk.picture} alt="" draggable="false" />{:else}{initial(v.author)}{/if}</button>
       {/each}
 
     </div>
@@ -380,7 +389,12 @@
         bind:clientHeight={cardHeight} onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
         <span class="arrow" aria-hidden="true"></span>
         <div class="card-h">
-          <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
+          {#if looks}
+            {@const lk = lookOf(v)!}
+            <Avatar name={v.author} seed={v.authorId || v.author} color={lk.color} picture={lk.picture} />
+          {:else}
+            <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
+          {/if}
           <div class="card-t">
             <div class="card-msg">{v.message || t("(no description)")}</div>
             <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {card.branch}{/if} · <span class="mono">{v.short}</span></div>
@@ -422,7 +436,11 @@
     border: 2px solid var(--c); background: var(--panel-2); color: var(--text); font-size: var(--fs-xs);
     font-weight: var(--fw-semibold); line-height: 20px; text-align: center; }
   .node:hover:not(:disabled) { border-color: var(--c); background: var(--hover); }
+  .node.tinted { color: var(--m); background: color-mix(in srgb, var(--m) 22%, var(--panel)); }
+  .node.pic { overflow: hidden; line-height: 0; }
+  .node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
   .node.here { background: var(--c); color: var(--bg); }
+  .node.here.pic { box-shadow: 0 0 0 2px var(--c); }
   .node.incoming { border-style: dashed; color: var(--muted); }
   .node.side { opacity: .75; }
   .node.pending { border-style: dashed; color: var(--c); background: var(--panel); }
