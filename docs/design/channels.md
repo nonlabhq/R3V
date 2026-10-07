@@ -54,6 +54,14 @@ on, a R3V that doesn't know it stops before working with the team
 (`remote.CheckFeatures`, from `Repo.Client` and the team overview) and says
 to update or switch to Nightly (CLI: `team_needs_features`, exit 6).
 
+Not every addition needs one. Data that every R3V since 0.1.0 already
+keeps and ignores safely (a new field in a record, which every R3V
+rewrites whole with the fields it doesn't know; new keys outside what
+storage cleanup looks at) only adds: older builds work with the team as
+before and just don't show it. Members' and projects' looks are such data
+([looks.md](looks.md)). A team feature is for what an older R3V would
+misread, lose or delete.
+
 Project kinds a Stable build doesn't know say so too: initializing a Unity,
 Unreal or Godot folder, or a `.r3v.yaml` naming a Nightly preset, fails with
 "needs R3V's Nightly channel" (CLI: `needs_nightly`, exit 6).

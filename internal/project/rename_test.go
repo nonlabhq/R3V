@@ -72,3 +72,29 @@ func TestShareVersionsLater(t *testing.T) {
 		t.Fatalf("the uncommitted change stays: %+v", changes)
 	}
 }
+
+// A first share stopped after the project's record was written, then the
+// project renamed or given a look meanwhile: sharing again keeps the record.
+func TestShareAgainKeepsTheRecord(t *testing.T) {
+	fake := s3test.New("team")
+	defer fake.Close()
+	code := remote.EncodeConnectionCode(remote.Config{URL: "s3+" + fake.URL + "/team/r3v",
+		AccessKey: "key", SecretKey: "secret"})
+	a, _ := Init(newProject(t), "yi")
+	if err := a.SetRemote(code); err != nil {
+		t.Fatal(err)
+	}
+	c, _ := a.Client()
+	kept := remote.Project{ID: a.Config.ProjectID, Name: "Night Drive", Icon: "drum", Color: "teal"}
+	if err := c.PutProject(kept); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, "Notes/lyrics.txt", lyrics)
+	if _, _, err := a.Save("first", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	ps, err := c.Projects()
+	if err != nil || len(ps) != 1 || ps[0].Name != kept.Name || ps[0].Icon != kept.Icon || ps[0].Color != kept.Color {
+		t.Fatalf("the team's record: %+v %v", ps, err)
+	}
+}

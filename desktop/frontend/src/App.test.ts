@@ -115,3 +115,23 @@ describe("App: tabs", () => {
     expect(writeText).toHaveBeenCalledWith("0.1.3-nightly.202610070525");
   });
 });
+
+describe("App: the user", () => {
+  it("opens User settings from the user area (Nightly), and shows their picture there", async () => {
+    api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "b2",
+      picture: "data:image/png;base64,AAAA", notShared: [] });
+    render(App);
+    const who = await screen.findByRole("button", { name: /Yi/ });
+    expect(who.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,AAAA");
+    await fireEvent.click(who);
+    expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
+  });
+
+  it("keeps the user area as it was where looks aren't (Stable)", async () => {
+    api.Profile.mockResolvedValue({ available: false, name: "Yi", memberId: "m1", color: "", picture: "", notShared: [] });
+    render(App);
+    await screen.findByText("Yi");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole("button", { name: /Yi/ })).toBeNull();
+  });
+});

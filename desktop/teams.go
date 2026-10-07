@@ -55,6 +55,9 @@ type TeamSummary struct {
 	// BackupFailing: this computer's backups of the team have failed for a
 	// while (see BackupInfo).
 	BackupFailing bool `json:"backupFailing"`
+	// Looks: the team keeps pictures, icons and colours (Nightly; not yet
+	// a hosted team).
+	Looks bool `json:"looks"`
 	// Hosted: kept by R3V-Cloud (people and access managed there);
 	// SignedOut: this computer isn't signed in to it.
 	Hosted    bool `json:"hosted"`
@@ -73,6 +76,9 @@ type TeamProject struct {
 	// "missing" (downloaded before, folder not found), "local" (no team).
 	Status string `json:"status"`
 	Branch string `json:"branch"`
+	// Icon and Color: how the team shows it (names; "" for the app's pick).
+	Icon  string `json:"icon"`
+	Color string `json:"color"`
 }
 
 type Overview struct {
@@ -94,7 +100,7 @@ func teamSummary(t teams.Team) TeamSummary {
 		ShareSetup: t.ShareSetup && t.Remote.IsStorage(), CanShareSetup: t.Remote.IsStorage(),
 		Preupload:     !t.NoPreupload && t.Remote.IsStorage(),
 		AskShareSetup: t.Remote.IsStorage() && t.MemberID != "" && !t.SetupAsked && !t.ShareSetup,
-		BackupFailing: backup.Failing(t.Backup)}
+		BackupFailing: backup.Failing(t.Backup), Looks: remote.Looks && !hosted}
 }
 
 func folderProject(root, status string) TeamProject {
@@ -159,10 +165,16 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	// shows them, not to be downloaded until it can).
 	addRemote := func(ps []remote.Project, fresh bool) {
 		for _, p := range ps {
-			if i, ok := seen[p.ID]; !ok {
-				seen[p.ID] = len(ov.Projects)
+			i, ok := seen[p.ID]
+			if !ok {
+				i = len(ov.Projects)
+				seen[p.ID] = i
 				ov.Projects = append(ov.Projects, TeamProject{ID: p.ID, Name: p.Name, Status: "remote"})
-			} else if fresh && p.Name != "" && ov.Projects[i].Name != p.Name {
+			}
+			if remote.Looks {
+				ov.Projects[i].Icon, ov.Projects[i].Color = p.Icon, p.Color
+			}
+			if ok && fresh && p.Name != "" && ov.Projects[i].Name != p.Name {
 				// The team's name wins (someone renamed it, or the folder is
 				// gone); the copy here takes it on.
 				ov.Projects[i].Name = p.Name
@@ -298,6 +310,7 @@ func (a *App) SetIdentity(teamID, memberID, name string) (TeamSummary, error) {
 	if saved.Backup != nil { // set up before the name (creating a team)
 		go backup.Announce(saved)
 	}
+	go shareLookWith(saved)
 	return teamSummary(saved), nil
 }
 
@@ -762,9 +775,11 @@ func rememberTeamProjects(teamID string, ps []remote.Project) {
 	all := readTeamProjects()
 	keep := make([]remote.Project, len(ps))
 	for i, p := range ps {
-		keep[i] = remote.Project{ID: p.ID, Name: p.Name}
+		keep[i] = remote.Project{ID: p.ID, Name: p.Name, Icon: p.Icon, Color: p.Color}
 	}
-	if slices.EqualFunc(all[teamID], keep, func(a, b remote.Project) bool { return a.ID == b.ID && a.Name == b.Name }) {
+	if slices.EqualFunc(all[teamID], keep, func(a, b remote.Project) bool {
+		return a.ID == b.ID && a.Name == b.Name && a.Icon == b.Icon && a.Color == b.Color
+	}) {
 		return // unchanged: not written every minute
 	}
 	all[teamID] = keep
