@@ -20,6 +20,7 @@ export {
     ConvertFormat,
     DeletedBranch,
     DownloadSize,
+    DropResult,
     FileVersion,
     FoundProject,
     IgnoreOption,
