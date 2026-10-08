@@ -490,6 +490,18 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 			roots = append(roots, m.Tree)
 		}
 	}
+	var leaseMu sync.Mutex
+	var releases []func()
+	// Released at once, not one after another: each is a request (a slow
+	// one to a hosted team), and a lease left behind only expires.
+	defer func() {
+		var wg sync.WaitGroup
+		for _, release := range releases {
+			wg.Add(1)
+			go func() { defer wg.Done(); release() }()
+		}
+		wg.Wait()
+	}()
 	// Storage cleanup (on any computer) leaves what this share relies on,
 	// including files the storage has already, until the versions are up.
 	if l, ok := c.(remote.Leaser); ok && len(objects)+len(roots) > 0 {
@@ -504,20 +516,8 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 		if err != nil {
 			return err
 		}
-		defer release()
+		releases = append(releases, release)
 	}
-	var leaseMu sync.Mutex
-	var releases []func()
-	// Released at once, not one after another: each is a request (a slow
-	// one to a hosted team), and a lease left behind only expires.
-	defer func() {
-		var wg sync.WaitGroup
-		for _, release := range releases {
-			wg.Add(1)
-			go func() { defer wg.Done(); release() }()
-		}
-		wg.Wait()
-	}()
 	hold := func(hashes []string) error {
 		l, ok := c.(remote.Leaser)
 		if !ok {
@@ -601,7 +601,8 @@ func (r *Repo) uploadObjects(c remote.Backend, hashes []string, hold func([]stri
 	}
 	t := r.newTransfer(StageUploading, len(missing), total)
 	t.report()
-	return transferAll(missing, func(h string) int64 { return sizes[h] }, func(h string) error {
+	var ready sync.Map // hash → *blob.Encoded, encoded ahead (uploadWindows)
+	upload := func(h string) error {
 		size, ok := sizes[h]
 		if !ok {
 			size = -1
@@ -621,8 +622,13 @@ func (r *Repo) uploadObjects(c remote.Backend, hashes []string, hold func([]stri
 				return nil
 			}
 		}
-		enc, err := r.encodeForUpload(c, h)
-		if err != nil {
+		var (
+			enc *blob.Encoded
+			err error
+		)
+		if e, ok := ready.LoadAndDelete(h); ok {
+			enc = e.(*blob.Encoded)
+		} else if enc, err = r.encodeForUpload(c, h); err != nil {
 			return fmt.Errorf("upload %s: %w", short(h), err)
 		}
 		if enc != nil {
@@ -663,7 +669,80 @@ func (r *Repo) uploadObjects(c remote.Backend, hashes []string, hold func([]stri
 		}
 		t.fileDone()
 		return nil
+	}
+	sizeOf := func(h string) int64 { return sizes[h] }
+	prep, ok := c.(remote.UploadPreparer)
+	if !ok || !remote.ThroughService(c) {
+		return transferAll(missing, sizeOf, upload)
+	}
+	defer ready.Range(func(_, e any) bool { // (what an error left)
+		e.(*blob.Encoded).Remove()
+		return true
 	})
+	var small, big []string
+	for _, h := range missing {
+		if s, ok := sizes[h]; ok && s < smallFile {
+			small = append(small, h)
+		} else {
+			big = append(big, h)
+		}
+	}
+	errs := make(chan error, 2)
+	go func() { errs <- r.uploadWindows(c, prep, small, &ready, upload) }()
+	go func() { errs <- inParallelN(bigTransfers, big, upload) }()
+	return errors.Join(<-errs, <-errs)
+}
+
+// uploadWindow is how many small files a hosted team's upload gets ready at
+// once: encoded, and their URLs asked for in one request.
+const uploadWindow = 64
+
+// uploadWindows uploads small files a window at a time, the next window
+// made ready (into ready) while one goes up.
+func (r *Repo) uploadWindows(c remote.Backend, prep remote.UploadPreparer, hashes []string, ready *sync.Map,
+	upload func(string) error) error {
+	get := func(win []string) {
+		var mu sync.Mutex
+		var bodies []remote.Body
+		inParallelN(transfers, win, func(h string) error {
+			enc, err := r.encodeForUpload(c, h)
+			if err != nil || enc == nil {
+				return nil // (the upload says what's wrong)
+			}
+			ready.Store(h, enc)
+			mu.Lock()
+			bodies = append(bodies, remote.Body{Hash: h, SHA256: enc.SHA256, Size: enc.Size})
+			mu.Unlock()
+			return nil
+		})
+		prep.PrepareUploads(bodies, nil)
+	}
+	var wins [][]string
+	for len(hashes) > 0 {
+		n := min(len(hashes), uploadWindow)
+		wins, hashes = append(wins, hashes[:n]), hashes[n:]
+	}
+	if len(wins) > 0 {
+		get(wins[0])
+	}
+	for i, win := range wins {
+		var next chan struct{}
+		if i+1 < len(wins) {
+			next = make(chan struct{})
+			go func() {
+				defer close(next)
+				get(wins[i+1])
+			}()
+		}
+		err := inParallelN(smallTransfers, win, upload)
+		if next != nil {
+			<-next
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // encodeForUpload compresses object h for storage that keeps blobs (see

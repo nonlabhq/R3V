@@ -108,11 +108,16 @@ type brokerBucket struct {
 	// each used once, by the first try of its download.
 	prepMu   sync.Mutex
 	prepared map[string]preparedURL
+	// Upload URLs asked for ahead (PreparePuts), each for the size and
+	// SHA-256 it was signed for.
+	preparedPuts map[string]preparedURL
 }
 
 type preparedURL struct {
 	url   string
 	until time.Time
+	sum   string // an upload's SHA-256 (base64) and size
+	size  int64
 }
 
 // PrepareGets asks for the download URLs of contents keys, up to 1,000 a
@@ -146,11 +151,65 @@ func (b *brokerBucket) PrepareGets(keys []string) {
 				b.prepared = map[string]preparedURL{}
 			}
 			for i, k := range batch {
-				b.prepared[k] = preparedURL{out.Get[i], until}
+				b.prepared[k] = preparedURL{url: out.Get[i], until: until}
 			}
 			b.prepMu.Unlock()
 		}
 	}
+}
+
+// PreparePuts asks for the upload URLs of contents, up to 1,000 a request,
+// so the uploads that follow don't each ask for their own. Best effort, as
+// PrepareGets.
+func (b *brokerBucket) PreparePuts(items []PutPrep) {
+	byPID := map[string][]PutPrep{}
+	for _, it := range items {
+		if pid, _, ok := contents(it.Key); ok {
+			byPID[pid] = append(byPID[pid], it)
+		}
+	}
+	for pid, its := range byPID {
+		for len(its) > 0 {
+			n := min(len(its), 1000)
+			batch := its[:n]
+			its = its[n:]
+			put := make([]putItem, 0, len(batch))
+			for _, it := range batch {
+				raw, err := hex.DecodeString(it.SHA256)
+				if err != nil || len(raw) != 32 {
+					return
+				}
+				_, rel, _ := contents(it.Key)
+				put = append(put, putItem{rel, it.Size, base64.StdEncoding.EncodeToString(raw)})
+			}
+			var out struct{ Put []string }
+			if b.json("/projects/"+pid+"/urls", map[string]any{"put": put}, &out) != nil || len(out.Put) != len(batch) {
+				continue
+			}
+			until := time.Now().Add(12 * time.Minute)
+			b.prepMu.Lock()
+			if b.preparedPuts == nil {
+				b.preparedPuts = map[string]preparedURL{}
+			}
+			for i, it := range batch {
+				b.preparedPuts[it.Key] = preparedURL{out.Put[i], until, put[i].SHA256, it.Size}
+			}
+			b.prepMu.Unlock()
+		}
+	}
+}
+
+// preparedPut takes key's prepared upload URL, if there is one still good
+// for these bytes.
+func (b *brokerBucket) preparedPut(key, sum string, size int64) string {
+	b.prepMu.Lock()
+	defer b.prepMu.Unlock()
+	p, ok := b.preparedPuts[key]
+	delete(b.preparedPuts, key)
+	if !ok || time.Now().After(p.until) || p.sum != sum || p.size != size {
+		return ""
+	}
+	return p.url
 }
 
 // preparedGet takes key's prepared URL, if there is one still good.
@@ -547,7 +606,14 @@ func (b *brokerBucket) Put(key string, r io.Reader, size int64, sum, cond string
 	}
 	b64 := base64.StdEncoding.EncodeToString(raw)
 	item := &putItem{rel, size, b64}
-	resp, err := b.transfer("PUT", func() (string, error) { return b.urls(pid, item, "") }, rs, size,
+	first := b.preparedPut(key, b64, size)
+	resp, err := b.transfer("PUT", func() (string, error) {
+		if u := first; u != "" {
+			first = ""
+			return u, nil
+		}
+		return b.urls(pid, item, "")
+	}, rs, size,
 		map[string]string{"if-none-match": "*", "x-amz-checksum-sha256": b64})
 	if err != nil {
 		return err

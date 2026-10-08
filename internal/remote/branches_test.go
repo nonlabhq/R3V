@@ -91,3 +91,11 @@ func TestBranchRecords(t *testing.T) {
 		t.Error("written without the channel")
 	}
 }
+
+// Storage reached directly has nothing to get ready.
+func TestPrepareUploadsDirect(t *testing.T) {
+	h := strings.Repeat("a", 64)
+	if remote.NewBucketBackend(membucket.New()).PrepareUploads([]remote.Body{{Hash: h, SHA256: h, Size: 1}}, nil) {
+		t.Error("a bucket reached directly prepares uploads")
+	}
+}

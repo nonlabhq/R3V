@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/nonlabhq/r3v/internal/chunk"
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
@@ -76,11 +77,21 @@ func (r *Repo) hashFile(abs string) (string, int64, error) {
 	}
 	defer f.Close()
 	h := sha256.New()
-	n, err := io.Copy(h, stopReader{r, f})
+	var w io.Writer = h
+	var l *lister
+	if fi, err := f.Stat(); err == nil && fi.Size() >= chunk.MinFile {
+		l = newLister()
+		w = io.MultiWriter(h, l)
+	}
+	n, err := io.Copy(w, stopReader{r, f})
+	sum := hex.EncodeToString(h.Sum(nil))
+	if l != nil {
+		l.keep(r, sum, err)
+	}
 	if err != nil {
 		return "", 0, err
 	}
-	return hex.EncodeToString(h.Sum(nil)), n, nil
+	return sum, n, nil
 }
 
 // storeFile copies a file of the project into the store, stopping when
