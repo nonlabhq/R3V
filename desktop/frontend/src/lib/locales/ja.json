@@ -1369,5 +1369,6 @@
 "Status": "状態",
 "{n} folder": "フォルダー {n} 個",
 "{n} folders": "フォルダー {n} 個",
-"Empty": "空"
+"Empty": "空",
+"Open the project in its program": "プロジェクトをそのアプリで開く"
 }

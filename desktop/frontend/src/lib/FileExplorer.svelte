@@ -166,13 +166,17 @@
   });
   let order = $derived(shown.map((f) => f.path));
   let hereSize = $derived(here.reduce((n, f) => n + f.size, 0));
-  // The folder's own folders, listed before its files (a click opens one),
+  // The folder's own folders, listed before its files (a double-click opens one),
   // with what is in them.
   let sizes = $derived.by(() => {
     const out = new Map<string, number>();
     for (const f of files) for (let d = dirOf(f.path); d; d = dirOf(d)) out.set(d, (out.get(d) ?? 0) + f.size);
     return out;
   });
+  // A folder among the files: a click picks it, a double-click opens it.
+  let subPicked = $state("");
+  $effect(() => { dir; subPicked = ""; });
+  $effect(() => { if (sel.picked.length) subPicked = ""; });
   let subfolders = $derived.by(() => {
     const q = filter.trim().toLowerCase();
     const list = findFolder(tree, dir)?.folders ?? [];
@@ -514,7 +518,8 @@
           </div>
           {#each subfolders as d (d.path)}
             <div class="row item sub" role="row" tabindex="-1" style:grid-template-columns={template} title={d.path}
-              onclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => openMenu(e, d.path, true)}
+              class:on={subPicked === d.path} onclick={() => { subPicked = d.path; sel = { picked: [], anchor: "" }; }}
+              ondblclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => { subPicked = d.path; openMenu(e, d.path, true); }}
               data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
               <span class="badge folder-badge" role="gridcell"><FileIcon kind="folder" /></span>
               <span class="nm" role="gridcell"><span class="fname">{d.name}</span><span class="msg">{insideText(d)}</span></span>
@@ -564,7 +569,8 @@
         {:else}
           {#each subfolders as d (d.path)}
             <div class="card sub" role="option" aria-selected="false" tabindex="-1" title={d.path}
-              onclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => openMenu(e, d.path, true)}
+              class:on={subPicked === d.path} onclick={() => { subPicked = d.path; sel = { picked: [], anchor: "" }; }}
+              ondblclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => { subPicked = d.path; openMenu(e, d.path, true); }}
               data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
               <span class="thumb"><span class="ph"><FileIcon kind="folder" /></span>
                 {#if d.changed}<span class="pill corner">{d.changed}</span>{/if}</span>
@@ -629,8 +635,7 @@
   <div class="ctx surface-menu" role="menu" use:portal bind:offsetWidth={menuW} bind:offsetHeight={menuH}
     style:left="{Math.max(8, Math.min(m.x, window.innerWidth - menuW - 8))}px" style:top="{Math.max(8, Math.min(m.y, window.innerHeight - menuH - 8))}px">
     {#if f && f.status !== "deleted"}
-      {@const tool = toolOf(f.path)}
-      <button class="item" onclick={() => openFile(f)}>{tool.name ? t("Open in {tool}", { tool: tool.name }) : t("Open")}</button>
+      <button class="item" onclick={() => openFile(f)}>{t("Open")}</button>
     {/if}
     {#if m.dir || (f && f.status !== "deleted")}
       <button class="item" onclick={() => showInFolder(m.path)}>{t("Show in folder")}</button>
@@ -692,7 +697,7 @@
   .tree ul { flex: 1; min-height: 0; overflow: auto; list-style: none; margin: 0; padding: 0; }
   .tree li { display: flex; align-items: center; }
   .tree-line { height: var(--border-width); margin: var(--sp-6) var(--sp-8); background: var(--line); }
-  .row.sub, .card.sub { cursor: pointer; }
+  .row.sub, .card.sub { cursor: default; }
   .folder-badge { background: transparent; color: var(--muted); }
   .card.sub .ph :global(svg) { width: 48px; height: 48px; }
   .crumb.home { display: inline-flex; align-items: center; padding: var(--sp-2); border-radius: var(--radius-sm); }

@@ -161,9 +161,11 @@
   </div>
 
   <footer>
-    <button class="primary" disabled={file.status === "deleted"} onclick={open}>
-      {tool.name ? t("Open in {tool}", { tool: tool.name }) : t("Open")}</button>
-    <button disabled={file.status === "deleted"} onclick={reveal}>{t("Show in folder")}</button>
+    <!-- (with the program Windows opens it with) -->
+    <button class="primary" disabled={file.status === "deleted"} onclick={open}>{t("Open")}</button>
+    <button class="icon-btn" disabled={file.status === "deleted"} onclick={reveal} title={t("Show in folder")} aria-label={t("Show in folder")}>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 4.25v8a1 1 0 0 0 1 1h10.5a1 1 0 0 0 1-1v-6.5a1 1 0 0 0-1-1H8L6.5 3.25H2.75a1 1 0 0 0-1 1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+    </button>
   </footer>
 </div>
 
@@ -216,4 +218,6 @@
   footer { flex: none; display: flex; gap: var(--sp-10); padding: var(--sp-12) var(--sp-18) var(--sp-16);
     border-top: var(--border-width) solid var(--line-strong); }
   footer .primary { flex: 1; }
+  .icon-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; padding: 0; }
+  .icon-btn svg { width: 16px; height: 16px; }
 </style>

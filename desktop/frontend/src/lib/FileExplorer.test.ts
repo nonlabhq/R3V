@@ -96,10 +96,14 @@ describe("FileExplorer", () => {
     expect(document.querySelector(".area.grid")).not.toBeNull(); // and the next time
     await fireEvent.click(screen.getByRole("button", { name: "List view" }));
     expect(document.querySelector(".area.list")).not.toBeNull();
-    // a folder's own folders are listed too, and open with a click
+    // a folder's own folders are listed too: a click picks one, a double-click opens it
     expect(subNames()).toEqual(["Loops"]);
     expect(document.querySelector(".row.sub .msg")?.textContent).toBe("2 files");
-    await fireEvent.click(document.querySelector<HTMLElement>(".row.sub")!);
+    const sub = document.querySelector<HTMLElement>(".row.sub")!;
+    await fireEvent.click(sub);
+    expect(sub.classList.contains("on")).toBe(true);
+    expect(rowNames()).toEqual(["Kick.wav"]);
+    await fireEvent.dblClick(sub);
     expect(rowNames()).toEqual(["Loop 10.wav", "Loop 2.wav"]);
     await fireEvent.click(folder("Samples"));
     // inner folders open in the tree; the path above the files goes back up

@@ -130,6 +130,29 @@ describe("App: tabs", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
+  it("sizes the sidebar by its edge, folds it past its narrowest, and opens it again", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    const shell = document.querySelector<HTMLElement>(".shell")!;
+    const edge = document.querySelector<HTMLElement>(".side-split")!;
+    const drag = async (to: number) => {
+      await fireEvent.pointerDown(edge, { button: 0, clientX: 256 });
+      await fireEvent.pointerMove(window, { buttons: 1, clientX: to });
+      await fireEvent.pointerUp(window);
+    };
+    await drag(320);
+    expect(shell.style.gridTemplateColumns).toBe("320px minmax(0, 1fr)");
+    expect(localStorage.getItem("r3v.sidebarWidth")).toBe("320");
+    await drag(170); // narrowest, not folded yet
+    expect(shell.classList.contains("folded")).toBe(false);
+    expect(shell.style.gridTemplateColumns).toBe("200px minmax(0, 1fr)");
+    await drag(100);
+    expect(shell.classList.contains("folded")).toBe(true);
+    await drag(240);
+    expect(shell.classList.contains("folded")).toBe(false);
+    expect(shell.style.gridTemplateColumns).toBe("240px minmax(0, 1fr)");
+  });
+
   it("shows the version short, says Nightly, and copies it in full", async () => {
     api.Version.mockResolvedValue("0.1.3-nightly.202610070525");
     const writeText = vi.fn(async () => {});

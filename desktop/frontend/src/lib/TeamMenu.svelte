@@ -42,7 +42,8 @@
   // week (asked again when the team settings close: one may be set up).
   let remindBackup = $state(false);
   $effect(() => {
-    const id = part === "notices" && current?.memberId && current.isStorage ? current.id : "";
+    // (R3V Cloud keeps its teams' data itself: no reminder there)
+    const id = part === "notices" && current?.memberId && current.isStorage && !current.hosted ? current.id : "";
     remindBackup = false;
     if (id) api.BackupReminder(id).then((r) => { if (current?.id === id) remindBackup = r; }).catch(() => {});
   });
@@ -210,7 +211,7 @@
       ☺ {tr("Choose your name in {team}", { team: current.name })}
     </button>
   {/if}
-  {#if current?.backupFailing}
+  {#if current?.backupFailing && !current.hosted}
     <button class="backup warn" onclick={() => (onsettings(current!))}>
       ⚠ {tr("Backups of {team} keep failing on this computer. Have a look", { team: current.name })} ›</button>
   {:else if current && remindBackup}

@@ -1369,5 +1369,6 @@
 "Status": "상태",
 "{n} folder": "폴더 {n}개",
 "{n} folders": "폴더 {n}개",
-"Empty": "비어 있음"
+"Empty": "비어 있음",
+"Open the project in its program": "프로젝트를 해당 프로그램에서 열기"
 }
