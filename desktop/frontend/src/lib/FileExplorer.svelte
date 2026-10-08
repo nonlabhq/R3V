@@ -402,7 +402,13 @@
   let menu = $state<{ path: string; x: number; y: number; dir: boolean; ignore: IgnoreOption[] } | null>(null);
   let ignoreOpen = $state(false);
   let menuW = $state(220), menuH = $state(200);
-  let converting = $state("");
+  // Samples to convert: the one right-clicked, or every one picked with it
+  // when they all are samples.
+  let converting = $state<string[]>([]);
+  const toConvert = (path: string) => {
+    const picked = sel.picked.includes(path) ? sel.picked.map((p) => files.find((f) => f.path === p)) : [];
+    return picked.length > 1 && picked.every((f) => f?.kind === "audio" && f.status !== "deleted") ? sel.picked : [path];
+  };
   function openMenu(e: MouseEvent, path: string, isDir: boolean) {
     e.preventDefault();
     if (!isDir && !sel.picked.includes(path)) sel = { picked: [path], anchor: path };
@@ -684,7 +690,8 @@
       <button class="item" onclick={() => startRename(m.path, m.dir)}>{t("Rename")}<span class="faint key">F2</span></button>
     {/if}
     {#if f?.kind === "audio" && f.status !== "deleted"}
-      <button class="item" onclick={() => { converting = m.path; menu = null; }}>{t("Convert…")}</button>
+      {@const n = toConvert(m.path).length}
+      <button class="item" onclick={() => { converting = toConvert(m.path); menu = null; }}>{n > 1 ? t("Convert {n} samples…", { n }) : t("Convert…")}</button>
     {/if}
     {#if f && ["added", "modified", "deleted", "renamed"].includes(f.status)}
       <button class="item danger-text" onclick={() => { const p = m.path; menu = null; ondiscard(p); }}>{t("Discard changes…")}</button>
@@ -719,9 +726,14 @@
   </div>
 {/if}
 
-{#if converting}
-  <ConvertDialog {root} file={converting} onclose={() => (converting = "")}
-    ondone={async (p) => { converting = ""; toast(t("Converted to {file}", { file: baseName(p) }), "ok"); await loadFiles(); pickDir(dirOf(p)); sel = { picked: [p], anchor: p }; }} />
+{#if converting.length}
+  <ConvertDialog {root} files={converting} onclose={() => (converting = [])}
+    ondone={async (made) => {
+      converting = [];
+      toast(made.length > 1 ? t("Converted {n} samples", { n: made.length }) : t("Converted to {file}", { file: baseName(made[0] ?? "") }), "ok");
+      await loadFiles();
+      if (made.length) { pickDir(dirOf(made[0])); sel = { picked: made.filter((p) => dirOf(p) === dirOf(made[0])), anchor: made[0] }; }
+    }} />
 {/if}
 
 <style>

@@ -587,7 +587,7 @@
 
 {#if converting}
   <ConvertDialog {root} file={converting} onclose={() => (converting = "")}
-    ondone={(p) => { converting = ""; toast(t("Converted to {file}", { file: p.slice(p.lastIndexOf("/") + 1) }), "ok"); reveal(p); }} />
+    ondone={([p]) => { converting = ""; if (!p) return; toast(t("Converted to {file}", { file: p.slice(p.lastIndexOf("/") + 1) }), "ok"); reveal(p); }} />
 {/if}
 
 <style>

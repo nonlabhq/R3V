@@ -1447,5 +1447,13 @@
 "Archives": "Archive",
 "{n} change not committed": "{n} Änderung nicht committet",
 "{n} changes not committed": "{n} Änderungen nicht committet",
-"Not a text file.": "Keine Textdatei."
+"Not a text file.": "Keine Textdatei.",
+"Converted {done} of {total}; these weren't:": "{done} von {total} umgewandelt; diese nicht:",
+"Convert {n} samples": "{n} Samples umwandeln",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "Schreibt jedes als {what} neben sein Original; „wie das Original“ behält jeweils die eigenen Werte. Die Originale bleiben.",
+"{n} of {total}: {file}": "{n} von {total}: {file}",
+"Converting…": "Wird umgewandelt…",
+"Convert": "Umwandeln",
+"Convert {n} samples…": "{n} Samples umwandeln…",
+"Converted {n} samples": "{n} Samples umgewandelt"
 }

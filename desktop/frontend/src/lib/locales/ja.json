@@ -1447,5 +1447,13 @@
 "Archives": "アーカイブ",
 "{n} change not committed": "未コミットの変更 {n} 件",
 "{n} changes not committed": "未コミットの変更 {n} 件",
-"Not a text file.": "テキストファイルではありません。"
+"Not a text file.": "テキストファイルではありません。",
+"Converted {done} of {total}; these weren't:": "{total} 件中 {done} 件を変換しました。次は変換できませんでした：",
+"Convert {n} samples": "{n} 個のサンプルを変換",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "それぞれを {what} として元のファイルの隣に書き出します。「元と同じ」はそれぞれの値を保ちます。元のファイルはそのままです。",
+"{n} of {total}: {file}": "{total} 件中 {n} 件目：{file}",
+"Converting…": "変換中…",
+"Convert": "変換",
+"Convert {n} samples…": "{n} 個のサンプルを変換…",
+"Converted {n} samples": "{n} 個のサンプルを変換しました"
 }
