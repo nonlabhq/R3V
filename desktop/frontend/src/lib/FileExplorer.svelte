@@ -151,12 +151,29 @@
   // --- the files of the folder ---
   let filter = $state("");
   let here = $derived(filesIn(files, dir));
+  // Searching (a name, or kinds of file picked): the folder's files and its
+  // folders' files, at any depth (as a content browser does); else the
+  // folder's own files.
+  let kinds = $state<string[]>([]);
+  let searching = $derived(!!filter.trim() || kinds.length > 0);
+  let below = $derived(dir ? files.filter((f) => f.path.startsWith(dir + "/")) : files);
+  // The kinds of file in the folder and below, with how many of each.
+  let kindCounts = $derived.by(() => {
+    const out = new Map<string, number>();
+    for (const f of below) out.set(f.kind, (out.get(f.kind) ?? 0) + 1);
+    return [...out].sort((a, b) => kindTitle(a[0]).localeCompare(kindTitle(b[0])));
+  });
+  let kindsOpen = $state(false);
+  function toggleKind(k: string) { kinds = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k]; }
+  // Where a file found below is, from the folder shown ("" right in it).
+  const whereIn = (f: ProjectFile) => { const d = dirOf(f.path); return d === dir ? "" : dir ? d.slice(dir.length + 1) : d; };
   type SortKey = "name" | "type" | "size" | "change";
   let sort = $state<{ key: SortKey; desc: boolean }>({ key: "change", desc: true });
   const changeTime = (f: ProjectFile) => last[f.path]?.time ?? (isChanged(f) ? "9" : "");
   let shown = $derived.by(() => {
     const q = filter.trim().toLowerCase();
-    const list = q ? here.filter((f) => baseName(f.path).toLowerCase().includes(q)) : [...here];
+    const list = !searching ? [...here]
+      : below.filter((f) => (!q || baseName(f.path).toLowerCase().includes(q)) && (!kinds.length || kinds.includes(f.kind)));
     const name = (f: ProjectFile) => baseName(f.path);
     return list.sort((a, b) => {
       const r = sort.key === "size" ? a.size - b.size : sort.key === "change" ? changeTime(a).localeCompare(changeTime(b))
@@ -178,6 +195,7 @@
   $effect(() => { dir; subPicked = ""; });
   $effect(() => { if (sel.picked.length) subPicked = ""; });
   let subfolders = $derived.by(() => {
+    if (kinds.length) return []; // (kinds of file: files only)
     const q = filter.trim().toLowerCase();
     const list = findFolder(tree, dir)?.folders ?? [];
     return q ? list.filter((f) => f.name.toLowerCase().includes(q)) : list;
@@ -416,7 +434,7 @@
   const sym: Record<string, string> = { added: "A", modified: "M", deleted: "D", renamed: "R" };
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"), renamed: t("Moved") } as Record<string, string>)[s] ?? "";
   let changedTotal = $derived(tree.changed);
-  const emptyText = () => filter ? t("No files here match “{text}”.", { text: filter })
+  const emptyText = () => searching ? (filter.trim() ? t("No files here or below match “{text}”.", { text: filter.trim() }) : t("No files of these kinds here or below."))
     : t("No files in this folder. Drop files here to copy them in.");
   let thumbFailed = $state<Record<string, boolean>>({});
 </script>
@@ -479,6 +497,26 @@
       <div class="toolbar">
         <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : st.name })}
           aria-label={t("Filter")} />
+        <div class="kinds-wrap">
+          <button class="kinds-btn" class:on={kinds.length > 0} onclick={() => (kindsOpen = !kindsOpen)} aria-haspopup="menu" aria-expanded={kindsOpen}
+            title={t("Kinds of file")} aria-label={t("Kinds of file")}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12l-4.5 5.5V13l-3 1.5V8.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+            {#if kinds.length}<span class="kinds-n">{kinds.length}</span>{/if}
+          </button>
+          {#if kindsOpen}
+            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+            <div class="kinds-scrim" onclick={() => (kindsOpen = false)}></div>
+            <div class="kinds-menu surface-menu" role="menu" aria-label={t("Kinds of file")}>
+              {#each kindCounts as [k, n] (k)}
+                <label class="kind"><input type="checkbox" checked={kinds.includes(k)} onchange={() => toggleKind(k)} />
+                  <FileIcon kind={k} /><span class="kname">{kindTitle(k)}</span><span class="faint">{n}</span></label>
+              {:else}
+                <p class="faint none">{t("No files here.")}</p>
+              {/each}
+              {#if kinds.length}<button class="clear" onclick={() => (kinds = [])}>{t("Show every kind")}</button>{/if}
+            </div>
+          {/if}
+        </div>
         <div class="modes" role="group" aria-label={t("Display")}>
           <button class:on={mode === "list"} aria-pressed={mode === "list"} onclick={() => (mode = "list")} title={t("List view")} aria-label={t("List view")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" /></svg>
@@ -493,7 +531,11 @@
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 4.25v8a1 1 0 0 0 1 1h10.5a1 1 0 0 0 1-1v-6.5a1 1 0 0 0-1-1H8L6.5 3.25H2.75a1 1 0 0 0-1 1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
         </button>
         {#each crumbs as c (c.path)}<span class="sep">›</span><button class="crumb" class:at={c.path === dir} onclick={() => pickDir(c.path)}>{c.name}</button>{/each}
-        <span class="faint"> · {tn(here.length, "{n} file", "{n} files")} · {formatBytes(hereSize)}</span>
+        {#if searching}
+          <span class="faint"> · {tn(shown.length, "{n} found here and below", "{n} found here and below")}</span>
+        {:else}
+          <span class="faint"> · {tn(here.length, "{n} file", "{n} files")} · {formatBytes(hereSize)}</span>
+        {/if}
       </p>
 
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
@@ -546,7 +588,7 @@
                 {:else}
                   <span class="fname">{baseName(f.path)}</span>
                 {/if}
-                <span class="msg">{v ? v.message || t("(no description)") : isChanged(f) ? t("Not committed yet") : ""}</span>
+                <span class="msg">{#if searching && whereIn(f)}<span class="where" title={dirOf(f.path)}>{whereIn(f)}</span>{/if}{v ? v.message || t("(no description)") : isChanged(f) ? t("Not committed yet") : ""}</span>
               </span>
               {#each shownCols as c (c.key)}
                 {#if c.key === "type"}
@@ -599,6 +641,7 @@
               {:else}
                 <span class="cname">{baseName(f.path)}</span>
               {/if}
+              {#if searching && whereIn(f)}<span class="cwhere faint" title={dirOf(f.path)}>{whereIn(f)}</span>{/if}
               <span class="cmeta">
                 {#if v}<Avatar name={v.author} seed={v.authorId} color={looks?.[v.authorId]?.color ?? ""} picture={looks?.[v.authorId]?.picture ?? ""} size={16} />{/if}
                 <span class="faint">{formatBytes(f.size)}</span>
@@ -700,6 +743,23 @@
   .row.sub, .card.sub { cursor: default; }
   .folder-badge { background: transparent; color: var(--muted); }
   .card.sub .ph :global(svg) { width: 48px; height: 48px; }
+  .kinds-wrap { position: relative; }
+  .kinds-btn { display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4) var(--sp-8); border-radius: var(--radius); color: var(--muted); }
+  .kinds-btn svg { width: 14px; height: 14px; }
+  .kinds-btn.on { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+  .kinds-n { font-size: var(--fs-2xs); font-weight: var(--fw-bold); }
+  .kinds-scrim { position: fixed; inset: 0; z-index: var(--z-menu); }
+  .kinds-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: var(--z-menu); min-width: 220px; max-height: 360px; overflow: auto;
+    padding: var(--sp-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .kind { display: flex; align-items: center; gap: var(--sp-8); margin: 0; padding: var(--sp-6) var(--sp-8); border-radius: var(--radius);
+    color: var(--text); font-size: var(--fs-md); cursor: pointer; }
+  .kind:hover { background: var(--hover); }
+  .kind input { width: auto; margin: 0; }
+  .kname { flex: 1; }
+  .kinds-menu .none { margin: var(--sp-6) var(--sp-8); font-size: var(--fs-sm); }
+  .kinds-menu .clear { width: 100%; margin-top: var(--sp-4); border: none; background: transparent; color: var(--accent-text); font-size: var(--fs-sm); text-align: left; padding: var(--sp-6) var(--sp-8); }
+  .where { margin-right: var(--sp-6); padding: 0 var(--sp-4); border-radius: var(--radius-sm); background: var(--hover); color: var(--muted); }
+  .cwhere { font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: calc(var(--sp-4) * -1); }
   .crumb.home { display: inline-flex; align-items: center; padding: var(--sp-2); border-radius: var(--radius-sm); }
   .crumb.home:hover { color: var(--text); background: var(--hover); }
   .crumb.home svg { width: 15px; height: 15px; }

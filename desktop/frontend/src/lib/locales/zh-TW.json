@@ -1432,5 +1432,11 @@
 "Not in this version": "這個版本沒有",
 "Merge back to main": "合併回 main",
 "Merge this version into main": "把這個版本合併到 main",
-"Go to main, then merge this version into it": "先切換到 main，再把這個版本合併進去"
+"Go to main, then merge this version into it": "先切換到 main，再把這個版本合併進去",
+"No files here or below match “{text}”.": "這裡和底下沒有符合「{text}」的檔案。",
+"No files of these kinds here or below.": "這裡和底下沒有這些類型的檔案。",
+"Kinds of file": "檔案類型",
+"No files here.": "這裡沒有檔案。",
+"Show every kind": "顯示所有類型",
+"{n} found here and below": "這裡和底下找到 {n} 個"
 }

@@ -1432,5 +1432,11 @@
 "Not in this version": "이 버전에는 없음",
 "Merge back to main": "main에 다시 병합",
 "Merge this version into main": "이 버전을 main에 병합",
-"Go to main, then merge this version into it": "main으로 이동한 뒤 이 버전을 병합"
+"Go to main, then merge this version into it": "main으로 이동한 뒤 이 버전을 병합",
+"No files here or below match “{text}”.": "여기와 그 아래에 “{text}”와 일치하는 파일이 없습니다.",
+"No files of these kinds here or below.": "여기와 그 아래에 이 종류의 파일이 없습니다.",
+"Kinds of file": "파일 종류",
+"No files here.": "여기에 파일이 없습니다.",
+"Show every kind": "모든 종류 표시",
+"{n} found here and below": "여기와 그 아래에서 {n}개 찾음"
 }

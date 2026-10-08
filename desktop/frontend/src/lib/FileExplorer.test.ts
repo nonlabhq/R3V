@@ -114,6 +114,30 @@ describe("FileExplorer", () => {
     expect(rowNames()).toEqual(["Kick.wav"]);
   });
 
+  it("searches the folder and the folders below it, by name or kind of file", async () => {
+    await show();
+    await fireEvent.click(screen.getByRole("button", { name: "List view" }));
+    const search = screen.getByPlaceholderText("Filter in Song");
+    await fireEvent.input(search, { target: { value: "loop" } });
+    expect(rowNames().sort()).toEqual(["Loop 10.wav", "Loop 2.wav"]); // in Samples/Loops
+    expect(document.querySelector(".row.item .where")?.textContent).toBe("Samples/Loops");
+    expect(subNames()).toEqual([]);
+    await fireEvent.input(search, { target: { value: "" } });
+    expect(rowNames().sort()).toEqual(["Song.als", "notes.txt"]); // (no search: the folder's own)
+    // kinds of file: the ones there, counted; picked, below too
+    await fireEvent.click(screen.getByRole("button", { name: "Kinds of file" }));
+    const menu = screen.getByRole("menu", { name: "Kinds of file" });
+    const kind = (name: string) => [...menu.querySelectorAll<HTMLElement>("label.kind")].find((l) => l.querySelector(".kname")?.textContent === name)!;
+    expect(kind("Audio").textContent).toContain("3");
+    await fireEvent.click(kind("Image").querySelector("input")!);
+    expect(rowNames().sort()).toEqual(["back.png", "cover.png"]);
+    expect(subNames()).toEqual([]);
+    // from a folder: only it and below
+    await fireEvent.click(folder("Samples"));
+    expect(rowNames()).toEqual([]);
+    expect(screen.getByText("No files of these kinds here or below.")).toBeTruthy();
+  });
+
   it("filters the folder's files and sorts by size", async () => {
     await show();
     await fireEvent.input(screen.getByPlaceholderText("Filter in Song"), { target: { value: "not" } });

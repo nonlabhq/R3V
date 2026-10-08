@@ -1432,5 +1432,11 @@
 "Not in this version": "In dieser Version nicht vorhanden",
 "Merge back to main": "Zurück in main zusammenführen",
 "Merge this version into main": "Diese Version in main zusammenführen",
-"Go to main, then merge this version into it": "Zu main wechseln und diese Version dort zusammenführen"
+"Go to main, then merge this version into it": "Zu main wechseln und diese Version dort zusammenführen",
+"No files here or below match “{text}”.": "Keine Dateien hier oder darunter passen zu „{text}“.",
+"No files of these kinds here or below.": "Keine Dateien dieser Arten hier oder darunter.",
+"Kinds of file": "Dateiarten",
+"No files here.": "Hier sind keine Dateien.",
+"Show every kind": "Alle Arten zeigen",
+"{n} found here and below": "{n} hier und darunter gefunden"
 }
