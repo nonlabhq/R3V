@@ -45,6 +45,10 @@ test("previews a Live set in the Files tab", async () => {
   await page.getByRole("button", { name: "Files", exact: true }).click();
   await page.getByRole("row", { name: /Night Drive\.als/ }).click();
   await expect(page.getByText("MIDI Tracks").first()).toBeVisible({ timeout: 15_000 });
+  // The project's rules file: its rules in plain words, editable here.
+  await page.getByRole("row", { name: /\.r3v\.yaml/ }).click();
+  await expect(page.getByText("Tools in this project").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Files and folders").first()).toBeVisible();
   await page.getByRole("button", { name: /^Versions/ }).click();
 });
 

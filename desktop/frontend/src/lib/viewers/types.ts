@@ -19,6 +19,7 @@ export type ViewerProps = {
   b: Side | null;   // the state it is compared with (null: none, e.g. a new file)
   compare: boolean; // show the differences from b (false: just a)
   stamp: number;    // changes when the project folder may have changed: reload "now"
+  editable?: boolean; // a is the file now and may be changed here (the Files tab's preview)
 };
 
 export type Viewer = {

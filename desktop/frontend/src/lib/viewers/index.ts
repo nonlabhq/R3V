@@ -8,6 +8,7 @@ import VideoViewer from "./VideoViewer.svelte";
 import ModelViewer from "./ModelViewer.svelte";
 import ImageViewer from "./ImageViewer.svelte";
 import TextViewer from "./TextViewer.svelte";
+import RulesViewer from "./RulesViewer.svelte";
 
 const text: Viewer = { id: "text", matches: () => true, component: TextViewer };
 
@@ -17,6 +18,7 @@ export const viewers: Viewer[] = [
   { id: "video", matches: (f) => f.video, component: VideoViewer },
   { id: "model", matches: (f) => f.model, component: ModelViewer },
   { id: "image", matches: (f) => f.preview, component: ImageViewer },
+  { id: "rules", matches: (f) => f.path === ".r3v.yaml", component: RulesViewer }, // the project's own rules
   text, // anything else: text when it is text, a note when it isn't
 ];
 
