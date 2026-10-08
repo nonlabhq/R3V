@@ -150,6 +150,8 @@ type TeamInfo struct {
 	// hosted team's address): R3V shares nothing to it any more.
 	Moving  *TeamMove `json:"moving,omitempty"`
 	MovedTo string    `json:"movedTo,omitempty"`
+	// Locks: the team's file locks settings (hosted teams; see locks.go).
+	Locks *LockSettings `json:"locks,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
 }

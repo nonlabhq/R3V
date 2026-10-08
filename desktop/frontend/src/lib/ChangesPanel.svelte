@@ -6,7 +6,6 @@
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
   import FileIcon from "./FileIcon.svelte";
-  import FileExplorer from "./FileExplorer.svelte";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
@@ -15,11 +14,14 @@
   import { navKey, ownKey, type NavRow } from "./keynav";
   import { changesView, pickChangesView } from "./changesview.svelte";
   import { portal } from "./portal";
+  import LockBadge from "./LockBadge.svelte";
+  import { lockAt, locksOf } from "./locks.svelte";
 
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
   // versions (History), shown by its kind's viewer (viewers/). "All files"
-  // lists the whole project folder. Each file has a menu (⋯ or right click).
+  // lists the whole project folder (the Files tab is FileExplorer). Each file
+  // has a menu (⋯ or right click).
   let { root, st, summary, commitBox, scope, excluded = $bindable({}), ondiscard, ondiscardall, ondiscardsome, onrestore, onrules }: {
     root: string;
     scope?: "changes" | "all"; // the list fixed to the changes or every file (no All files switch)
@@ -46,6 +48,7 @@
   }
   let files = $state<ProjectFile[]>([]);
   let selected = $state("");
+  let lv = $derived(locksOf(root)); // file locks (off: none shown)
   // The menu of a file or folder (right click, or ⋯), with the ways to
   // leave it out of versions.
   let menu = $state<{ path: string; x: number; y: number; dir: boolean; ignore: IgnoreOption[] } | null>(null);
@@ -329,11 +332,6 @@
 
 <div class="panel" bind:clientWidth={panelWidth} style:grid-template-columns="{sideWidth}px 1fr">
   {#if panelWidth}<Splitter key={splitKey} def={splitDef} width={panelWidth} minLeft={240} minRight={300} />{/if}
-  {#if scope === "all"}
-  <div class="side">
-    <FileExplorer {root} {files} {selected} onselect={select} onmenu={(e, p, dir) => openMenu(e, p, dir)} />
-  </div>
-  {:else}
   <div class="side">
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
   <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll} tabindex="-1" onkeydown={onListKey}>
@@ -415,12 +413,13 @@
               {/if}
               <button class="file {f.status}" class:on={f.path === selected}
                 onclick={() => select(f.path)} oncontextmenu={(e) => openMenu(e, f.path)} title={f.path}>
-                <FileIcon kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
+                <FileIcon path={f.path} kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
                 <span class="names">
                   <span class="fname">{name(f.path)}</span>
                   <span class="fdir">{f.status === "renamed" ? `← ${f.from}` : f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : t("Project folder")}</span>
                 </span>
                 <span class="right">
+                  {#if lockAt(lv, f.path)}<LockBadge lock={lockAt(lv, f.path)!} />{/if}
                   {#if f.live}
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive} title={t("Saved with {app}", { app: f.live })}>{v}</span>
@@ -443,12 +442,13 @@
               {/if}
               <button class="file {f.status}" class:on={f.path === selected}
                 onclick={() => select(f.path)} oncontextmenu={(e) => openMenu(e, f.path)} title={f.path}>
-                <FileIcon kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
+                <FileIcon path={f.path} kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
                 <span class="fname">{name(f.path)}</span>
                 {#if f.status === "renamed" && !moves.covered(f.path)}
                   <span class="from" title={t(f.edited ? "Moved from {path}, and changed" : "Moved from {path}", { path: f.from })}>← {fromLabel(f)}</span>
                 {/if}
                 <span class="right">
+                  {#if lockAt(lv, f.path)}<LockBadge lock={lockAt(lv, f.path)!} />{/if}
                   {#if f.live}
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive}
@@ -466,7 +466,6 @@
   </aside>
   {#if commitBox}<div class="commit">{@render commitBox()}</div>{/if}
   </div>
-  {/if}
 
   <section class="detail">
     {#if !selected || !current}
@@ -475,7 +474,7 @@
       {@const View = viewerFor(current).component}
       <div class="detail-h">
         <div class="title">
-          <div class="dname"><FileIcon kind={current.kind} /> {name(selected)}</div>
+          <div class="dname"><FileIcon path={current.path} kind={current.kind} /> {name(selected)}</div>
           <div class="faint small mono">{selected}</div>
           {#if current.live}<div class="faint small">{t("Saved with {app}", { app: current.live })}</div>{/if}
         </div>
@@ -558,7 +557,7 @@
   <div class="ctx surface-menu" role="menu" use:portal bind:offsetWidth={menuW} bind:offsetHeight={menuH}
     style:left="{Math.max(8, Math.min(m.x, window.innerWidth - menuW - 8))}px" style:top="{Math.max(8, Math.min(m.y, window.innerHeight - menuH - 8))}px">
     {#if !m.dir && f && f.status !== "deleted"}
-      <button class="item" onclick={() => openFile(m.path)}>{f.kind === "set" ? t("Open in {tool}", { tool: "Live" }) : f.kind === "audio" ? t("Open in default player") : t("Open")}</button>
+      <button class="item" onclick={() => openFile(m.path)}>{t("Open")}</button>
     {/if}
     {#if m.dir || (f && f.status !== "deleted")}
       <button class="item" onclick={() => { const p = m.path; menu = null; api.ShowFile(root, p).catch((e) => toast(errorText(e), "error")); }}>{t("Show in Explorer")}</button>
@@ -593,7 +592,7 @@
 
 {#if converting}
   <ConvertDialog {root} file={converting} onclose={() => (converting = "")}
-    ondone={(p) => { converting = ""; toast(t("Converted to {file}", { file: p.slice(p.lastIndexOf("/") + 1) }), "ok"); reveal(p); }} />
+    ondone={([p]) => { converting = ""; if (!p) return; toast(t("Converted to {file}", { file: p.slice(p.lastIndexOf("/") + 1) }), "ok"); reveal(p); }} />
 {/if}
 
 <style>

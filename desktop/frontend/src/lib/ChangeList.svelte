@@ -75,7 +75,7 @@
         {@const c = row.change!}
         <li>
           <div class="row file {c.status}" style:padding-left="{row.depth * 14 + 20}px" title={c.path}>
-            <FileIcon kind={kindOf(c.path)} faint={c.status === "deleted"} />
+            <FileIcon path={c.path} kind={kindOf(c.path)} faint={c.status === "deleted"} />
             <span class="fname">{name(c.path)}</span>
             {#if c.status === "renamed" && !moves.covered(c.path)}
               <span class="from" title={`Moved from ${c.from}${c.edited ? ", and changed" : ""}`}>← {fromLabel(c)}</span>

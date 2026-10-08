@@ -42,6 +42,97 @@ export class Applied {
 }
 
 /**
+ * FileLocks is what a project's .r3v.yaml says about file locks.
+ */
+export class FileLocks {
+    /**
+     * Disabled: enabled: false (no locks at all in this project).
+     */
+    "disabled": boolean;
+
+    /**
+     * AutoOff: auto_lock: off (manual locks only).
+     */
+    "autoOff": boolean;
+    "add": string[];
+    "remove": string[];
+
+    /** Creates a new FileLocks instance. */
+    constructor($$source: Partial<FileLocks> = {}) {
+        if (!("disabled" in $$source)) {
+            this["disabled"] = false;
+        }
+        if (!("autoOff" in $$source)) {
+            this["autoOff"] = false;
+        }
+        if (!("add" in $$source)) {
+            this["add"] = [];
+        }
+        if (!("remove" in $$source)) {
+            this["remove"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FileLocks instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FileLocks {
+        const $$createField2_0 = $$createType0;
+        const $$createField3_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("add" in $$parsedSource) {
+            $$parsedSource["add"] = $$createField2_0($$parsedSource["add"]);
+        }
+        if ("remove" in $$parsedSource) {
+            $$parsedSource["remove"] = $$createField3_0($$parsedSource["remove"]);
+        }
+        return new FileLocks($$parsedSource as Partial<FileLocks>);
+    }
+}
+
+/**
+ * LockKind is a kind of file a team can have lock by itself.
+ */
+export class LockKind {
+    "id": string;
+    "patterns": string[];
+
+    /**
+     * Default: auto-locked when a team turns locking on.
+     */
+    "default": boolean;
+
+    /** Creates a new LockKind instance. */
+    constructor($$source: Partial<LockKind> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("patterns" in $$source)) {
+            this["patterns"] = [];
+        }
+        if (!("default" in $$source)) {
+            this["default"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LockKind instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LockKind {
+        const $$createField1_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("patterns" in $$parsedSource) {
+            $$parsedSource["patterns"] = $$createField1_0($$parsedSource["patterns"]);
+        }
+        return new LockKind($$parsedSource as Partial<LockKind>);
+    }
+}
+
+/**
  * PresetEntry is a line of presets:.
  */
 export class PresetEntry {
@@ -79,3 +170,6 @@ export class PresetEntry {
         return new PresetEntry($$parsedSource as Partial<PresetEntry>);
     }
 }
+
+// Private type creation functions
+const $$createType0 = $Create.Array($Create.Any);

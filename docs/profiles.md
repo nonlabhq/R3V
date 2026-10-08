@@ -76,6 +76,21 @@ A preset also tells R3V which built-in code handles which files, what to check b
 
 Files without a merge handler are chosen whole (yours, theirs or both) when both sides changed them.
 
+## File locks
+
+On an R3V Cloud team that turned file locking on (Nightly; see [design/locks.md](design/locks.md)), files that can't be merged are locked while someone works on them: by hand (right-click › Lock), and by themselves for the kinds of file the team picked (auto-lock). A project can narrow the team's settings in `.r3v.yaml`, never widen them:
+
+```yaml
+file_locks:
+  enabled: false          # this project: no locks at all (even if the team has them on)
+  auto_lock:              # adds to / removes from the team's auto-lock kinds
+    add: ["Content/Maps/**"]
+    remove: ["*.uasset"]
+  # or: auto_lock: off    # this project: manual locks only
+```
+
+`add` and `remove` take patterns as rules do (folders too); `remove` wins. When the team's file locking is off, the project's settings do nothing (`enabled: true` doesn't turn it on), and the app's view of the file says so. R3V before 0.1.25 doesn't know `file_locks:` and refuses the file: set `requires: "0.1.25"` when you add it.
+
 ## Checking the rules
 
 - The **Rules** dialog in the app shows the preset in use and any problem with `.r3v.yaml`. While the file has a mistake (e.g. a misspelt field), R3V shows the problem and won't commit until it's fixed. Looking at changes still works.

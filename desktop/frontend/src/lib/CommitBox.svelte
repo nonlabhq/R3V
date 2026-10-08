@@ -42,7 +42,10 @@
 </div>
 
 <style>
-  .inline { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sp-10); }
+  /* the description grows with what is typed, up to five lines (then scrolls) */
+  textarea { field-sizing: content; max-height: calc(5lh + var(--sp-8) * 2); overflow-y: auto; }
+  .box:not(.inline) textarea { min-height: calc(3lh + var(--sp-8) * 2); }
+  .inline { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: var(--sp-10); }
   .inline textarea { grid-column: 1; grid-row: 1; resize: none; min-height: 0; border: none; border-radius: var(--radius);
     background: rgba(255, 255, 255, .07); padding: var(--sp-8) var(--sp-12); }
   .inline .commit-btn { grid-column: 2; grid-row: 1; width: auto; margin: 0; white-space: nowrap; }

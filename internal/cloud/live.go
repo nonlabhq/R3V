@@ -29,6 +29,9 @@ type Hub struct {
 	// record of team (its id): a member's (looks), the team's, a project's,
 	// a lock.
 	OnRecord func(service, team string, r Record)
+	// OnLock is called (on its own goroutine) when someone took or freed a
+	// file lock in one of team's projects.
+	OnLock func(service, team string, n LockNotice)
 
 	mu    sync.Mutex
 	conns map[string]*liveConn // by team address
@@ -201,6 +204,16 @@ type liveMsg struct {
 	Kind     string   `json:"kind"`
 	ID       string   `json:"id"`
 	Sum      string   `json:"sum"`
+	Path     string   `json:"path"`
+	MemberID string   `json:"memberId"`
+	Shared   bool     `json:"shared"`
+}
+
+// LockNotice is a file lock taken (Locked) or freed in Project; Shared: freed
+// by its holder's share.
+type LockNotice struct {
+	Locked, Shared          bool
+	Project, Path, MemberID string
 }
 
 // Record is a record the service wrote (R3V-Cloud's docs/api.md, Live
@@ -284,6 +297,10 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 		case "team", "access":
 			if f := c.hub.OnTeamChange; f != nil {
 				go f(c.service)
+			}
+		case "lock", "unlock":
+			if f := c.hub.OnLock; f != nil {
+				go f(c.service, c.team, LockNotice{Locked: m.Type == "lock", Shared: m.Shared, Project: m.Project, Path: m.Path, MemberID: m.MemberID})
 			}
 		case "record":
 			if f := c.hub.OnRecord; f != nil {

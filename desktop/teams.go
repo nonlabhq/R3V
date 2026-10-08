@@ -157,17 +157,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	}
 	// Downloaded projects first (known even when offline), then the team's list.
 	seen := map[string]int{} // project id -> index in ov.Projects
-	prefix := t.ID + "/"
-	for key, root := range store.Projects {
-		if strings.HasPrefix(key, prefix) {
-			p := folderProject(root, "downloaded")
-			if p.ID == "" {
-				p.ID = strings.TrimPrefix(key, prefix)
-			}
-			seen[p.ID] = len(ov.Projects)
-			ov.Projects = append(ov.Projects, p)
-		}
-	}
+	ov.Projects = downloadedProjects(store, t.ID, seen)
 	// The team's projects not downloaded here: as the team lists them, or as
 	// it did last time while it isn't asked or can't be reached (the app
 	// shows them, not to be downloaded until it can).
@@ -232,6 +222,61 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	}
 	sortProjects(ov.Projects)
 	return ov, nil
+}
+
+// downloadedProjects are team teamID's projects on this computer; seen
+// gets their ids (to their index).
+func downloadedProjects(store *teams.Store, teamID string, seen map[string]int) []TeamProject {
+	out := []TeamProject{}
+	prefix := teamID + "/"
+	for key, root := range store.Projects {
+		if strings.HasPrefix(key, prefix) {
+			p := folderProject(root, "downloaded")
+			if p.ID == "" {
+				p.ID = strings.TrimPrefix(key, prefix)
+			}
+			seen[p.ID] = len(out)
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// TeamProjects is a team's projects, for looking across teams.
+type TeamProjects struct {
+	Team     string        `json:"team"`
+	Projects []TeamProject `json:"projects"`
+}
+
+// AllProjects lists every team's projects as this computer knows them,
+// without asking the teams (no network): the ones here, and the rest as
+// each team last listed them (the quick launcher looks across teams).
+func (a *App) AllProjects() ([]TeamProjects, error) {
+	store, err := teams.Load()
+	if err != nil {
+		return nil, err
+	}
+	out := []TeamProjects{}
+	for _, t := range store.Teams {
+		seen := map[string]int{}
+		ps := downloadedProjects(store, t.ID, seen)
+		for _, p := range lastTeamProjects(t.ID) {
+			if i, ok := seen[p.ID]; ok {
+				if remote.Looks {
+					ps[i].Icon, ps[i].Color = p.Icon, p.Color
+				}
+				continue
+			}
+			tp := TeamProject{ID: p.ID, Name: p.Name, Status: "remote"}
+			if remote.Looks {
+				tp.Icon, tp.Color = p.Icon, p.Color
+			}
+			ps = append(ps, tp)
+		}
+		sortProjects(ps)
+		out = append(out, TeamProjects{Team: t.ID, Projects: ps})
+	}
+	return out, nil
 }
 
 func sortProjects(ps []TeamProject) {

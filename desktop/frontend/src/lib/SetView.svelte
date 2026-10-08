@@ -164,6 +164,10 @@
   // Bars between the ruler's numbers: as many numbers as fit (34px each),
   // 16 at most.
   let rulerW = $state(0);
+  // Narrower than this, the arrangement lists its tracks and how many clips
+  // each has (the clips drawn would be too small to tell apart).
+  const NARROW = 480;
+  let arrW = $state(0);
   let step = $derived.by(() => {
     const most = Math.min(16, rulerW ? Math.max(2, Math.floor(rulerW / 34)) : 16);
     return [1, 2, 4, 8, 16, 32, 64, 128, 256].find((s) => Math.ceil(bars / s) <= most) ?? 512;
@@ -440,7 +444,7 @@
 
     {#if setLook.pane === "arrangement"}
       {#if rows.length || !compare}
-        <div class="arr" style:--grid={pct(step * beatsPerBar)}>
+        <div class="arr" class:narrow={arrW > 0 && arrW < NARROW} style:--grid={pct(step * beatsPerBar)} bind:clientWidth={arrW}>
           <div class="row ruler">
             <div class="lane" bind:clientWidth={rulerW}>
               {#each Array.from({ length: Math.ceil(bars / step) }, (_, i) => i * step) as b}
@@ -492,7 +496,7 @@
                   {#if r.status}<span class="mark {r.status}" title={markTitle(r)}>{markOf[r.status]}</span>{/if}
                   {@render trackName(r, w)}
                   <span class="grow"></span>
-                  {#if t.clips.length && !compare}<span class="nclips" title={clipCount(t)}>{t.clips.length}</span>{/if}
+                  {#if t.clips.length && (!compare || arrW < NARROW)}<span class="nclips" title={clipCount(t)}>{t.clips.length}</span>{/if}
                 </div>
                 {@render activator(t, r.label, w)}
               </div>
@@ -597,6 +601,9 @@
   /* Live's dark look */
   .arr { background: #1c1c1c; border: var(--border-width) solid #000; border-radius: var(--radius); overflow: hidden; font-size: var(--fs-sm); color: #d8d8d8; }
   .row { display: flex; align-items: stretch; height: 26px; border-bottom: var(--border-width) solid #121212; }
+  /* narrow: the tracks and how many clips each has, not the clips drawn */
+  .arr.narrow .lane, .arr.narrow .row.ruler { display: none; }
+  .arr.narrow .head { flex: 1 1 auto; }
   .row.firstreturn { border-top: 6px solid #121212; }
   .lane { position: relative; flex: 1; min-width: 0; background-color: #2a2a2a;
     background-image: linear-gradient(90deg, #353535 1px, transparent 1px); background-size: var(--grid) 100%; }

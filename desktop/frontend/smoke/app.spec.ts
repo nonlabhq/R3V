@@ -45,7 +45,11 @@ test("previews a Live set in the Files tab", async () => {
   await page.getByRole("button", { name: "Files", exact: true }).click();
   await page.getByRole("row", { name: /Night Drive\.als/ }).click();
   await expect(page.getByText("MIDI Tracks").first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: /^Overview/ }).click();
+  // The project's rules file: its rules in plain words, editable here.
+  await page.getByRole("row", { name: /\.r3v\.yaml/ }).click();
+  await expect(page.getByText("Tools in this project").first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Files and folders").first()).toBeVisible();
+  await page.getByRole("button", { name: /^Versions/ }).click();
 });
 
 test("gets the teammate's new version, keeping your changes", async () => {
@@ -64,6 +68,19 @@ test("commits and shares your changes", async () => {
   await expect(page.getByRole("option", { name: "Your changes" })).toHaveCount(0);
 });
 
+// Alex's branch and main both changed notes.txt (Mia's line, Alex's line).
+test("merges a branch, asking about what both sides changed", async () => {
+  await page.getByRole("button", { name: /Current branch/ }).click();
+  await page.getByRole("menu").getByRole("button", { name: "half-time-chorus" }).last().click();
+  await page.getByRole("button", { name: "Merge and share" }).click();
+  const decide = page.getByRole("dialog", { name: "You and Alex both changed notes.txt" });
+  await expect(decide).toBeVisible({ timeout: 30_000 });
+  await expect(decide.getByText("1 of 1 decision")).toBeVisible();
+  await decide.getByRole("radio", { name: /Keep yours/ }).click();
+  await decide.getByRole("button", { name: "Merge", exact: true }).click();
+  await expect(page.getByText(/Merged half-time-chorus into main and shared it/).first()).toBeVisible({ timeout: 30_000 });
+});
+
 test("lists the shortcuts, and Esc closes the list", async () => {
   await page.locator("body").click({ position: { x: 5, y: 300 } });
   await page.keyboard.press("Control+/");
@@ -75,4 +92,18 @@ test("lists the shortcuts, and Esc closes the list", async () => {
 test("opens the project's settings", async () => {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByText(/rules|Rules/).first()).toBeVisible();
+});
+
+test("opens the team's home, and a project from the quick launcher", async () => {
+  await page.locator(".team-menu .switch").click();
+  await expect(page.getByRole("heading", { name: "Demo Band" })).toBeVisible();
+  await page.getByRole("button", { name: "Team settings" }).click();
+  await expect(page.getByRole("textbox", { name: "Team name" })).toBeVisible();
+  await page.keyboard.press("Control+t");
+  const search = page.getByRole("combobox", { name: "Open a project or team…" });
+  await expect(search).toBeFocused();
+  await search.fill("moon");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Moonrise" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });

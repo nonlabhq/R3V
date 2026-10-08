@@ -4,7 +4,7 @@ export type {
   State, Version, Change, Conflict, Preview, Result, Branch,
   Overview, TeamSummary, TeamProject, ProjectFile, FileVersion, ProjectInfo, RuleSuggestion, SampleSpot,
   CloudStatus, CloudPeople, MemberLook, Profile, BranchList, DeletedBranch, Milestone,
-  TeamMoveEstimate, TeamMoveState, CloudInvitation as InvitationInfo,
+  TeamMoveEstimate, TeamMoveState, CloudInvitation as InvitationInfo, TeamProjects,
 } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
 export type { Member as CloudMember, Invitation as CloudInvitation, Project as CloudProject, Claimable }
   from "../../bindings/github.com/nonlabhq/r3v/internal/cloud/models";

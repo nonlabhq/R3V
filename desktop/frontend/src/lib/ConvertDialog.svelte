@@ -5,15 +5,20 @@
   import ProgressBar from "./ProgressBar.svelte";
   import { api, errorText, type Progress } from "./api";
 
-  // Convert a sample to another format; the new file goes next to it.
-  // Sample rate, channels and bit depth keep the original's unless changed;
-  // notes say what a format forces.
-  let { root, file, onclose, ondone }: {
+  // Convert a sample, or several the same way, to another format; each new
+  // file goes next to its original. Sample rate, channels and bit depth keep
+  // each original's unless changed; notes say what a format forces.
+  let { root, file = "", files: many, onclose, ondone }: {
     root: string;
-    file: string; // relative path of the sample
+    file?: string; // relative path of the sample
+    files?: string[]; // or of several
     onclose: () => void;
-    ondone: (newFile: string) => void;
+    ondone: (newFiles: string[]) => void;
   } = $props();
+  let files = $derived(many?.length ? many : [file]);
+  let first = $derived(files[0]);
+  let at = $state(0); // converting the nth (from 1)
+  let failed = $state<string[]>([]);
 
   type Fmt = { id: string; name: string; ext: string; bitrates: number[]; rates: number[]; bits: number[] };
   let formats = $state<Fmt[]>([]);
@@ -40,7 +45,7 @@
 
   $effect(() => {
     api.ConvertFormats().then((f) => (formats = (f ?? []) as Fmt[]));
-    api.ConvertInfo(root, file).then((i) => (info = i)).catch(() => (info = null));
+    if (files.length === 1) api.ConvertInfo(root, first).then((i) => (info = i)).catch(() => (info = null));
   });
 
   // Keep choices valid for the format; work out the output and the file name.
@@ -51,8 +56,8 @@
     if (rate && !f.rates.includes(rate)) rate = 0;
     if (bits && !f.bits.includes(bits)) bits = 0;
     const [k, r, c, b] = [f.bitrates.length ? kbps : 0, rate, channels, bits];
-    api.ConvertTarget(root, file, f.id).then((t) => (target = t)).catch(() => (target = ""));
-    api.ConvertPlan(root, file, f.id, k, r, c, b).then((p) => { plan = p; error = ""; })
+    api.ConvertTarget(root, first, f.id).then((t) => (target = t)).catch(() => (target = ""));
+    api.ConvertPlan(root, first, f.id, k, r, c, b).then((p) => { plan = p; error = ""; })
       .catch((e) => { plan = null; error = errorText(e); });
   });
 
@@ -60,21 +65,29 @@
     if (busy && ev.data.root === root) progress = ev.data.stage === "done" ? null : ev.data;
   }));
 
+  // One after another; one that fails is said, the rest go on.
   async function run() {
     busy = true;
     error = "";
-    progress = null;
-    try {
-      ondone(await api.ConvertFile(root, file, format, current?.bitrates.length ? kbps : 0, rate, channels, bits));
-    } catch (e) {
-      error = errorText(e);
-    } finally {
-      busy = false;
+    failed = [];
+    const made: string[] = [];
+    for (const [i, f] of files.entries()) {
+      at = i + 1;
+      progress = null;
+      try {
+        made.push(await api.ConvertFile(root, f, format, current?.bitrates.length ? kbps : 0, rate, channels, bits));
+      } catch (e) {
+        failed = [...failed, `${name(f)}: ${errorText(e)}`];
+      }
     }
+    busy = false;
+    if (!failed.length) ondone(made);
+    else if (made.length) error = t("Converted {done} of {total}; these weren't:", { done: made.length, total: files.length });
   }
 </script>
 
-<Modal title={t("Convert {file}", { file: name(file) })} onclose={() => { if (!busy) onclose(); }}>
+<Modal title={files.length > 1 ? t("Convert {n} samples", { n: files.length }) : t("Convert {file}", { file: name(first) })}
+  onclose={() => { if (!busy) onclose(); }}>
   {#if info}<p class="faint small orig">{t("Original:")} {describe(info)}{info.seconds ? ` · ${info.seconds.toFixed(1)} s` : ""}</p>{/if}
 
   <div class="grid">
@@ -115,16 +128,24 @@
   </div>
 
   {#if plan}
+    {#if files.length > 1}
+      <p class="small result">{t("Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.", { what: describe(plan) })}</p>
+    {:else}
     <p class="small result">{target ? t("Writes {what} as {file} next to the original. The original stays.", { what: describe(plan), file: name(target) })
       : t("Writes {what} next to the original. The original stays.", { what: describe(plan) })}</p>
+    {/if}
     {#each plan.notes as n}<p class="small note">{n}</p>{/each}
   {/if}
-  {#if busy}<ProgressBar p={progress} waiting={t("Starting…")} />{/if}
+  {#if busy}
+    {#if files.length > 1}<p class="small result">{t("{n} of {total}: {file}", { n: at, total: files.length, file: name(files[at - 1] ?? "") })}</p>{/if}
+    <ProgressBar p={progress} waiting={t("Starting…")} />
+  {/if}
   {#if error}<p class="error small">{error}</p>{/if}
+  {#each failed as f}<p class="error small">{f}</p>{/each}
 
   {#snippet footer()}
     <button onclick={onclose} disabled={busy}>{t("Cancel")}</button>
-    <button class="primary" onclick={run} disabled={busy || !current || !plan}>{busy ? "Converting…" : "Convert"}</button>
+    <button class="primary" onclick={run} disabled={busy || !current || !plan}>{busy ? t("Converting…") : t("Convert")}</button>
   {/snippet}
 </Modal>
 

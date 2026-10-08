@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branchGraph, short } from "./branchGraph";
+import { branchGraph } from "./branchGraph";
 
 // main: m3 (merges a2) - m2 - m1; alt: a2 - a1 from m1 (merged into m3);
 // mine: y1 from m2, the branch you're on.
@@ -78,10 +78,5 @@ describe("branch graph", () => {
     const loop = branchGraph([{ id: "a", parents: ["b"] }, { id: "b", parents: ["a"] }, { id: "c", parents: ["gone"] }],
       [{ name: "main", latest: "a" }], "main", "main", "a");
     expect(loop.chainOf.size).toBe(3);
-  });
-
-  it("cuts long titles", () => {
-    expect(short("Arrangement: intro and breakdown", 16)).toBe("Arrangement: in…");
-    expect(short("Short")).toBe("Short");
   });
 });

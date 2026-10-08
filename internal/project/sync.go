@@ -569,11 +569,27 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	}); err != nil {
 		return err
 	}
+	// A hosted team is told which paths the move gives new content to (it
+	// refuses one someone else holds a lock on).
+	var changed []string
+	if remote.SendsChanges(c) {
+		heads, err := c.Branches(r.Config.ProjectID)
+		if err != nil && !errors.Is(err, remote.ErrNotFound) {
+			return err
+		}
+		shared := []string{old}
+		for _, h := range heads {
+			shared = append(shared, h)
+		}
+		if changed, err = r.changedPaths(head, shared); err != nil {
+			return err
+		}
+	}
 	// (the last moment it can stop: then the team has it)
 	if err := r.stopped(); err != nil {
 		return err
 	}
-	if err := c.UpdateBranch(r.Config.ProjectID, branch, old, head); err != nil {
+	if err := remote.MoveBranch(c, r.Config.ProjectID, branch, old, head, changed); err != nil {
 		return err
 	}
 	next()
@@ -955,6 +971,10 @@ func (r *Repo) updateKeepingWork(c remote.Backend, head, target string, opts Mer
 	merged, log, err := r.mergeManifests(base, work, theirs, opts)
 	if err != nil { // nothing changed: the work is where it was
 		os.Remove(r.snapshotPath(work.ID))
+		var mc *MergeConflictError
+		if errors.As(err, &mc) {
+			mc.Work = true
+		}
 		return nil, err
 	}
 	r.knowSizes(merged)
@@ -1319,7 +1339,14 @@ func CloneFromTeam(t *teams.Team, project, dir, author string, onProgress func(P
 // --- snapshot merge ---
 
 // MergeConflictError lists what could not be merged automatically.
-type MergeConflictError struct{ Conflicts []ConflictItem }
+type MergeConflictError struct {
+	Conflicts []ConflictItem
+	// Ours and Theirs are the two sides merged; Work: Ours is uncommitted
+	// work (not kept as a version). Log is what was combined on its own.
+	Ours, Theirs *Manifest
+	Work         bool
+	Log          []string
+}
 
 func (e *MergeConflictError) Error() string {
 	lines := make([]string, len(e.Conflicts))
@@ -1507,7 +1534,7 @@ func (r *Repo) mergeManifests(base, ours, theirs *Manifest, opts MergeOptions) (
 		}
 	}
 	if len(conflicts) > 0 {
-		return nil, nil, &MergeConflictError{Conflicts: conflicts}
+		return nil, nil, &MergeConflictError{Conflicts: conflicts, Ours: ours, Theirs: theirs, Log: log}
 	}
 	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
 

@@ -282,6 +282,12 @@ func (s *BucketBackend) Branches(pid string) (map[string]string, error) {
 // UpdateBranch uses conditional writes: create only if absent, move or
 // delete only if the branch still has the etag read.
 func (s *BucketBackend) UpdateBranch(pid, name, old, new string) error {
+	return s.UpdateBranchChanged(pid, name, old, new, nil)
+}
+
+// UpdateBranchChanged is UpdateBranch with the paths the move's new versions
+// change, for storage whose branch writes carry them (BranchPutter).
+func (s *BucketBackend) UpdateBranchChanged(pid, name, old, new string, changed []string) error {
 	if !validBranch(name) {
 		return fmt.Errorf("invalid branch name %q", name)
 	}
@@ -299,6 +305,8 @@ func (s *BucketBackend) UpdateBranch(pid, name, old, new string) error {
 	key := branchKey(pid, name)
 	if new == "" {
 		err = s.b.Delete(key, cond)
+	} else if bp, ok := s.b.(BranchPutter); ok {
+		err = bp.PutBranch(key, new, changed, cond)
 	} else {
 		data := []byte(new + "\n")
 		err = s.b.Put(key, bytes.NewReader(data), int64(len(data)), "", cond)

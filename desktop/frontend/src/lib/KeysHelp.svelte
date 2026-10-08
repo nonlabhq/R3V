@@ -7,7 +7,8 @@
 
   const groups = () => [
     { title: t("Window and tabs"), keys: [
-      ["Ctrl+T", t("New tab")],
+      ["Ctrl+T", t("Open a project or team…")],
+      ["F12", t("Open the project in its program")],
       ["Ctrl+W", t("Close the tab")],
       ["Ctrl+Shift+T", t("Open the tab closed last again")],
       ["Ctrl+Tab · Ctrl+Shift+Tab", t("Next and previous tab")],
@@ -21,7 +22,7 @@
       ["Enter · Backspace", t("Open a folder · go up (Files tab)")],
       ["Space", t("Play or pause the audio shown")],
     ] },
-    { title: t("Overview"), keys: [
+    { title: t("Versions"), keys: [
       ["↑ ↓", t("The next or previous version in the graph")],
       ["Ctrl+scroll", t("Spread the graph out or pack it in")],
     ] },

@@ -3,5 +3,7 @@
 
 export {
     Applied,
+    FileLocks,
+    LockKind,
     PresetEntry
 } from "./models.js";

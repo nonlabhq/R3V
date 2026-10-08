@@ -124,9 +124,3 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
   }
   return { chains, chainOf, row, edges, left, right };
 }
-
-/** A title cut to n characters, with an ellipsis. */
-export function short(text: string, n = 24): string {
-  const t = text.trim();
-  return [...t].length > n ? [...t].slice(0, n - 1).join("").trimEnd() + "…" : t;
-}

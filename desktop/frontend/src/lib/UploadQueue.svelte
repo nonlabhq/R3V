@@ -42,7 +42,7 @@
     <section>
       <h3>{name(p.root)} <span class="faint">· {t("in the background")}</span></h3>
       <div class="row now">
-        <FileIcon kind={kind(p.path)} />
+        <FileIcon path={p.path} kind={kind(p.path)} />
         <div class="what">
           <div class="fname" title={p.path}>{file(p.path)}{#if dir(p.path)}<span class="fdir"> {dir(p.path)}</span>{/if}</div>
           <div class="bar"><div style:width="{pct}%"></div></div>
@@ -51,7 +51,7 @@
       </div>
       {#each p.waiting as w (w.path)}
         <div class="row">
-          <FileIcon kind={kind(w.path)} />
+          <FileIcon path={w.path} kind={kind(w.path)} />
           <div class="what"><div class="fname" title={w.path}>{file(w.path)}{#if dir(w.path)}<span class="fdir"> {dir(w.path)}</span>{/if}</div></div>
           <span class="faint small">{formatBytes(w.size)} · {t("waiting")}</span>
         </div>

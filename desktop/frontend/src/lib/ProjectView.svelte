@@ -1,15 +1,17 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
-  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type Conflict, type TeamSummary,
+  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type TeamSummary,
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
   import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
+  import { loadLocks, watchLocks } from "./locks.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
   import { resetChangesView } from "./changesview.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
+  import FileExplorer from "./FileExplorer.svelte";
   import CommitBox from "./CommitBox.svelte";
   import EditsSummary from "./EditsSummary.svelte";
   import ProjectHeader from "./ProjectHeader.svelte";
@@ -32,7 +34,7 @@
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
-  import ConflictDialog from "./ConflictDialog.svelte";
+  import MergeDecisions, { type MergeKind } from "./MergeDecisions.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import LiveBlockedDialog from "./LiveBlockedDialog.svelte";
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
@@ -84,7 +86,7 @@
 
   // dialogs
   let preview = $state<{ title: string; label: string; data: Preview; run: Action; blocked: string } | null>(null);
-  let conflicts = $state<{ items: Conflict[]; run: Action; force: boolean } | null>(null);
+  let conflicts = $state<{ result: Result; run: Action; force: boolean } | null>(null);
   let liveBlocked = $state<{ run: Action; resolutions: Record<string, string>; set: string } | null>(null);
   let newBranch = $state<string | null>(null);
   // What a branch is called (its key where the team keeps no names).
@@ -98,7 +100,10 @@
   let keepOpen = $state<string | null>(null); // message for "Make this the latest version"
 
   type Action = { name: string; call: (res: Record<string, string>, force: boolean) => Promise<Result | null>;
-    done: (r: Result) => void; message?: string };
+    done: (r: Result) => void; message?: string;
+    // What decisions it may ask for are about (else the team's versions
+    // coming in): the branch or version merged, the version undone.
+    merge?: { kind: MergeKind; branch?: string; version?: string } };
 
   // Teammates committed on this branch while you were working: preview, then
   // combine, put your work on a branch, or discard it.
@@ -240,6 +245,27 @@
   // Read again every minute (the team's side), when a set is saved or files
   // change; how a long step is going.
   watchProject(() => root, () => !!busy, load, (p) => (progress = p));
+  // File locks: kept current, and said at once when a change can't be shared.
+  watchLocks(() => root, () => st?.changes.map((c) => c.path) ?? []);
+
+  // Turning file locking on, offered once to the team's admin.
+  async function turnLocksOn() {
+    const team = st?.teamId;
+    if (!team) return;
+    try {
+      const cur = await api.TeamLocks(team);
+      await api.SetTeamLocks(team, true, cur?.kinds ?? []);
+      toast(t("File locking is on for {team}: change it in the team's settings", { team: st?.teamName || t("the team") }), "ok", 7000);
+      loadLocks(root);
+      load();
+    } catch (e) {
+      toast(errorText(e), "error", 9000);
+    }
+  }
+  async function locksNotNow() {
+    if (st?.teamId) await api.DismissLocksOffer(st.teamId).catch(() => {});
+    if (st) st = { ...st, locksOffer: false } as State;
+  }
 
   async function refresh() {
     if (refreshing) return;
@@ -276,7 +302,7 @@
       } else if (r.liveRunning) {
         liveBlocked = { run: a, resolutions, set: r.openSet };
       } else if (r.conflicts.length) {
-        conflicts = { items: r.conflicts, run: a, force }; // keep a "Live is closed" confirmation
+        conflicts = { result: r, run: a, force }; // keep a "Live is closed" confirmation
       } else {
         a.done(r);
         if (r.takenBack?.length) toast(takenBackText(r.takenBack) + " " + t("It's taken out of your files too.") + reopen(), "info", 10000);
@@ -304,6 +330,12 @@
         "cancelled": t("Commit cancelled: your changes are as they were"),
         "cancelled-kept": t("Stopped before the team got it: the version is on this computer, not shared yet"),
       };
+      if (r.action === "locked") {
+        toast(lockedText(r), "warn", 15000);
+        message = "";
+        resetChangesView(root);
+        return;
+      }
       const kind = r.action === "nothing" || r.action.startsWith("cancelled") ? "info" : "ok";
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
@@ -514,6 +546,7 @@
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
         run: {
           name: "merge",
+          merge: { kind: "merge", branch: name },
           call: (res, force) => api.MergeBranch(root, name, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
             ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
@@ -540,6 +573,7 @@
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
         run: {
           name: "merge",
+          merge: { kind: "merge", branch: v.branches[0] ?? "", version: label },
           call: (res, force) => api.MergeVersion(root, v.id, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
             ? t("“{into}” already has {from}", { into: bl(st?.branch ?? ""), from: label }) : t("Merged {from} into {into} and shared it", { from: label, into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
@@ -568,6 +602,27 @@
       busy = "";
     }
   }
+
+  // A version merged back into main (from its card): on main, merged as any
+  // version; elsewhere, main first (as switching branches does), then
+  // merged once the project is on main.
+  let mergeOnMain = $state("");
+  function mergeBackToMain(v: Version) {
+    if (st?.branch === "main") return openVersionMerge(v);
+    mergeOnMain = v.id;
+    run({
+      name: "switch",
+      call: (_res, force) => api.SwitchBranch(root, "main", force),
+      done: () => toast(t("Now working on “{branch}”", { branch: bl("main") }) + reopen(), "ok", 8000),
+    });
+  }
+  $effect(() => {
+    const id = mergeOnMain;
+    if (!id || st?.branch !== "main") return;
+    mergeOnMain = "";
+    const v = st.history.find((x) => x.id === id);
+    if (v) openVersionMerge(v);
+  });
 
   function switchTo(name: string) {
     run({
@@ -655,6 +710,7 @@
     run({
       name: "undo",
       message: msg,
+      merge: { kind: "undo", version },
       call: (res, force) => api.UndoCommit(root, v.id, msg, res, force),
       done: (r) => toast((r.action === "saved-locally" ? t("Undone: a new version takes back “{version}”", { version })
         : t("Undone and shared: a new version takes back “{version}”", { version })) + reopen(), "ok", 8000),
@@ -711,12 +767,19 @@
       call: () => api.ShareVersions(root),
       done: (r) => {
         if (r.action === "cancelled-kept") toast(t("Stopped: your versions are on this computer, not shared yet"), "info");
+        else if (r.action === "locked") toast(lockedText(r), "warn", 15000);
         else {
           toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
           autoIcon();
         }
       },
     });
+  }
+
+  // A share refused: someone else holds files it changes. Who holds what.
+  function lockedText(r: Result): string {
+    const list = (r.locks ?? []).map((l) => t("{file} ({name})", { file: l.path.slice(l.path.lastIndexOf("/") + 1), name: l.name || t("someone") }));
+    return t("Committed on this computer, not shared: someone else is editing {files}. It's shared once they unlock them (commit again then).", { files: list.join(", ") });
   }
 
   let folderName = $derived(root.split(/[\\/]/).pop()?.replace(/ Project$/, "") ?? root);
@@ -753,12 +816,14 @@
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
       onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules}
-      onqueue={() => (queue.open = true)} {loadError} />
+      onqueue={() => (queue.open = true)} {loadError}
+      onlockson={turnLocksOn} onlocksnotnow={locksNotNow} />
 
 
     <nav>
       <button class:on={tab === "overview"} onclick={() => (tab = "overview")}>
-        {t("Overview")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
+        {t("Versions")}{#if st.changes.length}<span class="dot" title={tn(st.changes.length, "{n} change not committed", "{n} changes not committed")}
+          aria-label={tn(st.changes.length, "{n} change not committed", "{n} changes not committed")}></span>{/if}
       </button>
       <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
       {#if settings}
@@ -822,9 +887,13 @@
                 title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
               <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
                 title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
+              <button disabled={!st!.remoteUrl || !!st!.olderVersion || isNew || (st!.branch === "main" && v.inBranch) || !st!.branches.some((b) => b.name === "main")}
+                onclick={() => mergeBackToMain(v)}
+                title={st!.branch === "main" ? t("Merge this version into main") : t("Go to main, then merge this version into it")}><ActionIcon name="merge" />{t("Merge back to main")}</button>
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
+              onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
@@ -855,7 +924,8 @@
           </div>
         </div>
       {:else if tab === "files"}
-        <div class="pane">{@render changesPanel("all")}</div>
+        <FileExplorer {root} st={st} {looks} onrules={() => load()} ondiscard={(p) => (discardFile = p)}
+          onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
       {:else if tab === "settings" && settings}
         <div class="pane scroll"><div class="settings">{@render settings()}</div></div>
       {:else if tab === "changes"}
@@ -955,7 +1025,11 @@
 
   {#if conflicts}
     {@const c = conflicts}
-    <ConflictDialog conflicts={c.items} onclose={() => (conflicts = null)}
+    {@const m = c.run.merge}
+    <MergeDecisions conflicts={c.result.conflicts} ours={c.result.ours} theirs={c.result.theirs} combined={c.result.combined ?? []}
+      kind={m?.kind ?? "update"} {root} project={st?.name ?? ""} me={st?.author ?? ""} ourBranch={st?.branch ?? ""}
+      theirBranch={m?.kind === "merge" ? (m.branch ?? "") : ""} version={m?.version ?? ""} branches={st?.branches} {looks}
+      onclose={() => (conflicts = null)}
       onresolve={(res) => { const { run: action, force } = c; conflicts = null; run(action, res, force); }} />
   {/if}
 
@@ -1014,7 +1088,8 @@
   nav { display: flex; gap: var(--sp-4); padding: var(--sp-10) var(--sp-24) 0; border-bottom: var(--border-width) solid var(--line); }
   nav button { border: none; background: transparent; border-radius: var(--radius) var(--radius) 0 0; padding: var(--sp-8) var(--sp-14); color: var(--muted); border-bottom: 2px solid transparent; }
   nav button.on { color: var(--text); border-bottom-color: var(--accent); }
-  .count { margin-left: var(--sp-4); font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); }
+  /* changes not committed yet: a dot by Versions (how many on hover) */
+  nav .dot { display: inline-block; width: 7px; height: 7px; margin-left: var(--sp-6); vertical-align: 2px; border-radius: 50%; background: var(--accent); }
 
   main { flex: 1; overflow: auto; padding: var(--sp-16) var(--sp-24) var(--sp-32); }
   main.reading { opacity: .45; transition: opacity .2s; }

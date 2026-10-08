@@ -554,6 +554,82 @@ func (b *brokerBucket) Exists(key string) (bool, error) {
 	return false, fmt.Errorf("exists %s: %d", key, resp.StatusCode)
 }
 
+// KeepsLocks: the service keeps the team's file locks.
+func (b *brokerBucket) KeepsLocks() bool { return true }
+
+var brokerBranch = regexp.MustCompile(`^projects/[0-9a-f]{32}/branches/[^/]+$`)
+
+// branchBody is a branch move as the service takes it: the head, and the
+// paths the move's new versions change (checked against file locks).
+const branchBody = "application/vnd.r3v.branch+json"
+
+// PutBranch moves a branch, saying which paths its new versions change.
+// Always this form, locks on or off (the service refuses the plain one
+// once a team's locks are on).
+func (b *brokerBucket) PutBranch(key, head string, changed []string, cond string) error {
+	if changed == nil {
+		changed = []string{}
+	}
+	data, _ := json.Marshal(map[string]any{"head": head, "changed": changed})
+	return b.putKey(key, data, cond, branchBody)
+}
+
+// putKey writes a key the service keeps; cond as in Put.
+func (b *brokerBucket) putKey(key string, data []byte, cond, ctype string) error {
+	hdr := map[string]string{}
+	if ctype != "" {
+		hdr["content-type"] = ctype
+	}
+	switch cond {
+	case "":
+	case "*":
+		hdr["if-none-match"] = "*"
+	default:
+		hdr["if-match"] = cond
+	}
+	resp, err := b.call("PUT", keyPath(key), data, hdr)
+	if err != nil {
+		return err
+	}
+	switch resp.StatusCode {
+	case 200:
+		resp.Body.Close()
+		return nil
+	case 412:
+		resp.Body.Close()
+		return ErrPrecondition
+	case 404:
+		resp.Body.Close()
+		return ErrNotFound
+	case 409:
+		if ctype == branchBody {
+			return refused(resp, "put "+key)
+		}
+	}
+	return failed(resp, "put "+key)
+}
+
+// refused reads a branch move's 409: someone else holds a path the move
+// changes (*ErrLocked), or the team needs a newer R3V.
+func refused(resp *http.Response, what string) error {
+	defer resp.Body.Close()
+	var e struct {
+		Error struct {
+			Code    string
+			Message string
+			Locks   []LockHolder
+		}
+	}
+	json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&e)
+	switch e.Error.Code {
+	case "locked":
+		return &ErrLocked{Locks: e.Error.Locks}
+	case "update_r3v":
+		return ErrUpdateR3V
+	}
+	return fmt.Errorf("%s: 409 %s", what, e.Error.Message)
+}
+
 func (b *brokerBucket) Put(key string, r io.Reader, size int64, sum, cond string) error {
 	pid, rel, isContents := contents(key)
 	if !isContents {
@@ -561,30 +637,10 @@ func (b *brokerBucket) Put(key string, r io.Reader, size int64, sum, cond string
 		if err != nil {
 			return err
 		}
-		hdr := map[string]string{}
-		switch cond {
-		case "":
-		case "*":
-			hdr["if-none-match"] = "*"
-		default:
-			hdr["if-match"] = cond
+		if brokerBranch.MatchString(key) {
+			return b.PutBranch(key, strings.TrimSpace(string(data)), nil, cond)
 		}
-		resp, err := b.call("PUT", keyPath(key), data, hdr)
-		if err != nil {
-			return err
-		}
-		switch resp.StatusCode {
-		case 200:
-			resp.Body.Close()
-			return nil
-		case 412:
-			resp.Body.Close()
-			return ErrPrecondition
-		case 404:
-			resp.Body.Close()
-			return ErrNotFound
-		}
-		return failed(resp, "put "+key)
+		return b.putKey(key, data, cond, "")
 	}
 	// Contents are written once, with their SHA-256 (the URL demands both),
 	// from something that can be read again for a retry.

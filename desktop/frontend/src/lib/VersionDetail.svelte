@@ -99,7 +99,7 @@
           {#each files as f (f.path)}
             <li>
               <button class:on={f.path === picked} onclick={() => (picked = f.path)} title={f.path} data-path={f.path}>
-                <FileIcon kind={f.kind} />
+                <FileIcon path={f.path} kind={f.kind} />
                 <span class="names"><span class="fname">{name(f.path)}</span>{#if dir(f.path)}<span class="fdir">{dir(f.path)}</span>{/if}</span>
                 <span class="st {f.status}" title={statusName(f.status)}>{sym[f.status] ?? "?"}</span>
               </button>
@@ -113,7 +113,7 @@
         {@const View = viewerFor(current).component}
         {@const s = sides(current)}
         <div class="diff-h">
-          <div class="dname"><FileIcon kind={current.kind} /> {name(current.path)}</div>
+          <div class="dname"><FileIcon path={current.path} kind={current.kind} /> {name(current.path)}</div>
           <div class="faint small">{current.status === "renamed" ? t("Moved from {path}", { path: current.from }) : statusName(current.status)}</div>
         </div>
         <View root={at} file={current} a={s.a} b={s.b} compare={true} stamp={0} />

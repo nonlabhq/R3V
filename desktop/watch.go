@@ -43,6 +43,7 @@ func (a *App) WatchFiles(root string) bool {
 			if !slices.ContainsFunc(paths, func(p string) bool { return worthReloading(rules, p) }) {
 				return
 			}
+			go a.autoLock(root, paths) // (a file of a locked kind changed)
 		}
 		if a.emit != nil {
 			a.emit("files", FilesEvent{Root: root})
