@@ -825,6 +825,7 @@
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
+              onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
