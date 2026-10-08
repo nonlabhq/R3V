@@ -552,7 +552,7 @@
   <div class="ctx surface-menu" role="menu" use:portal bind:offsetWidth={menuW} bind:offsetHeight={menuH}
     style:left="{Math.max(8, Math.min(m.x, window.innerWidth - menuW - 8))}px" style:top="{Math.max(8, Math.min(m.y, window.innerHeight - menuH - 8))}px">
     {#if !m.dir && f && f.status !== "deleted"}
-      <button class="item" onclick={() => openFile(m.path)}>{f.kind === "set" ? t("Open in {tool}", { tool: "Live" }) : f.kind === "audio" ? t("Open in default player") : t("Open")}</button>
+      <button class="item" onclick={() => openFile(m.path)}>{t("Open")}</button>
     {/if}
     {#if m.dir || (f && f.status !== "deleted")}
       <button class="item" onclick={() => { const p = m.path; menu = null; api.ShowFile(root, p).catch((e) => toast(errorText(e), "error")); }}>{t("Show in Explorer")}</button>

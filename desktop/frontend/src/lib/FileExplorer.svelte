@@ -635,8 +635,7 @@
   <div class="ctx surface-menu" role="menu" use:portal bind:offsetWidth={menuW} bind:offsetHeight={menuH}
     style:left="{Math.max(8, Math.min(m.x, window.innerWidth - menuW - 8))}px" style:top="{Math.max(8, Math.min(m.y, window.innerHeight - menuH - 8))}px">
     {#if f && f.status !== "deleted"}
-      {@const tool = toolOf(f.path)}
-      <button class="item" onclick={() => openFile(f)}>{tool.name ? t("Open in {tool}", { tool: tool.name }) : t("Open")}</button>
+      <button class="item" onclick={() => openFile(f)}>{t("Open")}</button>
     {/if}
     {#if m.dir || (f && f.status !== "deleted")}
       <button class="item" onclick={() => showInFolder(m.path)}>{t("Show in folder")}</button>
