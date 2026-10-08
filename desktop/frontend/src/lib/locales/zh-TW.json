@@ -1541,5 +1541,9 @@
 "A project's .r3v.yaml can narrow this: turn locks off for it, or add and remove kinds of file.": "專案的 .r3v.yaml 可以縮小範圍：為它關閉鎖定，或增減檔案類型。",
 "Turning it on: teammates on an older R3V must update before they can share.": "開啟後：使用舊版 R3V 的隊友必須更新才能分享。",
 "Owners and admins change it.": "由擁有者和管理員變更。",
-"File locks": "檔案鎖定"
+"File locks": "檔案鎖定",
+"Go to this version": "前往這個版本",
+"New branch from here": "從這裡開新分支",
+"Merge into current version": "合併到目前版本",
+"Undo this commit": "復原這次提交"
 }

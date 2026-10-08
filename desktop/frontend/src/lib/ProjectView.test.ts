@@ -694,7 +694,7 @@ describe("ProjectView: review fixes", () => {
     await show({ changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     // New branch from v1 on its card: your changes first; cancelled.
     await fireEvent.mouseEnter(screen.getByRole("option", { name: /^v1,/ }));
-    await fireEvent.click(await screen.findByRole("button", { name: "New branch" }));
+    await fireEvent.click(await screen.findByRole("button", { name: "New branch from here" }));
     await fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
     // Later: going to v1, discarding the changes.
     await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
@@ -707,6 +707,19 @@ describe("ProjectView: review fixes", () => {
     await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", true, false));
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.queryByText("Branch name")).toBeNull();
+  });
+
+  it("shows only what applies on a version's card, Undo in red", async () => {
+    await show({ history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^v1,/ }));
+    expect(await screen.findByRole("button", { name: "Go to this version" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Merge back to main" })).toBeNull(); // (on main)
+    expect(screen.queryByRole("button", { name: "Merge into current version" })).toBeNull(); // (in the branch already)
+    expect(screen.queryByRole("button", { name: "Undo this commit" })).toBeNull(); // (the first: nothing to take back)
+    // the version you're on: no Go to; Undo, in red
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^v2,/ }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Go to this version" })).toBeNull());
+    expect(screen.getByRole("button", { name: "Undo this commit" }).classList.contains("danger-act")).toBe(true);
   });
 
   it("merges a version back to main from its card: main first, when on another branch", async () => {

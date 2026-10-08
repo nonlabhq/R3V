@@ -41,3 +41,19 @@ export function typeTitle(k: FileType): string {
     data: t("Data & Config"), doc: t("Documents"), font: t("Fonts"), archive: t("Archives"),
   } as Record<FileType, string>)[k];
 }
+
+// Files a program owns, by extension: drawn with the program's own icon
+// (appIcons.ts) wherever files are listed; a kind's icon is for the rest
+// (and for the kinds themselves, as in the Files tab's filter).
+const programs: Record<string, string> = {
+  als: "app-ableton", alp: "app-ableton", adg: "app-ableton", adv: "app-ableton", alc: "app-ableton",
+  bwproject: "app-bitwig", ptx: "app-protools", reason: "app-reason", maxpat: "app-max",
+  unity: "app-unity", prefab: "app-unity",
+  uproject: "app-unreal", umap: "app-unreal", uasset: "app-unreal",
+  godot: "app-godot", tscn: "app-godot", tres: "app-godot", gd: "app-godot",
+  blend: "app-blender", hip: "app-houdini", hipnc: "app-houdini", c4d: "app-cinema4d",
+  ma: "app-maya", mb: "app-maya", drp: "app-resolve", fig: "app-figma", kra: "app-krita",
+};
+
+/** The program icon (an appIcons name) a file is drawn with, if any. */
+export const programOf = (path: string): string => programs[extOf(path)] ?? "";

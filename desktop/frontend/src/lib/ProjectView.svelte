@@ -878,18 +878,23 @@
                 onsettings={(key) => (branchSettings = key)} onmilestone={(id) => (graphPick = id)} />
             </div>
             {#snippet cardActions(v: Version)}
+              <!-- only what can be done with this version, from here -->
               {@const isNew = incomingIds.has(v.id)}
-              <button disabled={v.id === st!.head || isNew || v.notHere} onclick={() => goTo(v)}
-                title={v.id === st!.head ? t("You are on this version") : isNew ? t("Get updates first") : t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to")}</button>
-              <button disabled={!st!.remoteUrl || !!st!.olderVersion || v.inBranch || isNew} onclick={() => openVersionMerge(v)}
-                title={v.inBranch ? t("Already in the branch you are on") : t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge")}</button>
-              <button disabled={!!st!.olderVersion || !v.inBranch || isNew || !v.parents.length} onclick={() => (undoing = v)}
-                title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
-              <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
-                title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
-              <button disabled={!st!.remoteUrl || !!st!.olderVersion || isNew || (st!.branch === "main" && v.inBranch) || !st!.branches.some((b) => b.name === "main")}
-                onclick={() => mergeBackToMain(v)}
-                title={st!.branch === "main" ? t("Merge this version into main") : t("Go to main, then merge this version into it")}><ActionIcon name="merge" />{t("Merge back to main")}</button>
+              {#if v.id !== st!.head && !isNew && !v.notHere}
+                <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to this version")}</button>
+              {/if}
+              {#if st!.remoteUrl && !isNew && !v.notHere}
+                <button onclick={() => newBranchFrom(v)} title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch from here")}</button>
+              {/if}
+              {#if st!.remoteUrl && !st!.olderVersion && !v.inBranch && !isNew}
+                <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge into current version")}</button>
+              {/if}
+              {#if st!.branch !== "main" && st!.remoteUrl && !st!.olderVersion && !isNew && st!.branches.some((b) => b.name === "main")}
+                <button onclick={() => mergeBackToMain(v)} title={t("Go to main, then merge this version into it")}><ActionIcon name="merge" />{t("Merge back to main")}</button>
+              {/if}
+              {#if !st!.olderVersion && v.inBranch && !isNew && v.parents.length}
+                <button class="danger-act" onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo this commit")}</button>
+              {/if}
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
