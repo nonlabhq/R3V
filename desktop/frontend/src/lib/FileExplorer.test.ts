@@ -197,7 +197,12 @@ describe("FileExplorer", () => {
     await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringMatching(/^Nothing was copied: Kick\.wav is already in Samples/), "error", 10000));
     // another project's drop isn't this one's
     emit("files-dropped", { root: "C:/Other", dir: "", files: ["D:/x.wav"] });
+    // its own files dragged out and let go over their folder: nothing to copy
+    emit("files-dropped", { root: ROOT, dir: "Samples", files: ["C:\\Song\\Samples\\Kick.wav"] });
     expect(api.CopyIntoProject).toHaveBeenCalledTimes(2);
+    // into another folder of the project: a copy
+    emit("files-dropped", { root: ROOT, dir: "", files: ["C:\\Song\\Samples\\Kick.wav"] });
+    expect(api.CopyIntoProject).toHaveBeenCalledTimes(3);
   });
 
   it("restores a file's version from its history", async () => {

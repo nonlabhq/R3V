@@ -239,10 +239,18 @@
     const off = Events.On("files-dropped", (ev: { data: { files: string[]; root: string; dir: string } }) => {
       const d = ev.data;
       if (d.root !== root || draggingOut || !d.files?.length) return;
+      // Files dragged out and let go over the folder they are in: nothing to do.
+      if (d.files.every((p) => dirOf(relTo(p) ?? "\0") === (d.dir ?? ""))) return;
       copyIn(d.dir ?? "", d.files);
     });
     return () => off();
   });
+  // A path's place in the project (null: outside it).
+  function relTo(abs: string): string | null {
+    const norm = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "");
+    const r = norm(root), p = norm(abs);
+    return p.toLowerCase().startsWith(r.toLowerCase() + "/") ? p.slice(r.length + 1) : null;
+  }
   async function copyIn(into: string, paths: string[]) {
     try {
       const res = await api.CopyIntoProject(root, into, paths);
