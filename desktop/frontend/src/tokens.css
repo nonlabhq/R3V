@@ -178,6 +178,7 @@
   --scrim: rgba(0, 0, 0, .55);                   /* behind a dialog */
   --scrim-strong: rgba(0, 0, 0, .8);            /* behind what blocks the app */
   --scrim-filter: none;                           /* e.g. blur(6px) */
+  --scrim-blur: blur(6px);                        /* behind what takes the whole app (merge decisions) */
   /* Menus, toasts and dialogs: a theme can make these see-through and blur
      what is behind (--surface-filter: blur(16px) saturate(1.3)). */
   --surface-menu: rgba(28, 28, 28, .92);

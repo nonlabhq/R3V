@@ -186,9 +186,9 @@ describe("ProjectView: committing", () => {
     })).mockResolvedValueOnce(result("published"));
     await typeMessage("Bass");
     await fireEvent.click(commitButton());
-    await screen.findByText("You and the team changed the same things");
-    await fireEvent.click(screen.getAllByRole("button", { name: "Keep mine" })[0]);
-    await fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await screen.findByRole("dialog", { name: "Both sides changed the same part of Song.als" });
+    await fireEvent.click(screen.getByRole("radio", { name: /Keep this computer's/ }));
+    await fireEvent.click(screen.getByRole("button", { name: "Combine" }));
     await waitFor(() => expect(api.Save).toHaveBeenLastCalledWith(ROOT, "Bass", false, { k1: "ours" }, false, []));
   });
 

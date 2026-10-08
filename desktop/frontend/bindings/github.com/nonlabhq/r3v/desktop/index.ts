@@ -16,6 +16,7 @@ export {
     CloudInvitation,
     CloudPeople,
     CloudStatus,
+    Combined,
     Conflict,
     ConvertFormat,
     DeletedBranch,

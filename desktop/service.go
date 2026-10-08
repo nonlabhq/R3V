@@ -700,12 +700,35 @@ func blocked(set string) *Result {
 	return &Result{Action: "blocked", LiveRunning: true, OpenSet: set, Log: []string{}, Relinked: []string{}, Conflicts: []Conflict{}}
 }
 
-func conflictResult(err error) (*Result, error) {
+// conflictResult: things changed on both sides, to decide, with the two
+// sides (their authors' current names as the team last told them) and
+// what was combined on its own.
+func conflictResult(r *project.Repo, err error) (*Result, error) {
 	var c *project.MergeConflictError
-	if errors.As(err, &c) {
-		return &Result{Action: "conflicts", Conflicts: toConflicts(c.Conflicts), Log: []string{}, Relinked: []string{}}, nil
+	if !errors.As(err, &c) {
+		return nil, err
 	}
-	return nil, err
+	out := &Result{Action: "conflicts", Conflicts: toConflicts(c.Conflicts), Log: []string{}, Relinked: []string{},
+		TakenBack: []Version{}, Combined: combinedOf(c.Log)}
+	names := cachedMemberNames(r)
+	side := func(m *project.Manifest) *Version {
+		if m == nil {
+			return nil
+		}
+		v := Version{ID: m.ID, Author: m.Author, Time: m.Time, Message: m.Message, AuthorID: m.AuthorID,
+			Parents: []string{}, Branches: []string{}}
+		if len(m.ID) >= 10 {
+			v.Short = m.ID[:10]
+		}
+		vs := []Version{v}
+		renameAuthors(names, vs)
+		return &vs[0]
+	}
+	out.Ours, out.Theirs = side(c.Ours), side(c.Theirs)
+	if c.Work && out.Ours != nil {
+		out.Ours.ID, out.Ours.Short, out.Ours.Message = "", "", ""
+	}
+	return out, nil
 }
 
 func syncResult(res *project.SyncResult) *Result {
@@ -782,7 +805,7 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 	}
 	if err != nil {
 		log.Printf("commit %s: %v", root, err) // (the app shows it for a moment only)
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	out := syncResult(res)
 	if m == nil && res.Action == "up-to-date" {
@@ -808,7 +831,7 @@ func (a *App) ShareVersions(root string) (*Result, error) {
 	}
 	if err != nil {
 		log.Printf("share %s: %v", root, err) // (the app shows it for a moment only)
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	return syncResult(res), nil
 }
@@ -849,7 +872,7 @@ func (a *App) Update(root string, resolutions map[string]string, force bool) (*R
 	}
 	res, err := r.Update(opts(resolutions))
 	if err != nil {
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	return syncResult(res), nil
 }
@@ -917,7 +940,7 @@ func (a *App) KeepThisVersion(root, message string, resolutions map[string]strin
 	}
 	_, res, err := r.Save(message, opts(resolutions))
 	if err != nil {
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	return syncResult(res), nil
 }
@@ -973,7 +996,7 @@ func (a *App) DiscardAndUpdate(root string, resolutions map[string]string, force
 	}
 	res, err := r.Update(opts(resolutions))
 	if err != nil {
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	return syncResult(res), nil
 }
@@ -1076,7 +1099,7 @@ func (a *App) MergeVersion(root, id, message string, resolutions map[string]stri
 	}
 	res, err := r.MergeVersion(id, message, opts(resolutions))
 	if err != nil {
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	return syncResult(res), nil
 }
@@ -1093,7 +1116,7 @@ func (a *App) MergeBranch(root, name, message string, resolutions map[string]str
 	}
 	res, err := r.MergeBranch(name, message, opts(resolutions))
 	if err != nil {
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	return syncResult(res), nil
 }
@@ -1207,7 +1230,7 @@ func (a *App) UndoCommit(root, id, message string, resolutions map[string]string
 	}
 	_, res, err := r.UndoCommit(id, message, opts(resolutions))
 	if err != nil {
-		return conflictResult(err)
+		return conflictResult(r, err)
 	}
 	if res == nil { // no team: committed here
 		out := syncResult(nil)
