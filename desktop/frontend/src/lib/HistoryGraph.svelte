@@ -44,6 +44,19 @@
   let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
   let g = $derived(branchGraph(versions, branches, branch, "main", head, (name) => branchLane(branches, name)));
   const labelOf = (name: string) => branchLabel(branches, name);
+  // A label's text width, as drawn (its font measured; estimated where
+  // there's no canvas).
+  let measure: CanvasRenderingContext2D | null | undefined;
+  function textWidth(text: string): number {
+    if (measure === undefined) {
+      try {
+        measure = document.createElement("canvas").getContext("2d");
+        if (measure) measure.font = `600 10px ${getComputedStyle(document.body).fontFamily}`;
+      } catch { measure = null; }
+    }
+    return measure ? measure.measureText(text).width
+      : [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 11 : 6), 0);
+  }
   let flags = $derived.by(() => {
     const m = new Map<string, string[]>();
     for (const ms of milestones ?? []) m.set(ms.version, [...(m.get(ms.version) ?? []), ms.name]);
@@ -109,8 +122,9 @@
       if (!c.name) continue;
       const atPending = pending && (c === headChain || !c.tip);
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
-      // (room at the right end for the settings button)
-      const w = Math.min(LABEL_W, labelOf(c.name).length * 6.5 + 20 + (onsettings ? 16 : 0));
+      // As wide as the name, up to LABEL_W (the settings button grows out
+      // on hover: it takes no room).
+      const w = Math.min(LABEL_W, Math.ceil(textWidth(labelOf(c.name))) + 20);
       const h = 24;
       const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
@@ -375,7 +389,7 @@
         </button>
       {/each}
       {#each labels as l (l.name + "@" + l.id)}
-        <div class="label" class:split={!!onsettings} style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})">
+        <div class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})">
           <button class="lpick" tabindex="-1" onclick={() => onselect(l.id)}><span class="bname">{labelOf(l.name)}</span></button>
           {#if onsettings}
             <button class="lset" tabindex="-1" title={t("Branch settings")} aria-label={t("Branch settings")}
@@ -522,20 +536,20 @@
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   /* A branch's label: its name (picks its newest version); with settings,
-     the right half opens them (a ⋯ shows on hover). */
+     a ⋯ grows out of its right end on hover (taking no room otherwise). */
   .label { position: absolute; border: var(--border-width) solid var(--line); border-radius: var(--radius);
-    background: var(--panel); line-height: 1.2; overflow: hidden; }
-  .label:hover { border-color: var(--c); }
-  .label button { position: absolute; top: 0; bottom: 0; margin: 0; border: none; border-radius: 0; background: transparent; }
-  .lpick { left: 0; right: 0; display: flex; align-items: center; justify-content: center; padding: 0 var(--sp-8); }
-  .split .lpick { padding-right: 20px; }
+    background: var(--panel); line-height: 1.2; }
+  .label:hover { border-color: var(--c); z-index: 2; }
+  .label button { position: absolute; margin: 0; border: none; border-radius: 0; background: transparent; }
+  .lpick { inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 var(--sp-8); border-radius: var(--radius) !important; }
   .label .lpick:hover:not(:disabled) { background: transparent; }
-  .lset { right: 0; width: 50%; display: flex; align-items: center; justify-content: flex-end; padding: 0 var(--sp-6);
-    color: var(--muted); font-size: var(--fs-sm); cursor: pointer; }
-  .lset span { opacity: 0; transition: opacity .12s; }
-  .label:hover .lset span { opacity: .7; }
-  .label .lset:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); }
-  .lset:hover span { opacity: 1; }
+  .lset { top: calc(var(--border-width) * -1); bottom: calc(var(--border-width) * -1); left: calc(100% - var(--radius));
+    width: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 0 0 0 var(--radius) !important;
+    color: var(--c); font-size: var(--fs-sm); cursor: pointer; background: var(--panel) !important; z-index: -1;
+    border: var(--border-width) solid transparent !important; border-left: none !important;
+    border-radius: 0 var(--radius) var(--radius) 0 !important; transition: width .12s; }
+  .label:hover .lset, .lset:focus-visible { width: calc(22px + var(--radius)); border-color: var(--c) !important; }
+  .label .lset:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 18%, var(--panel)) !important; }
   .bname { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--c); max-width: 100%;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

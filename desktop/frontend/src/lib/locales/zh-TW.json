@@ -1365,5 +1365,6 @@
 "Show in folder": "在資料夾中顯示",
 "Back to now": "回到現在",
 "History of this file": "這個檔案的歷史",
-"No files right in this folder: its folders are on the left.": "這個資料夾裡沒有直接放檔案：它的子資料夾在左邊。"
+"No files right in this folder: its folders are on the left.": "這個資料夾裡沒有直接放檔案：它的子資料夾在左邊。",
+"Status": "狀態"
 }

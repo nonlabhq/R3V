@@ -70,7 +70,7 @@ const folder = (name: string) => screen.getAllByRole("button").find((b) => b.cla
 describe("FileExplorer", () => {
   it("lists only folders on the left, with the changed files inside each", async () => {
     await show();
-    expect(treeNames()).toEqual(["Song", "Art", "Samples"]);
+    expect(treeNames()).toEqual(["Art", "Samples"]); // (the project's own folder: "./")
     expect(screen.getByText("3 changed")).toBeTruthy(); // Song.als, Loop 10.wav, cover.png
     expect(folder("Samples").querySelector(".pill")?.textContent).toBe("1");
     expect(folder("Art").querySelector(".pill")?.textContent).toBe("1");
@@ -80,19 +80,19 @@ describe("FileExplorer", () => {
     expect(screen.getByText(/Mia ·/)).toBeTruthy();
   });
 
-  it("shows a folder's files, a grid for pictures, and remembers each folder's look", async () => {
+  it("shows a folder's files, as a list or a grid the project remembers", async () => {
     await show();
     await fireEvent.click(folder("Art"));
-    expect(document.querySelector(".area.grid")).not.toBeNull(); // mostly pictures
+    expect(document.querySelector(".area.list")).not.toBeNull();
     expect(rowNames()).toEqual(["cover.png", "back.png"]);
+    await fireEvent.click(screen.getByRole("button", { name: "Grid view" }));
     expect(document.querySelector(".card img")).not.toBeNull();
     await fireEvent.click(folder("Samples"));
-    expect(document.querySelector(".area.grid")).not.toBeNull(); // sounds: a grid too
+    expect(document.querySelector(".area.grid")).not.toBeNull(); // every folder
+    cleanup();
+    await show();
+    expect(document.querySelector(".area.grid")).not.toBeNull(); // and the next time
     await fireEvent.click(screen.getByRole("button", { name: "List view" }));
-    expect(document.querySelector(".area.list")).not.toBeNull();
-    await fireEvent.click(folder("Art"));
-    expect(document.querySelector(".area.grid")).not.toBeNull(); // Art kept its own
-    await fireEvent.click(folder("Samples"));
     expect(document.querySelector(".area.list")).not.toBeNull();
     // inner folders open in the tree; the path above the files goes back up
     expect(treeNames()).toContain("Loops");
@@ -104,9 +104,9 @@ describe("FileExplorer", () => {
 
   it("filters the folder's files and sorts by size", async () => {
     await show();
-    await fireEvent.input(screen.getByPlaceholderText("Filter in Song"), { target: { value: "not" } });
+    await fireEvent.input(screen.getByPlaceholderText("Filter in ./"), { target: { value: "not" } });
     expect(rowNames()).toEqual(["notes.txt"]);
-    await fireEvent.input(screen.getByPlaceholderText("Filter in Song"), { target: { value: "" } });
+    await fireEvent.input(screen.getByPlaceholderText("Filter in ./"), { target: { value: "" } });
     await fireEvent.click(screen.getByRole("columnheader", { name: "Size" }));
     expect(rowNames()).toEqual(["Song.als", "notes.txt"]); // biggest first
     await fireEvent.click(screen.getByRole("columnheader", { name: "Size" }));
@@ -117,7 +117,7 @@ describe("FileExplorer", () => {
     await show();
     await fireEvent.click(folder("Art"));
     await fireEvent.click(screen.getByRole("button", { name: "List view" }));
-    await fireEvent.click(folder("Song"));
+    await fireEvent.click(screen.getByRole("button", { name: "./" }));
     const picked = () => [...document.querySelectorAll<HTMLElement>("[data-path][aria-selected=true]")].map((r) => r.dataset.path);
     await fireEvent.click(row("Song.als"));
     expect(picked()).toEqual(["Song.als"]);
@@ -138,8 +138,35 @@ describe("FileExplorer", () => {
     await fireEvent.click(row("notes.txt"), { ctrlKey: true });
     const area = screen.getByRole("grid", { name: "Files" });
     await fireEvent.pointerDown(row("notes.txt"), { button: 0, clientX: 10, clientY: 10 });
+    let done = () => {};
+    api.StartDrag.mockImplementation(() => new Promise<void>((r) => (done = r)));
+    document.body.classList.add("file-drop-target-active"); // (a mark Wails left)
     await fireEvent.pointerMove(area, { buttons: 1, clientX: 40, clientY: 12 });
     expect(api.StartDrag).toHaveBeenCalledWith(ROOT, ["Song.als", "notes.txt"]);
+    // the folder they come from takes no drop meanwhile; marks go when it ends
+    await waitFor(() => expect(area.hasAttribute("data-file-drop-target")).toBe(false));
+    expect(folder("Art").hasAttribute("data-file-drop-target")).toBe(true);
+    done();
+    await waitFor(() => expect(area.hasAttribute("data-file-drop-target")).toBe(true));
+    expect(document.querySelector(".file-drop-target-active")).toBeNull();
+  });
+
+  it("shows a Type column, resizes columns, and hides them from the head's menu", async () => {
+    await show();
+    await fireEvent.click(screen.getByRole("button", { name: "List view" }));
+    expect(row("Song.als").textContent).toContain("ALS · Live Set");
+    const head = document.querySelector<HTMLElement>(".row.head")!;
+    expect(head.style.gridTemplateColumns).toBe("30px minmax(120px, 1fr) 110px 40px 80px 160px");
+    const grip = head.querySelectorAll<HTMLElement>(".grip")[0];
+    await fireEvent.pointerDown(grip, { button: 0, clientX: 300 });
+    await fireEvent.pointerMove(window, { buttons: 1, clientX: 260 });
+    await fireEvent.pointerUp(window);
+    expect(head.style.gridTemplateColumns).toBe("30px minmax(120px, 1fr) 150px 40px 80px 160px");
+    await fireEvent.contextMenu(head, { clientX: 100, clientY: 100 });
+    await fireEvent.click(within(screen.getByRole("menu", { name: "Columns" })).getByLabelText("Size"));
+    expect(screen.queryByRole("columnheader", { name: "Size" })).toBeNull();
+    expect(head.style.gridTemplateColumns).toBe("30px minmax(120px, 1fr) 150px 40px 160px");
+    expect(JSON.parse(localStorage.getItem("r3v.fileColumnsHidden")!)).toEqual({ size: true });
   });
 
   it("renames with F2, and says why it can't", async () => {

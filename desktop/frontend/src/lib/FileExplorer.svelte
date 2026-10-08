@@ -4,20 +4,21 @@
   import { api, ago, errorText, formatBytes, previewURL, type MemberLook, type ProjectFile, type State, type Version } from "./api";
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon, { kindTitle } from "./FileIcon.svelte";
+  import { onDroppedFiles, clearDropMarks } from "./filedrop";
   import Avatar from "./Avatar.svelte";
   import FilePanel from "./FilePanel.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { portal } from "./portal";
   import { branchLabel, branchLane } from "./branches";
   import { gridKey, navKey, ownKey, type NavRow } from "./keynav";
-  import { baseName, clickPick, defaultMode, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick, toolOf,
+  import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick, toolOf,
     type Folder, type Selection } from "./files";
 
   // The Files tab, file-centred (the Overview is version-centred): the
   // project's folders on the left (with how many changed files each holds),
-  // the files of the folder picked in the middle (a list or a grid, each
-  // folder remembering which), and the file picked on the right with its
+  // the files of the folder picked in the middle (a list or a grid, the
+  // project remembering which), and the file picked on the right with its
   // history. Files are picked like in Explorer (Ctrl, Shift, a box drawn
   // around them), renamed with F2, dragged out to other programs, and
   // files dropped from Explorer are copied in.
@@ -47,7 +48,7 @@
     api.LastChanges(root).then((l) => { if (st.head === head) last = l ?? {}; }).catch(() => {});
   });
 
-  // Remembered per project: the folder shown, each folder's look.
+  // Remembered per project: the folder shown, the look (list or grid).
   const remember = <T,>(key: string, base: T): T => {
     try { return { ...base, ...JSON.parse(localStorage.getItem(key) ?? "{}") }; } catch { return base; }
   };
@@ -58,9 +59,9 @@
   // svelte-ignore state_referenced_locally
   let dir = $state(remember(`r3v.files:${root}`, { dir: "" }).dir);
   // svelte-ignore state_referenced_locally
-  let modes = $state<Record<string, "list" | "grid">>(remember(`r3v.fileModes:${root}`, {}));
+  let mode = $state<"list" | "grid">(remember(`r3v.fileMode:${root}`, { mode: "list" as "list" | "grid" }).mode);
   $effect(() => keep(`r3v.files:${root}`, { dir }));
-  $effect(() => keep(`r3v.fileModes:${root}`, modes));
+  $effect(() => keep(`r3v.fileMode:${root}`, { mode }));
 
   let tree = $derived(folderTree(files, st.name));
   // A folder that went away: back up to one that is there.
@@ -72,7 +73,8 @@
     }
   });
 
-  // --- the folder tree ---
+  // --- the folder tree (the project's own folder is no row: its folders
+  // are the first level, and its files show with none picked, "./") ---
   let open = $state<Record<string, boolean>>({});
   const isOpen = (p: string) => p === "" || (open[p] ?? (dir === p || dir.startsWith(p + "/")));
   type TreeRow = { f: Folder; depth: number };
@@ -82,7 +84,7 @@
       out.push({ f, depth });
       if (isOpen(f.path)) for (const s of f.folders) walk(s, depth + 1);
     };
-    walk(tree, 0);
+    for (const f of tree.folders) walk(f, 0);
     return out;
   });
   function pickDir(p: string) {
@@ -99,11 +101,59 @@
     else pickDir(nav.to);
   }
 
+  // --- widths (this computer, every project): the folders, the file
+  // panel, and the list's columns (some hidden) ---
+  const ROOT = "./";
+  let widths = $state(remember("r3v.filesWidths", { tree: 228, panel: 400 }));
+  type ColKey = "type" | "status" | "size" | "change";
+  const COLS: { key: ColKey; label: () => string; min: number }[] = [
+    { key: "type", label: () => t("Type"), min: 60 }, { key: "status", label: () => t("Status"), min: 30 },
+    { key: "size", label: () => t("Size"), min: 50 }, { key: "change", label: () => t("Last change"), min: 90 },
+  ];
+  let cols = $state(remember("r3v.fileColumns", { type: 110, status: 40, size: 80, change: 160 } as Record<ColKey, number>));
+  let hidden = $state(remember("r3v.fileColumnsHidden", {} as Partial<Record<ColKey, boolean>>));
+  $effect(() => keep("r3v.filesWidths", widths));
+  $effect(() => keep("r3v.fileColumns", cols));
+  $effect(() => keep("r3v.fileColumnsHidden", hidden));
+  let shownCols = $derived(COLS.filter((c) => !hidden[c.key]));
+  let template = $derived(`30px minmax(120px, 1fr) ${shownCols.map((c) => `${cols[c.key]}px`).join(" ")}`);
+  // A drag that sets a width: dx is how far the pointer went.
+  function dragWidth(e: PointerEvent, set: (dx: number) => void) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const x0 = e.clientX;
+    const move = (m: PointerEvent) => { if (!(m.buttons & 1)) return up(); set(m.clientX - x0); };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+  const clamp = (n: number, lo: number, hi: number) => Math.round(Math.min(hi, Math.max(lo, n)));
+  function resizeTree(e: PointerEvent) { const w0 = widths.tree; dragWidth(e, (dx) => (widths.tree = clamp(w0 + dx, 160, 440))); }
+  // The file panel: as set, but never more than half the card (the files
+  // keep room on a narrow window).
+  let cardW = $state(0);
+  let panelPx = $derived(cardW ? Math.min(widths.panel, Math.max(240, Math.round(cardW / 2))) : widths.panel);
+  function resizePanel(e: PointerEvent) { const w0 = panelPx; dragWidth(e, (dx) => (widths.panel = clamp(w0 - dx, 260, 760))); }
+  // (a column's left edge: the name column takes what is left)
+  function resizeCol(e: PointerEvent, c: (typeof COLS)[number]) { const w0 = cols[c.key]; dragWidth(e, (dx) => (cols[c.key] = clamp(w0 - dx, c.min, 600))); }
+  let colMenu = $state<{ x: number; y: number } | null>(null);
+  const typeOf = (f: ProjectFile) => {
+    const name = baseName(f.path);
+    const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1).toUpperCase() : "";
+    const kind = kindTitle(f.kind);
+    return ext ? `${ext} · ${kind}` : kind;
+  };
+
   // --- the files of the folder ---
   let filter = $state("");
   let here = $derived(filesIn(files, dir));
-  let mode = $derived(modes[dir] ?? defaultMode(here));
-  type SortKey = "name" | "size" | "change";
+  type SortKey = "name" | "type" | "size" | "change";
   let sort = $state<{ key: SortKey; desc: boolean }>({ key: "change", desc: true });
   const changeTime = (f: ProjectFile) => last[f.path]?.time ?? (isChanged(f) ? "9" : "");
   let shown = $derived.by(() => {
@@ -111,7 +161,8 @@
     const list = q ? here.filter((f) => baseName(f.path).toLowerCase().includes(q)) : [...here];
     const name = (f: ProjectFile) => baseName(f.path);
     return list.sort((a, b) => {
-      const r = sort.key === "size" ? a.size - b.size : sort.key === "change" ? changeTime(a).localeCompare(changeTime(b)) : 0;
+      const r = sort.key === "size" ? a.size - b.size : sort.key === "change" ? changeTime(a).localeCompare(changeTime(b))
+        : sort.key === "type" ? typeOf(a).localeCompare(typeOf(b)) : 0;
       return (r || name(a).localeCompare(name(b), undefined, { numeric: true })) * (sort.desc ? -1 : 1);
     });
   });
@@ -178,6 +229,9 @@
   let press: { x: number; y: number; path: string; ctrl: boolean; before: string[] } | null = null;
   let suppressClick = false;
   let draggingOut = $state(false);
+  let dragFrom = $state<string | null>(null); // the folder dragged out of (no drop target meanwhile)
+  // A folder takes files dropped on it, except the one being dragged out of.
+  const dropAt = (d: string) => (dragFrom === d ? undefined : "");
   function onPointerDown(e: PointerEvent) {
     if (e.button !== 0 || renaming) return;
     const item = (e.target as HTMLElement).closest<HTMLElement>("[data-path]");
@@ -213,6 +267,7 @@
     const there = paths.filter((p) => files.find((f) => f.path === p)?.status !== "deleted" || fromTree);
     if (!there.length || draggingOut) return;
     draggingOut = true;
+    dragFrom = fromTree ? dirOf(there[0]) : dir;
     suppressClick = true;
     try {
       await api.StartDrag(root, there);
@@ -220,6 +275,8 @@
       toast(errorText(e), "error");
     } finally {
       draggingOut = false;
+      dragFrom = null;
+      clearDropMarks(); // (a drop elsewhere, in another program, never tells this page)
       setTimeout(() => (suppressClick = false), 0);
     }
   }
@@ -235,15 +292,17 @@
   }
 
   // --- files dropped from Explorer: copied into the folder they land on ---
+  function dropped(d: { files: string[]; root: string; dir: string }) {
+    if (d.root !== root || !d.files?.length) return;
+    // Files dragged out and let go over the folder they are in: nothing to do.
+    if (d.files.every((p) => dirOf(relTo(p) ?? "\0") === (d.dir ?? ""))) return;
+    copyIn(d.dir ?? "", d.files);
+  }
   $effect(() => {
-    const off = Events.On("files-dropped", (ev: { data: { files: string[]; root: string; dir: string } }) => {
-      const d = ev.data;
-      if (d.root !== root || draggingOut || !d.files?.length) return;
-      // Files dragged out and let go over the folder they are in: nothing to do.
-      if (d.files.every((p) => dirOf(relTo(p) ?? "\0") === (d.dir ?? ""))) return;
-      copyIn(d.dir ?? "", d.files);
-    });
-    return () => off();
+    const offPage = onDroppedFiles(dropped);
+    // (the app's own route, where the page couldn't tell the folder)
+    const off = Events.On("files-dropped", (ev: { data: { files: string[]; root: string; dir: string } }) => dropped(ev.data));
+    return () => { offPage(); off(); };
   });
   // A path's place in the project (null: outside it).
   function relTo(abs: string): string | null {
@@ -292,7 +351,6 @@
       if (r.dir) {
         const moved = (p: string) => (p === r.path || p.startsWith(r.path + "/") ? to + p.slice(r.path.length) : p);
         dir = moved(dir);
-        modes = Object.fromEntries(Object.entries(modes).map(([k, v]) => [moved(k), v]));
       }
       await loadFiles();
       if (!r.dir) { sel = { picked: [to], anchor: to }; clicked = to; }
@@ -351,7 +409,9 @@
 <svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".ctx")) menu = null; }}
   onkeydown={(e) => { if (e.key === "Escape" && menu) menu = null; }} onpointerup={onPointerUp} />
 
-<div class="files-tab">
+<div class="files-tab" style:grid-template-columns="{widths.tree}px minmax(0, 1fr)">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="vsplit" style:left="{widths.tree + 24}px" onpointerdown={resizeTree}></div>
   <!-- the folders -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
   <nav class="tree card-box" aria-label={t("Folders")} tabindex="-1" onkeydown={onTreeKey}
@@ -372,7 +432,7 @@
             <input class="rename" bind:value={renaming.value} use:nameField onkeydown={renameKey} onblur={() => finishRename(true)}
               aria-label={t("New name")} />
           {:else}
-            <button class="folder" class:on={f.path === dir} title={f.path || st.name} data-file-drop-target data-root={root} data-dir={f.path}
+            <button class="folder" class:on={f.path === dir} title={f.path} data-file-drop-target={dropAt(f.path)} data-root={root} data-dir={f.path}
               onclick={() => pickDir(f.path)} ondblclick={() => f.folders.length && (open[f.path] = !isOpen(f.path))}
               oncontextmenu={(e) => f.path && openMenu(e, f.path, true)}
               onpointerdown={(e) => { if (e.button === 0 && f.path) treePress = { x: e.clientX, y: e.clientY, path: f.path }; }}
@@ -389,22 +449,22 @@
   </nav>
 
   <!-- the folder's files, and the file picked -->
-  <section class="area-card card-box">
+  <section class="area-card card-box" style:--panel-w="{panelPx}px" bind:clientWidth={cardW}>
     <div class="files">
       <div class="toolbar">
-        <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : st.name })}
+        <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : ROOT })}
           aria-label={t("Filter")} />
         <div class="modes" role="group" aria-label={t("Display")}>
-          <button class:on={mode === "list"} aria-pressed={mode === "list"} onclick={() => (modes[dir] = "list")} title={t("List view")} aria-label={t("List view")}>
+          <button class:on={mode === "list"} aria-pressed={mode === "list"} onclick={() => (mode = "list")} title={t("List view")} aria-label={t("List view")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" /></svg>
           </button>
-          <button class:on={mode === "grid"} aria-pressed={mode === "grid"} onclick={() => (modes[dir] = "grid")} title={t("Grid view")} aria-label={t("Grid view")}>
+          <button class:on={mode === "grid"} aria-pressed={mode === "grid"} onclick={() => (mode = "grid")} title={t("Grid view")} aria-label={t("Grid view")}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2.5h4.5v4.5h-4.5zM9 2.5h4.5v4.5h-4.5zM2.5 9h4.5v4.5h-4.5zM9 9h4.5v4.5h-4.5z" stroke="currentColor" stroke-width="1.4" fill="none" /></svg>
           </button>
         </div>
       </div>
       <p class="crumbs">
-        <button class="crumb" class:at={!dir} onclick={() => pickDir("")}>{st.name}</button>
+        <button class="crumb" class:at={!dir} onclick={() => pickDir("")} title={st.name}>{ROOT}</button>
         {#each crumbs as c (c.path)}<span class="sep">›</span><button class="crumb" class:at={c.path === dir} onclick={() => pickDir(c.path)}>{c.name}</button>{/each}
         <span class="faint"> · {tn(here.length, "{n} file", "{n} files")} · {formatBytes(hereSize)} · {t("on")}</span>
         <span class="branch" style:--c="var(--lane-{branchLane(st.branches, st.branch)})"><span class="dot"></span>{branchLabel(st.branches, st.branch)}</span>
@@ -413,19 +473,28 @@
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
       <div class="area {mode}" role={mode === "list" ? "grid" : "listbox"} aria-label={t("Files")} aria-multiselectable="true" tabindex="-1"
         bind:this={area} onkeydown={onAreaKey} onpointerdown={onPointerDown} onpointermove={onPointerMove}
-        data-file-drop-target data-root={root} data-dir={dir}>
+        data-file-drop-target={dropAt(dir)} data-root={root} data-dir={dir}>
         {#if mode === "list"}
-          <div class="row head" role="row">
+          <div class="row head" role="row" tabindex="-1" style:grid-template-columns={template}
+            oncontextmenu={(e) => { e.preventDefault(); colMenu = { x: e.clientX, y: e.clientY }; }}>
             <span></span>
             <button role="columnheader" onclick={() => sortBy("name")}>{t("Name")} · {t("Last version")}{#if sort.key === "name"} {sort.desc ? "↓" : "↑"}{/if}</button>
-            <span></span>
-            <button role="columnheader" class="num" onclick={() => sortBy("size")} aria-label={t("Size")}>{t("Size")} {sort.key === "size" ? (sort.desc ? "↓" : "↑") : "↕"}</button>
-            <button role="columnheader" onclick={() => sortBy("change")}>{t("Last change")}{#if sort.key === "change"} {sort.desc ? "↓" : "↑"}{/if}</button>
+            {#each shownCols as c (c.key)}
+              <span class="colh" class:num={c.key === "size"}>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span class="grip" onpointerdown={(e) => resizeCol(e, c)}></span>
+                {#if c.key === "status"}<span></span>
+                {:else}
+                  <button role="columnheader" onclick={() => sortBy(c.key as SortKey)} aria-label={c.label()}>{c.label()}{#if sort.key === c.key} {sort.desc ? "↓" : "↑"}{:else if c.key === "size"} ↕{/if}</button>
+                {/if}
+              </span>
+            {/each}
           </div>
           {#each shown as f (f.path)}
             {@const v = last[f.path]}
             {@const tool = toolOf(f.path)}
             <div class="row item {f.status}" role="row" aria-selected={sel.picked.includes(f.path)} data-path={f.path} class:on={sel.picked.includes(f.path)}
+              style:grid-template-columns={template}
               class:focus={f.path === focus} title={f.path} tabindex="-1" onclick={(e) => pick(e, f.path)} onkeydown={() => {}} ondblclick={() => openFile(f)}
               oncontextmenu={(e) => openMenu(e, f.path, false)} ondragstart={(e) => e.preventDefault()}>
               <span class="badge" role="gridcell" title={tool.name || undefined}>{tool.badge}</span>
@@ -438,12 +507,20 @@
                 {/if}
                 <span class="msg">{v ? v.message || t("(no description)") : isChanged(f) ? t("Not committed yet") : ""}</span>
               </span>
-              <span role="gridcell">{#if sym[f.status]}<span class="st {f.status}" title={statusName(f.status)}>{sym[f.status]}</span>{:else}<span class="faint">—</span>{/if}</span>
-              <span class="num faint" role="gridcell">{formatBytes(f.size)}</span>
-              <span class="who" role="gridcell">
-                {#if v}<Avatar name={v.author} seed={v.authorId} color={looks?.[v.authorId]?.color ?? ""} picture={looks?.[v.authorId]?.picture ?? ""} size={18} />
-                  <span class="wtxt">{v.author} · {ago(v.time)}</span>{/if}
-              </span>
+              {#each shownCols as c (c.key)}
+                {#if c.key === "type"}
+                  <span class="type faint" role="gridcell">{typeOf(f)}</span>
+                {:else if c.key === "status"}
+                  <span role="gridcell">{#if sym[f.status]}<span class="st {f.status}" title={statusName(f.status)}>{sym[f.status]}</span>{:else}<span class="faint">—</span>{/if}</span>
+                {:else if c.key === "size"}
+                  <span class="num faint" role="gridcell">{formatBytes(f.size)}</span>
+                {:else}
+                  <span class="who" role="gridcell">
+                    {#if v}<Avatar name={v.author} seed={v.authorId} color={looks?.[v.authorId]?.color ?? ""} picture={looks?.[v.authorId]?.picture ?? ""} size={18} />
+                      <span class="wtxt">{v.author} · {ago(v.time)}</span>{/if}
+                  </span>
+                {/if}
+              {/each}
             </div>
           {:else}
             <p class="muted empty">{emptyText()}</p>
@@ -488,6 +565,8 @@
       </div>
     </div>
 
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="vsplit panel-split" style:right="calc(var(--panel-w) + 24px)" onpointerdown={resizePanel}></div>
     <aside class="panel">
       {#if current}
         <FilePanel {root} {st} file={current} stamp={loadedAt} {onrestore} />
@@ -534,13 +613,30 @@
   </div>
 {/if}
 
+{#if colMenu}
+  {@const m = colMenu}
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+  <div class="ctx-scrim" use:portal onclick={() => (colMenu = null)} oncontextmenu={(e) => { e.preventDefault(); colMenu = null; }}></div>
+  <div class="ctx surface-menu cols-menu" role="menu" aria-label={t("Columns")} use:portal
+    style:left="{Math.min(m.x, window.innerWidth - 220)}px" style:top="{Math.min(m.y, window.innerHeight - 200)}px">
+    <p class="faint note">{t("Columns")}</p>
+    {#each COLS as c (c.key)}
+      <label class="item check"><input type="checkbox" checked={!hidden[c.key]} onchange={(e) => (hidden[c.key] = !e.currentTarget.checked)} />{c.label()}</label>
+    {/each}
+  </div>
+{/if}
+
 {#if converting}
   <ConvertDialog {root} file={converting} onclose={() => (converting = "")}
     ondone={async (p) => { converting = ""; toast(t("Converted to {file}", { file: baseName(p) }), "ok"); await loadFiles(); pickDir(dirOf(p)); sel = { picked: [p], anchor: p }; }} />
 {/if}
 
 <style>
-  .files-tab { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: var(--sp-16); height: 100%; min-height: 0; padding: var(--sp-16); }
+  .files-tab { position: relative; display: grid; gap: var(--sp-16); height: 100%; min-height: 0; padding: var(--sp-16); }
+  /* the lines between the columns, dragged to resize them */
+  .vsplit { position: absolute; top: var(--sp-16); bottom: var(--sp-16); width: 9px; margin-left: -4px; cursor: col-resize; z-index: 3; touch-action: none; }
+  .vsplit:hover, .vsplit:active { background: linear-gradient(to right, transparent 4px, var(--accent) 4px, var(--accent) 5px, transparent 5px); }
+  .panel-split { top: var(--sp-16); bottom: var(--sp-16); margin-left: 0; margin-right: -4px; }
   .card-box { min-height: 0; border-radius: var(--radius-card); background: var(--panel); box-shadow: var(--shadow-card); }
   .tree { display: flex; flex-direction: column; overflow: hidden; padding: var(--sp-14) var(--sp-8) var(--sp-12); }
   .tree:focus { outline: none; }
@@ -564,7 +660,7 @@
 
   .area-card { position: relative; display: flex; overflow: hidden; }
   .files { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: var(--sp-14) var(--sp-16) 0;
-    margin-right: calc(clamp(280px, 38%, 400px) + var(--sp-16)); }
+    margin-right: calc(var(--panel-w) + var(--sp-32)); }
   .toolbar { display: flex; align-items: center; gap: var(--sp-10); }
   .filter { flex: 0 1 220px; min-width: 120px; padding: var(--sp-6) var(--sp-10); font-size: var(--fs-sm); border-radius: var(--radius); }
   .modes { display: flex; margin-left: auto; padding: 2px; border-radius: var(--radius-pill); background: var(--bg-sunken); }
@@ -580,12 +676,18 @@
 
   .area { position: relative; flex: 1; min-height: 0; overflow: auto; padding-bottom: var(--sp-16); user-select: none; }
   .area:focus { outline: none; }
-  .row { display: grid; grid-template-columns: 30px minmax(120px, 1fr) 34px 76px minmax(110px, 150px); align-items: center; gap: var(--sp-10);
+  .row { display: grid; align-items: center; gap: var(--sp-10);
     padding: 0 var(--sp-8); border-radius: var(--radius); }
   .row.head { position: sticky; top: 0; z-index: 1; height: 30px; background: var(--panel); }
   .row.head button { border: none; background: transparent; padding: 0; text-align: left; font-size: var(--fs-2xs); color: var(--faint);
     text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .row.head button:hover { color: var(--text); background: transparent; }
+  .colh { position: relative; min-width: 0; display: flex; align-items: center; height: 100%; }
+  .colh.num { justify-content: flex-end; }
+  .grip { position: absolute; left: calc(var(--sp-10) / -2 - 4px); top: 4px; bottom: 4px; width: 8px; cursor: col-resize; touch-action: none; }
+  .grip::after { content: ""; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px; background: var(--line); }
+  .grip:hover::after { background: var(--accent); width: 2px; }
+  .type { min-width: 0; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row.item { height: 48px; border-bottom: var(--border-width) solid var(--line-soft); cursor: default; }
   .row.item:hover:not(.on) { background: var(--hover-soft); }
   .row.on, .card.on { background: var(--accent-soft); }
@@ -624,7 +726,7 @@
   .empty { padding: var(--sp-16) var(--sp-8); }
 
   /* the file, floating over the card's right side */
-  .panel { position: absolute; top: var(--sp-16); right: var(--sp-16); bottom: var(--sp-16); width: clamp(280px, 38%, 400px); display: flex; flex-direction: column;
+  .panel { position: absolute; top: var(--sp-16); right: var(--sp-16); bottom: var(--sp-16); width: var(--panel-w); display: flex; flex-direction: column;
     overflow: hidden; border-radius: var(--radius-xl); background: var(--surface-float); backdrop-filter: var(--float-filter); box-shadow: var(--shadow-float); }
   .panel > :global(*) { flex: 1; min-height: 0; }
   .pick-note { padding: var(--sp-20); }
@@ -643,4 +745,9 @@
   .pat { font-size: var(--fs-xs); }
   .ctx .note { margin: var(--sp-6) var(--sp-8) var(--sp-2); font-size: var(--fs-xs); line-height: 1.4; }
   .danger-text { color: var(--danger); }
+  .ctx-scrim { position: fixed; inset: 0; z-index: var(--z-submenu); }
+  .cols-menu { z-index: var(--z-submenu); }
+  .cols-menu .note { margin: var(--sp-2) var(--sp-8) var(--sp-6); text-transform: uppercase; letter-spacing: .06em; }
+  .item.check { gap: var(--sp-8); margin: 0; color: var(--text); font-size: var(--fs-md); cursor: pointer; }
+  .item.check input { width: auto; margin: 0; }
 </style>

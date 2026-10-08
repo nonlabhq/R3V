@@ -1365,5 +1365,6 @@
 "Show in folder": "Im Ordner zeigen",
 "Back to now": "Zurück zu jetzt",
 "History of this file": "Verlauf dieser Datei",
-"No files right in this folder: its folders are on the left.": "Keine Dateien direkt in diesem Ordner: seine Ordner stehen links."
+"No files right in this folder: its folders are on the left.": "Keine Dateien direkt in diesem Ordner: seine Ordner stehen links.",
+"Status": "Status"
 }

@@ -1365,5 +1365,6 @@
 "Show in folder": "폴더에서 보기",
 "Back to now": "지금으로 돌아가기",
 "History of this file": "이 파일의 기록",
-"No files right in this folder: its folders are on the left.": "이 폴더 바로 아래에는 파일이 없습니다. 하위 폴더는 왼쪽에 있습니다."
+"No files right in this folder: its folders are on the left.": "이 폴더 바로 아래에는 파일이 없습니다. 하위 폴더는 왼쪽에 있습니다.",
+"Status": "상태"
 }
