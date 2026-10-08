@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { t } from "./i18n.svelte";
-  import { api, errorText, type TeamSummary, type CloudStatus } from "./api";
+  import { api, errorText, type TeamSummary, type CloudStatus, type InvitationInfo } from "./api";
 
   // R3V-Cloud in "Join or create a team": sign in through the browser (the
   // account's teams come with it), then create a team or join one with an
@@ -54,6 +54,30 @@
     }
   }
 
+  // Joining: a team that moved in from its own storage brings its people
+  // along, to be claimed: "who were you?" first (their versions, name and
+  // look then theirs).
+  let invite = $state<InvitationInfo | null>(null);
+  let claim = $state("");
+  async function join() {
+    busy = true;
+    error = "";
+    try {
+      const info = await api.CloudInvitationInfo(link);
+      if (info && info.people.some((p) => !p.claimed)) {
+        invite = info;
+        claim = "";
+        return;
+      }
+    } catch (e) {
+      error = errorText(e);
+      return;
+    } finally {
+      busy = false;
+    }
+    run(() => api.CloudJoinAs(link, ""));
+  }
+
   async function run(f: () => Promise<TeamSummary>) {
     busy = true;
     error = "";
@@ -90,13 +114,30 @@
     </div>
   </form>
 
-  <form onsubmit={(e) => { e.preventDefault(); run(() => api.CloudJoin(link)); }}>
+  {#if invite}
+    <div class="claim">
+      <p><strong>{t("Who were you in {team}?", { team: invite.team })}</strong></p>
+      <p class="muted">{t("The team moved to R3V Cloud with its people: pick yourself, and your versions, name and look are yours.")}</p>
+      <div class="people" role="radiogroup" aria-label={t("Who were you?")}>
+        {#each invite.people.filter((p) => !p.claimed) as p (p.id)}
+          <label><input type="radio" name="claim" value={p.id} bind:group={claim} /> {p.name}</label>
+        {/each}
+        <label><input type="radio" name="claim" value="new" bind:group={claim} /> {t("I'm new to this team")}</label>
+      </div>
+      <div class="row actions"><span class="spacer"></span>
+        <button onclick={() => (invite = null)}>{t("Back")}</button>
+        <button class="primary" disabled={busy || !claim} onclick={() => run(() => api.CloudJoinAs(link, claim === "new" ? "" : claim))}>{t("Join")}</button>
+      </div>
+    </div>
+  {:else}
+  <form onsubmit={(e) => { e.preventDefault(); join(); }}>
     <label for="cloud-link">{t("Join with an invitation link")}</label>
     <div class="row">
       <input id="cloud-link" bind:value={link} placeholder="https://…/invite/…" autocomplete="off" spellcheck="false" />
       <button type="submit" disabled={busy || !link.trim()}>{t("Join")}</button>
     </div>
   </form>
+  {/if}
 {/if}
 {#if error}<p class="error">{error}</p>{/if}
 
@@ -106,5 +147,8 @@
   form .row { gap: var(--sp-8); }
   form input { flex: 1; min-width: 0; }
   .error { color: var(--danger); user-select: text; }
+  .claim { margin-top: var(--sp-14); }
+  .people { display: flex; flex-direction: column; gap: var(--sp-6); margin: var(--sp-10) 0; }
+  .people label { display: flex; align-items: center; gap: var(--sp-8); }
   .link { border: none; background: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: inherit; }
 </style>

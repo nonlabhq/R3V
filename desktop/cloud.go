@@ -162,15 +162,61 @@ func (a *App) CloudCreateTeam(name string) (TeamSummary, error) {
 
 // CloudJoin joins the team an invitation link is for and selects it.
 func (a *App) CloudJoin(link string) (TeamSummary, error) {
+	token, err := inviteToken(link)
+	if err != nil {
+		return TeamSummary{}, err
+	}
+	addr, err := cloud.Accept(cloud.Service(), token)
+	if err != nil {
+		return TeamSummary{}, err
+	}
+	return a.selectByAddress(addr)
+}
+
+func inviteToken(link string) (string, error) {
 	u, err := url.Parse(strings.TrimSpace(link))
 	token := ""
 	if err == nil {
 		_, token, _ = strings.Cut(u.Path, "/invite/")
 	}
 	if token == "" || strings.Contains(token, "/") {
-		return TeamSummary{}, errors.New("that isn't an invitation link (it looks like …/invite/…)")
+		return "", errors.New("that isn't an invitation link (it looks like …/invite/…)")
 	}
-	addr, err := cloud.Accept(cloud.Service(), token)
+	return token, nil
+}
+
+// CloudInvitation is what an invitation link is for, before accepting it:
+// the team, and the people of a team that moved in to be claimed.
+type CloudInvitation struct {
+	Team   string            `json:"team"`
+	People []cloud.Claimable `json:"people"`
+}
+
+// CloudInvitationInfo reads an invitation link (nothing accepted).
+func (a *App) CloudInvitationInfo(link string) (*CloudInvitation, error) {
+	token, err := inviteToken(link)
+	if err != nil {
+		return nil, err
+	}
+	team, ms, err := cloud.InvitationClaimables(cloud.Service(), token)
+	if err != nil {
+		return nil, err
+	}
+	if ms == nil {
+		ms = []cloud.Claimable{}
+	}
+	return &CloudInvitation{Team: team, People: ms}, nil
+}
+
+// CloudJoinAs joins the team an invitation link is for as who one was in
+// it before it moved to R3V Cloud (claim: their member id; "" for someone
+// new), and selects it.
+func (a *App) CloudJoinAs(link, claim string) (TeamSummary, error) {
+	token, err := inviteToken(link)
+	if err != nil {
+		return TeamSummary{}, err
+	}
+	addr, err := cloud.AcceptAs(cloud.Service(), token, claim)
 	if err != nil {
 		return TeamSummary{}, err
 	}

@@ -408,6 +408,13 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	head := r.Head()
 	// Asking the team what it has: said at once, not after a few requests.
 	r.report(StageChecking, 0, 0)
+	// A team moving (or moved) to R3V Cloud takes no shares: versions stay
+	// here, shared once it's there.
+	if info, err := c.Info(); err == nil {
+		if err := remote.CheckNotMoving(info); err != nil {
+			return err
+		}
+	}
 	// Only a project new to the team is named here: one that is there keeps
 	// its record (someone may have renamed it, or given it a look, even
 	// before a first share stopped half-way was done).

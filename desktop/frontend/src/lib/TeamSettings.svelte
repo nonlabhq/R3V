@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TeamMoveDialog from "./TeamMoveDialog.svelte";
   import { t, tn } from "./i18n.svelte";
   import Tx from "./Tx.svelte";
   import { untrack } from "svelte";
@@ -15,8 +16,10 @@
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
   // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false }: {
+  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false }: {
     team: TeamSummary;
+    teams?: TeamSummary[]; // the teams here (where it can move to)
+    canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
     offline?: boolean; // its storage can't be reached now
     roots?: string[]; // its projects on this computer (kept under Local when leaving)
     author?: string; // this computer's name, suggested when you have none here
@@ -174,6 +177,7 @@
       leaving = false;
     }
   }
+  let movingTeam = $state(false); // the move to R3V Cloud open
 </script>
 
 <Modal title={t("{team} settings", { team: team.name })} {onclose} width={620} backdropCloses={false}>
@@ -277,6 +281,16 @@
   </Fold>
   {/if}
 
+  {#if team.isStorage && canMove}
+    <section>
+      <h3>{t("Move to R3V Cloud")}</h3>
+      <div class="move">
+        <p class="faint small">{t("R3V Cloud copies the whole team's history from this storage itself, while everyone keeps working; then everyone's projects move over as they are. Nothing is deleted here.")}</p>
+        <button onclick={() => (movingTeam = true)}>{t("Move…")}</button>
+      </div>
+    </section>
+  {/if}
+
   {#if team.isStorage}
     <section>
       <h3>{t("Storage cleanup")}</h3>
@@ -356,7 +370,13 @@
 {/if}
 {/if}
 
+{#if movingTeam}
+  <TeamMoveDialog {team} {teams} {reload} onclose={() => (movingTeam = false)} />
+{/if}
+
 <style>
+  .move { display: flex; align-items: flex-start; gap: var(--sp-12); }
+  .move p { flex: 1; margin: 0; }
   section { margin-bottom: var(--sp-18); }
   h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 var(--sp-8); }
   .small { font-size: var(--fs-md); }

@@ -145,8 +145,41 @@ type TeamInfo struct {
 	Name string `json:"name"`
 	// Features the team turned on (see CheckFeatures).
 	Features []string `json:"features,omitempty"`
+	// Moving: the team is moving to R3V Cloud (docs/design/moving.md):
+	// R3V shares nothing to it meanwhile. MovedTo: it moved there (the
+	// hosted team's address): R3V shares nothing to it any more.
+	Moving  *TeamMove `json:"moving,omitempty"`
+	MovedTo string    `json:"movedTo,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
+}
+
+// TeamMove is a team's move under way: where to, by whom, since when.
+type TeamMove struct {
+	To   string    `json:"to"`
+	By   string    `json:"by,omitempty"` // member id
+	Time time.Time `json:"time"`
+}
+
+// ErrTeamMoving: the team is moving: shares wait until it's there.
+var ErrTeamMoving = errors.New("the team is moving to R3V Cloud: your versions are kept here and shared once it's there")
+
+// ErrTeamMoved: the team moved to R3V Cloud.
+type ErrTeamMoved struct{ To string }
+
+func (e *ErrTeamMoved) Error() string {
+	return "the team moved to R3V Cloud: join it there (your projects reconnect as they are)"
+}
+
+// CheckNotMoving fails when team info says shares must wait or go elsewhere.
+func CheckNotMoving(info TeamInfo) error {
+	if info.MovedTo != "" {
+		return &ErrTeamMoved{To: info.MovedTo}
+	}
+	if info.Moving != nil {
+		return ErrTeamMoving
+	}
+	return nil
 }
 
 // UnmarshalJSON and MarshalJSON keep fields this build doesn't know (see

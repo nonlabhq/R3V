@@ -30,7 +30,7 @@ const signedOut = { available: true, service: "https://api.r3v.so", signedIn: fa
 const signedIn = { ...signedOut, signedIn: true, email: "yi@example.test" };
 const band: TeamSummary = { id: "t1", name: "Band", address: "r3v-cloud+https://api.r3v.so/v1/teams/t1", isStorage: false, memberId: "m1",
   memberName: "Yi", keysUnreadable: false, shareSetup: false, canShareSetup: false, preupload: false, askShareSetup: false,
-  backupFailing: false, hosted: true, signedOut: false, noAccess: false, looks: false };
+  backupFailing: false, hosted: true, signedOut: false, noAccess: false, looks: false, moving: false, movedTo: "", movedToTeam: "" };
 
 describe("CloudJoin", () => {
   it("signs in through the browser and goes to the account's team", async () => {
@@ -60,7 +60,7 @@ describe("CloudJoin", () => {
   it("creates a team and joins one with a link, signed in", async () => {
     api.CloudStatus.mockResolvedValue(signedIn);
     api.CloudCreateTeam.mockResolvedValue(band);
-    api.CloudJoin.mockRejectedValue(new Error("This invitation was used, withdrawn or has expired: ask for a new one."));
+    api.CloudInvitationInfo.mockRejectedValue(new Error("This invitation was used, withdrawn or has expired: ask for a new one."));
     const onconnected = vi.fn();
     render(CloudJoin, { onconnected });
     await screen.findByText(/Signed in as yi@example.test/);
@@ -72,7 +72,37 @@ describe("CloudJoin", () => {
     await fireEvent.input(screen.getByLabelText("Join with an invitation link"), { target: { value: "https://r3v.so/invite/x" } });
     await fireEvent.click(screen.getByRole("button", { name: "Join" }));
     await screen.findByText(/ask for a new one/);
-    expect(api.CloudJoin).toHaveBeenCalledWith("https://r3v.so/invite/x");
+    expect(api.CloudInvitationInfo).toHaveBeenCalledWith("https://r3v.so/invite/x");
+    expect(api.CloudJoinAs).not.toHaveBeenCalled();
+  });
+
+  it("asks who you were in a team that moved in, then joins as them", async () => {
+    api.CloudStatus.mockResolvedValue(signedIn);
+    api.CloudInvitationInfo.mockResolvedValue({ team: "Band", people: [
+      { id: "a1", name: "Mia", claimed: false }, { id: "b2", name: "Robin", claimed: true }] });
+    api.CloudJoinAs.mockResolvedValue(band);
+    const onconnected = vi.fn();
+    render(CloudJoin, { onconnected });
+    await screen.findByText(/Signed in as/);
+    await fireEvent.input(screen.getByLabelText("Join with an invitation link"), { target: { value: "https://r3v.so/invite/x" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Join" }));
+    await screen.findByText("Who were you in Band?");
+    expect(screen.queryByLabelText("Robin")).toBeNull(); // claimed already
+    await fireEvent.click(screen.getByLabelText("Mia"));
+    await fireEvent.click(screen.getByRole("button", { name: "Join" }));
+    await waitFor(() => expect(api.CloudJoinAs).toHaveBeenCalledWith("https://r3v.so/invite/x", "a1"));
+    expect(onconnected).toHaveBeenCalledWith(band);
+  });
+
+  it("joins at once where nobody is to be claimed", async () => {
+    api.CloudStatus.mockResolvedValue(signedIn);
+    api.CloudInvitationInfo.mockResolvedValue({ team: "Band", people: [] });
+    api.CloudJoinAs.mockResolvedValue(band);
+    render(CloudJoin, { onconnected: vi.fn() });
+    await screen.findByText(/Signed in as/);
+    await fireEvent.input(screen.getByLabelText("Join with an invitation link"), { target: { value: "https://r3v.so/invite/y" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Join" }));
+    await waitFor(() => expect(api.CloudJoinAs).toHaveBeenCalledWith("https://r3v.so/invite/y", ""));
   });
 });
 
