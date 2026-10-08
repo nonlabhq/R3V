@@ -1369,5 +1369,6 @@
 "Status": "狀態",
 "{n} folder": "{n} 個資料夾",
 "{n} folders": "{n} 個資料夾",
-"Empty": "空的"
+"Empty": "空的",
+"Open the project in its program": "在對應的程式中開啟專案"
 }

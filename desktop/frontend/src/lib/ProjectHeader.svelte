@@ -31,6 +31,13 @@
 <svelte:window onclick={(e) => {
   const el = e.target as HTMLElement;
   if (setMenu && !el.closest(".open-wrap")) setMenu = false;
+}} onkeydown={(e) => {
+  // F12: the project in its program (several sets: their list)
+  if (e.key !== "F12" || e.repeat || e.ctrlKey || e.altKey || e.shiftKey || document.querySelector("[aria-modal='true']")) return;
+  if (!st.openable.length) return;
+  e.preventDefault();
+  if (st.openable.length === 1) open(st.openable[0]);
+  else setMenu = !setMenu;
 }} />
 
 <header>
@@ -55,21 +62,6 @@
     </div>
   </div>
   <div class="actions">
-    {#if st.openable.length === 1}
-      <button class="primary" onclick={() => open(st.openable[0])}
-        title={t("Open {file} in {tool}", { file: label(st.openable[0]), tool: (st.tool ? t(st.tool) : t("its program")) })}>▶ {t("Open in {tool}", { tool: toolName })}</button>
-    {:else if st.openable.length > 1}
-      <div class="open-wrap">
-        <button class="primary" onclick={() => (setMenu = !setMenu)} title={t("Open in {tool}", { tool: (st.tool ? t(st.tool) : t("its program")) })}>▶ {t("Open in {tool}", { tool: toolName })} ▾</button>
-        {#if setMenu}
-          <div class="menu right surface-menu" role="menu">
-            {#each st.openable as s}
-              <button class="item" onclick={() => { setMenu = false; open(s); }}>{label(s)}</button>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    {/if}
     <button class="ghost icon" onclick={oncheck} title={t("Check the project: Live version, samples, plugins")} aria-label={t("Project check")}>
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
     </button>
@@ -79,6 +71,22 @@
     <button class="ghost icon" onclick={() => api.ShowFolder(st.root)} title={t("Show folder")} aria-label={t("Show folder")}>
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
     </button>
+    <!-- the project in its program: at the far right (F12, the key at the far right too) -->
+    {#if st.openable.length === 1}
+      <button class="primary" onclick={() => open(st.openable[0])}
+        title={t("Open {file} in {tool}", { file: label(st.openable[0]), tool: (st.tool ? t(st.tool) : t("its program")) }) + " (F12)"}>▶ {t("Open in {tool}", { tool: toolName })}</button>
+    {:else if st.openable.length > 1}
+      <div class="open-wrap">
+        <button class="primary" onclick={() => (setMenu = !setMenu)} title={t("Open in {tool}", { tool: (st.tool ? t(st.tool) : t("its program")) }) + " (F12)"}>▶ {t("Open in {tool}", { tool: toolName })} ▾</button>
+        {#if setMenu}
+          <div class="menu right surface-menu" role="menu">
+            {#each st.openable as s}
+              <button class="item" onclick={() => { setMenu = false; open(s); }}>{label(s)}</button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
   </div>
 </header>
 

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
 vi.mock("./api", async (orig) => ({ ...(await orig<typeof import("./api")>()), api: mocks.api }));
 import QuickLaunch from "./QuickLaunch.svelte";
 import TeamHome from "./TeamHome.svelte";
+import ProjectHeader from "./ProjectHeader.svelte";
 import ProjectSettings from "./ProjectSettings.svelte";
 const { api } = mocks;
 afterEach(() => { cleanup(); for (const k of Object.keys(mocks.fns)) delete mocks.fns[k]; });
@@ -74,5 +75,23 @@ describe("ProjectSettings in its tab", () => {
     expect(onunlink).not.toHaveBeenCalled();
     await fireEvent.click(screen.getByRole("button", { name: "Unlink" }));
     expect(onunlink).toHaveBeenCalled();
+  });
+});
+
+describe("ProjectHeader", () => {
+  const st = (openable: string[]) => ({ root: "C:/Song", name: "Song", tool: "Ableton Live", openable }) as never;
+  it("opens the project in its program with F12, at the far right", async () => {
+    render(ProjectHeader, { st: st(["."]), refreshing: false, oncheck: vi.fn(), onrefresh: vi.fn() });
+    const buttons = [...document.querySelectorAll(".actions > button, .actions > .open-wrap")];
+    expect(buttons.at(-1)?.textContent).toContain("Open in Live");
+    await fireEvent.keyDown(window, { key: "F12" });
+    expect(api.OpenInTool).toHaveBeenCalledWith("C:/Song", ".");
+  });
+
+  it("lists the sets with F12 when there are several", async () => {
+    render(ProjectHeader, { st: st(["A.als", "B.als"]), refreshing: false, oncheck: vi.fn(), onrefresh: vi.fn() });
+    await fireEvent.keyDown(window, { key: "F12" });
+    expect(screen.getByRole("menu").textContent).toContain("B.als");
+    expect(api.OpenInTool).not.toHaveBeenCalled();
   });
 });
