@@ -54,6 +54,9 @@ type Team struct {
 	// the team deleted, or another account signed in). It stays listed with
 	// its projects until the person removes it; back in, it's cleared.
 	NoAccess bool `json:"noAccess,omitempty"`
+	// LocksAsked: turning file locks on was offered once (or decided):
+	// not offered again.
+	LocksAsked bool `json:"locksAsked,omitempty"`
 	// KeysUnreadable: the team's keys were sealed by another Windows user
 	// or on another computer (teams.json copied): connect again with the
 	// team's connection code.

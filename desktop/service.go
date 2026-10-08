@@ -58,6 +58,7 @@ func NewApp() *App {
 	// follows, and the frontend is told.
 	a.live.OnTeamChange = func(service string) { a.syncTeams(service) }
 	a.live.OnRecord = a.onRecord
+	a.live.OnLock = a.onLock
 	return a
 }
 
@@ -448,8 +449,15 @@ func (a *App) State(root string) (*State, error) {
 		return nil, err
 	}
 	sw.lap("status")
+	var changed []string
 	for _, c := range changes {
 		st.Changes = append(st.Changes, toChange(c.Path, c.Status, c.From, c.Edited, c.SetDiff))
+		if c.Status != "deleted" && c.Status != "untracked" {
+			changed = append(changed, c.Path)
+		}
+	}
+	if len(changed) > 0 && r.Config.Remote != nil {
+		go a.autoLock(r.Root, changed) // (files of a locked kind changed meanwhile)
 	}
 	st.MyEdits = nonNil(project.EditsIn(changes))
 	st.InUse = nonNil(r.InUse())
@@ -506,6 +514,9 @@ type TeamPart struct {
 	BranchGone *DeletedBranch `json:"branchGone"`
 	// Milestones: versions given a name for the team, newest first.
 	Milestones []Milestone `json:"milestones"`
+	// LocksOffer: offer to turn file locks on for the team (you its admin;
+	// a project that benefits; never asked).
+	LocksOffer bool `json:"locksOffer"`
 }
 
 // TeamState asks the team for its branches and new versions. It runs
@@ -537,6 +548,7 @@ func (a *App) TeamState(root string) (*TeamPart, error) {
 		if c, cerr := r.Client(); cerr == nil {
 			part.Capabilities = remote.CapabilitiesOf(c)
 		}
+		part.LocksOffer = locksOffer(r)
 		part.BranchNames = keepsBranchRecords(r)
 		if b := r.BranchName(); view.Heads[b] == "" && b != "main" {
 			if gone, err := a.deletedBranches(r); err == nil {
@@ -704,6 +716,9 @@ func blocked(set string) *Result {
 // sides (their authors' current names as the team last told them) and
 // what was combined on its own.
 func conflictResult(r *project.Repo, err error) (*Result, error) {
+	if out, ok := lockedResult(r, err); ok {
+		return out, nil
+	}
 	var c *project.MergeConflictError
 	if !errors.As(err, &c) {
 		return nil, err
@@ -811,6 +826,7 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 	if m == nil && res.Action == "up-to-date" {
 		out.Action = "nothing"
 	}
+	a.afterShare(root) // (a share frees your locks on what it changed)
 	return out, nil
 }
 
@@ -833,6 +849,7 @@ func (a *App) ShareVersions(root string) (*Result, error) {
 		log.Printf("share %s: %v", root, err) // (the app shows it for a moment only)
 		return conflictResult(r, err)
 	}
+	a.afterShare(root)
 	return syncResult(res), nil
 }
 

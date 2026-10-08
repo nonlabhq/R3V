@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -33,6 +34,8 @@ type Fake struct {
 	locks   map[string]map[string]*lock
 	// BranchBodies counts branch moves by their form ("branch", "plain").
 	BranchBodies map[string]int
+	// Down: the service can't be reached (connections dropped).
+	Down atomic.Bool
 }
 
 type member struct {
@@ -63,6 +66,14 @@ func NewFake(t testing.TB) *Fake {
 	n := 0
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f.Down.Load() {
+			if hj, ok := w.(http.Hijacker); ok {
+				if conn, _, err := hj.Hijack(); err == nil {
+					conn.Close()
+					return
+				}
+			}
+		}
 		ep := r.URL.EscapedPath()
 		body, _ := io.ReadAll(r.Body)
 		f.mu.Lock()
@@ -85,14 +96,23 @@ func NewFake(t testing.TB) *Fake {
 			w.Write(data)
 			return
 		}
-		rest, ok := strings.CutPrefix(ep, "/v1/teams/t")
-		if !ok {
-			w.WriteHeader(404)
-			return
-		}
 		me, ok := f.members[strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")]
 		if !ok {
 			w.WriteHeader(401)
+			return
+		}
+		if ep == "/v1/me" {
+			role := "member"
+			if me.admin {
+				role = "owner"
+			}
+			json.NewEncoder(w).Encode(map[string]any{"user": map[string]string{"id": "u" + me.id, "email": me.id + "@example.test"},
+				"teams": []map[string]string{{"id": "t", "name": "Team", "role": role, "memberId": me.id}}})
+			return
+		}
+		rest, ok := strings.CutPrefix(ep, "/v1/teams/t")
+		if !ok {
+			w.WriteHeader(404)
 			return
 		}
 		switch {

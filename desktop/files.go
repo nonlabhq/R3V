@@ -397,6 +397,7 @@ func (a *App) DiscardFile(root, file, from string, force bool) (*Result, error) 
 			return nil, err
 		}
 	}
+	go a.unlockDiscarded(root, []string{file, from}) // (your lock on it goes with the change)
 	return &Result{Action: "discarded", Log: []string{}, Relinked: []string{}, Conflicts: []Conflict{}}, nil
 }
 
@@ -433,6 +434,7 @@ func (a *App) DiscardFiles(root string, files []string, force bool) (*Result, er
 			}
 		}
 	}
+	go a.unlockDiscarded(root, files)
 	return &Result{Action: "discarded", Log: []string{}, Relinked: []string{}, Conflicts: []Conflict{}}, nil
 }
 
@@ -490,6 +492,11 @@ func (a *App) DiscardAll(root string, force bool) (*Result, error) {
 	if _, _, err := r.Checkout(head, true); err != nil {
 		return nil, err
 	}
+	var paths []string
+	for _, c := range changes {
+		paths = append(paths, c.Path, c.From)
+	}
+	go a.unlockDiscarded(root, paths)
 	return &Result{Action: "discarded", Log: []string{}, Relinked: []string{}, Conflicts: []Conflict{}}, nil
 }
 

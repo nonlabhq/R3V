@@ -180,6 +180,9 @@ type Result struct {
 	Ours     *Version   `json:"ours"`
 	Theirs   *Version   `json:"theirs"`
 	Combined []Combined `json:"combined"`
+	// Locks: action "locked": the share was refused, someone else holds
+	// these paths; the version stays committed here.
+	Locks []HeldLock `json:"locks"`
 }
 
 type Preview struct {
