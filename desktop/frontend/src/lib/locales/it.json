@@ -1444,5 +1444,7 @@
 "Data & Config": "Dati e configurazione",
 "Documents": "Documenti",
 "Fonts": "Font",
-"Archives": "Archivi"
+"Archives": "Archivi",
+"{n} change not committed": "{n} modifica non salvata",
+"{n} changes not committed": "{n} modifiche non salvate"
 }

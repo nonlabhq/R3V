@@ -45,7 +45,7 @@ test("previews a Live set in the Files tab", async () => {
   await page.getByRole("button", { name: "Files", exact: true }).click();
   await page.getByRole("row", { name: /Night Drive\.als/ }).click();
   await expect(page.getByText("MIDI Tracks").first()).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("button", { name: /^Overview/ }).click();
+  await page.getByRole("button", { name: /^Versions/ }).click();
 });
 
 test("gets the teammate's new version, keeping your changes", async () => {

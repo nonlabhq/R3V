@@ -786,7 +786,8 @@
 
     <nav>
       <button class:on={tab === "overview"} onclick={() => (tab = "overview")}>
-        {t("Overview")} {#if st.changes.length}<span class="count">{st.changes.length}</span>{/if}
+        {t("Versions")}{#if st.changes.length}<span class="dot" title={tn(st.changes.length, "{n} change not committed", "{n} changes not committed")}
+          aria-label={tn(st.changes.length, "{n} change not committed", "{n} changes not committed")}></span>{/if}
       </button>
       <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
       {#if settings}
@@ -1051,7 +1052,8 @@
   nav { display: flex; gap: var(--sp-4); padding: var(--sp-10) var(--sp-24) 0; border-bottom: var(--border-width) solid var(--line); }
   nav button { border: none; background: transparent; border-radius: var(--radius) var(--radius) 0 0; padding: var(--sp-8) var(--sp-14); color: var(--muted); border-bottom: 2px solid transparent; }
   nav button.on { color: var(--text); border-bottom-color: var(--accent); }
-  .count { margin-left: var(--sp-4); font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); }
+  /* changes not committed yet: a dot by Versions (how many on hover) */
+  nav .dot { display: inline-block; width: 7px; height: 7px; margin-left: var(--sp-6); vertical-align: 2px; border-radius: 50%; background: var(--accent); }
 
   main { flex: 1; overflow: auto; padding: var(--sp-16) var(--sp-24) var(--sp-32); }
   main.reading { opacity: .45; transition: opacity .2s; }

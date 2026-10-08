@@ -22,7 +22,7 @@
       ["Enter · Backspace", t("Open a folder · go up (Files tab)")],
       ["Space", t("Play or pause the audio shown")],
     ] },
-    { title: t("Overview"), keys: [
+    { title: t("Versions"), keys: [
       ["↑ ↓", t("The next or previous version in the graph")],
       ["Ctrl+scroll", t("Spread the graph out or pack it in")],
     ] },

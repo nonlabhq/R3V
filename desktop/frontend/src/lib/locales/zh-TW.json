@@ -1444,5 +1444,7 @@
 "Data & Config": "資料與設定",
 "Documents": "文件",
 "Fonts": "字型",
-"Archives": "壓縮檔"
+"Archives": "壓縮檔",
+"{n} change not committed": "{n} 項變更尚未提交",
+"{n} changes not committed": "{n} 項變更尚未提交"
 }
