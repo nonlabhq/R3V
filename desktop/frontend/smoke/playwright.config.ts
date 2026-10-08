@@ -13,6 +13,9 @@ const repo = fileURLToPath(new URL("../../..", import.meta.url));
 export default defineConfig({
   testDir: ".",
   timeout: 60_000,
+  // A server build just made starts slowly the first time (Windows scans a
+  // new program): what the steps wait for gets longer than the default.
+  expect: { timeout: 15_000 },
   workers: 1, // one demo team: the steps change it, in order
   reporter: [["list"]],
   use: {
