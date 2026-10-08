@@ -121,6 +121,15 @@ describe("HistoryGraph", () => {
     expect(onScreen()).toBeLessThan(24);
   });
 
+  it("glows where the files are now: your changes, else the version you're on", async () => {
+    show({ pending: 1 });
+    expect(document.querySelector(".node.now")?.getAttribute("data-id")).toBe("pending");
+    cleanup();
+    show();
+    expect(document.querySelectorAll(".node.now")).toHaveLength(1);
+    expect(document.querySelector(".node.now")?.classList.contains("here")).toBe(true);
+  });
+
   it("moves through your changes and the versions with ↑ ↓", async () => {
     const { onselect } = show({ pending: 1, selected: "pending" });
     await fireEvent.keyDown(screen.getByRole("listbox"), { key: "ArrowDown" });

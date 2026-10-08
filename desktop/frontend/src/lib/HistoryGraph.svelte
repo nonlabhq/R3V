@@ -405,7 +405,7 @@
       {/each}
 
       {#if pending}
-        <button class="node pending" class:on={selected === "pending"} data-id="pending" role="option"
+        <button class="node pending now" class:on={selected === "pending"} data-id="pending" role="option"
           aria-selected={selected === "pending"} style:left="{x(pendAt.col)}px" style:top="{yRow(0)}px"
           style:--c="var(--lane-{pendAt.color})" title={t("Your changes")} aria-label={t("Your changes")}
           onclick={() => onselect("pending")}>+</button>
@@ -413,7 +413,7 @@
       {#each versions as v (v.id)}
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
-        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:incoming={incoming.has(v.id)}
+        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:now={v.id === head && !pending} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
@@ -510,8 +510,8 @@
   .node.pic { line-height: 0; } /* (the img is round itself: the flag may stick out) */
   .node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
   .node.here { background: var(--c); color: var(--bg); }
-  /* the version your files are on: a glow in its branch's colour */
-  .node.here { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 75%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--c) 40%, transparent)); }
+  /* where your files are now (your changes, else the version you're on): a glow in its branch's colour */
+  .node.now { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 75%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--c) 40%, transparent)); }
   .node.here.pic { box-shadow: 0 0 0 2px var(--c); }
   .node.incoming { border-style: dashed; color: var(--muted); }
   .node.side { opacity: .75; }
