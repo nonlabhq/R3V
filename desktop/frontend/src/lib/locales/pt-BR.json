@@ -1429,5 +1429,8 @@
 "Cancel the merge?": "Cancelar a mesclagem?",
 "The decisions you made are forgotten and nothing changes.": "As decisões que você tomou são esquecidas e nada muda.",
 "Keep deciding": "Continuar decidindo",
-"Not in this version": "Não está nesta versão"
+"Not in this version": "Não está nesta versão",
+"Merge back to main": "Mesclar de volta na main",
+"Merge this version into main": "Mesclar esta versão na main",
+"Go to main, then merge this version into it": "Ir para a main e mesclar esta versão nela"
 }

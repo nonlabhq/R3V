@@ -678,6 +678,20 @@ describe("ProjectView: review fixes", () => {
     expect(screen.queryByText("Branch name")).toBeNull();
   });
 
+  it("merges a version back to main from its card: main first, when on another branch", async () => {
+    const history = (onMain: boolean) => [version("i1", "idea work", { parents: ["h0"], inBranch: !onMain, branches: ["idea"] }),
+      version("h0", "v1", { parents: [] })];
+    await show({ branch: "idea", head: "i1", history: history(false) });
+    api.SwitchBranch.mockResolvedValue(result("moved"));
+    api.PreviewMergeVersion.mockResolvedValue({ action: "merge", message: "Merge idea", versions: [], changes: [], conflicts: [] });
+    // once switched, the project is on main
+    api.State.mockResolvedValue(state({ branch: "main", head: "h0", history: history(true) }));
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^idea work,/ }));
+    await fireEvent.click(await screen.findByRole("button", { name: "Merge back to main" }));
+    await waitFor(() => expect(api.SwitchBranch).toHaveBeenCalledWith(ROOT, "main", false));
+    await waitFor(() => expect(api.PreviewMergeVersion).toHaveBeenCalledWith(ROOT, "i1"));
+  });
+
   it("doesn't show the error of a version picked before", async () => {
     await show({ history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     let fail!: (e: Error) => void;

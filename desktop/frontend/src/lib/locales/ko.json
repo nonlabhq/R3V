@@ -1429,5 +1429,8 @@
 "Cancel the merge?": "병합을 취소할까요?",
 "The decisions you made are forgotten and nothing changes.": "지금까지 한 결정은 잊히고 아무것도 바뀌지 않습니다.",
 "Keep deciding": "계속 결정하기",
-"Not in this version": "이 버전에는 없음"
+"Not in this version": "이 버전에는 없음",
+"Merge back to main": "main에 다시 병합",
+"Merge this version into main": "이 버전을 main에 병합",
+"Go to main, then merge this version into it": "main으로 이동한 뒤 이 버전을 병합"
 }

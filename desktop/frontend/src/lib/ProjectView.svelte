@@ -575,6 +575,27 @@
     }
   }
 
+  // A version merged back into main (from its card): on main, merged as any
+  // version; elsewhere, main first (as switching branches does), then
+  // merged once the project is on main.
+  let mergeOnMain = $state("");
+  function mergeBackToMain(v: Version) {
+    if (st?.branch === "main") return openVersionMerge(v);
+    mergeOnMain = v.id;
+    run({
+      name: "switch",
+      call: (_res, force) => api.SwitchBranch(root, "main", force),
+      done: () => toast(t("Now working on “{branch}”", { branch: bl("main") }) + reopen(), "ok", 8000),
+    });
+  }
+  $effect(() => {
+    const id = mergeOnMain;
+    if (!id || st?.branch !== "main") return;
+    mergeOnMain = "";
+    const v = st.history.find((x) => x.id === id);
+    if (v) openVersionMerge(v);
+  });
+
   function switchTo(name: string) {
     run({
       name: "switch",
@@ -829,6 +850,9 @@
                 title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo")}</button>
               <button disabled={!st!.remoteUrl || isNew || v.notHere} onclick={() => newBranchFrom(v)}
                 title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch")}</button>
+              <button disabled={!st!.remoteUrl || !!st!.olderVersion || isNew || (st!.branch === "main" && v.inBranch) || !st!.branches.some((b) => b.name === "main")}
+                onclick={() => mergeBackToMain(v)}
+                title={st!.branch === "main" ? t("Merge this version into main") : t("Go to main, then merge this version into it")}><ActionIcon name="merge" />{t("Merge back to main")}</button>
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
