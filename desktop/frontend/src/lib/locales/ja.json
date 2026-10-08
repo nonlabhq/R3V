@@ -1432,5 +1432,11 @@
 "Not in this version": "このバージョンにはありません",
 "Merge back to main": "main にマージして戻す",
 "Merge this version into main": "このバージョンを main にマージ",
-"Go to main, then merge this version into it": "main に切り替えてから、このバージョンをマージ"
+"Go to main, then merge this version into it": "main に切り替えてから、このバージョンをマージ",
+"No files here or below match “{text}”.": "ここと下の階層に「{text}」に一致するファイルはありません。",
+"No files of these kinds here or below.": "ここと下の階層にこの種類のファイルはありません。",
+"Kinds of file": "ファイルの種類",
+"No files here.": "ここにはファイルがありません。",
+"Show every kind": "すべての種類を表示",
+"{n} found here and below": "ここと下の階層で {n} 件"
 }
