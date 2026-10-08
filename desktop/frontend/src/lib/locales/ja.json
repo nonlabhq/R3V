@@ -1438,5 +1438,11 @@
 "Kinds of file": "ファイルの種類",
 "No files here.": "ここにはファイルがありません。",
 "Show every kind": "すべての種類を表示",
-"{n} found here and below": "ここと下の階層で {n} 件"
+"{n} found here and below": "ここと下の階層で {n} 件",
+"Video": "動画",
+"3D": "3D",
+"Data & Config": "データと設定",
+"Documents": "ドキュメント",
+"Fonts": "フォント",
+"Archives": "アーカイブ"
 }

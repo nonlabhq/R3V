@@ -237,7 +237,7 @@
     <MergeSetPreview {root} file={x.file} version={v?.id ?? ""} track={x.track} {color} name={nameOf(x)} />
   {:else}
     <div class="summary">
-      <FileIcon kind={fileKind(x.file)} faint={(which === "ours" ? oursDid(x) : theirsDid(x)) === "deleted"} />
+      <FileIcon path={x.file} kind={fileKind(x.file)} faint={(which === "ours" ? oursDid(x) : theirsDid(x)) === "deleted"} />
       <span class="what">
         <span class="file" title={x.file}>{kindOf(x) === "set" ? x.unit : x.file}</span>
         <span class="faint">{kindOf(x) === "set" ? x.file + " · " : ""}{did(x, which)}</span>

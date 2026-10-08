@@ -6,7 +6,8 @@
   import { branchGraph } from "./branchGraph";
   import { branchLabel, branchLane } from "./branches";
   import { initial } from "./palette";
-  import { baseName, isChanged, toolOf } from "./files";
+  import { baseName, isChanged } from "./files";
+  import FileIcon from "./FileIcon.svelte";
 
   // The Files tab's file panel: the file large, where it is, what you
   // changed (when you did), and its history; a version picked in the
@@ -34,7 +35,6 @@
 
   const label = (h: FileVersion) => `“${h.version.message || h.version.short}”`;
   let View = $derived(viewerFor(file).component);
-  let tool = $derived(toolOf(file.path));
   let pickedV = $derived(picked ? history?.find((h) => h.version.id === picked) : undefined);
   // In the version you're on (a moved file: where it was).
   let headPath = $derived(file.status === "renamed" && file.from ? file.from : file.path);
@@ -93,7 +93,7 @@
 
 <div class="fp">
   <header>
-    <span class="badge" title={tool.name || undefined}>{tool.badge}</span>
+    <span class="badge"><FileIcon path={file.path} kind={file.kind} /></span>
     <strong class="name" title={file.path}>{baseName(file.path)}</strong>
     {#if sym[file.status]}<span class="st {file.status}" title={statusName(file.status)}>{sym[file.status]}</span>{/if}
   </header>

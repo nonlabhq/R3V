@@ -410,7 +410,7 @@
               {/if}
               <button class="file {f.status}" class:on={f.path === selected}
                 onclick={() => select(f.path)} oncontextmenu={(e) => openMenu(e, f.path)} title={f.path}>
-                <FileIcon kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
+                <FileIcon path={f.path} kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
                 <span class="names">
                   <span class="fname">{name(f.path)}</span>
                   <span class="fdir">{f.status === "renamed" ? `← ${f.from}` : f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : t("Project folder")}</span>
@@ -438,7 +438,7 @@
               {/if}
               <button class="file {f.status}" class:on={f.path === selected}
                 onclick={() => select(f.path)} oncontextmenu={(e) => openMenu(e, f.path)} title={f.path}>
-                <FileIcon kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
+                <FileIcon path={f.path} kind={f.kind} faint={f.status === "ignored" || f.status === "deleted"} />
                 <span class="fname">{name(f.path)}</span>
                 {#if f.status === "renamed" && !moves.covered(f.path)}
                   <span class="from" title={t(f.edited ? "Moved from {path}, and changed" : "Moved from {path}", { path: f.from })}>← {fromLabel(f)}</span>
@@ -469,7 +469,7 @@
       {@const View = viewerFor(current).component}
       <div class="detail-h">
         <div class="title">
-          <div class="dname"><FileIcon kind={current.kind} /> {name(selected)}</div>
+          <div class="dname"><FileIcon path={current.path} kind={current.kind} /> {name(selected)}</div>
           <div class="faint small mono">{selected}</div>
           {#if current.live}<div class="faint small">{t("Saved with {app}", { app: current.live })}</div>{/if}
         </div>

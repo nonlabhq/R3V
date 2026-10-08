@@ -190,7 +190,7 @@ describe("FileExplorer", () => {
   it("shows a Type column, resizes columns, and hides them from the head's menu", async () => {
     await show();
     await fireEvent.click(screen.getByRole("button", { name: "List view" }));
-    expect(row("Song.als").textContent).toContain("ALS · Live Set");
+    expect(row("Song.als").textContent).toContain("ALS · Project");
     const head = document.querySelector<HTMLElement>(".row.head")!;
     expect(head.style.gridTemplateColumns).toBe("30px minmax(120px, 1fr) 110px 40px 80px 160px");
     const grip = head.querySelectorAll<HTMLElement>(".grip")[0];

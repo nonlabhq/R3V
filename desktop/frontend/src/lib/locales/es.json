@@ -1438,5 +1438,11 @@
 "Kinds of file": "Tipos de archivo",
 "No files here.": "No hay archivos aquí.",
 "Show every kind": "Mostrar todos los tipos",
-"{n} found here and below": "{n} encontrados aquí y debajo"
+"{n} found here and below": "{n} encontrados aquí y debajo",
+"Video": "Vídeo",
+"3D": "3D",
+"Data & Config": "Datos y configuración",
+"Documents": "Documentos",
+"Fonts": "Fuentes",
+"Archives": "Archivos comprimidos"
 }

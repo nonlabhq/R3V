@@ -4,14 +4,15 @@
   import { api, ago, errorText, formatBytes, previewURL, type MemberLook, type ProjectFile, type State, type Version } from "./api";
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
-  import FileIcon, { kindTitle } from "./FileIcon.svelte";
+  import FileIcon from "./FileIcon.svelte";
   import { onDroppedFiles, clearDropMarks } from "./filedrop";
+  import { FILE_TYPES, extOf, typeOf as fileType, typeTitle, type FileType } from "./fileTypes";
   import Avatar from "./Avatar.svelte";
   import FilePanel from "./FilePanel.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { portal } from "./portal";
   import { gridKey, navKey, ownKey, type NavRow } from "./keynav";
-  import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick, toolOf,
+  import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick,
     type Folder, type Selection } from "./files";
 
   // The Files tab, file-centred (the Overview is version-centred): the
@@ -141,11 +142,10 @@
   // (a column's left edge: the name column takes what is left)
   function resizeCol(e: PointerEvent, c: (typeof COLS)[number]) { const w0 = cols[c.key]; dragWidth(e, (dx) => (cols[c.key] = clamp(w0 - dx, c.min, 600))); }
   let colMenu = $state<{ x: number; y: number } | null>(null);
+  // "WAV · Audio"; a file of no kind, its extension alone.
   const typeOf = (f: ProjectFile) => {
-    const name = baseName(f.path);
-    const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1).toUpperCase() : "";
-    const kind = kindTitle(f.kind);
-    return ext ? `${ext} · ${kind}` : kind;
+    const ext = extOf(f.path).toUpperCase(), k = fileType(f.path);
+    return [ext, k ? typeTitle(k) : ""].filter(Boolean).join(" · ") || "—";
   };
 
   // --- the files of the folder ---
@@ -154,17 +154,17 @@
   // Searching (a name, or kinds of file picked): the folder's files and its
   // folders' files, at any depth (as a content browser does); else the
   // folder's own files.
-  let kinds = $state<string[]>([]);
+  let kinds = $state<FileType[]>([]);
   let searching = $derived(!!filter.trim() || kinds.length > 0);
   let below = $derived(dir ? files.filter((f) => f.path.startsWith(dir + "/")) : files);
-  // The kinds of file in the folder and below, with how many of each.
+  // The kinds of file in the folder and below (by extension), with how many of each.
   let kindCounts = $derived.by(() => {
-    const out = new Map<string, number>();
-    for (const f of below) out.set(f.kind, (out.get(f.kind) ?? 0) + 1);
-    return [...out].sort((a, b) => kindTitle(a[0]).localeCompare(kindTitle(b[0])));
+    const out = new Map<FileType, number>();
+    for (const f of below) { const k = fileType(f.path); if (k) out.set(k, (out.get(k) ?? 0) + 1); }
+    return FILE_TYPES.filter((k) => out.has(k)).map((k) => [k, out.get(k)!] as const);
   });
   let kindsOpen = $state(false);
-  function toggleKind(k: string) { kinds = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k]; }
+  function toggleKind(k: FileType) { kinds = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k]; }
   // Where a file found below is, from the folder shown ("" right in it).
   const whereIn = (f: ProjectFile) => { const d = dirOf(f.path); return d === dir ? "" : dir ? d.slice(dir.length + 1) : d; };
   type SortKey = "name" | "type" | "size" | "change";
@@ -173,7 +173,7 @@
   let shown = $derived.by(() => {
     const q = filter.trim().toLowerCase();
     const list = !searching ? [...here]
-      : below.filter((f) => (!q || baseName(f.path).toLowerCase().includes(q)) && (!kinds.length || kinds.includes(f.kind)));
+      : below.filter((f) => (!q || baseName(f.path).toLowerCase().includes(q)) && (!kinds.length || kinds.includes(fileType(f.path) as FileType)));
     const name = (f: ProjectFile) => baseName(f.path);
     return list.sort((a, b) => {
       const r = sort.key === "size" ? a.size - b.size : sort.key === "change" ? changeTime(a).localeCompare(changeTime(b))
@@ -509,7 +509,8 @@
             <div class="kinds-menu surface-menu" role="menu" aria-label={t("Kinds of file")}>
               {#each kindCounts as [k, n] (k)}
                 <label class="kind"><input type="checkbox" checked={kinds.includes(k)} onchange={() => toggleKind(k)} />
-                  <FileIcon kind={k} /><span class="kname">{kindTitle(k)}</span><span class="faint">{n}</span></label>
+                  <FileIcon type={k} />
+                  <span class="kname">{typeTitle(k)}</span><span class="faint">{n}</span></label>
               {:else}
                 <p class="faint none">{t("No files here.")}</p>
               {/each}
@@ -575,12 +576,11 @@
           {/each}
           {#each shown as f (f.path)}
             {@const v = last[f.path]}
-            {@const tool = toolOf(f.path)}
             <div class="row item {f.status}" role="row" aria-selected={sel.picked.includes(f.path)} data-path={f.path} class:on={sel.picked.includes(f.path)}
               style:grid-template-columns={template}
               class:focus={f.path === focus} title={f.path} tabindex="-1" onclick={(e) => pick(e, f.path)} onkeydown={() => {}} ondblclick={() => openFile(f)}
               oncontextmenu={(e) => openMenu(e, f.path, false)} ondragstart={(e) => e.preventDefault()}>
-              <span class="badge" role="gridcell" title={tool.name || undefined}>{tool.badge}</span>
+              <span class="badge" role="gridcell"><FileIcon path={f.path} kind={f.kind} faint={f.status === "deleted"} /></span>
               <span class="nm" role="gridcell">
                 {#if renaming && !renaming.dir && renaming.path === f.path}
                   <input class="rename" bind:value={renaming.value} use:nameField onkeydown={renameKey} onblur={() => finishRename(true)}
@@ -622,13 +622,12 @@
           {/each}
           {#each shown as f (f.path)}
             {@const v = last[f.path]}
-            {@const tool = toolOf(f.path)}
             <div class="card {f.status}" data-path={f.path} class:on={sel.picked.includes(f.path)} class:focus={f.path === focus} title={f.path}
               role="option" aria-selected={sel.picked.includes(f.path)} tabindex="-1"
               onclick={(e) => pick(e, f.path)} ondblclick={() => openFile(f)} oncontextmenu={(e) => openMenu(e, f.path, false)}
               ondragstart={(e) => e.preventDefault()} onkeydown={() => {}}>
               <span class="thumb">
-                <span class="ph">{#if tool.name}<span class="big-badge">{tool.badge}</span>{:else}<FileIcon kind={f.kind} />{/if}</span>
+                <span class="ph"><FileIcon path={f.path} kind={f.kind} /></span>
                 {#if f.preview && f.status !== "deleted" && !thumbFailed[f.path]}
                   <img src="{previewURL(root, f.path, '', 320)}&t={f.modified}" alt="" loading="lazy" draggable="false"
                     onerror={() => (thumbFailed[f.path] = true)} />

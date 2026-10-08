@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clickPick, folderTree, findFolder, marqueePick, toolOf } from "./files";
+import { clickPick, folderTree, findFolder, marqueePick } from "./files";
 
 const file = (path: string, status = "unchanged", kind = "other", preview = false) =>
   ({ path, status, size: 1, kind, live: "", from: "", edited: false, preview, video: false, model: false, modified: "" });
@@ -16,14 +16,6 @@ describe("files", () => {
     expect(findFolder(top, "B/D")!.changed).toBe(1);
     expect(findFolder(top, "x")!.changed).toBe(0);
     expect(findFolder(top, "B/Z")).toBeNull();
-  });
-
-  it("names the program a file is made with", () => {
-    expect(toolOf("Assets/Harbor.unity")).toEqual({ badge: "Un", name: "Unity" });
-    expect(toolOf("Song.als")).toEqual({ badge: "Lv", name: "Live" });
-    expect(toolOf("Textures/hull.psd")).toEqual({ badge: "Ps", name: "Photoshop" });
-    expect(toolOf("notes.markdown")).toEqual({ badge: "MAR", name: "" });
-    expect(toolOf("README")).toEqual({ badge: "—", name: "" });
   });
 
   it("picks with a click, Ctrl and Shift", () => {
