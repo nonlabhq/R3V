@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
-  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type Conflict, type TeamSummary,
+  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type TeamSummary,
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
   import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
@@ -33,7 +33,7 @@
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
-  import ConflictDialog from "./ConflictDialog.svelte";
+  import MergeDecisions, { type MergeKind } from "./MergeDecisions.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import LiveBlockedDialog from "./LiveBlockedDialog.svelte";
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
@@ -85,7 +85,7 @@
 
   // dialogs
   let preview = $state<{ title: string; label: string; data: Preview; run: Action; blocked: string } | null>(null);
-  let conflicts = $state<{ items: Conflict[]; run: Action; force: boolean } | null>(null);
+  let conflicts = $state<{ result: Result; run: Action; force: boolean } | null>(null);
   let liveBlocked = $state<{ run: Action; resolutions: Record<string, string>; set: string } | null>(null);
   let newBranch = $state<string | null>(null);
   // What a branch is called (its key where the team keeps no names).
@@ -99,7 +99,10 @@
   let keepOpen = $state<string | null>(null); // message for "Make this the latest version"
 
   type Action = { name: string; call: (res: Record<string, string>, force: boolean) => Promise<Result | null>;
-    done: (r: Result) => void; message?: string };
+    done: (r: Result) => void; message?: string;
+    // What decisions it may ask for are about (else the team's versions
+    // coming in): the branch or version merged, the version undone.
+    merge?: { kind: MergeKind; branch?: string; version?: string } };
 
   // Teammates committed on this branch while you were working: preview, then
   // combine, put your work on a branch, or discard it.
@@ -277,7 +280,7 @@
       } else if (r.liveRunning) {
         liveBlocked = { run: a, resolutions, set: r.openSet };
       } else if (r.conflicts.length) {
-        conflicts = { items: r.conflicts, run: a, force }; // keep a "Live is closed" confirmation
+        conflicts = { result: r, run: a, force }; // keep a "Live is closed" confirmation
       } else {
         a.done(r);
         if (r.takenBack?.length) toast(takenBackText(r.takenBack) + " " + t("It's taken out of your files too.") + reopen(), "info", 10000);
@@ -515,6 +518,7 @@
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
         run: {
           name: "merge",
+          merge: { kind: "merge", branch: name },
           call: (res, force) => api.MergeBranch(root, name, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
             ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
@@ -541,6 +545,7 @@
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
         run: {
           name: "merge",
+          merge: { kind: "merge", branch: v.branches[0] ?? "", version: label },
           call: (res, force) => api.MergeVersion(root, v.id, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
             ? t("“{into}” already has {from}", { into: bl(st?.branch ?? ""), from: label }) : t("Merged {from} into {into} and shared it", { from: label, into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
@@ -656,6 +661,7 @@
     run({
       name: "undo",
       message: msg,
+      merge: { kind: "undo", version },
       call: (res, force) => api.UndoCommit(root, v.id, msg, res, force),
       done: (r) => toast((r.action === "saved-locally" ? t("Undone: a new version takes back “{version}”", { version })
         : t("Undone and shared: a new version takes back “{version}”", { version })) + reopen(), "ok", 8000),
@@ -958,7 +964,11 @@
 
   {#if conflicts}
     {@const c = conflicts}
-    <ConflictDialog conflicts={c.items} onclose={() => (conflicts = null)}
+    {@const m = c.run.merge}
+    <MergeDecisions conflicts={c.result.conflicts} ours={c.result.ours} theirs={c.result.theirs} combined={c.result.combined ?? []}
+      kind={m?.kind ?? "update"} {root} project={st?.name ?? ""} me={st?.author ?? ""} ourBranch={st?.branch ?? ""}
+      theirBranch={m?.kind === "merge" ? (m.branch ?? "") : ""} version={m?.version ?? ""} branches={st?.branches} {looks}
+      onclose={() => (conflicts = null)}
       onresolve={(res) => { const { run: action, force } = c; conflicts = null; run(action, res, force); }} />
   {/if}
 
