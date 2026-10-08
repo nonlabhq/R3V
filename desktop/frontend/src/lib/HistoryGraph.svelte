@@ -536,20 +536,22 @@
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   /* A branch's label: its name (picks its newest version); with settings,
-     a ⋯ grows out of its right end on hover (taking no room otherwise). */
+     a ⋯ floats just outside its right end on hover (the label keeps its
+     size and frame). */
   .label { position: absolute; border: var(--border-width) solid var(--line); border-radius: var(--radius);
     background: var(--panel); line-height: 1.2; }
   .label:hover { border-color: var(--c); z-index: 2; }
   .label button { position: absolute; margin: 0; border: none; border-radius: 0; background: transparent; }
   .lpick { inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 var(--sp-8); border-radius: var(--radius) !important; }
   .label .lpick:hover:not(:disabled) { background: transparent; }
-  .lset { top: calc(var(--border-width) * -1); bottom: calc(var(--border-width) * -1); left: calc(100% - var(--radius));
-    width: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 0 0 0 var(--radius) !important;
-    color: var(--c); font-size: var(--fs-sm); cursor: pointer; background: var(--panel) !important; z-index: -1;
-    border: var(--border-width) solid transparent !important; border-left: none !important;
-    border-radius: 0 var(--radius) var(--radius) 0 !important; transition: width .12s; }
-  .label:hover .lset, .lset:focus-visible { width: calc(22px + var(--radius)); border-color: var(--c) !important; }
-  .label .lset:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 18%, var(--panel)) !important; }
+  /* (from the label's edge, so the pointer crosses to it without leaving) */
+  .lset { top: 50%; left: 100%; transform: translateY(-50%); width: 26px; height: 22px; padding: 0 0 0 var(--sp-4) !important;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .12s; }
+  .lset span { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    color: var(--c); font-size: var(--fs-sm); background: var(--panel-2); box-shadow: var(--shadow-pop); }
+  .label:hover .lset, .lset:focus-visible { opacity: 1; pointer-events: auto; }
+  .label .lset:hover:not(:disabled) { background: transparent; }
+  .lset:hover span { background: color-mix(in srgb, var(--c) 22%, var(--panel-2)); }
   .bname { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--c); max-width: 100%;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
