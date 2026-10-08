@@ -202,13 +202,15 @@
     if (!v) return null;
     const c = g.chainOf.get(v.id)!;
     // To the left of the dot, centred on it: the pointer can go up and down
-    // the versions without the card in the way. The little arrow points at
-    // the dot. (In the window: over the sidebar if it comes to that.)
+    // the versions without the card in the way. No room on the left (the
+    // window's edge): to its right, never over the dot. The little arrow
+    // points at the dot. (In the window: over the sidebar if it comes to that.)
     const nx = origin.left + panX + x(c.col), ny = origin.top + panY + y(v.id), gap = 22;
     const vh = typeof window === "undefined" ? 800 : window.innerHeight;
-    const left = Math.max(8, nx - gap - CARD_W);
+    const right = nx - gap - CARD_W < 8;
+    const left = right ? nx + gap : nx - gap - CARD_W;
     const top = Math.min(Math.max(8, ny - cardHeight / 2), Math.max(8, vh - 8 - cardHeight));
-    return { v, branch: c.name, left, top, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
+    return { v, branch: c.name, left, top, right, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
   });
 
   // At first (and on double-click): main in the middle, a short history in
@@ -447,7 +449,7 @@
     {/if}
     {#if card}
       {@const v = card.v}
-      <div class="card surface-menu" role="group" aria-label={v.message || t("(no description)")} use:portal
+      <div class="card surface-menu" class:right={card.right} role="group" aria-label={v.message || t("(no description)")} use:portal
         style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
         bind:clientHeight={cardHeight} onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
         <span class="arrow" aria-hidden="true"></span>
@@ -516,6 +518,7 @@
   .arrow { position: absolute; right: -6px; top: var(--ay); width: 10px; height: 10px; margin-top: -5px;
     transform: rotate(45deg); background: var(--surface-menu);
     border-right: var(--border-width) solid var(--line); border-top: var(--border-width) solid var(--line); }
+  .card.right .arrow { right: auto; left: -6px; transform: rotate(-135deg); }
   .card-h { display: flex; gap: var(--sp-10); align-items: flex-start; }
   .avatar { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--c); display: flex;
     align-items: center; justify-content: center; font-size: var(--fs-xs); font-weight: var(--fw-semibold); }

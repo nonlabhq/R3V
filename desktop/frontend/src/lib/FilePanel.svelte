@@ -60,6 +60,29 @@
     "main", st.head, (n) => branchLane(st.branches, n)).chainOf);
   const branchOf = (id: string) => chainOf.get(id)?.name || st.branch;
 
+  // The line above the history is dragged to share the panel's height
+  // (remembered on this computer).
+  const TOP_KEY = "r3v.filePanelTop";
+  let topH = $state((() => { try { return Number(localStorage.getItem(TOP_KEY)) || 320; } catch { return 320; } })());
+  let bodyH = $state(0);
+  let topPx = $derived(bodyH ? Math.round(Math.min(Math.max(140, topH), Math.max(140, bodyH - 120))) : topH);
+  function resizeTop(e: PointerEvent) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const y0 = e.clientY, h0 = topPx;
+    const move = (m: PointerEvent) => { if (!(m.buttons & 1)) return up(); topH = Math.round(h0 + m.clientY - y0); };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      topH = topPx;
+      try { localStorage.setItem(TOP_KEY, String(topH)); } catch { /* not remembered */ }
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+
   function open() {
     api.OpenInLive(root, file.path).catch((e) => toast(errorText(e), "error"));
   }
@@ -75,7 +98,8 @@
     {#if sym[file.status]}<span class="st {file.status}" title={statusName(file.status)}>{sym[file.status]}</span>{/if}
   </header>
 
-  <div class="body">
+  <div class="body" bind:clientHeight={bodyH}>
+    <div class="top" style:height={file.status === "ignored" ? undefined : `${topPx}px`}>
     <div class="preview">
       {#if file.status === "ignored"}
         <p class="muted">{t("R3V doesn't keep this file in versions: the project's rules leave it out (see the project's settings, ⚙ at the top).")}</p>
@@ -99,8 +123,11 @@
         <View {root} {file} a={file.status === "deleted" ? null : nowSide} b={hadOne ? headSide : null} compare={true} {stamp} />
       </section>
     {/if}
+    </div>
 
     {#if file.status !== "ignored"}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="hsplit" onpointerdown={resizeTop}></div>
       <section class="history">
         <h3>{t("History of this file")}</h3>
         {#if history === null}
@@ -151,8 +178,13 @@
   .st.added { background: var(--add-soft); color: var(--add); }
   .st.deleted { background: var(--del-soft); color: var(--del); }
   .st.renamed { background: var(--warn-soft); color: var(--warn); }
-  .body { flex: 1; min-height: 0; overflow: auto; }
-  .preview { margin: 0 var(--sp-18); min-height: 120px; max-height: 260px; overflow: auto; border-radius: var(--radius-lg);
+  .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  /* the file (and your changes) above, its history below: the line between them is dragged */
+  .top { flex: none; min-height: 0; overflow: auto; }
+  .hsplit { flex: none; height: 9px; margin: -4px 0; position: relative; z-index: 1; cursor: row-resize; touch-action: none; }
+  .hsplit:hover, .hsplit:active { background: linear-gradient(to bottom, transparent 4px, var(--accent) 4px, var(--accent) 5px, transparent 5px); }
+  .history { flex: 1; min-height: 0; overflow: auto; }
+  .preview { margin: 0 var(--sp-18); min-height: 120px; overflow: auto; border-radius: var(--radius-lg);
     background: var(--bg-sunken); padding: var(--sp-8); }
   .preview > p { padding: var(--sp-12); }
   .meta { margin: var(--sp-10) var(--sp-18) var(--sp-14); font-size: var(--fs-sm); color: var(--muted); overflow-wrap: anywhere; }

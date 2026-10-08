@@ -43,7 +43,8 @@ const version = (id: string, message: string, author: string, time: string) =>
 const st = { name: "Song", head: "h2", branch: "main", branches: [], history: [], changes: [] } as unknown as State;
 
 const treeNames = () => [...document.querySelectorAll(".tree .folder .fname")].map((n) => n.textContent);
-const rowNames = () => [...document.querySelectorAll(".row.item .fname, .card .cname")].map((n) => n.textContent);
+const rowNames = () => [...document.querySelectorAll(".row.item:not(.sub) .fname, .card:not(.sub) .cname")].map((n) => n.textContent);
+const subNames = () => [...document.querySelectorAll(".row.sub .fname, .card.sub .cname")].map((n) => n.textContent);
 const row = (name: string) => [...document.querySelectorAll<HTMLElement>("[data-path]")].find((r) => r.dataset.path?.endsWith(name))!;
 
 beforeEach(() => {
@@ -70,7 +71,8 @@ const folder = (name: string) => screen.getAllByRole("button").find((b) => b.cla
 describe("FileExplorer", () => {
   it("lists only folders on the left, with the changed files inside each", async () => {
     await show();
-    expect(treeNames()).toEqual(["Art", "Samples"]); // (the project's own folder: "./")
+    expect(treeNames()).toEqual(["Song", "Art", "Samples"]); // (the project's own folder on a row of its own)
+    expect(document.querySelector(".tree-line")).not.toBeNull();
     expect(screen.getByText("3 changed")).toBeTruthy(); // Song.als, Loop 10.wav, cover.png
     expect(folder("Samples").querySelector(".pill")?.textContent).toBe("1");
     expect(folder("Art").querySelector(".pill")?.textContent).toBe("1");
@@ -94,6 +96,12 @@ describe("FileExplorer", () => {
     expect(document.querySelector(".area.grid")).not.toBeNull(); // and the next time
     await fireEvent.click(screen.getByRole("button", { name: "List view" }));
     expect(document.querySelector(".area.list")).not.toBeNull();
+    // a folder's own folders are listed too, and open with a click
+    expect(subNames()).toEqual(["Loops"]);
+    expect(document.querySelector(".row.sub .msg")?.textContent).toBe("2 files");
+    await fireEvent.click(document.querySelector<HTMLElement>(".row.sub")!);
+    expect(rowNames()).toEqual(["Loop 10.wav", "Loop 2.wav"]);
+    await fireEvent.click(folder("Samples"));
     // inner folders open in the tree; the path above the files goes back up
     expect(treeNames()).toContain("Loops");
     await fireEvent.click(folder("Loops"));
@@ -104,9 +112,9 @@ describe("FileExplorer", () => {
 
   it("filters the folder's files and sorts by size", async () => {
     await show();
-    await fireEvent.input(screen.getByPlaceholderText("Filter in ./"), { target: { value: "not" } });
+    await fireEvent.input(screen.getByPlaceholderText("Filter in Song"), { target: { value: "not" } });
     expect(rowNames()).toEqual(["notes.txt"]);
-    await fireEvent.input(screen.getByPlaceholderText("Filter in ./"), { target: { value: "" } });
+    await fireEvent.input(screen.getByPlaceholderText("Filter in Song"), { target: { value: "" } });
     await fireEvent.click(screen.getByRole("columnheader", { name: "Size" }));
     expect(rowNames()).toEqual(["Song.als", "notes.txt"]); // biggest first
     await fireEvent.click(screen.getByRole("columnheader", { name: "Size" }));
@@ -117,7 +125,7 @@ describe("FileExplorer", () => {
     await show();
     await fireEvent.click(folder("Art"));
     await fireEvent.click(screen.getByRole("button", { name: "List view" }));
-    await fireEvent.click(screen.getByRole("button", { name: "./" }));
+    await fireEvent.click(document.querySelector<HTMLElement>(".crumb.home")!);
     const picked = () => [...document.querySelectorAll<HTMLElement>("[data-path][aria-selected=true]")].map((r) => r.dataset.path);
     await fireEvent.click(row("Song.als"));
     expect(picked()).toEqual(["Song.als"]);
