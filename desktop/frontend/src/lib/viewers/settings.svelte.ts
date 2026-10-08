@@ -25,3 +25,10 @@ export function setAllTracks(on: boolean) {
   setLook.allTracks = on;
   write("r3v.setAllTracks", on ? "1" : "0");
 }
+
+// Markdown notes: as they read, or as text.
+export const mdLook = $state({ text: read("r3v.mdText") === "1" });
+export function setMdText(on: boolean) {
+  mdLook.text = on;
+  write("r3v.mdText", on ? "1" : "0");
+}

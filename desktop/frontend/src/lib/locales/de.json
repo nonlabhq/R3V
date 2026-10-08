@@ -1446,5 +1446,6 @@
 "Fonts": "Schriften",
 "Archives": "Archive",
 "{n} change not committed": "{n} Änderung nicht committet",
-"{n} changes not committed": "{n} Änderungen nicht committet"
+"{n} changes not committed": "{n} Änderungen nicht committet",
+"Not a text file.": "Keine Textdatei."
 }

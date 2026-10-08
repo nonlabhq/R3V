@@ -1446,5 +1446,6 @@
 "Fonts": "글꼴",
 "Archives": "압축 파일",
 "{n} change not committed": "커밋하지 않은 변경 {n}개",
-"{n} changes not committed": "커밋하지 않은 변경 {n}개"
+"{n} changes not committed": "커밋하지 않은 변경 {n}개",
+"Not a text file.": "텍스트 파일이 아닙니다."
 }

@@ -1446,5 +1446,6 @@
 "Fonts": "Fontes",
 "Archives": "Arquivos compactados",
 "{n} change not committed": "{n} alteração não confirmada",
-"{n} changes not committed": "{n} alterações não confirmadas"
+"{n} changes not committed": "{n} alterações não confirmadas",
+"Not a text file.": "Não é um arquivo de texto."
 }
