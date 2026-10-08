@@ -132,6 +132,92 @@ func (a *App) FileHistory(root, file string) ([]FileVersion, error) {
 	return out, nil
 }
 
+// lastChanges keeps LastChanges by project and version (a version's
+// history never changes).
+var lastChanges = struct {
+	sync.Mutex
+	m map[string]map[string]Version
+}{m: map[string]map[string]Version{}}
+
+// maxLastChange: how far back LastChanges looks; older files show none.
+const maxLastChange = 2000
+
+// LastChanges tells, for each file in the version the project is on, the
+// newest version that changed it (along the branch's first parents), for
+// the Files tab's "last change".
+func (a *App) LastChanges(root string) (map[string]Version, error) {
+	r, unlock, err := a.open(root)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+	head := r.Head()
+	if head == "" {
+		return map[string]Version{}, nil
+	}
+	key := root + "|" + head
+	lastChanges.Lock()
+	cached := lastChanges.m[key]
+	lastChanges.Unlock()
+	if cached == nil {
+		if cached, err = lastChangesOf(r, head); err != nil {
+			return nil, err
+		}
+		lastChanges.Lock()
+		if len(lastChanges.m) > 50 {
+			lastChanges.m = map[string]map[string]Version{}
+		}
+		lastChanges.m[key] = cached
+		lastChanges.Unlock()
+	}
+	names := a.memberNames(r)
+	out := make(map[string]Version, len(cached))
+	for p, v := range cached {
+		if n := names[v.AuthorID]; n != "" {
+			v.Author = n
+		}
+		out[p] = v
+	}
+	return out, nil
+}
+
+func lastChangesOf(r *project.Repo, head string) (map[string]Version, error) {
+	m, err := r.Load(head)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]Version{}
+	want := make(map[string]bool, len(m.Files))
+	for _, f := range m.Files {
+		want[f.Path] = true
+	}
+	left := len(want)
+	for n := 0; m != nil && left > 0 && n < maxLastChange; n++ {
+		var parent *project.Manifest
+		if len(m.Parents) > 0 {
+			if parent, err = r.Load(m.Parents[0]); err != nil {
+				parent = nil // not on this computer: what is left came in here
+			}
+		}
+		var before map[string]string
+		if parent != nil {
+			before = make(map[string]string, len(parent.Files))
+			for _, f := range parent.Files {
+				before[f.Path] = f.Hash
+			}
+		}
+		for _, f := range m.Files {
+			if _, done := out[f.Path]; done || !want[f.Path] || (before != nil && before[f.Path] == f.Hash) {
+				continue
+			}
+			out[f.Path] = toVersion(m, nil)
+			left--
+		}
+		m = parent
+	}
+	return out, nil
+}
+
 // FileDiff describes how a set changed between two versions ("" for from:
 // the set was added), as diff lines.
 func (a *App) FileDiff(root, file, from, to string) ([]string, error) {

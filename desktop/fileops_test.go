@@ -212,3 +212,24 @@ func TestCopyIntoProject(t *testing.T) {
 		}
 	}
 }
+
+// Each file's last change: the newest version that changed it.
+func TestLastChanges(t *testing.T) {
+	root := localSong(t)
+	t.Cleanup(waitTidy)
+	a := NewApp()
+	if _, err := a.Save(root, "first", true, nil, true, nil); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(root, "Samples", "kick.wav"), []byte("RIFF-kick-2"), 0o644)
+	if _, err := a.Save(root, "second", true, nil, true, nil); err != nil {
+		t.Fatal(err)
+	}
+	last, err := a.LastChanges(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if last["Song.als"].Message != "first" || last["Samples/kick.wav"].Message != "second" {
+		t.Errorf("last changes: %+v", last)
+	}
+}
