@@ -6,7 +6,9 @@
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
   import ProjectView from "./lib/ProjectView.svelte";
-  import NewTab from "./lib/NewTab.svelte";
+  import TeamHome from "./lib/TeamHome.svelte";
+  import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
+  import { moveKey, readOrder, sortByOrder } from "./lib/order";
   import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
     type TabRef, type TabSnap } from "./lib/tabs";
   import { cssColor, initial, pickFor } from "./lib/palette";
@@ -92,17 +94,8 @@
   const openLabel = (p: TeamProject, rel: string) => (rel === "." ? p.name : rel);
 
   const SELECTED_KEY = "r3v.selected";
-  // Pinned projects come first in the list (this computer only).
-  const PINNED_KEY = "r3v.pinned";
-  let pinned = $state<string[]>((() => {
-    try { const v = JSON.parse(localStorage.getItem(PINNED_KEY) ?? "[]"); return Array.isArray(v) ? v.filter((k) => typeof k === "string") : []; } catch { return []; }
-  })());
-  function togglePin(p: TeamProject) {
-    const key = rowKey(p);
-    pinned = pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key];
-    try { localStorage.setItem(PINNED_KEY, JSON.stringify(pinned)); } catch { /* not remembered */ }
-  }
   const DOWNLOAD_DIR_KEY = "r3v.downloadDir";
+  const readJSON = (k: string): unknown => { try { return JSON.parse(localStorage.getItem(k) ?? "null"); } catch { return null; } };
   const remember = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* not persisted */ } };
   const recall = (k: string) => { try { return localStorage.getItem(k) ?? ""; } catch { return ""; } };
 
@@ -243,36 +236,63 @@
   }
 
   let current = $derived(overview?.teams.find((t) => t.id === overview?.currentTeam));
-  // Every project is a team's (0.9: no projects kept on this computer only).
-  let entries = $derived.by(() => {
-    const list = overview?.projects ?? [];
-    const pin = (p: TeamProject) => (pinned.includes(rowKey(p)) ? 0 : 1);
-    return [...list].sort((a, b) => pin(a) - pin(b)); // stable: pinned first, the rest as they come
-  });
+  // Every project is a team's (0.9: no projects kept on this computer only),
+  // in the order dragged in the sidebar (each team its own, this computer
+  // only).
+  const orderKey = (team: string) => `r3v.order:${team}`;
+  let order = $state<string[]>([]);
+  $effect.pre(() => { order = readOrder(readJSON(orderKey(overview?.currentTeam ?? ""))); });
+  // (by the project's id: it stays when the project is downloaded)
+  const orderOf = (p: TeamProject) => p.id || p.root;
+  let entries = $derived(sortByOrder(overview?.projects ?? [], orderOf, order));
   let selectedEntry = $derived(
     entries.find((p) => (selected.root ? p.root === selected.root : !!selected.id && p.id === selected.id && !p.root)));
+
+  // The team's home (a click on the team): shown instead of a project, no
+  // tab picked; its projects, or its settings.
+  let home = $state(false);
+  let homeSection = $state<"projects" | "settings">("projects");
+  function goHome(section: "projects" | "settings" = "projects") {
+    home = true;
+    homeSection = section;
+  }
+  // A team's settings: the shown team's in its home, another's in a dialog.
+  function openTeamSettings(team: TeamSummary) {
+    if (team.id === overview?.currentTeam) goHome("settings");
+    else teamSettingsFor = team;
+  }
+
+  // Projects opened last, of any team, newest first (the quick launcher
+  // offers them).
+  const RECENT_KEY = "r3v.recent";
+  let recent = $state<{ team: string; key: string }[]>((() => {
+    const v = readJSON(RECENT_KEY);
+    return Array.isArray(v) ? v.filter((x) => x && typeof x.team === "string" && typeof x.key === "string") : [];
+  })());
 
   function select(p: TeamProject) {
     selected = p.root ? { root: p.root } : { id: p.id };
     if (p.root) remember(SELECTED_KEY, p.root);
-    blank = "";
+    home = false;
     openTab(p);
+    if (teamId) {
+      recent = [{ team: teamId, key: rowKey(p) }, ...recent.filter((x) => !(x.team === teamId && x.key === rowKey(p)))].slice(0, 12);
+      remember(RECENT_KEY, JSON.stringify(recent));
+    }
   }
 
   // Projects open as tabs at the top: one list for every team (remembered;
   // drag one to move it). The sidebar opens one of its team's, or goes to it
   // when it is open already; a tab of another team switches the sidebar to
-  // that team first ("the sidebar follows the tab"). A new tab ("new:…",
-  // Ctrl+T or +) picks a team and a project to open in it; new tabs aren't
-  // remembered.
+  // that team first ("the sidebar follows the tab"). Ctrl+T or + opens the
+  // quick launcher (a project or a team's home, of any team).
   const TABS_KEY = "r3v.tabs";
-  const readJSON = (k: string): unknown => { try { return JSON.parse(localStorage.getItem(k) ?? "null"); } catch { return null; } };
   const savedTabs = readJSON(TABS_KEY);
   let tabs = $state<TabRef[]>(loadTabs(savedTabs, []));
   // Before one list for all, each team had its own: the first team shown
   // starts the list (the others' old lists are left as they were).
   let migrateTabs = savedTabs === null;
-  let blank = $state(""); // the new tab shown ("" a project's)
+  let launching = $state(false); // the quick launcher open
   let tabsClosed = $state(false); // every tab closed: nothing is picked for you
   let switching = $state(false); // going to another team's tab: nothing is picked for you
   let teamId = $derived(overview?.currentTeam ?? "");
@@ -305,7 +325,7 @@
   type Tab = { id: string; key: string; team: string; p?: TeamProject; snap?: TabSnap };
   let tabItems = $derived(tabs.map((x): Tab | null => {
     const id = tabId(x);
-    if (isNewTab(x.key)) return { id, key: x.key, team: "" };
+    if (isNewTab(x.key)) return null; // (new tabs were before the quick launcher)
     if (x.team !== teamId) return x.p ? { id, key: x.key, team: x.team, snap: x.p } : null;
     const p = entries.find((e) => rowKey(e) === x.key);
     return p ? { id, key: x.key, team: x.team, p } : null;
@@ -317,7 +337,7 @@
   const tabTitle = (team: string, p: { name: string; root: string }) =>
     [team ? `${team} · ${p.name}` : p.name, p.root].filter(Boolean).join("\n");
   // (by key: reading the overview again makes new project objects)
-  const activeTab = (x: Tab) => (x.p ? !blank && !!selectedEntry && rowKey(selectedEntry) === x.key : !x.team && blank === x.key);
+  const activeTab = (x: Tab) => !!x.p && !home && !!selectedEntry && rowKey(selectedEntry) === x.key;
   function saveTabs() { remember(TABS_KEY, JSON.stringify(toSave(tabs))); }
   const isOpen = (p: TeamProject) => tabs.some((x) => x.team === teamId && x.key === rowKey(p));
   function openTab(p: TeamProject) {
@@ -332,25 +352,31 @@
     tabs = renameTab(tabs, teamId, from, to);
     saveTabs();
   }
-  function newTab() {
-    const key = `new:${Date.now()}`;
-    tabs = [...tabs, { team: "", key }];
-    blank = key;
-    tabsClosed = false;
-  }
-  // From a new tab: the project takes its place (or its own tab, if open).
-  function openHere(p: TeamProject) {
-    const here = blank;
-    tabs = isOpen(p) ? tabs.filter((x) => x.key !== here)
-      : tabs.map((x) => (x.key === here ? { team: teamId, key: rowKey(p), p: snapOf(p) } : x));
-    saveTabs();
-    select(p);
+  // From the quick launcher: a team's home, or a project (its team shown
+  // first).
+  async function launch(pick: LaunchPick) {
+    launching = false;
+    if (pick.team !== teamId) {
+      switching = true;
+      try {
+        await api.SelectTeam(pick.team);
+        await reload();
+      } catch (e) {
+        toast(errorText(e), "error");
+        return;
+      } finally {
+        switching = false;
+      }
+    }
+    const want = pick.project;
+    if (!want) return goHome();
+    const p = entries.find((e) => rowKey(e) === rowKey(want)) ?? entries.find((e) => !!want.id && e.id === want.id);
+    if (p) select(p);
   }
   // Another team's tab: that team is shown (as the team menu does), then its
   // project, once the team lists it.
   async function goTab(x: Tab) {
     if (x.p) return select(x.p);
-    if (!x.team) { blank = x.key; return; }
     switching = true;
     try {
       await api.SelectTeam(x.team);
@@ -388,8 +414,7 @@
     if (!wasActive) return;
     if (n?.p) select(n.p);
     else if (n?.team) { selected = {}; goTab(n); }
-    else if (n) blank = n.key;
-    else { selected = {}; blank = ""; tabsClosed = true; }
+    else { selected = {}; tabsClosed = true; goHome(); }
   }
   // Dragging a tab moves it among the others (a drag isn't a click). It
   // ends when the button is let go, wherever, or the drag is cancelled.
@@ -421,6 +446,44 @@
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
   }
+  // Dragging a project in the sidebar moves it (a drag isn't a click); the
+  // order is kept for its team on this computer.
+  let projDrag: { key: string; y: number; moved: boolean } | null = null;
+  let projDragged = false;
+  let dragging = $state(""); // the project being dragged (drawn lifted)
+  function projDown(e: PointerEvent, key: string) {
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".more, .row-menu")) return;
+    const list = (e.currentTarget as HTMLElement).closest("[data-projects]");
+    projDrag = { key, y: e.clientY, moved: false };
+    const move = (m: PointerEvent) => {
+      if (!projDrag) return;
+      if (!(m.buttons & 1)) return up();
+      if (!projDrag.moved && Math.abs(m.clientY - projDrag.y) < 5) return;
+      projDrag.moved = true;
+      dragging = projDrag.key;
+      const rows = [...(list?.querySelectorAll<HTMLElement>("[data-key]") ?? [])];
+      let to = rows.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientY < r.top + r.height / 2; });
+      if (to < 0) to = rows.length;
+      const keys = entries.map(orderOf);
+      const moved = moveKey(keys, projDrag.key, to);
+      if (moved !== keys) order = moved;
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      if (projDrag?.moved) {
+        projDragged = true;
+        remember(orderKey(teamId), JSON.stringify(order));
+        setTimeout(() => (projDragged = false));
+      }
+      projDrag = null;
+      dragging = "";
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
   // The sidebar folds to the logo and a button to open it again (remembered).
   const SIDEBAR_KEY = "r3v.sidebar";
   let folded = $state(recall(SIDEBAR_KEY) === "folded");
@@ -431,7 +494,7 @@
 
   // Keep a valid selection when the team or the list changes.
   $effect(() => {
-    if (!overview || selectedEntry || tabsClosed || blank || switching) return;
+    if (!overview || selectedEntry || tabsClosed || home || switching) return;
     const last = recall(SELECTED_KEY);
     const pick = untrack(() => tabItems).find((x) => x.p)?.p ?? entries.find((p) => p.root && p.root === last) ??
       entries.find((p) => p.status === "downloaded") ?? entries[0];
@@ -627,7 +690,7 @@
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "t" && overview && !onboarding
       && !e.repeat && !document.querySelector("[aria-modal='true']") && !(e.target as HTMLElement).closest?.("input, textarea, [contenteditable]")) {
       e.preventDefault();
-      newTab();
+      launching = !launching;
     }
     if (e.key === "Escape" && rowMenu) { e.preventDefault(); rowMenu = ""; }
     tabKeysDown(e);
@@ -663,19 +726,31 @@
   <div class="shell" class:folded>
     <aside>
       {#if folded}
+      <!-- folded: the same rows as unfolded, so nothing moves when it folds -->
       <div class="aside-top folded-top">
         <button class="logo" onclick={() => (appSettings = true)} title={t("R3V settings")} aria-label={t("R3V settings")}>
           <img src="/brand/r3v-icon-small.svg" alt="" />
           {#if update || current?.keysUnreadable || overview.teamError}<span class="news" title={t("Open the sidebar to see what's new")}></span>{/if}
         </button>
+      </div>
+      {#if current}
+        <div class="team-slot">
+          <button class="team-mark" class:on={home} onclick={() => goHome()} title={current.name} aria-label={current.name}
+            style:--c={cssColor(pickFor(current.id))}>{initial(current.name)}</button>
+        </div>
+      {/if}
+      <div class="section-slot">
         <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\\)"} aria-label={t("Show the sidebar")}>»</button>
       </div>
       <!-- folded: the projects as their icons -->
-      <div class="folded-list">
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+      <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
         {#each entries as p (p.root || p.id)}
-          <button class="folded-proj" class:on={!blank && selectedEntry === p} onclick={() => select(p)} title={p.name} aria-label={p.name}>
-            <ProjectIcon {p} size={28} />
-          </button>
+          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} onpointerdown={(e) => projDown(e, orderOf(p))}>
+            <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)} title={p.name} aria-label={p.name}>
+              <ProjectIcon {p} size={30} />
+            </button>
+          </div>
         {/each}
         <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
@@ -695,7 +770,7 @@
       {:else}
       <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
-        <img src="/brand/r3v-icon-small.svg" alt="" /><img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
+        <img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
       </button>
       <!-- the version, short (0.1.3, and Nightly); in full in its tooltip, copied on a click -->
@@ -706,26 +781,10 @@
       {/if}
       <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
-      {#if update}
-        {@const u = update}
-        <div class="update">
-          <div class="update-h">
-            <span>{t("{app} {version} is available", { app: `R3V${edition ? ` ${edition}` : ""}`, version: u.version })}</span>
-            {#if !u.required}
-              <button class="ghost x" title={t("Hide until the next version")}
-                onclick={() => { remember(DISMISSED_KEY, u.version); update = null; }}>✕</button>
-            {/if}
-          </div>
-          {@render updateActions(u)}
-        </div>
-      {/if}
-      <TeamMenu {overview} {reload} bind:settingsFor={teamSettingsFor} />
-      {#if current?.keysUnreadable}
-        <p class="keys-warn">{t("This computer can't read the keys of “{team}” (R3V's settings came from another computer or Windows user). Enter them again in the team's settings (⚙).", { team: current.name })}</p>
-      {/if}
+      <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onsettings={openTeamSettings} /></div>
 
       <div class="list">
-        <div class="section row-h">
+        <div class="section row-h section-slot">
           <span>{t("Projects")}</span>
           {#if current}
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
@@ -736,7 +795,8 @@
         {:else if current && !overview.teamChecked}
           <div class="offline checking">● {t("checking…")}</div>
         {/if}
-        <ul>
+        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+        <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each entries as p (p.root || p.id)}
             {@render row(p)}
           {:else}
@@ -747,6 +807,27 @@
           <span>+ {t("Add project")}</span>
           <span class="hint">{t("Select project folder")}</span>
         </button>
+      </div>
+      <!-- what needs you: R3V's update, the team's asks (kept below the
+           projects, so they stay where they are folded or not) -->
+      <div class="notices">
+        {#if update}
+          {@const u = update}
+          <div class="update">
+            <div class="update-h">
+              <span>{t("{app} {version} is available", { app: `R3V${edition ? ` ${edition}` : ""}`, version: u.version })}</span>
+              {#if !u.required}
+                <button class="ghost x" title={t("Hide until the next version")}
+                  onclick={() => { remember(DISMISSED_KEY, u.version); update = null; }}>✕</button>
+              {/if}
+            </div>
+            {@render updateActions(u)}
+          </div>
+        {/if}
+        {#if current?.keysUnreadable}
+          <p class="keys-warn">{t("This computer can't read the keys of “{team}” (R3V's settings came from another computer or Windows user). Enter them again in the team's settings (⚙).", { team: current.name })}</p>
+        {/if}
+        <TeamMenu {overview} {reload} part="notices" onhome={() => goHome()} onsettings={openTeamSettings} />
       </div>
       <!-- who you are in this team, and the app's settings -->
       <div class="user">
@@ -775,32 +856,33 @@
           onclickcapture={(e) => { if (tabDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each tabItems as x (x.id)}
             {@const proj = x.p ?? x.snap}
-            {@const name = proj ? proj.name : t("New tab")}
+            {@const name = proj?.name ?? ""}
             {@const team = teamOf(x.team)}
             <div class="tab" class:on={activeTab(x)} onpointerdown={(e) => tabDown(e, x.id)}>
               <button class="tab-name" role="tab" aria-selected={activeTab(x)}
                 title={proj ? tabTitle(team?.name ?? "", proj) : name}
                 onclick={() => goTab(x)}>
-                {#if proj}<ProjectIcon p={proj} size={16} />{:else}<span class="tab-icon" aria-hidden="true">+</span>{/if}{name}
+                {#if proj}<ProjectIcon p={proj} size={16} />{/if}{name}
                 {#if manyTeams && team}<span class="tab-team" style:--c={cssColor(pickFor(team.id))} aria-hidden="true">{initial(team.name)}</span>{/if}
               </button>
               <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
                 title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
             </div>
           {/each}
-          <button class="tab-add" onclick={newTab} aria-label={t("New tab")} title={t("New tab (Ctrl+T)")}>+</button>
+          <button class="tab-add" class:on={launching} onclick={() => (launching = !launching)} aria-label={t("Open a project or team…")}
+            title={t("Open a project or team…") + " (Ctrl+T)"}>+</button>
         </div>
         {@render winControls()}
       </div>
       <div class="content-body">
-      {#if blank}
-        <NewTab {overview} projects={entries} open={isOpen} {reload} onopen={openHere}
-          onadd={addToTeam} adding={busy === "add"} />
+      {#if current && (home || !selectedEntry)}
+        <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
+          adding={busy === "add"} {reload} canMove={nightly} bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
             onsettings={() => (settingsFor = selectedEntry ?? null)}
-            entry={selectedEntry} onteamsettings={(team) => (teamSettingsFor = team)}
+            entry={selectedEntry} onteamsettings={openTeamSettings}
             settings={settingsTab}
             firstShare={firstShare === selectedEntry.root} onfirstshared={() => (firstShare = "")}
             downloaded={justDownloaded === selectedEntry.root} ondownloadseen={() => (justDownloaded = "")} />
@@ -893,13 +975,13 @@
 {/snippet}
 
 {#snippet row(p: TeamProject)}
-  <li>
-    <button class="proj {p.status}" class:on={!blank && selectedEntry === p} onclick={() => select(p)}
+  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} onpointerdown={(e) => projDown(e, orderOf(p))}>
+    <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)}
       class:locked={p.status === "remote" && teamLocked}
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.root}>
       <ProjectIcon {p} size={24} />
       <span class="text">
-        <span class="name">{p.name}{#if pinned.includes(rowKey(p))}<svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label={t("Pinned")}><title>{t("Pinned")}</title><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>{/if}</span>
+        <span class="name">{p.name}</span>
         <span class="meta" class:busy={p.root && activity[p.root]}>
           {p.root && activity[p.root] ? progressShort(activity[p.root]) : statusText(p.status) ?? `⑂ ${p.branchLabel || p.branch}`}
         </span>
@@ -910,7 +992,6 @@
       onclick={() => toggleMenu(p)}>⋯</button>
     {#if rowMenu === rowKey(p)}
       <div class="row-menu surface-menu" role="menu">
-        <button class="item" onclick={() => { rowMenu = ""; togglePin(p); }}>{pinned.includes(rowKey(p)) ? t("Unpin") : t("Pin to top")}</button>
         {#if menuInfo && menuInfo.openable.length === 1}
           <button class="item" onclick={() => openIn(p, menuInfo!.openable[0])}>{t("Open in {tool}", { tool: toolName(menuInfo.tool) })}</button>
         {:else if menuInfo && menuInfo.openable.length > 1}
@@ -940,6 +1021,9 @@
 
 
 <Tooltip />
+{#if launching && overview}
+  <QuickLaunch teams={overview.teams} current={teamId} {recent} onpick={launch} onclose={() => (launching = false)} />
+{/if}
 {#if keysHelp}<KeysHelp onclose={() => (keysHelp = false)} />{/if}
 {#if queue.open}
   <UploadQueue names={Object.fromEntries(entries.filter((p) => p.root).map((p) => [p.root, p.name]))} onclose={() => (queue.open = false)} />
@@ -1030,8 +1114,16 @@
 {#if nightly}<StyleLab />{/if}
 
 <style>
-  .shell { display: grid; grid-template-columns: 250px 1fr; height: 100%; }
-  .shell.folded { grid-template-columns: 52px 1fr; }
+  .shell { display: grid; grid-template-columns: 256px 1fr; height: 100%; }
+  .shell.folded { grid-template-columns: 60px 1fr; }
+  /* Folded or not, the rows above the projects are as high, and a project
+     row too: the projects stay where they are when the sidebar folds. */
+  aside { --top-h: 40px; --team-h: 52px; --section-h: 34px; --row-h: 40px; }
+  .aside-top { height: var(--top-h); flex: none; }
+  .team-slot { min-height: var(--team-h); flex: none; display: flex; align-items: center; }
+  .team-slot > :global(*) { flex: 1; min-width: 0; }
+  .team-slot :global(.current) { height: var(--team-h); box-sizing: border-box; padding: var(--sp-6) 0; }
+  .section-slot { height: var(--section-h); box-sizing: border-box; flex: none; }
   .user { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-8) calc(var(--sp-10) * -1) calc(var(--sp-12) * -1);
     padding: var(--sp-10) var(--sp-14); border-top: var(--border-width) solid var(--line); }
   .user .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
@@ -1050,14 +1142,24 @@
   .aside-top .version { margin-bottom: var(--sp-8); }
   .fold { flex: none; padding: var(--sp-2) var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; margin-bottom: var(--sp-8); }
   .fold:hover:not(:disabled) { color: var(--text); }
-  .folded-top { flex-direction: column; margin-left: calc(var(--sp-6) * -1); margin-right: calc(var(--sp-6) * -1); }
-  .folded-top .fold { margin: 0; }
-  .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: var(--sp-6);
-    padding: var(--sp-10) 0; margin: 0 calc(var(--sp-6) * -1); }
-  .folded-proj { padding: var(--sp-4); border: var(--border-width) solid transparent; border-radius: var(--radius); background: transparent; line-height: 0; }
+  .folded-top { justify-content: center; }
+  .shell.folded .team-slot, .shell.folded .section-slot { justify-content: center; }
+  .shell.folded .section-slot { display: flex; align-items: center; }
+  .shell.folded .section-slot .fold { margin: 0; }
+  .team-mark { flex: none !important; width: 36px; height: 36px; padding: 0; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
+    font-weight: var(--fw-bold); color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); border-color: transparent; }
+  .team-mark:hover:not(:disabled) { border-color: var(--line-strong); background: color-mix(in srgb, var(--c) 28%, var(--panel)); }
+  .team-mark.on { border-color: var(--accent); }
+  .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center;
+    padding: 0; margin: 0 calc(var(--sp-6) * -1); }
+  .folded-row { height: var(--row-h); flex: none; display: flex; align-items: center; justify-content: center; }
+  .folded-proj { padding: var(--sp-2); border: var(--border-width) solid transparent; border-radius: var(--radius-lg); background: transparent; line-height: 0; }
   .folded-proj:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
-  .folded-proj.on { background: var(--panel-2); border-color: var(--line-strong); }
-  .add-icon { width: 38px; height: 38px; line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
+  .folded-proj.on { background: var(--accent-bg); border-color: var(--accent-line); }
+  .folded-proj.remote { opacity: .45; }
+  .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
+  .lifted { opacity: .55; }
+  li[data-key], .folded-row { touch-action: none; }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo { position: relative; }
   .logo img { width: 22px; height: 22px; display: block; }
@@ -1082,9 +1184,9 @@
   .dl-progress { width: 360px; max-width: 100%; margin: var(--sp-10) auto 0; display: flex; text-align: left; }
   ul { list-style: none; margin: 0; padding: 0; }
   li { display: flex; align-items: center; position: relative; }
-  .proj { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: var(--sp-6) var(--sp-28) var(--sp-6) var(--sp-10); border-radius: var(--radius-lg); text-align: left; }
+  .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--radius-lg); text-align: left; }
   .proj:hover { background: var(--panel); }
-  .proj.on { background: var(--panel-2); }
+  .proj.on { background: var(--accent-bg); }
   .icon { width: 16px; text-align: center; color: var(--accent); }
   .text { display: flex; flex-direction: column; min-width: 0; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1119,7 +1221,6 @@
   .row-menu.submenu { position: fixed; right: auto; min-width: 200px; max-width: 340px; z-index: var(--z-submenu); }
   .row-menu.submenu .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .row-menu .has-sub[aria-expanded="true"] { background: var(--hover); }
-  .pin { width: 11px; height: 11px; margin-left: var(--sp-4); color: var(--faint); vertical-align: -1px; flex: none; }
   .danger-text { color: var(--danger); }
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }
@@ -1136,7 +1237,8 @@
     font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: .04em; text-transform: uppercase; line-height: 1.5; }
   .edition { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; padding: 1px var(--sp-6);
     border-radius: var(--radius); color: var(--accent-ink); background: var(--accent); }
-  .update { margin: 0 0 var(--sp-10); padding: var(--sp-8) var(--sp-10); border-radius: var(--radius-lg); background: var(--accent-bg); border: var(--border-width) solid var(--accent-line); font-size: var(--fs-md); }
+  .notices { flex: none; display: flex; flex-direction: column; gap: var(--sp-6); }
+  .update { margin: 0; padding: var(--sp-8) var(--sp-10); border-radius: var(--radius-lg); background: var(--accent-bg); border: var(--border-width) solid var(--accent-line); font-size: var(--fs-md); }
   .update-h { display: flex; align-items: center; gap: var(--sp-6); font-weight: var(--fw-semibold); color: var(--accent); }
   .update-h span { flex: 1; }
   .update-a { display: flex; gap: var(--sp-6); margin-top: var(--sp-6); }
@@ -1170,7 +1272,6 @@
   .tab-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
     padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .tab-name:hover:not(:disabled) { background: transparent; }
-  .tab-icon { color: var(--accent); font-size: var(--fs-sm); }
   /* Which team a tab is on, once tabs of more than one are open. */
   .tab-team { flex: none; margin-left: auto; padding: 0 var(--sp-4); border-radius: var(--radius-pill); font-size: var(--fs-2xs);
     font-weight: var(--fw-semibold); line-height: 1.4; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
@@ -1178,6 +1279,7 @@
   .tab:hover .tab-x, .tab.on .tab-x { visibility: visible; }
   .tab-x:hover:not(:disabled) { background: transparent; color: var(--text); }
   .tab-add { align-self: center; border: none; background: transparent; padding: 0 var(--sp-10); font-size: var(--fs-lg); color: var(--muted); }
+  .tab-add.on { color: var(--text); }
   .tab { user-select: none; }
   .win { display: flex; align-self: stretch; }
   .win button { width: 46px; border: none; border-radius: 0; background: transparent; padding: 0; display: flex;
@@ -1193,6 +1295,6 @@
   .placeholder h1 { margin: var(--sp-6) 0; }
   .big { font-size: 44px; color: var(--faint); }
   .center { justify-content: center; }
-  .keys-warn { margin: var(--sp-6) var(--sp-12) 0; padding: var(--sp-8) var(--sp-10); border-radius: var(--radius); font-size: var(--fs-sm); line-height: 1.4;
+  .keys-warn { margin: 0; padding: var(--sp-8) var(--sp-10); border-radius: var(--radius); font-size: var(--fs-sm); line-height: 1.4;
     background: var(--warn-bg); color: var(--warn); }
 </style>

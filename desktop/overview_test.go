@@ -1,6 +1,7 @@
 package desktop
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -61,5 +62,53 @@ func TestOverviewWithTheTeamDown(t *testing.T) {
 	ov, err = a.Overview()
 	if err != nil || !ov.TeamChecked || ov.TeamError == "" || len(remotes(ov)) != 1 {
 		t.Fatalf("with the team: %+v %v", ov, err)
+	}
+}
+
+// The quick launcher looks across teams without asking them: each team's
+// projects here, and the rest as it last listed them.
+func TestAllProjects(t *testing.T) {
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	t.Cleanup(waitTidy)
+	a := NewApp()
+	one, two := s3test.New("one"), s3test.New("two")
+	defer one.Close()
+	defer two.Close()
+	t1, err := a.CreateStorageTeam(remote.Storage{Endpoint: one.URL, Bucket: "one", AccessKey: "k", SecretKey: "s"}, "One")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t2, err := a.CreateStorageTeam(remote.Storage{Endpoint: two.URL, Bucket: "two", AccessKey: "k", SecretKey: "s"}, "Two")
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := newSong(t)
+	if _, err := a.AddProjectToTeam(t1.ID, root); err != nil {
+		t.Fatal(err)
+	}
+	store, _ := teams.Load()
+	c, _ := store.Find(t2.ID).Open()
+	c.PutProject(remote.Project{ID: teams.NewID(16), Name: "Elsewhere"})
+	if err := a.SelectTeam(t2.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Overview(); err != nil { // (the team's list, remembered)
+		t.Fatal(err)
+	}
+	all, err := a.AllProjects()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string][]string{}
+	for _, tp := range all {
+		for _, p := range tp.Projects {
+			got[tp.Team] = append(got[tp.Team], p.Name+":"+p.Status)
+		}
+	}
+	if len(got[t1.ID]) != 1 || !strings.HasSuffix(got[t1.ID][0], ":downloaded") {
+		t.Errorf("team one: %v", got[t1.ID])
+	}
+	if len(got[t2.ID]) != 1 || got[t2.ID][0] != "Elsewhere:remote" {
+		t.Errorf("team two: %v", got[t2.ID])
 	}
 }

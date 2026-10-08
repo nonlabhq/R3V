@@ -36,30 +36,57 @@ afterEach(() => cleanup());
 const tabs = () => screen.queryAllByRole("tab").map((t) => t.textContent?.trim());
 
 describe("App: tabs", () => {
-  it("stays with no tab once the last is closed, when the projects are read again", async () => {
+  it("shows the team's home once the last tab is closed, also when the projects are read again", async () => {
     render(App);
     await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
     await fireEvent.click(screen.getByRole("button", { name: "Close Song" }));
-    await screen.findByText(/Pick a project on the left/);
+    await screen.findByRole("button", { name: "Team settings" });
     const reads = api.Overview.mock.calls.length;
     await fireEvent.keyDown(window, { key: "F5" }); // reads the overview again
     await waitFor(() => expect(api.Overview.mock.calls.length).toBeGreaterThan(reads));
     await new Promise((r) => setTimeout(r, 20));
     expect(tabs()).toEqual([]);
-    expect(screen.getByText(/Pick a project on the left/)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Band" })).toBeTruthy();
   });
 
-  it("opens a new tab with Ctrl+T, but not held down, nor while typing", async () => {
+  it("shows the team's home from the team, and its settings from there", async () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
-    await fireEvent.keyDown(window, { key: "t", ctrlKey: true });
+    await fireEvent.click(document.querySelector<HTMLElement>(".team-menu .switch")!);
+    expect(await screen.findByRole("heading", { name: "Band" })).toBeTruthy();
+    expect(screen.getAllByRole("tab").some((x) => x.getAttribute("aria-selected") === "true")).toBe(false);
+    await fireEvent.click(screen.getByRole("button", { name: "Team settings" }));
+    expect(await screen.findByRole("textbox", { name: "Team name" })).toBeTruthy();
+    // a project from the home opens in its tab
+    await fireEvent.click(screen.getByRole("button", { name: "Projects" }));
+    await fireEvent.click(screen.getAllByRole("button", { name: /^Beat/ }).at(-1)!);
     await waitFor(() => expect(tabs()).toHaveLength(2));
+    expect(screen.queryByRole("heading", { name: "Band" })).toBeNull();
+  });
+
+  it("opens the quick launcher with Ctrl+T, but not held down, nor while typing", async () => {
+    api.AllProjects.mockResolvedValue([{ team: "t", projects: overview().projects }]);
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
     await fireEvent.keyDown(window, { key: "t", ctrlKey: true, repeat: true });
     const field = document.createElement("input");
     document.body.append(field);
     await fireEvent.keyDown(field, { key: "t", ctrlKey: true });
     field.remove();
-    expect(tabs()).toHaveLength(2);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await fireEvent.keyDown(window, { key: "t", ctrlKey: true });
+    const search = await screen.findByRole("combobox", { name: "Open a project or team…" });
+    // a project found by its name: Enter opens it in a tab
+    await waitFor(() => expect(api.AllProjects).toHaveBeenCalled());
+    await fireEvent.input(search, { target: { value: "bea" } });
+    await waitFor(() => expect(screen.getByRole("option", { selected: true }).textContent).toContain("Beat"));
+    await fireEvent.keyDown(search, { key: "Enter" });
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    // Esc closes it
+    await fireEvent.keyDown(window, { key: "t", ctrlKey: true });
+    await fireEvent.keyDown(await screen.findByRole("combobox"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
   it("goes through, closes and reopens tabs, and folds the sidebar, with the keyboard", async () => {
@@ -129,8 +156,8 @@ describe("App: tabs of more than one team", () => {
     api.SelectTeam.mockImplementation(async (id: string) => { currentTeam = id; });
   });
   const on = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent?.trim();
-  const teamMenu = () => document.querySelector<HTMLElement>(".team-menu .switch")!;
-  const teamShown = () => teamMenu().textContent;
+  const teamMenu = () => document.querySelector<HTMLElement>(".team-menu .caret")!;
+  const teamShown = () => document.querySelector<HTMLElement>(".team-menu .switch")!.textContent;
 
   it("keeps a team's tabs when another team is picked, and goes back to it from its tab", async () => {
     render(App);
@@ -138,7 +165,9 @@ describe("App: tabs of more than one team", () => {
     await fireEvent.click(teamMenu());
     await fireEvent.click(screen.getByRole("button", { name: /Duo/ }));
     await waitFor(() => expect(teamShown()).toContain("Duo"));
-    // team b's project opens in a tab of its own, and team a's stays
+    // team b's home shows; its project opens in a tab of its own, and team a's stays
+    expect(await screen.findByRole("heading", { name: "Duo" })).toBeTruthy();
+    await fireEvent.click(screen.getAllByRole("button", { name: /^Loop/ })[0]);
     await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Loop")]));
     expect(on()).toContain("Loop");
     expect(screen.getAllByRole("tab")[0].title).toBe("Band · Song\nC:/Song");

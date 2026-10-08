@@ -16,8 +16,9 @@
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
   // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false }: {
+  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false }: {
     team: TeamSummary;
+    inline?: boolean;      // in the team's home, not a dialog
     teams?: TeamSummary[]; // the teams here (where it can move to)
     canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
     offline?: boolean; // its storage can't be reached now
@@ -107,7 +108,7 @@
   });
 
   // Folded to where it points; opened when the keys need entering again.
-  let connOpen = $state(untrack(() => team.keysUnreadable));
+  let connOpen = $state(untrack(() => !!team.keysUnreadable));
   let where = $derived(!conn ? "" : conn.storage
     ? `${conn.settings.endpoint.replace(/^https?:\/\//, "")} / ${conn.settings.bucket}${conn.settings.folder ? " / " + conn.settings.folder : ""}`
     : conn.address);
@@ -180,7 +181,7 @@
   let movingTeam = $state(false); // the move to R3V Cloud open
 </script>
 
-<Modal title={t("{team} settings", { team: team.name })} {onclose} width={620} backdropCloses={false}>
+{#snippet body()}
   <section>
     <h3>{t("Name")}</h3>
     <input bind:value={name} aria-label={t("Team name")} />
@@ -325,15 +326,29 @@
     </section>
   {/if}
 
-  {#snippet footer()}
-    <button class="ghost danger-text" onclick={() => {
+{/snippet}
+{#snippet leave()}
+  <button class="ghost danger-text" onclick={() => {
       keepProjects = true; fullHistory = false; historySize = 0; confirmDisconnect = true;
       api.HistoryDownloadSize("", team.id).then((n) => (historySize = n)).catch(() => {});
     }}>{team.hosted ? (team.noAccess ? t("Remove the team…") : t("Leave the team…")) : t("Disconnect…")}</button>
+{/snippet}
+
+{#if inline}
+  <div class="inline">
+    {@render body()}
+    <div class="inline-foot">{@render leave()}</div>
+  </div>
+{:else}
+<Modal title={t("{team} settings", { team: team.name })} {onclose} width={620} backdropCloses={false}>
+  {@render body()}
+  {#snippet footer()}
+    {@render leave()}
     <span class="spacer"></span>
     <button onclick={onclose}>{t("Close")}</button>
   {/snippet}
 </Modal>
+{/if}
 
 {#if confirmDisconnect}
   <!-- A hosted team is left (or, the account no longer in it, removed);
@@ -375,6 +390,8 @@
 {/if}
 
 <style>
+  .inline { max-width: 720px; }
+  .inline-foot { padding-top: var(--sp-12); border-top: var(--border-width) solid var(--line); }
   .move { display: flex; align-items: flex-start; gap: var(--sp-12); }
   .move p { flex: 1; margin: 0; }
   section { margin-bottom: var(--sp-18); }

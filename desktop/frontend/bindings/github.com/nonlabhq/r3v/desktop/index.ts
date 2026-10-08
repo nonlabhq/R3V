@@ -53,6 +53,7 @@ export {
     TeamMoveState,
     TeamPart,
     TeamProject,
+    TeamProjects,
     TeamSummary,
     TextChanges,
     TextContent,
