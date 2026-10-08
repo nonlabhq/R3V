@@ -10,7 +10,6 @@
   import FilePanel from "./FilePanel.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { portal } from "./portal";
-  import { branchLabel, branchLane } from "./branches";
   import { gridKey, navKey, ownKey, type NavRow } from "./keynav";
   import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick, toolOf,
     type Folder, type Selection } from "./files";
@@ -73,8 +72,8 @@
     }
   });
 
-  // --- the folder tree (the project's own folder is no row: its folders
-  // are the first level, and its files show with none picked, "./") ---
+  // --- the folder tree: the project's own folder on a row of its own (a
+  // line under it), then its folders, the first level not indented ---
   let open = $state<Record<string, boolean>>({});
   const isOpen = (p: string) => p === "" || (open[p] ?? (dir === p || dir.startsWith(p + "/")));
   type TreeRow = { f: Folder; depth: number };
@@ -103,7 +102,6 @@
 
   // --- widths (this computer, every project): the folders, the file
   // panel, and the list's columns (some hidden) ---
-  const ROOT = "./";
   let widths = $state(remember("r3v.filesWidths", { tree: 228, panel: 400 }));
   type ColKey = "type" | "status" | "size" | "change";
   const COLS: { key: ColKey; label: () => string; min: number }[] = [
@@ -168,6 +166,20 @@
   });
   let order = $derived(shown.map((f) => f.path));
   let hereSize = $derived(here.reduce((n, f) => n + f.size, 0));
+  // The folder's own folders, listed before its files (a click opens one),
+  // with what is in them.
+  let sizes = $derived.by(() => {
+    const out = new Map<string, number>();
+    for (const f of files) for (let d = dirOf(f.path); d; d = dirOf(d)) out.set(d, (out.get(d) ?? 0) + f.size);
+    return out;
+  });
+  let subfolders = $derived.by(() => {
+    const q = filter.trim().toLowerCase();
+    const list = findFolder(tree, dir)?.folders ?? [];
+    return q ? list.filter((f) => f.name.toLowerCase().includes(q)) : list;
+  });
+  const insideText = (f: Folder) => [f.folders.length ? tn(f.folders.length, "{n} folder", "{n} folders") : "",
+    f.files ? tn(f.files, "{n} file", "{n} files") : ""].filter(Boolean).join(" · ") || t("Empty");
   function sortBy(k: SortKey) {
     if (sort.key === k) sort.desc = !sort.desc;
     else sort = { key: k, desc: k !== "name" };
@@ -401,7 +413,6 @@
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"), renamed: t("Moved") } as Record<string, string>)[s] ?? "";
   let changedTotal = $derived(tree.changed);
   const emptyText = () => filter ? t("No files here match “{text}”.", { text: filter })
-    : findFolder(tree, dir)?.folders.length ? t("No files right in this folder: its folders are on the left.")
     : t("No files in this folder. Drop files here to copy them in.");
   let thumbFailed = $state<Record<string, boolean>>({});
 </script>
@@ -421,6 +432,16 @@
       {#if changedTotal}<span class="faint">{tn(changedTotal, "{n} changed", "{n} changed")}</span>{/if}
     </div>
     <ul>
+      <li class="root-row">
+        <span class="chev"></span>
+        <button class="folder" class:on={dir === ""} title={st.name} data-file-drop-target={dropAt("")} data-root={root} data-dir=""
+          onclick={() => pickDir("")} ondragstart={(e) => e.preventDefault()}>
+          <FileIcon kind="folder" open={dir === ""} />
+          <span class="fname">{st.name}</span>
+          {#if tree.changed}<span class="pill" title={tn(tree.changed, "{n} changed file inside", "{n} changed files inside")}>{tree.changed}</span>{/if}
+        </button>
+      </li>
+      {#if treeRows.length}<li class="tree-line" aria-hidden="true"></li>{/if}
       {#each treeRows as { f, depth } (f.path)}
         <li style:padding-left="{depth * 16}px">
           {#if f.folders.length && f.path !== ""}
@@ -452,7 +473,7 @@
   <section class="area-card card-box" style:--panel-w="{panelPx}px" bind:clientWidth={cardW}>
     <div class="files">
       <div class="toolbar">
-        <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : ROOT })}
+        <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : st.name })}
           aria-label={t("Filter")} />
         <div class="modes" role="group" aria-label={t("Display")}>
           <button class:on={mode === "list"} aria-pressed={mode === "list"} onclick={() => (mode = "list")} title={t("List view")} aria-label={t("List view")}>
@@ -464,10 +485,11 @@
         </div>
       </div>
       <p class="crumbs">
-        <button class="crumb" class:at={!dir} onclick={() => pickDir("")} title={st.name}>{ROOT}</button>
+        <button class="crumb home" class:at={!dir} onclick={() => pickDir("")} title={st.name} aria-label={st.name}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.75 4.25v8a1 1 0 0 0 1 1h10.5a1 1 0 0 0 1-1v-6.5a1 1 0 0 0-1-1H8L6.5 3.25H2.75a1 1 0 0 0-1 1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" /></svg>
+        </button>
         {#each crumbs as c (c.path)}<span class="sep">›</span><button class="crumb" class:at={c.path === dir} onclick={() => pickDir(c.path)}>{c.name}</button>{/each}
-        <span class="faint"> · {tn(here.length, "{n} file", "{n} files")} · {formatBytes(hereSize)} · {t("on")}</span>
-        <span class="branch" style:--c="var(--lane-{branchLane(st.branches, st.branch)})"><span class="dot"></span>{branchLabel(st.branches, st.branch)}</span>
+        <span class="faint"> · {tn(here.length, "{n} file", "{n} files")} · {formatBytes(hereSize)}</span>
       </p>
 
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
@@ -490,6 +512,20 @@
               </span>
             {/each}
           </div>
+          {#each subfolders as d (d.path)}
+            <div class="row item sub" role="row" tabindex="-1" style:grid-template-columns={template} title={d.path}
+              onclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => openMenu(e, d.path, true)}
+              data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
+              <span class="badge folder-badge" role="gridcell"><FileIcon kind="folder" /></span>
+              <span class="nm" role="gridcell"><span class="fname">{d.name}</span><span class="msg">{insideText(d)}</span></span>
+              {#each shownCols as c (c.key)}
+                {#if c.key === "type"}<span class="type faint" role="gridcell">{t("Folder")}</span>
+                {:else if c.key === "status"}<span role="gridcell">{#if d.changed}<span class="pill" title={tn(d.changed, "{n} changed file inside", "{n} changed files inside")}>{d.changed}</span>{/if}</span>
+                {:else if c.key === "size"}<span class="num faint" role="gridcell">{formatBytes(sizes.get(d.path) ?? 0)}</span>
+                {:else}<span role="gridcell"></span>{/if}
+              {/each}
+            </div>
+          {/each}
           {#each shown as f (f.path)}
             {@const v = last[f.path]}
             {@const tool = toolOf(f.path)}
@@ -523,9 +559,19 @@
               {/each}
             </div>
           {:else}
-            <p class="muted empty">{emptyText()}</p>
+            {#if !subfolders.length}<p class="muted empty">{emptyText()}</p>{/if}
           {/each}
         {:else}
+          {#each subfolders as d (d.path)}
+            <div class="card sub" role="option" aria-selected="false" tabindex="-1" title={d.path}
+              onclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => openMenu(e, d.path, true)}
+              data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
+              <span class="thumb"><span class="ph"><FileIcon kind="folder" /></span>
+                {#if d.changed}<span class="pill corner">{d.changed}</span>{/if}</span>
+              <span class="cname">{d.name}</span>
+              <span class="cmeta"><span class="faint">{insideText(d)}</span></span>
+            </div>
+          {/each}
           {#each shown as f (f.path)}
             {@const v = last[f.path]}
             {@const tool = toolOf(f.path)}
@@ -553,7 +599,7 @@
               </span>
             </div>
           {:else}
-            <p class="muted empty">{emptyText()}</p>
+            {#if !subfolders.length}<p class="muted empty">{emptyText()}</p>{/if}
           {/each}
         {/if}
         {#if marquee}
@@ -645,6 +691,13 @@
   .tree-h .faint { text-transform: none; letter-spacing: 0; font-weight: normal; }
   .tree ul { flex: 1; min-height: 0; overflow: auto; list-style: none; margin: 0; padding: 0; }
   .tree li { display: flex; align-items: center; }
+  .tree-line { height: var(--border-width); margin: var(--sp-6) var(--sp-8); background: var(--line); }
+  .row.sub, .card.sub { cursor: pointer; }
+  .folder-badge { background: transparent; color: var(--muted); }
+  .card.sub .ph :global(svg) { width: 48px; height: 48px; }
+  .crumb.home { display: inline-flex; align-items: center; padding: var(--sp-2); border-radius: var(--radius-sm); }
+  .crumb.home:hover { color: var(--text); background: var(--hover); }
+  .crumb.home svg { width: 15px; height: 15px; }
   .chev { flex: none; width: 18px; height: 22px; padding: 0; border: none; background: transparent; display: inline-flex; align-items: center; justify-content: center; }
   .chev svg { width: 10px; height: 10px; color: var(--muted); transition: transform .12s; }
   .chev svg.open { transform: rotate(90deg); }
@@ -671,8 +724,6 @@
   .crumb { border: none; background: transparent; padding: 0; color: var(--muted); font-size: var(--fs-sm); }
   .crumb.at { color: var(--text); font-weight: var(--fw-semibold); }
   .sep { color: var(--faint); }
-  .branch { display: inline-flex; align-items: center; gap: var(--sp-4); color: var(--c); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 
   .area { position: relative; flex: 1; min-height: 0; overflow: auto; padding-bottom: var(--sp-16); user-select: none; }
   .area:focus { outline: none; }

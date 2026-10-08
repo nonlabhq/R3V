@@ -1366,5 +1366,8 @@
 "Back to now": "Volver a ahora",
 "History of this file": "Historial de este archivo",
 "No files right in this folder: its folders are on the left.": "No hay archivos directamente en esta carpeta: sus carpetas están a la izquierda.",
-"Status": "Estado"
+"Status": "Estado",
+"{n} folder": "{n} carpeta",
+"{n} folders": "{n} carpetas",
+"Empty": "Vacía"
 }
