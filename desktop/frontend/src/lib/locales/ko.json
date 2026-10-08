@@ -1438,5 +1438,11 @@
 "Kinds of file": "파일 종류",
 "No files here.": "여기에 파일이 없습니다.",
 "Show every kind": "모든 종류 표시",
-"{n} found here and below": "여기와 그 아래에서 {n}개 찾음"
+"{n} found here and below": "여기와 그 아래에서 {n}개 찾음",
+"Video": "동영상",
+"3D": "3D",
+"Data & Config": "데이터 및 설정",
+"Documents": "문서",
+"Fonts": "글꼴",
+"Archives": "압축 파일"
 }

@@ -1438,5 +1438,11 @@
 "Kinds of file": "檔案類型",
 "No files here.": "這裡沒有檔案。",
 "Show every kind": "顯示所有類型",
-"{n} found here and below": "這裡和底下找到 {n} 個"
+"{n} found here and below": "這裡和底下找到 {n} 個",
+"Video": "影片",
+"3D": "3D",
+"Data & Config": "資料與設定",
+"Documents": "文件",
+"Fonts": "字型",
+"Archives": "壓縮檔"
 }

@@ -57,27 +57,6 @@ export function findFolder(top: Folder, path: string): Folder | null {
 /** The files right in a folder. */
 export const filesIn = (files: ProjectFile[], dir: string) => files.filter((f) => dirOf(f.path) === dir);
 
-// The programs files are made with: a short badge, and the name "Open in"
-// says (only for files a program owns; others open in what Windows picks).
-const tools: [RegExp, string, string][] = [
-  [/\.als$/i, "Lv", "Live"], [/\.(alc|adg|adv|agr|ams)$/i, "Lv", "Live"],
-  [/\.(unity|prefab|asset|mat|anim|controller)$/i, "Un", "Unity"],
-  [/\.(uasset|umap|uproject)$/i, "Ue", "Unreal"],
-  [/\.(tscn|tres|godot|gd)$/i, "Gd", "Godot"],
-  [/\.blend$/i, "Bl", "Blender"], [/\.psd$/i, "Ps", "Photoshop"], [/\.c4d$/i, "C4", "Cinema 4D"],
-  [/\.m[ab]$/i, "My", "Maya"], [/\.hip(nc|lc)?$/i, "Hd", "Houdini"], [/\.kra$/i, "Kr", "Krita"],
-  [/\.(afphoto|afdesign)$/i, "Af", "Affinity"],
-];
-
-/** The file's program badge (else its extension) and the program's name ("" when none). */
-export function toolOf(path: string): { badge: string; name: string } {
-  const hit = tools.find(([re]) => re.test(path));
-  if (hit) return { badge: hit[1], name: hit[2] };
-  const name = baseName(path);
-  const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1) : "";
-  return { badge: ext.slice(0, 3).toUpperCase() || "—", name: "" };
-}
-
 export type Selection = { picked: string[]; anchor: string };
 
 /** A click on key: alone, Ctrl toggles it, Shift picks the range from the anchor. */

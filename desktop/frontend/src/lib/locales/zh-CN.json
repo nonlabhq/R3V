@@ -1438,5 +1438,11 @@
 "Kinds of file": "文件类型",
 "No files here.": "这里没有文件。",
 "Show every kind": "显示所有类型",
-"{n} found here and below": "这里及其下层找到 {n} 个"
+"{n} found here and below": "这里及其下层找到 {n} 个",
+"Video": "视频",
+"3D": "3D",
+"Data & Config": "数据与配置",
+"Documents": "文档",
+"Fonts": "字体",
+"Archives": "压缩包"
 }
