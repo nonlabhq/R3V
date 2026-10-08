@@ -76,3 +76,17 @@ test("opens the project's settings", async () => {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByText(/rules|Rules/).first()).toBeVisible();
 });
+
+test("opens the team's home, and a project from the quick launcher", async () => {
+  await page.locator(".team-menu .switch").click();
+  await expect(page.getByRole("heading", { name: "Demo Band" })).toBeVisible();
+  await page.getByRole("button", { name: "Team settings" }).click();
+  await expect(page.getByRole("textbox", { name: "Team name" })).toBeVisible();
+  await page.keyboard.press("Control+t");
+  const search = page.getByRole("combobox", { name: "Open a project or team…" });
+  await expect(search).toBeFocused();
+  await search.fill("moon");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Moonrise" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});

@@ -7,7 +7,7 @@
 
   const groups = () => [
     { title: t("Window and tabs"), keys: [
-      ["Ctrl+T", t("New tab")],
+      ["Ctrl+T", t("Open a project or team…")],
       ["Ctrl+W", t("Close the tab")],
       ["Ctrl+Shift+T", t("Open the tab closed last again")],
       ["Ctrl+Tab · Ctrl+Shift+Tab", t("Next and previous tab")],

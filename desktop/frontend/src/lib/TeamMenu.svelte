@@ -5,11 +5,17 @@
   import Modal from "./Modal.svelte";
   import JoinOrCreate from "./JoinOrCreate.svelte";
   import IdentityForm from "./IdentityForm.svelte";
+  import { cssColor, initial, pickFor } from "./palette";
+  import { storageKind } from "./teamText";
 
-  // settingsFor: the team whose settings are open (the ⚙ of a team; the app
-  // shows them, so a project's header can open them too).
-  let { overview, reload, settingsFor = $bindable(null) }: {
-    overview: Overview; reload: () => Promise<void>; settingsFor?: TeamSummary | null;
+  // The team shown: a click on it opens its home (onhome; home: shown now),
+  // the caret lists the other teams. onsettings opens a team's settings
+  // (in its home).
+  // part: the team itself, or what it asks of you (signing in, your name,
+  // backups…), drawn apart (at the sidebar's foot: the projects don't move).
+  let { overview, reload, home = false, onhome, onsettings, part = "team" }: {
+    overview: Overview; reload: () => Promise<void>; home?: boolean;
+    onhome: () => void; onsettings: (team: TeamSummary) => void; part?: "team" | "notices";
   } = $props();
 
   let open = $state(false);
@@ -21,7 +27,7 @@
   // Sharing your setup not chosen yet (a member from before the option, or
   // back on a team): asked once.
   let answered = $state<Record<string, boolean>>({});
-  let shareAsk = $derived(!identityFor && !connecting && current?.askShareSetup && !answered[current.id] ? current : null);
+  let shareAsk = $derived(part === "team" && !identityFor && !connecting && current?.askShareSetup && !answered[current.id] ? current : null);
   async function answerShare(team: TeamSummary, on: boolean) {
     answered[team.id] = true;
     try {
@@ -36,7 +42,7 @@
   // week (asked again when the team settings close: one may be set up).
   let remindBackup = $state(false);
   $effect(() => {
-    const id = current?.memberId && current.isStorage && !settingsFor ? current.id : "";
+    const id = part === "notices" && current?.memberId && current.isStorage ? current.id : "";
     remindBackup = false;
     if (id) api.BackupReminder(id).then((r) => { if (current?.id === id) remindBackup = r; }).catch(() => {});
   });
@@ -68,15 +74,20 @@
     api.CloudCancelSignIn();
   }
 
+  // Another team: its home.
   async function select(id: string) {
     open = false;
     try {
-      await api.SelectTeam(id);
-      await reload();
+      if (id !== overview.currentTeam) {
+        await api.SelectTeam(id);
+        await reload();
+      }
+      onhome();
     } catch (e) {
       toast(errorText(e), "error");
     }
   }
+
 
   async function connected(t: TeamSummary) {
     connecting = false;
@@ -153,23 +164,23 @@
 
 <svelte:window onclick={(e) => { if (open && !(e.target as HTMLElement).closest(".team-menu")) open = false; }} />
 
-<div class="team-menu">
-  <!-- the team (a click lists the others), and its settings right there -->
-  <div class="current">
-    <button class="switch" onclick={() => (open = !open)} title={current?.address ?? ""} aria-haspopup="menu" aria-expanded={open}>
-      <span class="label">{tr("Team")}</span>
-      <span class="name">{current?.name ?? tr("No team")}</span>
+<div class="team-menu" class:notices={part === "notices"}>
+  {#if part === "team"}
+  <!-- the team (a click opens its home), and the others behind the caret -->
+  <div class="current" class:on={home}>
+    <button class="switch" onclick={() => { open = false; onhome(); }} title={current?.address ?? ""} aria-current={home ? "page" : undefined}>
+      {#if current}<span class="mark" style:--c={cssColor(pickFor(current.id))} aria-hidden="true">{initial(current.name)}</span>{/if}
+      <span class="tt">
+        <span class="name">{current?.name ?? tr("No team")}</span>
+        <span class="label">{current ? storageKind(current) : tr("Team")}</span>
+      </span>
     </button>
-    {#if current}
-      <button class="ghost settings" title={tr("Team settings: names, connection code, keys")} aria-label={tr("Team settings: names, connection code, keys")}
-        onclick={() => { open = false; settingsFor = current!; }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      </button>
-    {/if}
+    <button class="caret" onclick={() => (open = !open)} aria-haspopup="menu" aria-expanded={open}
+      title={tr("Switch team")} aria-label={tr("Switch team")}>
+      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
+    </button>
   </div>
+  {:else}
   {#if current?.hosted && current.signedOut}
     <button class="who" disabled={signingIn} onclick={signIn}>
       ⚠ {signingIn ? tr("Finish signing in in your browser…") : tr("Signed out of R3V-Cloud: sign in to share and update")}
@@ -200,28 +211,25 @@
     </button>
   {/if}
   {#if current?.backupFailing}
-    <button class="backup warn" onclick={() => (settingsFor = current!)}>
+    <button class="backup warn" onclick={() => (onsettings(current!))}>
       ⚠ {tr("Backups of {team} keep failing on this computer. Have a look", { team: current.name })} ›</button>
   {:else if current && remindBackup}
     <div class="backup">
-      <button class="go" onclick={() => (settingsFor = current!)}>
+      <button class="go" onclick={() => (onsettings(current!))}>
         <span>⛁ {tr("No one backs up {team} yet", { team: current.name })}</span>
         <span class="faint">{tr("Set up a backup to a drive or NAS")} ›</span>
       </button>
       <button class="ghost x" title={tr("Remind me in a week")} onclick={() => hushBackup(current!)}>✕</button>
     </div>
   {/if}
+  {/if}
   {#if open}
     <div class="menu surface-menu" role="menu">
       {#each overview.teams as t (t.id)}
-        <div class="team-row">
-          <button class="item" onclick={() => select(t.id)}>
-            <span class="check">{t.id === overview.currentTeam ? "✓" : ""}</span>
-            <span class="tname">{t.name}</span>
-          </button>
-          <button class="gear" title={tr("Team settings: names, connection code, keys")}
-            onclick={() => { open = false; settingsFor = t; }}>⚙</button>
-        </div>
+        <button class="item" onclick={() => select(t.id)}>
+          <span class="check">{t.id === overview.currentTeam ? "✓" : ""}</span>
+          <span class="tname">{t.name}</span>
+        </button>
       {/each}
       {#if overview.teams.length}<div class="sep"></div>{/if}
       <button class="item" onclick={() => { open = false; connecting = true; }}>
@@ -277,35 +285,38 @@
 
 <style>
   .noaccess { margin: 0; cursor: default; white-space: normal; line-height: 1.35; }
-  .team-menu { position: relative; margin-bottom: var(--sp-10); }
+  .team-menu { position: relative; }
+  .team-menu.notices:empty { display: none; }
+  .team-menu.notices > :global(:first-child) { margin-top: 0; }
   .backup { display: flex; align-items: flex-start; gap: var(--sp-4); width: 100%; margin-top: var(--sp-6); padding: var(--sp-6) var(--sp-8); border-radius: var(--radius);
     background: var(--panel); font-size: var(--fs-sm); text-align: left; line-height: 1.4; }
   .backup.warn { display: block; background: var(--warn-bg); color: var(--warn); }
   .backup .go { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); padding: 0; background: none; text-align: left; font-size: var(--fs-sm); color: var(--text); }
   .backup .x { padding: 0 var(--sp-4); line-height: 16px; color: var(--muted); }
-  .current { display: flex; align-items: stretch; background: var(--panel); border-radius: var(--radius-lg); }
+  .current { display: flex; align-items: stretch; gap: var(--sp-4); }
   .switch {
-    flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; padding: var(--sp-8) var(--sp-10);
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-10); text-align: left; padding: var(--sp-8) var(--sp-8);
     background: transparent; border-color: transparent; border-radius: var(--radius-lg);
   }
-  .switch:hover:not(:disabled) { background: var(--hover); border-color: transparent; }
-  .label { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
+  .switch:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
+  .current.on .switch { background: var(--accent-bg); }
+  .mark { flex: none; width: 32px; height: 32px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
+    font-weight: var(--fw-bold); color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); }
+  .tt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .label { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .settings { flex: none; align-self: center; margin-right: var(--sp-6); padding: var(--sp-6); line-height: 0; color: var(--muted); }
-  .settings:hover:not(:disabled) { color: var(--text); }
-  .settings svg { width: 18px; height: 18px; }
+  .caret { flex: none; width: 30px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--muted);
+    background: transparent; border-color: var(--line); border-radius: var(--radius-lg); }
+  .caret:hover:not(:disabled), .caret[aria-expanded="true"] { color: var(--text); background: var(--panel); }
+  .caret svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.5; }
   .menu {
-    position: absolute; top: calc(100% + 4px); left: 0; right: -60px; z-index: var(--z-menu); padding: var(--sp-6);
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: var(--z-menu); padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
   .item { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; }
   .item:hover { background: var(--hover); }
   .moved { color: var(--accent); font-size: var(--fs-sm); line-height: 1.4; }
   .moved .go { display: block; margin-top: var(--sp-4); font-size: var(--fs-sm); }
-  .team-row { display: flex; align-items: center; }
-  .team-row .item { flex: 1; min-width: 0; }
-  .gear { flex: none; border: none; background: transparent; color: var(--faint); padding: var(--sp-4) var(--sp-8); border-radius: var(--radius); }
-  .gear:hover { color: var(--text); background: var(--hover); }
   .check { width: 14px; color: var(--ok); }
   .tname { flex: 1; }
   .small { font-size: var(--fs-sm); }

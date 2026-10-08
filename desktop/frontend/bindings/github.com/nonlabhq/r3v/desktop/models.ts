@@ -2691,6 +2691,38 @@ export class TeamProject {
     }
 }
 
+/**
+ * TeamProjects is a team's projects, for looking across teams.
+ */
+export class TeamProjects {
+    "team": string;
+    "projects": TeamProject[];
+
+    /** Creates a new TeamProjects instance. */
+    constructor($$source: Partial<TeamProjects> = {}) {
+        if (!("team" in $$source)) {
+            this["team"] = "";
+        }
+        if (!("projects" in $$source)) {
+            this["projects"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TeamProjects instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TeamProjects {
+        const $$createField1_0 = $$createType21;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("projects" in $$parsedSource) {
+            $$parsedSource["projects"] = $$createField1_0($$parsedSource["projects"]);
+        }
+        return new TeamProjects($$parsedSource as Partial<TeamProjects>);
+    }
+}
+
 export class TeamSummary {
     "id": string;
     "name": string;
