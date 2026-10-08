@@ -395,3 +395,42 @@ func TestBrokerPreparedDownloads(t *testing.T) {
 		t.Errorf("a second download of a key (its URL used): %v, %d requests", err, f.urlCalls.Load())
 	}
 }
+
+// Uploads asked for ahead take one request for their URLs, not one each;
+// one whose bytes aren't those prepared asks for its own.
+func TestBrokerPreparedUploads(t *testing.T) {
+	f := newFakeCloud(t)
+	b := f.bucket(t)
+	type up struct {
+		key  string
+		data []byte
+		sum  string
+	}
+	var ups []up
+	var items []PutPrep
+	for i := range 5 {
+		key, data, sum := object(fmt.Sprintf("file %d", i))
+		ups = append(ups, up{key, data, sum})
+		items = append(items, PutPrep{key, int64(len(data)), sum})
+	}
+	b.PreparePuts(items)
+	if n := f.urlCalls.Load(); n != 1 {
+		t.Fatalf("URL requests to prepare: %d", n)
+	}
+	for _, u := range ups[1:] {
+		if err := b.Put(u.key, bytes.NewReader(u.data), int64(len(u.data)), u.sum, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := f.urlCalls.Load(); n != 1 {
+		t.Errorf("URL requests after the uploads: %d, want still 1", n)
+	}
+	other := []byte("not what was prepared")
+	s := sha256.Sum256(other)
+	if err := b.Put(ups[0].key, bytes.NewReader(other), int64(len(other)), hex.EncodeToString(s[:]), ""); err != nil {
+		t.Fatal(err)
+	}
+	if n := f.urlCalls.Load(); n != 2 {
+		t.Errorf("an upload of other bytes: %d URL requests, want 2", n)
+	}
+}
