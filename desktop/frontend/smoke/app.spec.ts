@@ -64,6 +64,19 @@ test("commits and shares your changes", async () => {
   await expect(page.getByRole("option", { name: "Your changes" })).toHaveCount(0);
 });
 
+// Alex's branch and main both changed notes.txt (Mia's line, Alex's line).
+test("merges a branch, asking about what both sides changed", async () => {
+  await page.getByRole("button", { name: /Current branch/ }).click();
+  await page.getByRole("menu").getByRole("button", { name: "half-time-chorus" }).last().click();
+  await page.getByRole("button", { name: "Merge and share" }).click();
+  const decide = page.getByRole("dialog", { name: "You and Alex both changed notes.txt" });
+  await expect(decide).toBeVisible({ timeout: 30_000 });
+  await expect(decide.getByText("1 of 1 decision")).toBeVisible();
+  await decide.getByRole("radio", { name: /Keep yours/ }).click();
+  await decide.getByRole("button", { name: "Merge", exact: true }).click();
+  await expect(page.getByText(/Merged half-time-chorus into main and shared it/).first()).toBeVisible({ timeout: 30_000 });
+});
+
 test("lists the shortcuts, and Esc closes the list", async () => {
   await page.locator("body").click({ position: { x: 5, y: 300 } });
   await page.keyboard.press("Control+/");
