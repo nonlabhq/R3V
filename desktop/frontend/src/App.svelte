@@ -488,6 +488,32 @@
   const SIDEBAR_KEY = "r3v.sidebar";
   let folded = $state(recall(SIDEBAR_KEY) === "folded");
   function fold(on: boolean) { folded = on; remember(SIDEBAR_KEY, on ? "folded" : ""); }
+  // Its edge is dragged to size it; past its narrowest by a stretch it
+  // folds, and dragged out from folded it opens again (remembered).
+  const SIDE_W_KEY = "r3v.sidebarWidth", SIDE_MIN = 200, SIDE_MAX = 420, SIDE_FOLD = 60;
+  let sideW = $state(Math.min(SIDE_MAX, Math.max(SIDE_MIN, Number(recall(SIDE_W_KEY)) || 256)));
+  let sizing = $state(false);
+  function sideDrag(e: PointerEvent) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    sizing = true;
+    const move = (m: PointerEvent) => {
+      if (!(m.buttons & 1)) return up();
+      if (m.clientX < SIDE_MIN - SIDE_FOLD) { if (!folded) fold(true); return; }
+      if (folded) fold(false);
+      sideW = Math.round(Math.min(SIDE_MAX, Math.max(SIDE_MIN, m.clientX)));
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      sizing = false;
+      remember(SIDE_W_KEY, String(sideW));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
   // The window's own controls (no Windows title bar): in the browser
   // (server mode) they do nothing.
   const win = (f: () => Promise<unknown>) => f().catch(() => {});
@@ -723,7 +749,9 @@
     else if (root) selected = { root };
   }} />
 {:else}
-  <div class="shell" class:folded>
+  <div class="shell" class:folded class:sizing style:grid-template-columns="{folded ? 60 : sideW}px minmax(0, 1fr)">
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="side-split" style:left="{folded ? 60 : sideW}px" onpointerdown={sideDrag}></div>
     <aside>
       {#if folded}
       <!-- folded: the same rows as unfolded, so nothing moves when it folds -->
@@ -813,16 +841,18 @@
       <div class="notices">
         {#if update}
           {@const u = update}
-          <div class="update">
-            <div class="update-h">
-              <span>{t("{app} {version} is available", { app: `R3V${edition ? ` ${edition}` : ""}`, version: u.version })}</span>
-              {#if !u.required}
-                <button class="ghost x" title={t("Hide until the next version")}
-                  onclick={() => { remember(DISMISSED_KEY, u.version); update = null; }}>✕</button>
-              {/if}
-            </div>
-            {@render updateActions(u)}
+          <!-- a newer R3V, in a line: its version (What's new on a click), the button -->
+          <div class="update" title={t("{app} {version} is available", { app: `R3V${edition ? ` ${edition}` : ""}`, version: u.version })}>
+            <button class="link upd-v" onclick={() => openLink(u.pageUrl)} title={t("What's new")}>
+              R3V {u.version.split("-")[0]}{#if u.version.includes("-nightly")}<span class="channel">Nightly</span>{/if}
+            </button>
+            {@render updateButton(u)}
+            {#if !u.required}
+              <button class="ghost x" title={t("Hide until the next version")} aria-label={t("Hide until the next version")}
+                onclick={() => { remember(DISMISSED_KEY, u.version); update = null; }}>✕</button>
+            {/if}
           </div>
+          {#if updState.stage === "failed"}<p class="upd-error">{updState.error}</p>{/if}
         {/if}
         {#if current?.keysUnreadable}
           <p class="keys-warn">{t("This computer can't read the keys of “{team}” (R3V's settings came from another computer or Windows user). Enter them again in the team's settings (⚙).", { team: current.name })}</p>
@@ -950,6 +980,13 @@
 
 {#snippet updateActions(u: UpdateInfo)}
   <div class="update-a">
+    {@render updateButton(u)}
+    <button class="ghost" onclick={() => openLink(u.pageUrl)}>{t("What's new")}</button>
+  </div>
+  {#if updState.stage === "failed"}<p class="upd-error">{updState.error}</p>{/if}
+{/snippet}
+
+{#snippet updateButton(u: UpdateInfo)}
     {#if !u.installable}
       {#if u.downloadUrl}
         <button class="primary" onclick={() => openLink(u.downloadUrl)}
@@ -966,12 +1003,6 @@
       <button class="primary" onclick={updateNow} disabled={anyBusy}
         title={t("Downloads it, then R3V closes, updates and opens again")}>{t("Update now")}</button>
     {/if}
-    <button class="ghost" onclick={() => openLink(u.pageUrl)}>{t("What's new")}</button>
-  </div>
-  {#if updState.stage === "failed"}<p class="upd-error">{updState.error}</p>{/if}
-  {#if u.installable && updState.stage === "ready" && updState.auto && !u.required}
-    <p class="faint small upd-note">{t("Or it installs by itself when R3V is in the tray.")}</p>
-  {/if}
 {/snippet}
 
 {#snippet row(p: TeamProject)}
@@ -1114,7 +1145,10 @@
 {#if nightly}<StyleLab />{/if}
 
 <style>
-  .shell { display: grid; grid-template-columns: 256px 1fr; height: 100%; }
+  .shell { position: relative; display: grid; grid-template-columns: 256px 1fr; height: 100%; }
+  .side-split { position: absolute; top: 0; bottom: 0; width: 7px; margin-left: -4px; z-index: var(--z-sticky); cursor: col-resize; touch-action: none; }
+  .side-split:hover, .shell.sizing .side-split { background: linear-gradient(to right, transparent 3px, var(--accent) 3px, var(--accent) 4px, transparent 4px); }
+  .shell.sizing { cursor: col-resize; user-select: none; }
   .shell.folded { grid-template-columns: 60px 1fr; }
   /* Folded or not, the rows above the projects are as high, and a project
      row too: the projects stay where they are when the sidebar folds. */
@@ -1238,16 +1272,18 @@
   .edition { font-size: var(--fs-2xs); font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; padding: 1px var(--sp-6);
     border-radius: var(--radius); color: var(--accent-ink); background: var(--accent); }
   .notices { flex: none; display: flex; flex-direction: column; gap: var(--sp-6); }
-  .update { margin: 0; padding: var(--sp-8) var(--sp-10); border-radius: var(--radius-lg); background: var(--accent-bg); border: var(--border-width) solid var(--accent-line); font-size: var(--fs-md); }
-  .update-h { display: flex; align-items: center; gap: var(--sp-6); font-weight: var(--fw-semibold); color: var(--accent); }
-  .update-h span { flex: 1; }
-  .update-a { display: flex; gap: var(--sp-6); margin-top: var(--sp-6); }
+  .update { display: flex; align-items: center; gap: var(--sp-6); margin: 0; padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-10);
+    border-radius: var(--radius-lg); background: var(--accent-bg); border: var(--border-width) solid var(--accent-line); font-size: var(--fs-sm); }
+  .upd-v { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: var(--sp-4); color: var(--accent); font-weight: var(--fw-semibold);
+    font-size: var(--fs-sm); text-decoration: none; white-space: nowrap; overflow: hidden; }
+  .update :global(button.primary) { flex: none; padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); }
+  .update .upd-progress { flex: 0 0 60px; }
+  .update .small { font-size: var(--fs-xs); white-space: nowrap; }
+  .update-a { display: flex; gap: var(--sp-6); margin-top: var(--sp-6); align-items: center; }
   .update-a button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
-  .update-a { align-items: center; }
   .upd-progress { flex: 1; height: 5px; border-radius: var(--radius-xs); background: var(--accent-line); overflow: hidden; }
   .upd-progress span { display: block; height: 100%; background: var(--accent); transition: width .2s; }
   .upd-error { margin: var(--sp-6) 0 0; color: var(--danger); font-size: var(--fs-sm); }
-  .upd-note { margin: var(--sp-4) 0 0; }
   .must-update { position: fixed; inset: 0; z-index: var(--z-blocking); display: flex; align-items: center; justify-content: center;
     background: var(--scrim-strong); backdrop-filter: var(--scrim-filter); }
   .must-card { width: 440px; max-width: calc(100vw - 48px); padding: var(--sp-24) var(--sp-24); border-radius: var(--radius-xl);
