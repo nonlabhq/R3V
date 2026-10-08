@@ -58,6 +58,45 @@ describe("HistoryGraph", () => {
     expect(screen.getByText(/No versions yet/)).toBeTruthy();
   });
 
+  it("labels a branch with just its name; picking it picks its newest version", async () => {
+    const { onselect } = show({ selected: "m1" });
+    expect(screen.getByText("main")).toBeTruthy();
+    expect(screen.queryByText("Mix")).toBeNull(); // (its newest version's title isn't on the label)
+    expect(screen.queryByRole("button", { name: "Branch settings" })).toBeNull(); // (no settings to open)
+    await fireEvent.click(screen.getByText("main"));
+    expect(onselect).toHaveBeenLastCalledWith("m3");
+  });
+
+  it("opens a branch's settings from the right half of its label", async () => {
+    const onsettings = vi.fn();
+    const { onselect } = show({ branches: [main, { name: "idea", latest: "m3" }], onsettings });
+    const buttons = screen.getAllByRole("button", { name: "Branch settings" });
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].getAttribute("title")).toBe("Branch settings");
+    await fireEvent.click(buttons[1]);
+    expect(onsettings).toHaveBeenLastCalledWith("idea");
+    expect(onselect).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByText("main"));
+    expect(onselect).toHaveBeenLastCalledWith("m3");
+    expect(onsettings).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a milestone as a capsule at the left edge, a dashed line and a ring to its version", async () => {
+    const { onselect } = show({ milestones: [{ version: "m2", name: "v0.3 Playtest" }, { version: "m1", name: "First mix" }] });
+    const capsule = screen.getByRole("button", { name: "v0.3 Playtest" });
+    expect(capsule.querySelector("b")?.textContent).toBe("v0.3"); // (the version number stands out)
+    expect(screen.getByRole("button", { name: "First mix" }).querySelector("b")).toBeNull();
+    const dot = screen.getByRole("option", { name: /^Bass,/ });
+    expect(parseFloat(capsule.style.left)).toBeLessThan(parseFloat(dot.style.left));
+    expect(capsule.style.top).toBe(dot.style.top); // on its version's row
+    const box = screen.getByRole("listbox");
+    expect(box.querySelectorAll(".mline")).toHaveLength(2);
+    expect(box.querySelectorAll(".mring")).toHaveLength(2);
+    expect(dot.getAttribute("aria-label")).toContain("⚑ v0.3 Playtest");
+    await fireEvent.click(capsule);
+    expect(onselect).toHaveBeenLastCalledWith("m2");
+  });
+
   it("moves through your changes and the versions with ↑ ↓", async () => {
     const { onselect } = show({ pending: 1, selected: "pending" });
     await fireEvent.keyDown(screen.getByRole("listbox"), { key: "ArrowDown" });

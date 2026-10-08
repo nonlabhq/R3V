@@ -3,20 +3,22 @@
   import { ago, type MemberLook, type Version } from "./api";
   import { colorOf, cssColor } from "./palette";
   import Avatar from "./Avatar.svelte";
-  import { branchGraph, short } from "./branchGraph";
+  import { branchGraph } from "./branchGraph";
   import { branchLabel, branchLane } from "./branches";
   import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
   // The Overview's left column: the branch graph (see branchGraph.ts), main
-  // in the middle. Each branch's newest version is labelled with the branch
-  // and its title; every other version is a dot with its author's picture,
-  // else their initial (on their colour, when the team keeps looks); its
-  // title on hover. Your changes not committed yet are a dashed dot
+  // in the middle. Each branch has its name at the top (picking it picks
+  // its newest version; its right half opens the branch's settings); every
+  // version is a dot with its author's picture, else their initial (on
+  // their colour, when the team keeps looks); its title on hover.
+  // Milestones are capsules at the left edge, a dashed line to their dot.
+  // Your changes not committed yet are a dashed dot
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones }: {
+  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string }[];
     branch: string;    // the branch you are on
@@ -29,12 +31,13 @@
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
-    milestones?: { version: string; name: string }[]; // versions the team named: a flag on their dot
+    milestones?: { version: string; name: string }[]; // versions the team named
+    onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
   } = $props();
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
   // them out or packs them in; the dots, lines and labels keep their size.
-  const ROW = 56, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36, TITLE = 22;
+  const ROW = 56, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36;
   // The view: pan (px on the screen) and zoom.
   let panX = $state(0), panY = $state(0), zoom = $state(1);
   const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
@@ -66,67 +69,49 @@
   let width = $derived(Math.max(120, fullWidth - reserve));
   let boxHeight = $state(0);
 
-  // Labels: one per branch, with its newest version's title, above its top
-  // dot (your changes, on your branch). Placed clear of the dots and of each
-  // other: centred, else leaning to the branch's side, else a row higher.
-  // Positions are from the middle column (dx) and the first row (y).
-  // Milestones: a tag out from their dot, pointing at it. A row holds one
-  // version, so no other dot is beside it; the tag goes to the side no line
-  // passes on its row (else the side fewer do). Branch labels keep clear.
-  const TAG_W = 180, TAG_H = 20;
-  type Tag = { id: string; text: string; dx: number; y: number; w: number; left: boolean; color: number };
-  // The columns lines pass at each row.
-  let passing = $derived.by(() => {
-    const at = new Map<number, Set<number>>();
-    const mark = (row: number, col: number) => { if (!at.has(row)) at.set(row, new Set()); at.get(row)!.add(col); };
-    for (const e of g.edges) {
-      const a = g.row.get(e.from), b = g.row.get(e.to);
-      if (a === undefined || b === undefined) continue;
-      const cols = [g.chainOf.get(e.from)!.col, g.chainOf.get(e.to)!.col];
-      for (let r = Math.min(a, b); r <= Math.max(a, b); r++) for (const c of cols) mark(r, c);
-    }
-    return at;
-  });
-  let tags = $derived.by(() => {
-    const out: Tag[] = [];
+  // Milestones: a capsule at the graph's left edge (⚑, the version number
+  // when the name starts with one, then the name), a dashed line over to
+  // the version's dot and a ring round the dot, in its branch's colour.
+  // Positions are from the canvas's left edge (x) and the first row (y).
+  const MS_W = 160, MS_GAP = 28;
+  type Mark = { id: string; text: string; ver: string; name: string; w: number; y: number; col: number; color: number };
+  let marks = $derived.by(() => {
+    const out: Mark[] = [];
     for (const [id, names] of flags) {
       const c = g.chainOf.get(id);
       const row = g.row.get(id);
       if (!c || row === undefined) continue;
       const text = names.join(" · ");
+      const m = /^(v\d+(?:\.\d+)*|\d+(?:\.\d+)+)\s+(.+)$/i.exec(text);
       // (wide scripts, CJK and the like, take about twice a Latin letter)
-      const w = Math.min(TAG_W, [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 13 : 7), 0) + 18);
-      const cols = [...(passing.get(row) ?? [])].filter((k) => k !== c.col);
-      const right = cols.filter((k) => k > c.col).length, leftN = cols.filter((k) => k < c.col).length;
-      const left = right > 0 && leftN < right;
-      // (dx: the end at the dot; w only keeps labels clear, the tag sizes to its text)
-      out.push({ id, text, w, left, color: c.color, dx: left ? c.col * colW - 18 : c.col * colW + 18,
-        y: (row + off) * rowH + rowH / 2 - TAG_H / 2 });
+      const w = Math.min(MS_W, [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 13 : 7), 0) + 34);
+      out.push({ id, text, ver: m ? m[1] : "", name: m ? m[2] : text, w, y: (row + off) * rowH + rowH / 2, col: c.col, color: c.color });
     }
     return out;
   });
-  type Label = { id: string; name: string; title: string; color: number; dx: number; y: number; w: number; h: number };
+  // Room for them at the left (the graph starts to their right).
+  let markRoom = $derived(marks.length ? Math.max(...marks.map((m) => m.w)) + MS_GAP : 0);
+  // Labels: one per branch, its name, above its top dot (your changes, on
+  // your branch). Placed clear of the dots and of each other: centred, else
+  // leaning to the branch's side, else a row higher. Positions are from the
+  // middle column (dx) and the first row (y).
+  type Label = { id: string; name: string; color: number; dx: number; y: number; w: number; h: number };
   let labels = $derived.by(() => {
     const out: Label[] = [];
     const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
       ...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
     const clear = (dx: number, y: number, w: number, h: number) =>
       dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
-      out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4) &&
-      tags.every((l) => { const x0 = l.left ? l.dx - l.w : l.dx;
-        return x0 + l.w + 4 < dx || x0 > dx + w + 4 || l.y + TAG_H + 4 < y || l.y > y + h + 4; });
+      out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
     // (before the first version: your branch's name over your changes)
     const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: branchLane(branches, branch), empty: true }] : [];
     for (const c of [...g.chains, ...first]) {
       if (!c.name) continue;
       const atPending = pending && (c === headChain || !c.tip);
-      const tip = byID.get(c.tip);
-      // On your branch with changes not committed: just its name.
-      // (an empty branch: just its name too; its newest version is another's)
-      const title = atPending || c.empty || !tip ? "" : short(tip.message || t("(no description)"), TITLE);
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
-      const w = Math.min(LABEL_W, Math.max(labelOf(c.name).length * 6.5, title.length * 7.5) + 20);
-      const h = title ? 32 : 24;
+      // (room at the right end for the settings button)
+      const w = Math.min(LABEL_W, labelOf(c.name).length * 6.5 + 20 + (onsettings ? 16 : 0));
+      const h = 24;
       const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
       let place = { dx: lean[0], y: rowY * rowH + rowH / 2 - 16 - h };
@@ -134,12 +119,12 @@
         const y = rowY * rowH + rowH / 2 - 16 - h - k * (LABEL_H - 4);
         for (const dx of lean) if (clear(dx, y, w, h)) { place = { dx, y }; break search; }
       }
-      out.push({ id: c.tip || "pending", name: c.name, title, color: c.color, ...place, w, h });
+      out.push({ id: c.tip || "pending", name: c.name, color: c.color, ...place, w, h });
     }
     return out;
   });
-  let center = $derived(PAD - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx), ...tags.map((l) => (l.left ? l.dx - l.w : l.dx) - 8)));
-  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w), ...tags.map((l) => (l.left ? l.dx : l.dx + l.w) + 8)) + PAD);
+  let center = $derived(PAD + markRoom - Math.min(-g.left * colW - 12, ...labels.map((l) => l.dx)));
+  let full = $derived(center + Math.max(g.right * colW + 12, ...labels.map((l) => l.dx + l.w)) + PAD);
   const x = (col: number) => center + col * colW;
   // Room at the top for the labels.
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
@@ -362,6 +347,10 @@
   {:else}
     <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px)">
       <svg width={full} height={height} aria-hidden="true">
+        {#each marks as m (m.id)}
+          <path class="mline" d="M {PAD + m.w} {top + m.y} L {x(m.col) - 19} {top + m.y}" stroke="var(--lane-{m.color})"
+            stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
+        {/each}
         {#each g.edges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
           <path d={path(e)} stroke="var(--lane-{c.color})" stroke-width={c.main ? 4 : 3} fill="none" stroke-linecap="round"
@@ -374,20 +363,25 @@
           <path d={stubPath(st)} stroke="var(--lane-{st.c.color})" stroke-width="3" fill="none" stroke-linecap="round" />
           <circle cx={x(st.c.col)} cy={yRow(st.row)} r="5" fill="var(--panel)" stroke="var(--lane-{st.c.color})" stroke-width="2" />
         {/each}
+        {#each marks as m (m.id)}
+          <circle class="mring" cx={x(m.col)} cy={top + m.y} r="18" fill="none" stroke="var(--lane-{m.color})" stroke-width="2" />
+        {/each}
       </svg>
 
-      {#each tags as m (m.id)}
-        <button class="mtag" class:left={m.left} style:--c="var(--lane-{m.color})" style:left="{center + m.dx}px" style:top="{top + m.y}px" style:max-width="{TAG_W}px"
-          tabindex="-1" title={m.text} onclick={() => onselect(m.id)}>
-          <span>{m.text}</span>
+      {#each marks as m (m.id)}
+        <button class="mtag" style:--c="var(--lane-{m.color})" style:left="{PAD}px" style:top="{top + m.y}px" style:max-width="{MS_W}px"
+          tabindex="-1" title={m.text} aria-label={m.text} onclick={() => onselect(m.id)}>
+          <span class="mflag" aria-hidden="true">⚑</span>{#if m.ver}<b>{m.ver}</b>{/if}<span class="mname">{m.name}</span>
         </button>
       {/each}
       {#each labels as l (l.name + "@" + l.id)}
-        <button class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})"
-          tabindex="-1" onclick={() => onselect(l.id)}>
-          <span class="bname">{labelOf(l.name)}</span>
-          {#if l.title}<span class="btitle">{l.title}</span>{/if}
-        </button>
+        <div class="label" class:split={!!onsettings} style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})">
+          <button class="lpick" tabindex="-1" onclick={() => onselect(l.id)}><span class="bname">{labelOf(l.name)}</span></button>
+          {#if onsettings}
+            <button class="lset" tabindex="-1" title={t("Branch settings")} aria-label={t("Branch settings")}
+              onclick={() => onsettings(l.name)}><span aria-hidden="true">⋯</span></button>
+          {/if}
+        </div>
       {/each}
 
       {#if pending}
@@ -516,29 +510,32 @@
     -webkit-box-orient: vertical; overflow: hidden; user-select: text; }
   .card-meta { font-size: var(--fs-xs); color: var(--faint); margin-top: var(--sp-2); }
   .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
-  /* A milestone's tag: a pointed end towards its dot. */
-  .mtag { position: absolute; height: 20px; display: inline-flex; align-items: center; gap: var(--sp-4);
-    padding: 0 var(--sp-8) 0 var(--sp-4); margin-left: 6px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
-    --tint: color-mix(in srgb, var(--c) 18%, var(--panel)); /* (opaque: the lines stay under it) */
-    color: var(--c); background: var(--tint); border: var(--border-width) solid var(--c);
-    border-left: none; border-radius: 0 var(--radius) var(--radius) 0; white-space: nowrap; z-index: 1; }
-  .mtag::before { content: ""; position: absolute; left: -7px; top: -1px; width: 0; height: 0;
-    border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-right: 7px solid var(--c); }
-  .mtag::after { content: ""; position: absolute; left: -5px; top: 0; width: 0; height: 0;
-    border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 6px solid var(--tint); }
-  .mtag.left { transform: translateX(-100%); margin-left: -6px; padding: 0 var(--sp-4) 0 var(--sp-8);
-    border-left: var(--border-width) solid var(--c); border-right: none; border-radius: var(--radius) 0 0 var(--radius); }
-  .mtag.left::before { left: auto; right: -7px; border-right: none; border-left: 7px solid var(--c); }
-  .mtag.left::after { left: auto; right: -5px; border-right: none; border-left: 6px solid var(--tint); }
-  .mtag:hover:not(:disabled) { background: var(--tint); border-color: var(--c); filter: brightness(1.15); }
-  .mtag span { overflow: hidden; text-overflow: ellipsis; }
+  /* A milestone: a capsule at the left edge, a dashed line to its dot, a ring round the dot. */
+  .mtag { position: absolute; height: 22px; transform: translateY(-50%); display: inline-flex; align-items: center;
+    gap: var(--sp-4); padding: 0 var(--sp-8); font-size: var(--fs-xs); white-space: nowrap; z-index: 1;
+    --tint: color-mix(in srgb, var(--c) 16%, var(--panel)); /* (opaque: the lines stay under it) */
+    color: var(--c); background: var(--tint); border: var(--border-width) solid transparent; border-radius: var(--radius-pill); }
+  .mtag:hover:not(:disabled) { background: var(--tint); border-color: var(--c); }
+  .mtag b { color: var(--text); font-weight: var(--fw-semibold); }
+  .mtag .mname { overflow: hidden; text-overflow: ellipsis; }
+  .mline { opacity: .55; }
   .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
-  .label { position: absolute; height: auto; padding: var(--sp-2) var(--sp-8);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
-    border: var(--border-width) solid var(--line); border-radius: var(--radius); background: var(--panel); line-height: 1.2; }
-  .label:hover:not(:disabled) { border-color: var(--c); background: var(--panel); }
+  /* A branch's label: its name (picks its newest version); with settings,
+     the right half opens them (a ⋯ shows on hover). */
+  .label { position: absolute; border: var(--border-width) solid var(--line); border-radius: var(--radius);
+    background: var(--panel); line-height: 1.2; overflow: hidden; }
+  .label:hover { border-color: var(--c); }
+  .label button { position: absolute; top: 0; bottom: 0; margin: 0; border: none; border-radius: 0; background: transparent; }
+  .lpick { left: 0; right: 0; display: flex; align-items: center; justify-content: center; padding: 0 var(--sp-8); }
+  .split .lpick { padding-right: 20px; }
+  .label .lpick:hover:not(:disabled) { background: transparent; }
+  .lset { right: 0; width: 50%; display: flex; align-items: center; justify-content: flex-end; padding: 0 var(--sp-6);
+    color: var(--muted); font-size: var(--fs-sm); cursor: pointer; }
+  .lset span { opacity: 0; transition: opacity .12s; }
+  .label:hover .lset span { opacity: .7; }
+  .label .lset:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); }
+  .lset:hover span { opacity: 1; }
   .bname { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); color: var(--c); max-width: 100%;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .btitle { font-size: var(--fs-xs); color: var(--text); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
