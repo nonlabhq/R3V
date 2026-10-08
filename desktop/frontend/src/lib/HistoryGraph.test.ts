@@ -97,6 +97,30 @@ describe("HistoryGraph", () => {
     expect(onselect).toHaveBeenLastCalledWith("m2");
   });
 
+  it("keeps a milestone's capsule at the view's left edge as the graph moves, short of its dot", async () => {
+    show({ milestones: [{ version: "m2", name: "v0.3 Playtest" }] });
+    const capsule = screen.getByRole("button", { name: "v0.3 Playtest" });
+    const dot = screen.getByRole("option", { name: /^Bass,/ });
+    const box = screen.getByRole("listbox");
+    const canvas = box.querySelector<HTMLElement>(".canvas")!;
+    const panX = () => parseFloat(/translate\((-?[\d.]+)px/.exec(canvas.style.transform)![1]);
+    const drag = async (dx: number) => {
+      await pointer(box, "pointerdown", { clientX: 100, clientY: 100, button: 0, buttons: 1 });
+      await pointer(box, "pointermove", { clientX: 100 + dx, clientY: 100, buttons: 1 });
+      await pointer(box, "pointerup", { clientX: 100 + dx, clientY: 100 });
+    };
+    // on screen, the capsule's left is its left plus the pan: 24 px in
+    const onScreen = () => parseFloat(capsule.style.left) + panX();
+    await drag(60);
+    expect(onScreen()).toBeCloseTo(24);
+    await drag(-30);
+    expect(onScreen()).toBeCloseTo(24);
+    // dragged far left, it goes along with its dot, still to its left
+    await drag(-400);
+    expect(parseFloat(capsule.style.left)).toBeLessThan(parseFloat(dot.style.left) - 19 - 12);
+    expect(onScreen()).toBeLessThan(24);
+  });
+
   it("moves through your changes and the versions with ↑ ↓", async () => {
     const { onselect } = show({ pending: 1, selected: "pending" });
     await fireEvent.keyDown(screen.getByRole("listbox"), { key: "ArrowDown" });

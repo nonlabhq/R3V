@@ -104,6 +104,10 @@
   });
   // Room for them at the left (the graph starts to their right).
   let markRoom = $derived(marks.length ? Math.max(...marks.map((m) => m.w)) + MS_GAP : 0);
+  // A milestone's capsule keeps to the view's left edge as the graph moves
+  // (its dashed line stretching), short of its dot; it leaves the view only
+  // with its dot.
+  const markLeft = (m: { w: number; col: number }) => Math.min(PAD - panX, x(m.col) - 19 - 12 - m.w);
   // Labels: one per branch, its name, above its top dot (your changes, on
   // your branch). Placed clear of the dots and of each other: centred, else
   // leaning to the branch's side, else a row higher. Positions are from the
@@ -364,7 +368,7 @@
     <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px)">
       <svg width={full} height={height} aria-hidden="true">
         {#each marks as m (m.id)}
-          <path class="mline" d="M {PAD + m.w} {top + m.y} L {x(m.col) - 19} {top + m.y}" stroke="var(--lane-{m.color})"
+          <path class="mline" d="M {markLeft(m) + m.w} {top + m.y} L {x(m.col) - 19} {top + m.y}" stroke="var(--lane-{m.color})"
             stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
         {/each}
         {#each g.edges as e (e.from + ">" + e.to)}
@@ -385,7 +389,7 @@
       </svg>
 
       {#each marks as m (m.id)}
-        <button class="mtag" style:--c="var(--lane-{m.color})" style:left="{PAD}px" style:top="{top + m.y}px" style:max-width="{MS_W}px"
+        <button class="mtag" style:--c="var(--lane-{m.color})" style:left="{markLeft(m)}px" style:top="{top + m.y}px" style:max-width="{MS_W}px"
           tabindex="-1" title={m.text} aria-label={m.text} onclick={() => onselect(m.id)}>
           <span class="mflag" aria-hidden="true">⚑</span>{#if m.ver}<b>{m.ver}</b>{/if}<span class="mname">{m.name}</span>
         </button>
@@ -506,6 +510,8 @@
   .node.pic { line-height: 0; } /* (the img is round itself: the flag may stick out) */
   .node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
   .node.here { background: var(--c); color: var(--bg); }
+  /* the version your files are on: a glow in its branch's colour */
+  .node.here { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 75%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--c) 40%, transparent)); }
   .node.here.pic { box-shadow: 0 0 0 2px var(--c); }
   .node.incoming { border-style: dashed; color: var(--muted); }
   .node.side { opacity: .75; }
