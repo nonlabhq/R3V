@@ -16,6 +16,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/remote/cloudtest"
 	"github.com/nonlabhq/r3v/internal/remote/s3test"
+	"github.com/nonlabhq/r3v/internal/teammove"
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
@@ -133,7 +134,7 @@ func TestTeamMoveToCloud(t *testing.T) {
 	was := moves
 	moves = f
 	t.Cleanup(func() { moves = was })
-	moveEvery = time.Millisecond
+	teammove.Every = time.Millisecond
 
 	if err := a.StartTeamMove(one.ID, hosted.ID, []string{tp.ID}, "ro-key", "ro-secret", ""); err != nil {
 		t.Fatal(err)

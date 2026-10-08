@@ -50,7 +50,6 @@ export {
     TakeBack,
     TeamConnection,
     TeamMoveEstimate,
-    TeamMoveProject,
     TeamMoveState,
     TeamPart,
     TeamProject,

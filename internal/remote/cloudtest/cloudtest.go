@@ -61,7 +61,7 @@ func New(t testing.TB) string {
 			tag := fmt.Sprintf(`"%d"`, tags[k])
 			switch r.Method {
 			case "GET", "HEAD":
-				if !there {
+				if !there || !listed(kv, k) {
 					w.WriteHeader(404)
 					return
 				}
@@ -156,4 +156,19 @@ func New(t testing.TB) string {
 	t.Cleanup(srv.Close)
 	t.Setenv("R3V_CLOUD_TOKEN", "token")
 	return "r3v-cloud+" + srv.URL + "/v1/teams/t"
+}
+
+// listed: like the service, a project's contents (objects, big files'
+// lists, versions) are asked about only once its project.json is there.
+func listed(kv map[string][]byte, key string) bool {
+	parts := strings.SplitN(key, "/", 3)
+	if len(parts) < 3 || parts[0] != "projects" {
+		return true
+	}
+	switch strings.SplitN(parts[2], "/", 2)[0] {
+	case "objects", "chunked", "snapshots":
+		_, ok := kv["projects/"+parts[1]+"/project.json"]
+		return ok
+	}
+	return true
 }

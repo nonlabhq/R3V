@@ -21,6 +21,9 @@ import * as health$0 from "../internal/health/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as remote$0 from "../internal/remote/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as teammove$0 from "../internal/teammove/models.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -151,9 +154,7 @@ export function CancelSave(root: string): $CancellablePromise<boolean> {
 }
 
 /**
- * CancelTeamMove gives a move up: the old team is as it was (unfrozen),
- * the service forgets the key; what was copied stays unseen on the hosted
- * team. Not once it's done.
+ * CancelTeamMove gives a move up (not once it's done).
  */
 export function CancelTeamMove(teamID: string): $CancellablePromise<void> {
     return $Call.ByID(3570406171, teamID);
@@ -1139,9 +1140,8 @@ export function Signature(root: string): $CancellablePromise<string> {
 
 /**
  * StartTeamMove starts moving team teamID's projects (ids) to hosted team
- * toID: the service gets the read-only key (accessKey, secretKey; region
- * "" for R2's "auto"), then plans and the copy go on in the background
- * (TeamMoveState says how; "team-move" events tell of changes).
+ * toID with a read-only key (region "" for R2's "auto"); the plans and the
+ * copy go on in the background.
  */
 export function StartTeamMove(teamID: string, toID: string, projects: string[], accessKey: string, secretKey: string, region: string): $CancellablePromise<void> {
     return $Call.ByID(4101495143, teamID, toID, projects, accessKey, secretKey, region);
@@ -1206,7 +1206,7 @@ export function TeamMembers(teamID: string): $CancellablePromise<remote$0.Member
 }
 
 /**
- * TeamMoveState says how team teamID's move goes (asking the service).
+ * TeamMoveState says how team teamID's move goes.
  */
 export function TeamMoveState(teamID: string): $CancellablePromise<$models.TeamMoveState | null> {
     return $Call.ByID(1645171422, teamID).then(($result: any) => {
@@ -1388,7 +1388,7 @@ const $$createType24 = convert$0.Info.createFrom;
 const $$createType25 = convert$0.Result.createFrom;
 const $$createType26 = $models.DeletedBranch.createFrom;
 const $$createType27 = $Create.Array($$createType26);
-const $$createType28 = $models.TeamMoveEstimate.createFrom;
+const $$createType28 = teammove$0.Estimate.createFrom;
 const $$createType29 = $Create.Nullable($$createType28);
 const $$createType30 = $models.FileVersion.createFrom;
 const $$createType31 = $Create.Array($$createType30);
@@ -1426,7 +1426,7 @@ const $$createType62 = $models.State.createFrom;
 const $$createType63 = $Create.Nullable($$createType62);
 const $$createType64 = $models.TeamConnection.createFrom;
 const $$createType65 = $Create.Array($Create.Any);
-const $$createType66 = $models.TeamMoveState.createFrom;
+const $$createType66 = teammove$0.State.createFrom;
 const $$createType67 = $Create.Nullable($$createType66);
 const $$createType68 = $models.FoundProject.createFrom;
 const $$createType69 = $Create.Array($$createType68);

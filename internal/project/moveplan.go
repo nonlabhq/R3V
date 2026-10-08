@@ -299,6 +299,11 @@ func FinishMove(from, to *teams.Team, p remote.Project) error {
 	for _, h := range heads {
 		tips = append(tips, h)
 	}
+	// Listed first: R3V Cloud answers about a project's contents only once
+	// it is (with no branches yet, it shows no versions).
+	if err := d.PutProject(p); err != nil {
+		return err
+	}
 	if missing, err := d.MissingSnapshots(p.ID, dedupe(tips)); err != nil {
 		return err
 	} else if len(missing) > 0 {
@@ -307,8 +312,5 @@ func FinishMove(from, to *teams.Team, p remote.Project) error {
 	if err := copyRecords(c, d, p.ID); err != nil {
 		return err
 	}
-	if err := copyBranches(d, p.ID, heads, nil); err != nil {
-		return err
-	}
-	return d.PutProject(p) // listed from now on
+	return copyBranches(d, p.ID, heads, nil)
 }

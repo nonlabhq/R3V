@@ -25,6 +25,9 @@ import * as project$0 from "../internal/project/models.js";
 import * as remote$0 from "../internal/remote/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as teammove$0 from "../internal/teammove/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as textdiff$0 from "../internal/textdiff/models.js";
 
 /**
@@ -2472,176 +2475,24 @@ export class TeamConnection {
 }
 
 /**
- * TeamMoveEstimate is what moving a team means, before anything is done.
+ * TeamMoveEstimate and TeamMoveState are teammove's, for the app.
  */
-export class TeamMoveEstimate {
-    "projects": TeamMoveProject[];
-
-    /**
-     * bytes R3V Cloud will keep
-     */
-    "hosted": number;
-
-    /**
-     * bytes the team's storage holds now
-     */
-    "storage": number;
-    "people": number;
-
-    /**
-     * Where the team's storage is (for making the read-only key): its
-     * address, bucket, folder; "r2", "aws" or "" for another.
-     */
-    "endpoint": string;
-    "bucket": string;
-    "folder": string;
-    "provider": string;
-
-    /** Creates a new TeamMoveEstimate instance. */
-    constructor($$source: Partial<TeamMoveEstimate> = {}) {
-        if (!("projects" in $$source)) {
-            this["projects"] = [];
-        }
-        if (!("hosted" in $$source)) {
-            this["hosted"] = 0;
-        }
-        if (!("storage" in $$source)) {
-            this["storage"] = 0;
-        }
-        if (!("people" in $$source)) {
-            this["people"] = 0;
-        }
-        if (!("endpoint" in $$source)) {
-            this["endpoint"] = "";
-        }
-        if (!("bucket" in $$source)) {
-            this["bucket"] = "";
-        }
-        if (!("folder" in $$source)) {
-            this["folder"] = "";
-        }
-        if (!("provider" in $$source)) {
-            this["provider"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new TeamMoveEstimate instance from a string or object.
-     */
-    static createFrom($$source: any = {}): TeamMoveEstimate {
-        const $$createField0_0 = $$createType55;
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("projects" in $$parsedSource) {
-            $$parsedSource["projects"] = $$createField0_0($$parsedSource["projects"]);
-        }
-        return new TeamMoveEstimate($$parsedSource as Partial<TeamMoveEstimate>);
-    }
-}
+export const TeamMoveEstimate = teammove$0.Estimate;
 
 /**
- * TeamMoveProject is one project's part.
+ * TeamMoveEstimate and TeamMoveState are teammove's, for the app.
  */
-export class TeamMoveProject {
-    "id": string;
-    "name": string;
-    "versions": number;
-    "bytes": number;
-
-    /** Creates a new TeamMoveProject instance. */
-    constructor($$source: Partial<TeamMoveProject> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = "";
-        }
-        if (!("name" in $$source)) {
-            this["name"] = "";
-        }
-        if (!("versions" in $$source)) {
-            this["versions"] = 0;
-        }
-        if (!("bytes" in $$source)) {
-            this["bytes"] = 0;
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new TeamMoveProject instance from a string or object.
-     */
-    static createFrom($$source: any = {}): TeamMoveProject {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new TeamMoveProject($$parsedSource as Partial<TeamMoveProject>);
-    }
-}
+export type TeamMoveEstimate = teammove$0.Estimate;
 
 /**
- * TeamMoveState is how a team's move goes.
+ * TeamMoveEstimate and TeamMoveState are teammove's, for the app.
  */
-export class TeamMoveState {
-    /**
-     * "" (none), "planning", "copying", "finishing", "done"
-     */
-    "phase": string;
+export const TeamMoveState = teammove$0.State;
 
-    /**
-     * the hosted team's id
-     */
-    "to": string;
-    "items": number;
-    "itemsDone": number;
-    "bytes": number;
-    "bytesDone": number;
-
-    /**
-     * the service copied all it was given
-     */
-    "copied": boolean;
-    "failed": number;
-    "error": string;
-
-    /** Creates a new TeamMoveState instance. */
-    constructor($$source: Partial<TeamMoveState> = {}) {
-        if (!("phase" in $$source)) {
-            this["phase"] = "";
-        }
-        if (!("to" in $$source)) {
-            this["to"] = "";
-        }
-        if (!("items" in $$source)) {
-            this["items"] = 0;
-        }
-        if (!("itemsDone" in $$source)) {
-            this["itemsDone"] = 0;
-        }
-        if (!("bytes" in $$source)) {
-            this["bytes"] = 0;
-        }
-        if (!("bytesDone" in $$source)) {
-            this["bytesDone"] = 0;
-        }
-        if (!("copied" in $$source)) {
-            this["copied"] = false;
-        }
-        if (!("failed" in $$source)) {
-            this["failed"] = 0;
-        }
-        if (!("error" in $$source)) {
-            this["error"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new TeamMoveState instance from a string or object.
-     */
-    static createFrom($$source: any = {}): TeamMoveState {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new TeamMoveState($$parsedSource as Partial<TeamMoveState>);
-    }
-}
+/**
+ * TeamMoveEstimate and TeamMoveState are teammove's, for the app.
+ */
+export type TeamMoveState = teammove$0.State;
 
 /**
  * TeamPart is the team's side of a project's state (see TeamState).
@@ -2743,7 +2594,7 @@ export class TeamPart {
         const $$createField4_0 = $$createType24;
         const $$createField5_0 = $$createType24;
         const $$createField6_0 = $$createType3;
-        const $$createField8_0 = $$createType56;
+        const $$createField8_0 = $$createType54;
         const $$createField10_0 = $$createType51;
         const $$createField11_0 = $$createType53;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
@@ -3044,7 +2895,7 @@ export class TextChanges {
      * Creates a new TextChanges instance from a string or object.
      */
     static createFrom($$source: any = {}): TextChanges {
-        const $$createField4_0 = $$createType58;
+        const $$createField4_0 = $$createType56;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hunks" in $$parsedSource) {
             $$parsedSource["hunks"] = $$createField4_0($$parsedSource["hunks"]);
@@ -3184,7 +3035,7 @@ export class UndoPlan {
         const $$createField0_0 = $$createType6;
         const $$createField1_0 = $$createType6;
         const $$createField2_0 = $$createType28;
-        const $$createField4_0 = $$createType59;
+        const $$createField4_0 = $$createType57;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changed" in $$parsedSource) {
             $$parsedSource["changed"] = $$createField0_0($$parsedSource["changed"]);
@@ -3395,7 +3246,7 @@ export class VerifyResult {
      * Creates a new VerifyResult instance from a string or object.
      */
     static createFrom($$source: any = {}): VerifyResult {
-        const $$createField3_0 = $$createType61;
+        const $$createField3_0 = $$createType59;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("problems" in $$parsedSource) {
             $$parsedSource["problems"] = $$createField3_0($$parsedSource["problems"]);
@@ -3546,11 +3397,9 @@ const $$createType50 = DeletedBranch.createFrom;
 const $$createType51 = $Create.Nullable($$createType50);
 const $$createType52 = Milestone.createFrom;
 const $$createType53 = $Create.Array($$createType52);
-const $$createType54 = TeamMoveProject.createFrom;
-const $$createType55 = $Create.Array($$createType54);
-const $$createType56 = remote$0.Capabilities.createFrom;
-const $$createType57 = textdiff$0.Hunk.createFrom;
-const $$createType58 = $Create.Array($$createType57);
-const $$createType59 = TakeBack.createFrom;
-const $$createType60 = VerifyProblem.createFrom;
-const $$createType61 = $Create.Array($$createType60);
+const $$createType54 = remote$0.Capabilities.createFrom;
+const $$createType55 = textdiff$0.Hunk.createFrom;
+const $$createType56 = $Create.Array($$createType55);
+const $$createType57 = TakeBack.createFrom;
+const $$createType58 = VerifyProblem.createFrom;
+const $$createType59 = $Create.Array($$createType58);
