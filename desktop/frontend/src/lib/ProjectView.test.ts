@@ -91,6 +91,37 @@ describe("ProjectView: committing", () => {
     await toasted("Version committed and shared with the team");
   });
 
+  it("says who holds the files a refused share changes; the version stays committed", async () => {
+    await show({ changes: [change("Maps/Harbor.umap")], tool: "Unreal Editor" });
+    api.Save.mockResolvedValue(result("locked", { locks: [{ path: "Maps/Harbor.umap", memberId: "k", name: "Kai" }] }));
+    await typeMessage("Harbor lights");
+    await fireEvent.click(commitButton());
+    await toasted("Committed on this computer, not shared: someone else is editing Harbor.umap (Kai). It's shared once they unlock them (commit again then).");
+    expect(toast.mock.calls.some(([t]) => t === "Version committed and shared with the team")).toBe(false);
+  });
+
+  it("says at once when a change can't be shared: someone else holds the file", async () => {
+    await show({ changes: [change("Maps/Harbor.umap")] });
+    emit("lock-held", { root: ROOT, path: "Maps/Harbor.umap", file: "Harbor.umap", name: "Kai", meanwhile: false });
+    await toasted("Kai is editing Harbor.umap: your change can't be shared until it's unlocked");
+    emit("lock-held", { root: "C:/Other", path: "x.umap", file: "x.umap", name: "Kai", meanwhile: false });
+    expect(toast.mock.calls.filter(([t]) => /x\.umap/.test(t)).length).toBe(0); // another project's
+  });
+
+  it("offers to turn file locking on once, and does", async () => {
+    await show({ locksOffer: true });
+    api.TeamLocks.mockResolvedValue({ available: true, on: false, kinds: ["unreal", "blender"], admin: true, all: [] });
+    await fireEvent.click(screen.getByRole("button", { name: "Turn on file locking" }));
+    await waitFor(() => expect(api.SetTeamLocks).toHaveBeenCalledWith("t", true, ["unreal", "blender"]));
+  });
+
+  it("says no to turning file locking on, remembered", async () => {
+    await show({ locksOffer: true });
+    await fireEvent.click(screen.getByRole("button", { name: "Not now" }));
+    await waitFor(() => expect(api.DismissLocksOffer).toHaveBeenCalledWith("t"));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Turn on file locking" })).toBeNull());
+  });
+
   it("lists a few changes, makes a tree of many, keeps the one picked until the next commit", async () => {
     const many = Array.from({ length: 11 }, (_, i) => change(`Samples/take ${i}.wav`, "added"));
     await show({ changes: many });

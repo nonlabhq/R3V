@@ -14,6 +14,9 @@
   import { gridKey, navKey, ownKey, type NavRow } from "./keynav";
   import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick,
     type Folder, type Selection } from "./files";
+  import LockBadge from "./LockBadge.svelte";
+  import ConfirmDialog from "./ConfirmDialog.svelte";
+  import { breakLock, holderName, lockAt, locksOf, lockPaths, unlockPaths } from "./locks.svelte";
 
   // The Files tab, file-centred (the Overview is version-centred): the
   // project's folders on the left (with how many changed files each holds),
@@ -33,6 +36,17 @@
 
   let files = $state<ProjectFile[]>([]);
   let last = $state<Record<string, Version | undefined>>({});
+  // File locks (off: nothing shows): a folder's own lock, a file's (its
+  // own or a folder's over it).
+  let lv = $derived(locksOf(root));
+  const folderLock = (p: string) => (lv?.on ? lv.items.find((l) => l.prefix && l.path === p + "/") : undefined);
+  const fileLock = (p: string) => lockAt(lv, p);
+  let breaking = $state<{ path: string; name: string } | null>(null);
+  // Lock or unlock from the menu: the files picked with the one clicked.
+  const lockTargets = (m: { path: string; dir: boolean }) =>
+    m.dir ? [m.path + "/"] : sel.picked.includes(m.path) ? sel.picked.filter((p) => !fileLock(p)) : [m.path];
+  function lockFromMenu(m: { path: string; dir: boolean }) { menu = null; lockPaths(root, lockTargets(m)); }
+  function unlockFromMenu(path: string) { menu = null; unlockPaths(root, [path]); }
   let loadedAt = $state(0);
   function loadFiles() {
     return api.ProjectFiles(root, true).then((f) => { files = f ?? []; loadedAt = Date.now(); })
@@ -488,6 +502,7 @@
               ondragstart={(e) => e.preventDefault()}>
               <FileIcon kind="folder" open={f.path === dir} />
               <span class="fname">{f.name || t("Project")}</span>
+              {#if folderLock(f.path)}<LockBadge lock={folderLock(f.path)!} {looks} size={14} />{/if}
               {#if f.changed}<span class="pill" title={tn(f.changed, "{n} changed file inside", "{n} changed files inside")}>{f.changed}</span>{/if}
             </button>
           {/if}
@@ -571,7 +586,8 @@
               ondblclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => { subPicked = d.path; openMenu(e, d.path, true); }}
               data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
               <span class="badge folder-badge" role="gridcell"><FileIcon kind="folder" /></span>
-              <span class="nm" role="gridcell"><span class="fname">{d.name}</span><span class="msg">{insideText(d)}</span></span>
+              <span class="nm" role="gridcell"><span class="nmline"><span class="fname">{d.name}</span>
+                {#if folderLock(d.path)}<LockBadge lock={folderLock(d.path)!} {looks} />{/if}</span><span class="msg">{insideText(d)}</span></span>
               {#each shownCols as c (c.key)}
                 {#if c.key === "type"}<span class="type faint" role="gridcell">{t("Folder")}</span>
                 {:else if c.key === "status"}<span role="gridcell">{#if d.changed}<span class="pill" title={tn(d.changed, "{n} changed file inside", "{n} changed files inside")}>{d.changed}</span>{/if}</span>
@@ -592,7 +608,8 @@
                   <input class="rename" bind:value={renaming.value} use:nameField onkeydown={renameKey} onblur={() => finishRename(true)}
                     onclick={(e) => e.stopPropagation()} aria-label={t("New name")} />
                 {:else}
-                  <span class="fname">{baseName(f.path)}</span>
+                  <span class="nmline"><span class="fname">{baseName(f.path)}</span>
+                    {#if fileLock(f.path)}<LockBadge lock={fileLock(f.path)!} {looks} />{/if}</span>
                 {/if}
                 <span class="msg">{#if searching && whereIn(f)}<span class="where" title={dirOf(f.path)}>{whereIn(f)}</span>{/if}{v ? v.message || t("(no description)") : isChanged(f) ? t("Not committed yet") : ""}</span>
               </span>
@@ -621,7 +638,8 @@
               ondblclick={() => pickDir(d.path)} onkeydown={() => {}} oncontextmenu={(e) => { subPicked = d.path; openMenu(e, d.path, true); }}
               data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
               <span class="thumb"><span class="ph"><FileIcon kind="folder" /></span>
-                {#if d.changed}<span class="pill corner">{d.changed}</span>{/if}</span>
+                {#if d.changed}<span class="pill corner">{d.changed}</span>{/if}
+                {#if folderLock(d.path)}<span class="lock-corner"><LockBadge lock={folderLock(d.path)!} {looks} /></span>{/if}</span>
               <span class="cname">{d.name}</span>
               <span class="cmeta"><span class="faint">{insideText(d)}</span></span>
             </div>
@@ -639,6 +657,7 @@
                     onerror={() => (thumbFailed[f.path] = true)} />
                 {/if}
                 {#if sym[f.status]}<span class="st corner {f.status}" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
+                {#if fileLock(f.path)}<span class="lock-corner"><LockBadge lock={fileLock(f.path)!} {looks} /></span>{/if}
               </span>
               {#if renaming && !renaming.dir && renaming.path === f.path}
                 <input class="rename" bind:value={renaming.value} use:nameField onkeydown={renameKey} onblur={() => finishRename(true)}
@@ -693,6 +712,20 @@
       {@const n = toConvert(m.path).length}
       <button class="item" onclick={() => { converting = toConvert(m.path); menu = null; }}>{n > 1 ? t("Convert {n} samples…", { n }) : t("Convert…")}</button>
     {/if}
+    {#if lv?.on}
+      {@const own = m.dir ? folderLock(m.path) : lv.items.find((l) => l.path === m.path)}
+      {@const over = m.dir ? lockAt(lv, m.path + "/") : fileLock(m.path)}
+      <div class="sep"></div>
+      {#if own?.mine}
+        <button class="item" onclick={() => unlockFromMenu(own.path)}>{m.dir ? t("Unlock folder") : t("Unlock")}</button>
+      {:else if own && lv.admin}
+        <button class="item danger-text" onclick={() => { breaking = { path: own.path, name: holderName(own) }; menu = null; }}>{t("Break lock…")}</button>
+      {:else if !over}
+        <button class="item" onclick={() => lockFromMenu(m)}>{m.dir ? t("Lock folder") : t("Lock")}</button>
+      {:else if !over.mine}
+        <p class="faint note">{t("Locked by {name}", { name: holderName(over) })}</p>
+      {/if}
+    {/if}
     {#if f && ["added", "modified", "deleted", "renamed"].includes(f.status)}
       <button class="item danger-text" onclick={() => { const p = m.path; menu = null; ondiscard(p); }}>{t("Discard changes…")}</button>
     {/if}
@@ -724,6 +757,13 @@
       <label class="item check"><input type="checkbox" checked={!hidden[c.key]} onchange={(e) => (hidden[c.key] = !e.currentTarget.checked)} />{c.label()}</label>
     {/each}
   </div>
+{/if}
+
+{#if breaking}
+  {@const b = breaking}
+  <ConfirmDialog title={t("Break the lock?")} danger confirm={t("Break lock")}
+    text={t("{name} holds {file}. Breaking the lock lets others change it; any changes {name} hasn't shared may then clash with theirs.", { name: b.name, file: b.path })}
+    onclose={() => (breaking = null)} onconfirm={() => { const p = b.path; breaking = null; breakLock(root, p); }} />
 {/if}
 
 {#if converting.length}
@@ -825,6 +865,9 @@
   .big-badge { min-width: 44px; height: 36px; padding: 0 var(--sp-6); font-size: var(--fs-md); border-radius: var(--radius); }
   .nm { min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
   .nm .fname { font-weight: var(--fw-semibold); font-size: var(--fs-md); }
+  .nmline { min-width: 0; display: flex; align-items: center; gap: var(--sp-6); }
+  .nmline .fname { flex: 0 1 auto; }
+  .lock-corner { position: absolute; right: var(--sp-6); top: var(--sp-6); }
   .msg { font-size: var(--fs-xs); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .num { text-align: right; font-size: var(--fs-sm); }
   .who { min-width: 0; display: flex; align-items: center; gap: var(--sp-6); font-size: var(--fs-sm); color: var(--muted); }

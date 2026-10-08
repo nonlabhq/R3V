@@ -41,6 +41,17 @@ func TestStableReachesNoService(t *testing.T) {
 	if _, err := SignIn(context.Background(), srv.URL, func(string) error { return nil }); !errors.Is(err, ErrNotInBuild) {
 		t.Errorf("sign in: %v", err)
 	}
+	// File locks too.
+	addr := "r3v-cloud+" + srv.URL + "/v1/teams/t1"
+	if _, err := Locks(addr, "p"); !errors.Is(err, remote.ErrLocksNotInBuild) {
+		t.Errorf("locks: %v", err)
+	}
+	if _, err := SetLocks(addr, "p", "w", []string{"a"}, nil); !errors.Is(err, remote.ErrLocksNotInBuild) {
+		t.Errorf("lock: %v", err)
+	}
+	if err := BreakLock(addr, "p", "a"); !errors.Is(err, remote.ErrLocksNotInBuild) {
+		t.Errorf("break: %v", err)
+	}
 	if n := hits.Load(); n != 0 {
 		t.Errorf("the service was reached %d time(s)", n)
 	}

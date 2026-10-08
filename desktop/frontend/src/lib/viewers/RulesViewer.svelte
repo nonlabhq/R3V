@@ -6,6 +6,7 @@
   import RulesEditor from "../RulesEditor.svelte";
   import { editRulesText, folderName, leftOutText, presetName, rulesChanges } from "../rules";
   import { rulesLook, setRulesPane } from "./settings.svelte";
+  import { fileLocksSet, lockingLines } from "../lockKinds";
   import TextViewer from "./TextViewer.svelte";
   import type { Side, ViewerProps } from "./types";
 
@@ -84,6 +85,15 @@
       </ul>
     </section>
   {/if}
+  {@const locking = lockingLines(r.teamLocks, r.fileLocks)}
+  {#if locking.length}
+    <section>
+      <h3>{t("File locks")}</h3>
+      <ul class="settings locking">
+        {#each locking as line, i (i)}<li>{line}</li>{/each}
+      </ul>
+    </section>
+  {/if}
 {/snippet}
 
 <div class="rulesview">
@@ -113,6 +123,9 @@
           <li class={c.kind}><span class="sign" aria-hidden="true">{sign[c.kind]}</span>{c.text}</li>
         {/each}
       </ul>
+      {#if now && now.teamLocks && !now.teamLocks.on && (fileLocksSet(now.fileLocks) || fileLocksSet(before?.fileLocks))}
+        <p class="faint small">{t("The team hasn't turned file locking on: this file's lock settings do nothing until it does.")}</p>
+      {/if}
     {:else}
       <p class="muted">{t("The rules are the same: only comments or layout changed.")}</p>
     {/if}

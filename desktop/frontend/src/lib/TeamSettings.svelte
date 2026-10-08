@@ -12,6 +12,7 @@
   import BackupSection from "./BackupSection.svelte";
   import Fold from "./Fold.svelte";
   import CloudPeople from "./CloudPeople.svelte";
+  import TeamLocks from "./TeamLocks.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
@@ -206,6 +207,7 @@
   </section>
 
   <CloudPeople {team} />
+  {#if !offline}<TeamLocks {team} />{/if}
   {:else}
   <section>
     <h3>{t("Your name in this team")}</h3>

@@ -14,6 +14,8 @@
   import { navKey, ownKey, type NavRow } from "./keynav";
   import { changesView, pickChangesView } from "./changesview.svelte";
   import { portal } from "./portal";
+  import LockBadge from "./LockBadge.svelte";
+  import { lockAt, locksOf } from "./locks.svelte";
 
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
@@ -46,6 +48,7 @@
   }
   let files = $state<ProjectFile[]>([]);
   let selected = $state("");
+  let lv = $derived(locksOf(root)); // file locks (off: none shown)
   // The menu of a file or folder (right click, or ⋯), with the ways to
   // leave it out of versions.
   let menu = $state<{ path: string; x: number; y: number; dir: boolean; ignore: IgnoreOption[] } | null>(null);
@@ -416,6 +419,7 @@
                   <span class="fdir">{f.status === "renamed" ? `← ${f.from}` : f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : t("Project folder")}</span>
                 </span>
                 <span class="right">
+                  {#if lockAt(lv, f.path)}<LockBadge lock={lockAt(lv, f.path)!} />{/if}
                   {#if f.live}
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive} title={t("Saved with {app}", { app: f.live })}>{v}</span>
@@ -444,6 +448,7 @@
                   <span class="from" title={t(f.edited ? "Moved from {path}, and changed" : "Moved from {path}", { path: f.from })}>← {fromLabel(f)}</span>
                 {/if}
                 <span class="right">
+                  {#if lockAt(lv, f.path)}<LockBadge lock={lockAt(lv, f.path)!} />{/if}
                   {#if f.live}
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive}

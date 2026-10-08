@@ -569,11 +569,27 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	}); err != nil {
 		return err
 	}
+	// A hosted team is told which paths the move gives new content to (it
+	// refuses one someone else holds a lock on).
+	var changed []string
+	if remote.SendsChanges(c) {
+		heads, err := c.Branches(r.Config.ProjectID)
+		if err != nil && !errors.Is(err, remote.ErrNotFound) {
+			return err
+		}
+		shared := []string{old}
+		for _, h := range heads {
+			shared = append(shared, h)
+		}
+		if changed, err = r.changedPaths(head, shared); err != nil {
+			return err
+		}
+	}
 	// (the last moment it can stop: then the team has it)
 	if err := r.stopped(); err != nil {
 		return err
 	}
-	if err := c.UpdateBranch(r.Config.ProjectID, branch, old, head); err != nil {
+	if err := remote.MoveBranch(c, r.Config.ProjectID, branch, old, head, changed); err != nil {
 		return err
 	}
 	next()

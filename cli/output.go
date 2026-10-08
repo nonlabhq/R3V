@@ -90,6 +90,13 @@ type cliError struct {
 	Hint      string
 	Conflicts []conflictJSON
 	Set       string // the set open in Live
+	Locks     []lockJSON
+}
+
+// lockJSON is a path someone else holds (a share refused: files_locked).
+type lockJSON struct {
+	Path     string `json:"path"`
+	MemberID string `json:"member_id"`
 }
 
 func (e *cliError) Error() string { return e.Err.Error() }
@@ -102,6 +109,7 @@ type errorJSON struct {
 	Exit      int            `json:"exit"`
 	Conflicts []conflictJSON `json:"conflicts,omitempty"`
 	Set       string         `json:"set,omitempty"`
+	Locks     []lockJSON     `json:"locks,omitempty"`
 }
 
 func usageError(format string, a ...any) error {
@@ -143,6 +151,18 @@ func classify(err error) *cliError {
 		return &cliError{Code: "team_needs_features", Exit: exitUpgrade, Err: err,
 			Hint: "the user must update R3V, or switch to the Nightly channel"}
 	}
+	var locked *remote.ErrLocked
+	if errors.As(err, &locked) {
+		ce := &cliError{Code: "files_locked", Exit: exitError, Err: err,
+			Hint: "someone else holds these files: the versions stay here; save again once they're unlocked"}
+		for _, l := range locked.Locks {
+			ce.Locks = append(ce.Locks, lockJSON{l.Path, l.MemberID})
+		}
+		return ce
+	}
+	if errors.Is(err, remote.ErrUpdateR3V) {
+		return &cliError{Code: "newer_version_needed", Exit: exitUpgrade, Err: err, Hint: "install the current R3V"}
+	}
 	var mc *project.MergeConflictError
 	if errors.As(err, &mc) {
 		return &cliError{Code: "merge_conflict", Exit: exitConflict, Err: err, Conflicts: conflictsJSON(mc.Conflicts),
@@ -176,7 +196,7 @@ func fail(command string, err error) int {
 	ce := classify(err)
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
-			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set}})
+			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())

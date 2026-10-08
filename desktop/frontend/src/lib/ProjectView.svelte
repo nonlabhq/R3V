@@ -5,6 +5,7 @@
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
   import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
+  import { loadLocks, watchLocks } from "./locks.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
   import { resetChangesView } from "./changesview.svelte";
@@ -244,6 +245,27 @@
   // Read again every minute (the team's side), when a set is saved or files
   // change; how a long step is going.
   watchProject(() => root, () => !!busy, load, (p) => (progress = p));
+  // File locks: kept current, and said at once when a change can't be shared.
+  watchLocks(() => root, () => st?.changes.map((c) => c.path) ?? []);
+
+  // Turning file locking on, offered once to the team's admin.
+  async function turnLocksOn() {
+    const team = st?.teamId;
+    if (!team) return;
+    try {
+      const cur = await api.TeamLocks(team);
+      await api.SetTeamLocks(team, true, cur?.kinds ?? []);
+      toast(t("File locking is on for {team}: change it in the team's settings", { team: st?.teamName || t("the team") }), "ok", 7000);
+      loadLocks(root);
+      load();
+    } catch (e) {
+      toast(errorText(e), "error", 9000);
+    }
+  }
+  async function locksNotNow() {
+    if (st?.teamId) await api.DismissLocksOffer(st.teamId).catch(() => {});
+    if (st) st = { ...st, locksOffer: false } as State;
+  }
 
   async function refresh() {
     if (refreshing) return;
@@ -308,6 +330,12 @@
         "cancelled": t("Commit cancelled: your changes are as they were"),
         "cancelled-kept": t("Stopped before the team got it: the version is on this computer, not shared yet"),
       };
+      if (r.action === "locked") {
+        toast(lockedText(r), "warn", 15000);
+        message = "";
+        resetChangesView(root);
+        return;
+      }
       const kind = r.action === "nothing" || r.action.startsWith("cancelled") ? "info" : "ok";
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
@@ -739,12 +767,19 @@
       call: () => api.ShareVersions(root),
       done: (r) => {
         if (r.action === "cancelled-kept") toast(t("Stopped: your versions are on this computer, not shared yet"), "info");
+        else if (r.action === "locked") toast(lockedText(r), "warn", 15000);
         else {
           toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
           autoIcon();
         }
       },
     });
+  }
+
+  // A share refused: someone else holds files it changes. Who holds what.
+  function lockedText(r: Result): string {
+    const list = (r.locks ?? []).map((l) => t("{file} ({name})", { file: l.path.slice(l.path.lastIndexOf("/") + 1), name: l.name || t("someone") }));
+    return t("Committed on this computer, not shared: someone else is editing {files}. It's shared once they unlock them (commit again then).", { files: list.join(", ") });
   }
 
   let folderName = $derived(root.split(/[\\/]/).pop()?.replace(/ Project$/, "") ?? root);
@@ -781,7 +816,8 @@
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
       onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules}
-      onqueue={() => (queue.open = true)} {loadError} />
+      onqueue={() => (queue.open = true)} {loadError}
+      onlockson={turnLocksOn} onlocksnotnow={locksNotNow} />
 
 
     <nav>

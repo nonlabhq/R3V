@@ -155,6 +155,7 @@ type State struct {
 	// BranchGone: from TeamState (TeamPart.BranchGone).
 	BranchGone *DeletedBranch `json:"branchGone"`
 	Milestones []Milestone    `json:"milestones"` // (TeamPart.Milestones)
+	LocksOffer bool           `json:"locksOffer"` // (TeamPart.LocksOffer)
 }
 
 // Result of save / update / merge / switch.
@@ -180,6 +181,9 @@ type Result struct {
 	Ours     *Version   `json:"ours"`
 	Theirs   *Version   `json:"theirs"`
 	Combined []Combined `json:"combined"`
+	// Locks: action "locked": the share was refused, someone else holds
+	// these paths; the version stays committed here.
+	Locks []HeldLock `json:"locks"`
 }
 
 type Preview struct {

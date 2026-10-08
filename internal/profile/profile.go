@@ -97,6 +97,7 @@ type file struct {
 	Presets   map[string]string `yaml:"presets"`
 	Rules     []Rule            `yaml:"rules"`
 	Gitignore bool              `yaml:"gitignore"`
+	FileLocks *fileLocks        `yaml:"file_locks"`
 }
 
 // Applied is a preset in use for a folder ("" is the project folder).
@@ -121,8 +122,10 @@ type Profile struct {
 	Gitignore bool
 	// OwnGitignore: .r3v.yaml itself says gitignore: true.
 	OwnGitignore bool
-	root         string
-	gi           gitignores
+	// FileLocks: what .r3v.yaml says about file locks (see locks.go).
+	FileLocks FileLocks
+	root      string
+	gi        gitignores
 }
 
 type applied struct {
@@ -207,6 +210,13 @@ func Parse(data []byte, root string) (*Profile, error) {
 		if err := checkPattern(r.pattern()); err != nil {
 			return Detect(root), fmt.Errorf("%s: rule %d: %w", FileName, i+1, err)
 		}
+	}
+	if f.FileLocks != nil {
+		fl, err := f.FileLocks.resolve()
+		if err != nil {
+			return Detect(root), fmt.Errorf("%s: %w", FileName, err)
+		}
+		p.FileLocks = fl
 	}
 	presets := f.Presets
 	if len(presets) == 0 {
