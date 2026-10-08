@@ -10,6 +10,7 @@
   import { resetChangesView } from "./changesview.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
+  import FileExplorer from "./FileExplorer.svelte";
   import CommitBox from "./CommitBox.svelte";
   import EditsSummary from "./EditsSummary.svelte";
   import ProjectHeader from "./ProjectHeader.svelte";
@@ -855,7 +856,8 @@
           </div>
         </div>
       {:else if tab === "files"}
-        <div class="pane">{@render changesPanel("all")}</div>
+        <FileExplorer {root} st={st} {looks} onrules={() => load()} ondiscard={(p) => (discardFile = p)}
+          onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
       {:else if tab === "settings" && settings}
         <div class="pane scroll"><div class="settings">{@render settings()}</div></div>
       {:else if tab === "changes"}

@@ -6,7 +6,6 @@
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
   import FileIcon from "./FileIcon.svelte";
-  import FileExplorer from "./FileExplorer.svelte";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
@@ -19,7 +18,8 @@
   // Changes tab: files on the left; on the right the selected file, as it is
   // (Preview), against the version you're on (Changes) or through its
   // versions (History), shown by its kind's viewer (viewers/). "All files"
-  // lists the whole project folder. Each file has a menu (⋯ or right click).
+  // lists the whole project folder (the Files tab is FileExplorer). Each file
+  // has a menu (⋯ or right click).
   let { root, st, summary, commitBox, scope, excluded = $bindable({}), ondiscard, ondiscardall, ondiscardsome, onrestore, onrules }: {
     root: string;
     scope?: "changes" | "all"; // the list fixed to the changes or every file (no All files switch)
@@ -329,11 +329,6 @@
 
 <div class="panel" bind:clientWidth={panelWidth} style:grid-template-columns="{sideWidth}px 1fr">
   {#if panelWidth}<Splitter key={splitKey} def={splitDef} width={panelWidth} minLeft={240} minRight={300} />{/if}
-  {#if scope === "all"}
-  <div class="side">
-    <FileExplorer {root} {files} {selected} onselect={select} onmenu={(e, p, dir) => openMenu(e, p, dir)} />
-  </div>
-  {:else}
   <div class="side">
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
   <aside class="files" bind:this={scroller} bind:clientHeight={viewH} onscroll={onScroll} tabindex="-1" onkeydown={onListKey}>
@@ -466,7 +461,6 @@
   </aside>
   {#if commitBox}<div class="commit">{@render commitBox()}</div>{/if}
   </div>
-  {/if}
 
   <section class="detail">
     {#if !selected || !current}
