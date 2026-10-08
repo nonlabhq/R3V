@@ -1,5 +1,17 @@
-<script lang="ts">
+<script lang="ts" module>
   import { t } from "./i18n.svelte";
+  // A kind of file in words ("Live Set", "Audio"…).
+  export function kindTitle(kind: string): string {
+    const titles: Record<string, string> = {
+      set: t("Live Set"), live: t("Live clip, preset or rack"), audio: t("Audio"), midi: "MIDI", other: t("File"), folder: t("Folder"),
+      scene: t("Scene"), level: t("Level"), prefab: "Prefab", asset: t("Asset"), script: t("Code"), image: t("Image"), model: t("3D model"),
+      meta: "Unity .meta",
+    };
+    return Object.hasOwn(titles, kind) ? titles[kind] : t("File");
+  }
+</script>
+
+<script lang="ts">
   // A small icon per kind of file, so sets, samples, MIDI and the rest are
   // told apart at a glance.
   let { kind, open = false, faint = false }: {
@@ -7,16 +19,10 @@
     open?: boolean; // folders
     faint?: boolean;
   } = $props();
-
-  const titles = (): Record<string, string> => ({
-    set: t("Live Set"), live: t("Live clip, preset or rack"), audio: t("Audio"), midi: "MIDI", other: t("File"), folder: t("Folder"),
-    scene: t("Scene"), level: t("Level"), prefab: "Prefab", asset: t("Asset"), script: t("Code"), image: t("Image"), model: t("3D model"),
-    meta: "Unity .meta",
-  });
 </script>
 
 <svg class="icon {kind}" class:faint viewBox="0 0 16 16" aria-hidden="true">
-  <title>{titles()[kind] ?? t("File")}</title>
+  <title>{kindTitle(kind)}</title>
   {#if kind === "set"}
     <!-- a set: arrangement lanes -->
     <rect x="1.5" y="2" width="13" height="12" rx="2.5" class="fill" />

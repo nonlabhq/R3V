@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clickPick, defaultMode, folderTree, findFolder, marqueePick, toolOf } from "./files";
+import { clickPick, folderTree, findFolder, marqueePick, toolOf } from "./files";
 
 const file = (path: string, status = "unchanged", kind = "other", preview = false) =>
   ({ path, status, size: 1, kind, live: "", from: "", edited: false, preview, video: false, model: false, modified: "" });
@@ -16,12 +16,6 @@ describe("files", () => {
     expect(findFolder(top, "B/D")!.changed).toBe(1);
     expect(findFolder(top, "x")!.changed).toBe(0);
     expect(findFolder(top, "B/Z")).toBeNull();
-  });
-
-  it("starts folders of pictures, models and sounds as a grid", () => {
-    expect(defaultMode([file("a.png", "unchanged", "image", true), file("b.png", "unchanged", "image", true), file("c.txt")])).toBe("grid");
-    expect(defaultMode([file("a.wav", "unchanged", "audio"), file("b.cs"), file("c.txt")])).toBe("list");
-    expect(defaultMode([])).toBe("list");
   });
 
   it("names the program a file is made with", () => {

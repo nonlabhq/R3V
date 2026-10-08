@@ -57,13 +57,6 @@ export function findFolder(top: Folder, path: string): Folder | null {
 /** The files right in a folder. */
 export const filesIn = (files: ProjectFile[], dir: string) => files.filter((f) => dirOf(f.path) === dir);
 
-/** Grid for a folder of mostly pictures, models or sounds; else List. */
-export function defaultMode(files: ProjectFile[]): "list" | "grid" {
-  if (!files.length) return "list";
-  const visual = files.filter((f) => f.preview || f.model || f.video || f.kind === "audio" || f.kind === "image" || f.kind === "model");
-  return visual.length * 2 > files.length ? "grid" : "list";
-}
-
 // The programs files are made with: a short badge, and the name "Open in"
 // says (only for files a program owns; others open in what Windows picks).
 const tools: [RegExp, string, string][] = [

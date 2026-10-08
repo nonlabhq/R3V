@@ -1365,5 +1365,6 @@
 "Show in folder": "フォルダーに表示",
 "Back to now": "現在に戻る",
 "History of this file": "このファイルの履歴",
-"No files right in this folder: its folders are on the left.": "このフォルダーの直下にファイルはありません。中のフォルダーは左にあります。"
+"No files right in this folder: its folders are on the left.": "このフォルダーの直下にファイルはありません。中のフォルダーは左にあります。",
+"Status": "状態"
 }

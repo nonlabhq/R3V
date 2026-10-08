@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
   import { splits, saveSplits, splitPx } from "./splits.svelte";
 
   // The line between two panes, dragged to share their width. It sits in a
@@ -31,7 +30,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="splitter" style:left="{left}px" onpointerdown={start} title={t("Drag to resize")}></div>
+<div class="splitter" style:left="{left}px" onpointerdown={start}></div>
 
 <style>
   .splitter { position: absolute; top: 0; bottom: 0; width: 7px; margin-left: -4px; cursor: col-resize; z-index: 3; touch-action: none; }
