@@ -1,6 +1,7 @@
 package desktop
 
 import (
+	"path"
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/diff"
@@ -74,6 +75,24 @@ type Conflict struct {
 	Unit        string `json:"unit"`
 	Description string `json:"description"`
 	CanKeepBoth bool   `json:"canKeepBoth"`
+	// Kind is what it is: "track" (a track of a Live Set; Track its id,
+	// Name its name), "file" (a whole file), or "set" (another part of a
+	// set: track order, a send, the set's settings).
+	Kind  string `json:"kind"`
+	Track string `json:"track"`
+	Name  string `json:"name"`
+	// Ours and Theirs: what each side did to it, "changed" or "deleted".
+	Ours   string `json:"ours"`
+	Theirs string `json:"theirs"`
+}
+
+// Combined is a thing a merge took in on its own: a track or a file
+// "added", "changed" or "removed" (File the file, Name the track's name
+// or "" for the file itself).
+type Combined struct {
+	File string `json:"file"`
+	Name string `json:"name"`
+	What string `json:"what"`
 }
 
 // RulesInfo is how a project's rules come about (see profile).
@@ -156,6 +175,11 @@ type Result struct {
 	KeptWork bool `json:"keptWork"`
 	// TakenBack: versions a teammate took back, taken out here too.
 	TakenBack []Version `json:"takenBack"`
+	// With Conflicts: the two sides (Ours with no id: the uncommitted
+	// files), and what was combined on its own.
+	Ours     *Version   `json:"ours"`
+	Theirs   *Version   `json:"theirs"`
+	Combined []Combined `json:"combined"`
 }
 
 type Preview struct {
@@ -208,8 +232,82 @@ func diffLines(d *diff.SetDiff) []string {
 func toConflicts(cs []project.ConflictItem) []Conflict {
 	out := []Conflict{}
 	for _, c := range cs {
-		out = append(out, Conflict{Key: c.Key, File: c.File, Unit: c.Unit, Description: c.Description,
-			CanKeepBoth: c.CanKeepBoth})
+		x := Conflict{Key: c.Key, File: c.File, Unit: c.Unit, Description: c.Description,
+			CanKeepBoth: c.CanKeepBoth, Kind: "set", Name: c.Unit, Ours: "changed", Theirs: "changed"}
+		_, inSet, _ := strings.Cut(c.Key, "#")
+		switch {
+		case c.Unit == c.File:
+			x.Kind, x.Name = "file", path.Base(c.File)
+		case strings.HasPrefix(inSet, "track:"):
+			x.Kind, x.Track = "track", strings.TrimPrefix(inSet, "track:")
+			if _, n, ok := quoted(c.Unit); ok {
+				x.Name = n
+			}
+		}
+		// (the words of internal/merge and project.mergeManifests)
+		d := c.Description
+		if strings.HasPrefix(d, "deleted in ours") || strings.HasPrefix(d, "deleted by you") {
+			x.Ours = "deleted"
+		}
+		if strings.HasSuffix(d, "deleted in theirs") || strings.HasSuffix(d, "deleted by others") {
+			x.Theirs = "deleted"
+		}
+		out = append(out, x)
+	}
+	return out
+}
+
+// quoted splits a merge label, `AudioTrack "Bass"`, into its kind and name.
+func quoted(label string) (kind, name string, ok bool) {
+	kind, rest, ok := strings.Cut(label, ` "`)
+	if !ok || !strings.HasSuffix(rest, `"`) {
+		return "", "", false
+	}
+	return kind, strings.TrimSuffix(rest, `"`), true
+}
+
+// combinedOf reads a merge's log (the lines of project.mergeManifests and
+// internal/merge) for what came in on its own; other lines are left out.
+func combinedOf(log []string) []Combined {
+	out := []Combined{}
+	seen := map[Combined]bool{}
+	add := func(c Combined) {
+		if !seen[c] {
+			seen[c] = true
+			out = append(out, c)
+		}
+	}
+	for _, l := range log {
+		switch {
+		case strings.HasPrefix(l, "took theirs: "):
+			add(Combined{File: strings.TrimPrefix(l, "took theirs: "), What: "changed"})
+		case strings.HasPrefix(l, "deleted (theirs): "):
+			add(Combined{File: strings.TrimPrefix(l, "deleted (theirs): "), What: "removed"})
+		case strings.HasSuffix(l, ": changed on both sides -> merged"):
+			add(Combined{File: strings.TrimSuffix(l, ": changed on both sides -> merged"), What: "changed"})
+		default:
+			// A set's track: `Song.als: AudioTrack "Choir": added from theirs`.
+			file, rest, ok := strings.Cut(l, ": ")
+			if !ok {
+				continue
+			}
+			label, what, ok := strings.Cut(rest, `": `)
+			if !ok {
+				continue
+			}
+			_, name, ok := quoted(label + `"`)
+			if !ok {
+				continue
+			}
+			switch {
+			case strings.HasPrefix(what, "added from theirs"):
+				add(Combined{File: file, Name: name, What: "added"})
+			case what == "took theirs":
+				add(Combined{File: file, Name: name, What: "changed"})
+			case strings.HasPrefix(what, "removed"):
+				add(Combined{File: file, Name: name, What: "removed"})
+			}
+		}
 	}
 	return out
 }
