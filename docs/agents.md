@@ -126,6 +126,7 @@ preview first and ask the user.
 | 1 | `unsaved_changes` | save first (`r3v save -m ...`); `update` keeps them unless you also have versions not shared |
 | 1 | `on_older_version` | an older version is checked out: `r3v checkout latest` |
 | 1 | `unshared_versions` | `r3v save -m ...` shares them |
+| 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `save` again once they are unlocked |
 | 1 | `not_connected` | the project is not in a team (`save` still saves locally) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
