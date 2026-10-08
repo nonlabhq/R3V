@@ -1446,5 +1446,13 @@
 "Fonts": "Font",
 "Archives": "Archivi",
 "{n} change not committed": "{n} modifica non salvata",
-"{n} changes not committed": "{n} modifiche non salvate"
+"{n} changes not committed": "{n} modifiche non salvate",
+"Converted {done} of {total}; these weren't:": "Convertiti {done} su {total}; questi no:",
+"Convert {n} samples": "Converti {n} campioni",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "Scrive ciascuno come {what} accanto al suo originale; «come l'originale» mantiene quelli di ciascuno. Gli originali restano.",
+"{n} of {total}: {file}": "{n} di {total}: {file}",
+"Converting…": "Conversione…",
+"Convert": "Converti",
+"Convert {n} samples…": "Converti {n} campioni…",
+"Converted {n} samples": "{n} campioni convertiti"
 }

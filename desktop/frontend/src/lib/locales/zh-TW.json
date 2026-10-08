@@ -1446,5 +1446,13 @@
 "Fonts": "字型",
 "Archives": "壓縮檔",
 "{n} change not committed": "{n} 項變更尚未提交",
-"{n} changes not committed": "{n} 項變更尚未提交"
+"{n} changes not committed": "{n} 項變更尚未提交",
+"Converted {done} of {total}; these weren't:": "已轉換 {total} 個中的 {done} 個；以下沒有轉換成功：",
+"Convert {n} samples": "轉換 {n} 個取樣",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "把每個寫成 {what}，放在各自的原檔旁邊；「與原檔相同」會保留各自的設定。原檔保持不變。",
+"{n} of {total}: {file}": "第 {n}/{total} 個：{file}",
+"Converting…": "轉換中…",
+"Convert": "轉換",
+"Convert {n} samples…": "轉換 {n} 個取樣…",
+"Converted {n} samples": "已轉換 {n} 個取樣"
 }

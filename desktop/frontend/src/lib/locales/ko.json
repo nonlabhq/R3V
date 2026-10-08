@@ -1446,5 +1446,13 @@
 "Fonts": "글꼴",
 "Archives": "압축 파일",
 "{n} change not committed": "커밋하지 않은 변경 {n}개",
-"{n} changes not committed": "커밋하지 않은 변경 {n}개"
+"{n} changes not committed": "커밋하지 않은 변경 {n}개",
+"Converted {done} of {total}; these weren't:": "{total}개 중 {done}개를 변환했습니다. 다음은 변환하지 못했습니다:",
+"Convert {n} samples": "샘플 {n}개 변환",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "각각을 {what}(으)로 원본 옆에 씁니다. “원본과 같게”는 각 파일의 값을 유지합니다. 원본은 그대로 둡니다.",
+"{n} of {total}: {file}": "{total}개 중 {n}번째: {file}",
+"Converting…": "변환 중…",
+"Convert": "변환",
+"Convert {n} samples…": "샘플 {n}개 변환…",
+"Converted {n} samples": "샘플 {n}개를 변환했습니다"
 }

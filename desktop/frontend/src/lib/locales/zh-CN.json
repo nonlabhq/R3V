@@ -1446,5 +1446,13 @@
 "Fonts": "字体",
 "Archives": "压缩包",
 "{n} change not committed": "{n} 处更改尚未提交",
-"{n} changes not committed": "{n} 处更改尚未提交"
+"{n} changes not committed": "{n} 处更改尚未提交",
+"Converted {done} of {total}; these weren't:": "已转换 {total} 个中的 {done} 个；以下未能转换：",
+"Convert {n} samples": "转换 {n} 个采样",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "将每个写成 {what}，放在各自原文件旁；“与原文件相同”保留各自的设置。原文件保持不变。",
+"{n} of {total}: {file}": "第 {n}/{total} 个：{file}",
+"Converting…": "正在转换…",
+"Convert": "转换",
+"Convert {n} samples…": "转换 {n} 个采样…",
+"Converted {n} samples": "已转换 {n} 个采样"
 }

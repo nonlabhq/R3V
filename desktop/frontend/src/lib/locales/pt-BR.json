@@ -1446,5 +1446,13 @@
 "Fonts": "Fontes",
 "Archives": "Arquivos compactados",
 "{n} change not committed": "{n} alteração não confirmada",
-"{n} changes not committed": "{n} alterações não confirmadas"
+"{n} changes not committed": "{n} alterações não confirmadas",
+"Converted {done} of {total}; these weren't:": "{done} de {total} convertidos; estes não:",
+"Convert {n} samples": "Converter {n} samples",
+"Writes each as {what} next to its original; “same as original” keeps each one's own. The originals stay.": "Grava cada um como {what} ao lado do original; “igual ao original” mantém os de cada um. Os originais ficam.",
+"{n} of {total}: {file}": "{n} de {total}: {file}",
+"Converting…": "Convertendo…",
+"Convert": "Converter",
+"Convert {n} samples…": "Converter {n} samples…",
+"Converted {n} samples": "{n} samples convertidos"
 }
