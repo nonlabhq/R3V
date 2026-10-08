@@ -1444,5 +1444,7 @@
 "Data & Config": "データと設定",
 "Documents": "ドキュメント",
 "Fonts": "フォント",
-"Archives": "アーカイブ"
+"Archives": "アーカイブ",
+"{n} change not committed": "未コミットの変更 {n} 件",
+"{n} changes not committed": "未コミットの変更 {n} 件"
 }

@@ -1444,5 +1444,7 @@
 "Data & Config": "데이터 및 설정",
 "Documents": "문서",
 "Fonts": "글꼴",
-"Archives": "압축 파일"
+"Archives": "압축 파일",
+"{n} change not committed": "커밋하지 않은 변경 {n}개",
+"{n} changes not committed": "커밋하지 않은 변경 {n}개"
 }

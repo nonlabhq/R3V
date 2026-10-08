@@ -352,8 +352,8 @@ describe("ProjectView: tabs", () => {
     localStorage.setItem(`r3v.tab:${ROOT}`, "history"); // (remembered from before)
     await show({ changes: [change("Song.als")] });
     const nav = document.querySelector("nav")!;
-    expect([...nav.querySelectorAll("button")].map((b) => b.textContent?.replace(/\d+/g, "").trim())).toEqual(["Overview", "Files", "Settings"]);
-    expect(nav.querySelector("button.on")?.textContent).toContain("Overview");
+    expect([...nav.querySelectorAll("button")].map((b) => b.textContent?.replace(/\d+/g, "").trim())).toEqual(["Versions", "Files", "Settings"]);
+    expect(nav.querySelector("button.on")?.textContent).toContain("Versions");
   });
 });
 

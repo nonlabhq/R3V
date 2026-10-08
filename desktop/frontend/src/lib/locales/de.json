@@ -1444,5 +1444,7 @@
 "Data & Config": "Daten & Konfiguration",
 "Documents": "Dokumente",
 "Fonts": "Schriften",
-"Archives": "Archive"
+"Archives": "Archive",
+"{n} change not committed": "{n} Änderung nicht committet",
+"{n} changes not committed": "{n} Änderungen nicht committet"
 }

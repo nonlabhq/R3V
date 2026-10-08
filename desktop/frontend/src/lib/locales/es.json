@@ -1444,5 +1444,7 @@
 "Data & Config": "Datos y configuración",
 "Documents": "Documentos",
 "Fonts": "Fuentes",
-"Archives": "Archivos comprimidos"
+"Archives": "Archivos comprimidos",
+"{n} change not committed": "{n} cambio sin confirmar",
+"{n} changes not committed": "{n} cambios sin confirmar"
 }

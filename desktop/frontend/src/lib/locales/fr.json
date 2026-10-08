@@ -1444,5 +1444,7 @@
 "Data & Config": "Données et configuration",
 "Documents": "Documents",
 "Fonts": "Polices",
-"Archives": "Archives"
+"Archives": "Archives",
+"{n} change not committed": "{n} modification non validée",
+"{n} changes not committed": "{n} modifications non validées"
 }
