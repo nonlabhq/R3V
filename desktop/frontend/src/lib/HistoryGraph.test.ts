@@ -97,6 +97,16 @@ describe("HistoryGraph", () => {
     expect(onselect).toHaveBeenLastCalledWith("m2");
   });
 
+  it("lines the milestones' capsules up on one edge", () => {
+    // (a branch off m1: its version is a column over)
+    show({ versions: [version("b1", "Idea", ["m1"]), ...versions], branches: [main, { name: "idea", latest: "b1" }],
+      milestones: [{ version: "m2", name: "v0.3 Playtest" }, { version: "m1", name: "First mix" }, { version: "b1", name: "Try" }] });
+    const lefts = ["v0.3 Playtest", "First mix", "Try"].map((n) => screen.getByRole("button", { name: n }).style.left);
+    expect(new Set(lefts).size).toBe(1);
+    const dots = ["Bass", "Idea"].map((n) => screen.getByRole("option", { name: new RegExp(`^${n},`) }).style.left);
+    expect(dots[0]).not.toBe(dots[1]); // on different columns, and still lined up
+  });
+
   it("keeps a milestone's capsule at the view's left edge as the graph moves, short of its dot", async () => {
     show({ milestones: [{ version: "m2", name: "v0.3 Playtest" }] });
     const capsule = screen.getByRole("button", { name: "v0.3 Playtest" });
