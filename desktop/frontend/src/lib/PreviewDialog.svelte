@@ -63,7 +63,7 @@
         </ul>
       </div>
     {:else if preview.action === "merge" && !blocked}
-      <p class="ok">{t("No conflicts — your work and theirs combine automatically.")}</p>
+      <p class="ok">{t("Nothing both of you changed — your work and theirs combine on their own.")}</p>
     {/if}
     {#if asksMessage}
       <label for="merge-msg">{t("Description of the merge version")}</label>

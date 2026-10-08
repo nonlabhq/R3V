@@ -314,7 +314,7 @@
 "No changes in the set's tracks.": "Nessuna modifica nelle tracce del Set.",
 "No changes since the version you're on.": "Nessuna modifica rispetto alla versione in cui sei.",
 "No committed versions of this file yet.": "Nessuna versione di questo file con commit, per ora.",
-"No conflicts — your work and theirs combine automatically.": "Nessun conflitto — il tuo lavoro e il loro si combinano automaticamente.",
+"Nothing both of you changed — your work and theirs combine on their own.": "Niente che avete cambiato entrambi: il tuo lavoro e il loro si uniscono da soli.",
 "No file changes.": "Nessuna modifica ai file.",
 "No line changes.": "Nessuna modifica alle righe.",
 "No longer tracked": "Non più tracciato",

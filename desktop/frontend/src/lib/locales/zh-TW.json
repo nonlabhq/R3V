@@ -314,7 +314,7 @@
 "No changes in the set's tracks.": "Set 的音軌沒有變更。",
 "No changes since the version you're on.": "自你目前所在的版本以來沒有變更。",
 "No committed versions of this file yet.": "這個檔案還沒有已提交的版本。",
-"No conflicts — your work and theirs combine automatically.": "沒有衝突——你的作品和他們的會自動合併。",
+"Nothing both of you changed — your work and theirs combine on their own.": "沒有你們都改過的地方——你的作品和他們的會自動合在一起。",
 "No file changes.": "沒有檔案變更。",
 "No line changes.": "沒有行的變更。",
 "No longer tracked": "不再追蹤",
