@@ -123,7 +123,7 @@ func call(service, token, method, path string, in, out any) error {
 		}
 		json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&e)
 		if e.Error.Message != "" {
-			return fmt.Errorf("R3V-Cloud: %s", e.Error.Message)
+			return &serviceError{e.Error.Code, e.Error.Message}
 		}
 		return fmt.Errorf("R3V-Cloud: %s %s: %d", method, shown, resp.StatusCode)
 	}
@@ -132,6 +132,12 @@ func call(service, token, method, path string, in, out any) error {
 	}
 	return json.NewDecoder(resp.Body).Decode(out)
 }
+
+// serviceError is what the service said went wrong: its code (for the
+// app) and its message (for people).
+type serviceError struct{ Code, Message string }
+
+func (e *serviceError) Error() string { return "R3V-Cloud: " + e.Message }
 
 // Me is the signed-in person and their teams.
 type Me struct {

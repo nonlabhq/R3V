@@ -57,6 +57,12 @@ type TeamSummary struct {
 	BackupFailing bool `json:"backupFailing"`
 	// Looks: the team keeps pictures, icons and colours (Nightly).
 	Looks bool `json:"looks"`
+	// Moving: the team is moving to R3V Cloud (no shares meanwhile).
+	// MovedTo: it moved there (the hosted team's address); MovedToTeam:
+	// that team's id here, once this computer has joined it.
+	Moving      bool   `json:"moving"`
+	MovedTo     string `json:"movedTo"`
+	MovedToTeam string `json:"movedToTeam"`
 	// Hosted: kept by R3V-Cloud (people and access managed there);
 	// SignedOut: this computer isn't signed in to it.
 	Hosted    bool `json:"hosted"`
@@ -194,11 +200,21 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	ov.TeamChecked = true
 	b, err := t.Open()
 	if err == nil {
-		// Follow the team's name when whoever runs it renames it.
-		if info, err := b.Info(); err == nil && teams.SyncTeamName(t.ID, info.Name) {
+		// Follow the team's name when whoever runs it renames it; and say
+		// when it's moving, or moved, to R3V Cloud.
+		if info, err := b.Info(); err == nil {
+			synced := teams.SyncTeamName(t.ID, info.Name)
 			for i := range ov.Teams {
-				if ov.Teams[i].ID == t.ID {
+				if ov.Teams[i].ID != t.ID {
+					continue
+				}
+				if synced {
 					ov.Teams[i].Name = info.Name
+				}
+				ov.Teams[i].Moving = info.Moving != nil
+				ov.Teams[i].MovedTo = info.MovedTo
+				if to := store.FindByURL(info.MovedTo); info.MovedTo != "" && to != nil {
+					ov.Teams[i].MovedToTeam = to.ID
 				}
 			}
 		}

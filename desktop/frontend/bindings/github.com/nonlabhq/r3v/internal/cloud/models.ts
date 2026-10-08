@@ -6,6 +6,47 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
+ * Claimable is an imported member, and whether someone claimed them.
+ */
+export class Claimable {
+    /**
+     * the old member id: theirs in the hosted team once claimed
+     */
+    "id": string;
+    "name": string;
+    "color"?: string;
+
+    /**
+     * the picture's SHA-256 (written as usual)
+     */
+    "picture"?: string;
+    "claimed": boolean;
+
+    /** Creates a new Claimable instance. */
+    constructor($$source: Partial<Claimable> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("claimed" in $$source)) {
+            this["claimed"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Claimable instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Claimable {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Claimable($$parsedSource as Partial<Claimable>);
+    }
+}
+
+/**
  * Invitation is one not yet accepted.
  */
 export class Invitation {

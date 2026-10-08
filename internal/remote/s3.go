@@ -694,3 +694,23 @@ func (s *BucketBackend) PrepareSnapshots(pid string, ids []string) {
 	}
 	p.PrepareGets(keys)
 }
+
+// Keys a move plans (see project.PlanMove): where a team's storage keeps a
+// file's contents, a big file's mark, a version.
+func ObjectKey(hash string) string      { return objectKey(hash) }
+func ChunkedKey(hash string) string     { return chunkedDir + hash }
+func SnapshotKey(pid, id string) string { return snapshotKey(pid, id) }
+
+// KeySizes maps the keys under prefix (relative to the team's folder) to
+// their sizes: one listing, a page at a time.
+func (s *BucketBackend) KeySizes(prefix string) (map[string]int64, error) {
+	items, err := listAll(s.b, prefix)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]int64, len(items))
+	for _, it := range items {
+		out[it.Key] = it.Size
+	}
+	return out, nil
+}

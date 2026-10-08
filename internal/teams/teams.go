@@ -119,6 +119,9 @@ type Store struct {
 	Teams   []Team `json:"teams"`
 	// Projects maps "<team id>/<project id>" to the local project folder.
 	Projects map[string]string `json:"projects"`
+	// Moves: teams this computer is moving to R3V Cloud, by the old team's
+	// id (docs/design/moving.md): picked up again after a restart.
+	Moves map[string]*Move `json:"moves,omitempty"`
 	// Local lists project folders kept on this computer only (no team).
 	Local []string `json:"local,omitempty"`
 	// ManualUpdates: R3V doesn't install updates on its own (it still
@@ -388,6 +391,17 @@ func NewID(n int) string {
 const LocalID = "local"
 
 // Remove forgets a team and its project locations (folders stay on disk).
+// Move is a team's move to R3V Cloud under way on this computer.
+type Move struct {
+	Move     string   `json:"move"`     // the service's id for it
+	To       string   `json:"to"`       // the hosted team's id here
+	Projects []string `json:"projects"` // the ones moving
+	// Phase: "copying" (the bulk, the team in use), "finishing" (frozen:
+	// the second pass, then records and branches), "done".
+	Phase string `json:"phase"`
+	Error string `json:"error,omitempty"` // what stopped it last
+}
+
 func (s *Store) Remove(id string) {
 	out := s.Teams[:0]
 	for _, t := range s.Teams {

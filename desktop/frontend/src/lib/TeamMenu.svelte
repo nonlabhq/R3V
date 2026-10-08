@@ -132,6 +132,23 @@
       reconnecting = false;
     }
   }
+  // The team moved to R3V Cloud and this computer joined it there: its
+  // projects follow (the same folders, nothing downloaded).
+  let following = $state(false);
+  async function follow() {
+    const from = current!, to = current!.movedToTeam;
+    following = true;
+    try {
+      await api.FollowMovedTeam(from.id, to);
+      await api.SelectTeam(to);
+      await reload();
+      toast(tr("Your projects are on R3V Cloud now, as they were."), "ok");
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      following = false;
+    }
+  }
 </script>
 
 <svelte:window onclick={(e) => { if (open && !(e.target as HTMLElement).closest(".team-menu")) open = false; }} />
@@ -162,6 +179,19 @@
   {#if current?.hosted && current.noAccess && !current.signedOut}
     <!-- the account signed in isn't in it (any more): the person decides -->
     <p class="who noaccess">⚠ {tr("The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.")}</p>
+  {/if}
+  {#if current?.moving}
+    <p class="who moved">↗ {tr("{team} is moving to R3V Cloud: versions you commit are kept here and shared once it's there.", { team: current.name })}</p>
+  {:else if current?.movedTo}
+    <!-- moved to R3V Cloud: join it there, and the projects come along -->
+    <div class="who moved">
+      ↗ {tr("{team} moved to R3V Cloud.", { team: current.name })}
+      {#if current.movedToTeam}
+        <button class="go" disabled={following} onclick={follow}>{tr("Bring my projects there")}</button>
+      {:else}
+        {tr("Ask a teammate for an invitation to it: when you join, your projects come along as they are.")}
+      {/if}
+    </div>
   {/if}
   {#if current && !current.memberId}
     <button class="who" onclick={() => (identityFor = current!)}
@@ -270,6 +300,8 @@
   }
   .item { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; }
   .item:hover { background: var(--hover); }
+  .moved { color: var(--accent); font-size: var(--fs-sm); line-height: 1.4; }
+  .moved .go { display: block; margin-top: var(--sp-4); font-size: var(--fs-sm); }
   .team-row { display: flex; align-items: center; }
   .team-row .item { flex: 1; min-width: 0; }
   .gear { flex: none; border: none; background: transparent; color: var(--faint); padding: var(--sp-4) var(--sp-8); border-radius: var(--radius); }
