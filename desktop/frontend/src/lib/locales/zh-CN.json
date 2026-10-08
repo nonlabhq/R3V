@@ -1446,5 +1446,6 @@
 "Fonts": "字体",
 "Archives": "压缩包",
 "{n} change not committed": "{n} 处更改尚未提交",
-"{n} changes not committed": "{n} 处更改尚未提交"
+"{n} changes not committed": "{n} 处更改尚未提交",
+"Not a text file.": "不是文本文件。"
 }

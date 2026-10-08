@@ -1446,5 +1446,6 @@
 "Fonts": "Polices",
 "Archives": "Archives",
 "{n} change not committed": "{n} modification non validée",
-"{n} changes not committed": "{n} modifications non validées"
+"{n} changes not committed": "{n} modifications non validées",
+"Not a text file.": "Ce n'est pas un fichier texte."
 }
