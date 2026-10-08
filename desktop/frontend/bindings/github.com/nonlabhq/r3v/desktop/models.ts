@@ -681,6 +681,49 @@ export class DownloadSize {
 }
 
 /**
+ * DropResult tells what dropping files into the project did.
+ */
+export class DropResult {
+    /**
+     * the new files and folders (relative paths)
+     */
+    "copied": string[];
+
+    /**
+     * names already in the folder: nothing was copied
+     */
+    "clashes": string[];
+
+    /** Creates a new DropResult instance. */
+    constructor($$source: Partial<DropResult> = {}) {
+        if (!("copied" in $$source)) {
+            this["copied"] = [];
+        }
+        if (!("clashes" in $$source)) {
+            this["clashes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new DropResult instance from a string or object.
+     */
+    static createFrom($$source: any = {}): DropResult {
+        const $$createField0_0 = $$createType6;
+        const $$createField1_0 = $$createType6;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("copied" in $$parsedSource) {
+            $$parsedSource["copied"] = $$createField0_0($$parsedSource["copied"]);
+        }
+        if ("clashes" in $$parsedSource) {
+            $$parsedSource["clashes"] = $$createField1_0($$parsedSource["clashes"]);
+        }
+        return new DropResult($$parsedSource as Partial<DropResult>);
+    }
+}
+
+/**
  * FileVersion is a version that changed a file.
  */
 export class FileVersion {

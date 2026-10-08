@@ -99,6 +99,11 @@ func Run() {
 		URL:       "/",
 		// Started by Windows at sign-in: stay in the tray.
 		Hidden: slices.Contains(os.Args[1:], backgroundFlag),
+		// Files dropped from Explorer on the Files tab (data-file-drop-target).
+		EnableFileDrop: true,
+	})
+	window.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
+		svc.emit("files-dropped", droppedFiles(e.Context().DroppedFiles(), e.Context().DropTargetDetails()))
 	})
 	// Closing the window keeps R3V running in the tray (the team watches keep
 	// watching); Quit is in the tray menu.
@@ -133,6 +138,25 @@ func Run() {
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// FilesDrop is files dropped on a folder of a project (the drop target's
+// data-root and data-dir); the page copies them in (CopyIntoProject).
+type FilesDrop struct {
+	Files []string `json:"files"`
+	Root  string   `json:"root"`
+	Dir   string   `json:"dir"`
+}
+
+func droppedFiles(files []string, target *application.DropTargetDetails) FilesDrop {
+	out := FilesDrop{Files: files}
+	if out.Files == nil {
+		out.Files = []string{}
+	}
+	if target != nil {
+		out.Root, out.Dir = target.Attributes["data-root"], target.Attributes["data-dir"]
+	}
+	return out
 }
 
 // instanceID makes a second launch open the running app's window; a build
