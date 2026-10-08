@@ -1429,5 +1429,8 @@
 "Cancel the merge?": "マージをやめますか？",
 "The decisions you made are forgotten and nothing changes.": "選んだ内容は破棄され、何も変わりません。",
 "Keep deciding": "判断を続ける",
-"Not in this version": "このバージョンにはありません"
+"Not in this version": "このバージョンにはありません",
+"Merge back to main": "main にマージして戻す",
+"Merge this version into main": "このバージョンを main にマージ",
+"Go to main, then merge this version into it": "main に切り替えてから、このバージョンをマージ"
 }

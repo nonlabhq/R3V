@@ -187,7 +187,7 @@
 
   // The card for the version under the pointer: what it is, and what can be
   // done with it. It stays while the pointer is on the dot or the card.
-  const CARD_W = 280;
+  const CARD_W = 220;
   let hovered = $state<string | null>(null);
   let cardHeight = $state(140);
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -465,8 +465,8 @@
             <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
           {/if}
           <div class="card-t">
-            <div class="card-msg">{v.message || t("(no description)")}</div>
-            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {labelOf(card.branch)}{/if} · <span class="mono">{v.short}</span></div>
+            <div class="card-msg" title={v.short}>{v.message || t("(no description)")}</div>
+            <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {labelOf(card.branch)}{/if}</div>
             {#if flags.has(v.id)}<div class="card-flag">⚑ {flags.get(v.id)!.join(" · ")}</div>{/if}
           </div>
         </div>
@@ -542,7 +542,8 @@
   .mtag b { color: var(--text); font-weight: var(--fw-semibold); }
   .mtag .mname { overflow: hidden; text-overflow: ellipsis; }
   .mline { opacity: .55; }
-  .card-acts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-6); margin-top: var(--sp-10); }
+  .card-acts { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-10); }
+  .card-acts :global(button) { justify-content: flex-start; }
   .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
   /* A branch's label: its name (picks its newest version); with settings,
      a ⋯ floats just outside its right end on hover (the label keeps its

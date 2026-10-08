@@ -1429,5 +1429,8 @@
 "Cancel the merge?": "要取消合并吗？",
 "The decisions you made are forgotten and nothing changes.": "你做的决定不会保留，什么都不会改变。",
 "Keep deciding": "继续决定",
-"Not in this version": "这个版本没有"
+"Not in this version": "这个版本没有",
+"Merge back to main": "合并回 main",
+"Merge this version into main": "将此版本合并到 main",
+"Go to main, then merge this version into it": "先切换到 main，再将此版本合并进去"
 }
