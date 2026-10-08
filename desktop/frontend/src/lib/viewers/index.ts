@@ -9,6 +9,7 @@ import ModelViewer from "./ModelViewer.svelte";
 import ImageViewer from "./ImageViewer.svelte";
 import TextViewer from "./TextViewer.svelte";
 import MarkdownViewer from "./MarkdownViewer.svelte";
+import RulesViewer from "./RulesViewer.svelte";
 
 const text: Viewer = { id: "text", matches: () => true, component: TextViewer };
 
@@ -19,6 +20,7 @@ export const viewers: Viewer[] = [
   { id: "model", matches: (f) => f.model, component: ModelViewer },
   { id: "image", matches: (f) => f.preview, component: ImageViewer },
   { id: "markdown", matches: (f) => /\.(md|markdown)$/i.test(f.path), component: MarkdownViewer },
+  { id: "rules", matches: (f) => f.path === ".r3v.yaml", component: RulesViewer }, // the project's own rules
   text, // anything else: text when it is text, a note when it isn't
 ];
 

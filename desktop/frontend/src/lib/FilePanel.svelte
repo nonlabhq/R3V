@@ -105,7 +105,7 @@
         <p class="muted">{t("R3V doesn't keep this file in versions: the project's rules leave it out (see the project's settings, ⚙ at the top).")}</p>
       {:else if shown}
         {#key `${shown.path}|${shown.version}`}
-          <View {root} {file} a={shown} b={null} compare={false} {stamp} />
+          <View {root} {file} a={shown} b={null} compare={false} {stamp} editable={!picked && file.status !== "deleted"} />
         {/key}
       {:else}
         <p class="muted">{t("Deleted in this version.")}</p>

@@ -32,3 +32,11 @@ export function setMdText(on: boolean) {
   mdLook.text = on;
   write("r3v.mdText", on ? "1" : "0");
 }
+
+// The project's rules file: the rules in plain words, or its text.
+export type RulesPane = "rules" | "text";
+export const rulesLook = $state({ pane: (read("r3v.rulesPane") === "text" ? "text" : "rules") as RulesPane });
+export function setRulesPane(p: RulesPane) {
+  rulesLook.pane = p;
+  write("r3v.rulesPane", p);
+}

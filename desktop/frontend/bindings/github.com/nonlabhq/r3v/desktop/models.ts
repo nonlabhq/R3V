@@ -1957,6 +1957,87 @@ export class RulesInfo {
 }
 
 /**
+ * RulesState is a project's .r3v.yaml in one version, read by the same
+ * parser R3V follows: what the file viewer shows in plain words, and
+ * compares rule by rule.
+ */
+export class RulesState {
+    /**
+     * false: no rules file in that version
+     */
+    "exists": boolean;
+
+    /**
+     * it can't be read: shown as text instead
+     */
+    "error": string;
+
+    /**
+     * the oldest R3V that understands it
+     */
+    "requires": string;
+
+    /**
+     * follows the project's .gitignore files
+     */
+    "gitignore": boolean;
+    "presets": profile$0.PresetEntry[];
+    "rules": RuleItem[];
+
+    /**
+     * the presets R3V knows, with what they leave out
+     */
+    "options": PresetOption[];
+
+    /** Creates a new RulesState instance. */
+    constructor($$source: Partial<RulesState> = {}) {
+        if (!("exists" in $$source)) {
+            this["exists"] = false;
+        }
+        if (!("error" in $$source)) {
+            this["error"] = "";
+        }
+        if (!("requires" in $$source)) {
+            this["requires"] = "";
+        }
+        if (!("gitignore" in $$source)) {
+            this["gitignore"] = false;
+        }
+        if (!("presets" in $$source)) {
+            this["presets"] = [];
+        }
+        if (!("rules" in $$source)) {
+            this["rules"] = [];
+        }
+        if (!("options" in $$source)) {
+            this["options"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RulesState instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RulesState {
+        const $$createField4_0 = $$createType37;
+        const $$createField5_0 = $$createType39;
+        const $$createField6_0 = $$createType43;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("presets" in $$parsedSource) {
+            $$parsedSource["presets"] = $$createField4_0($$parsedSource["presets"]);
+        }
+        if ("rules" in $$parsedSource) {
+            $$parsedSource["rules"] = $$createField5_0($$parsedSource["rules"]);
+        }
+        if ("options" in $$parsedSource) {
+            $$parsedSource["options"] = $$createField6_0($$parsedSource["options"]);
+        }
+        return new RulesState($$parsedSource as Partial<RulesState>);
+    }
+}
+
+/**
  * SampleSpot is a sample the project's sets use that is missing or only in
  * R3V's hidden .r3v folder (see project.SampleSpots).
  */

@@ -44,6 +44,7 @@ export {
     RuleSuggestion,
     RulesDetail,
     RulesInfo,
+    RulesState,
     SampleSpot,
     SetTrackChange,
     SetView,

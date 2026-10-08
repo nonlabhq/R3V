@@ -119,8 +119,10 @@ type Profile struct {
 	// Gitignore: the project's .gitignore files apply too (from
 	// .r3v.yaml, or a preset in use).
 	Gitignore bool
-	root      string
-	gi        gitignores
+	// OwnGitignore: .r3v.yaml itself says gitignore: true.
+	OwnGitignore bool
+	root         string
+	gi           gitignores
 }
 
 type applied struct {
@@ -192,7 +194,7 @@ func Parse(data []byte, root string) (*Profile, error) {
 		return Detect(root), fmt.Errorf("%s: %s", FileName, plainYAMLError(err))
 	}
 	p := &Profile{Requires: strings.TrimSpace(f.Requires), Rules: f.Rules, FromFile: true, root: root,
-		Gitignore: f.Gitignore}
+		Gitignore: f.Gitignore, OwnGitignore: f.Gitignore}
 	if p.Requires != "" {
 		if _, err := parseVersion(p.Requires); err != nil {
 			return Detect(root), fmt.Errorf("%s: requires: %q is not a version like \"0.7\"", FileName, p.Requires)
