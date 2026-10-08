@@ -21,6 +21,16 @@ type PresetOption struct {
 	LeftOut []string `json:"leftOut"` // its ignore patterns
 }
 
+// presetOptions are the presets R3V knows.
+func presetOptions() []PresetOption {
+	out := []PresetOption{}
+	for _, name := range profile.Names() {
+		p, _ := profile.Builtin(name)
+		out = append(out, PresetOption{Name: name, LeftOut: append([]string{}, p.Ignore...)})
+	}
+	return out
+}
+
 // RuleItem is a rule of .r3v.yaml.
 type RuleItem struct {
 	Kind    string `json:"kind"` // ignore | track
@@ -56,24 +66,27 @@ func (a *App) ProjectRules(root string) (*RulesDetail, error) {
 		return nil, err
 	}
 	out := &RulesDetail{Presets: profile.PresetEntries(string(data)), Rules: []RuleItem{},
-		Suggestions: suggestions(r), Options: []PresetOption{}}
-	for _, name := range profile.Names() {
-		p, _ := profile.Builtin(name)
-		out.Options = append(out.Options, PresetOption{Name: name, LeftOut: append([]string{}, p.Ignore...)})
-	}
+		Suggestions: suggestions(r), Options: presetOptions()}
 	rules, err := r.Profile()
 	if err != nil {
 		out.Error = err.Error()
 		return out, nil
 	}
+	out.Rules = ruleItems(rules)
+	return out, nil
+}
+
+// ruleItems are a profile's own rules, in order.
+func ruleItems(rules *profile.Profile) []RuleItem {
+	out := []RuleItem{}
 	for _, ru := range rules.Rules {
 		if ru.Ignore != "" {
-			out.Rules = append(out.Rules, RuleItem{Kind: "ignore", Pattern: ru.Ignore})
+			out = append(out, RuleItem{Kind: "ignore", Pattern: ru.Ignore})
 		} else {
-			out.Rules = append(out.Rules, RuleItem{Kind: "track", Pattern: ru.Track})
+			out = append(out, RuleItem{Kind: "track", Pattern: ru.Track})
 		}
 	}
-	return out, nil
+	return out
 }
 
 // RuleNode is a file or folder in the Rules window's tree.
