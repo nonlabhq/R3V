@@ -13,7 +13,7 @@
   // does it.
   let { st, busy, progress, restorable, missingSamples, onshare, onrecover, onpreset, onbranchhere, onlatest,
     oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, oncancel, cancelling = false, loadError = "",
-    onrestorebranch, onswitchmain }: {
+    onrestorebranch, onswitchmain, onlockson, onlocksnotnow }: {
     st: State;
     busy: string;
     progress: Progress | null;
@@ -37,6 +37,8 @@
     loadError?: string; // the project couldn't be read again just now (what is shown is from before)
     onrestorebranch?: () => void; // the branch you are on was deleted: bring it back
     onswitchmain?: () => void;
+    onlockson?: () => void; // turn file locking on for the team (offered once)
+    onlocksnotnow?: () => void;
   } = $props();
 
   // The warning about OneDrive & co., once understood, stays away (per project).
@@ -92,6 +94,14 @@
   <div class="banner info">
     <div>{t("Not shared with {team} yet: its versions are on this computer only.", { team: st.teamName || t("the team") })}</div>
     <button class="primary" onclick={onshare}>{t("Share now")}</button>
+  </div>
+{/if}
+
+{#if st.locksOffer && onlockson && !busy && !progress}
+  <div class="banner info">
+    <div>{t("Files like these can't be merged: when two people change the same one, one of them loses their work. With file locking, {team} sees who is working on which file, and a change to a file someone else holds waits until they're done.", { team: st.teamName || t("the team") })}</div>
+    {#if onlocksnotnow}<button onclick={onlocksnotnow}>{t("Not now")}</button>{/if}
+    <button class="primary" onclick={onlockson}>{t("Turn on file locking")}</button>
   </div>
 {/if}
 

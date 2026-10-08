@@ -2581,6 +2581,11 @@ export class State {
      */
     "milestones": Milestone[];
 
+    /**
+     * (TeamPart.LocksOffer)
+     */
+    "locksOffer": boolean;
+
     /** Creates a new State instance. */
     constructor($$source: Partial<State> = {}) {
         if (!("rules" in $$source)) {
@@ -2672,6 +2677,9 @@ export class State {
         }
         if (!("milestones" in $$source)) {
             this["milestones"] = [];
+        }
+        if (!("locksOffer" in $$source)) {
+            this["locksOffer"] = false;
         }
 
         Object.assign(this, $$source);

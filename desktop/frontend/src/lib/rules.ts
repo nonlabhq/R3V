@@ -4,6 +4,7 @@
 import { t } from "./i18n.svelte";
 import { api, errorText } from "./api";
 import { toast } from "./notify.svelte";
+import { fileLocksChanges } from "./lockKinds";
 import type { RulesState } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
 
 export const presetName = (p: string) => ({ ableton: "Ableton Live", unity: "Unity", unreal: "Unreal", godot: "Godot",
@@ -89,5 +90,7 @@ export function rulesChanges(now: RulesState | null, before: RulesState | null):
   if (!!a?.gitignore !== !!b?.gitignore) out.push(a?.gitignore
     ? { kind: "add", text: t("Follows the project's .gitignore files") }
     : { kind: "del", text: t("No longer follows the project's .gitignore files") });
+  // File locks (file_locks:).
+  if (a || b) out.push(...fileLocksChanges(a?.fileLocks, b?.fileLocks));
   return out;
 }

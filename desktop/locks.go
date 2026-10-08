@@ -665,14 +665,10 @@ func locksOffer(r *project.Repo) bool {
 	if _, ok := cloud.Hosted(*t); !ok {
 		return false
 	}
-	if !benefits(r) {
+	if s, err := teamLockSettings(t, false); err != nil || s.On {
 		return false
 	}
-	s, err := teamLockSettings(t, false)
-	if err != nil || s.On {
-		return false
-	}
-	return isAdmin(myRole(t))
+	return isAdmin(myRole(t)) && benefits(r)
 }
 
 // benefits: a project with files that can't be merged and are worked on

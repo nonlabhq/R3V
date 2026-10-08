@@ -155,6 +155,7 @@ type State struct {
 	// BranchGone: from TeamState (TeamPart.BranchGone).
 	BranchGone *DeletedBranch `json:"branchGone"`
 	Milestones []Milestone    `json:"milestones"` // (TeamPart.Milestones)
+	LocksOffer bool           `json:"locksOffer"` // (TeamPart.LocksOffer)
 }
 
 // Result of save / update / merge / switch.
