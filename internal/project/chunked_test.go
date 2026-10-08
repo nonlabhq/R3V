@@ -143,3 +143,45 @@ func TestChunkedFlaky(t *testing.T) {
 		t.Fatal("level differs")
 	}
 }
+
+// A big file's pieces are listed while the save reads it (the upload
+// doesn't read it once more for them); a list that doesn't match the file
+// any more stops the upload rather than sending what isn't the file.
+func TestChunkListFromSave(t *testing.T) {
+	fake := s3test.New("team")
+	defer fake.Close()
+	cfg := remote.Config{URL: "s3+" + fake.URL + "/team/r3v", AccessKey: "key", SecretKey: "secret"}
+	a, _ := Init(newProject(t), "yi")
+	if err := a.SetRemote(remote.EncodeConnectionCode(cfg)); err != nil {
+		t.Fatal(err)
+	}
+	level := randomBytes(3, 20<<20)
+	write(t, a.Root, "Maps/Level.umap", string(level))
+	h := chunk.HashOf(level)
+	want, _, err := chunk.ListFile(filepath.Join(a.Root, "Maps", "Level.umap"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, _, err := a.hashFile(filepath.Join(a.Root, "Maps", "Level.umap")); err != nil || got != h {
+		t.Fatalf("hash %s, %v", got, err)
+	}
+	if got := a.loadChunkList(h); got == nil || !bytes.Equal(got.Encode(), want.Encode()) {
+		t.Fatal("hashing the level didn't keep its chunk list")
+	}
+	if _, _, err := a.Save("first", Strategy("fail")); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	// The list kept, but the file changed since: the upload says so.
+	c, err := remote.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	other := filepath.Join(t.TempDir(), "other")
+	os.WriteFile(other, randomBytes(4, 20<<20), 0o644)
+	err = a.uploadChunked(c.(remote.BodyStore), c, h, other, -1, a.newTransfer(StageUploading, 1, 0),
+		func([]string) error { return nil })
+	if err == nil || !strings.Contains(err.Error(), "changed") {
+		t.Errorf("uploading other bytes under the list: %v", err)
+	}
+}

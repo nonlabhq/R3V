@@ -62,6 +62,43 @@ func (r *Repo) loadChunkList(h string) *chunk.List {
 	return l
 }
 
+// lister lists the pieces of a big file from its bytes written to it: the
+// save lists them while it reads the file anyway, and the upload needn't
+// read the file once more for them.
+type lister struct {
+	pw   *io.PipeWriter
+	done chan *chunk.List
+}
+
+func newLister() *lister {
+	pr, pw := io.Pipe()
+	l := &lister{pw, make(chan *chunk.List, 1)}
+	go func() {
+		list := &chunk.List{}
+		err := chunk.Cut(pr, func(p []byte) error {
+			list.Pieces = append(list.Pieces, chunk.Piece{Hash: chunk.HashOf(p), Size: int64(len(p))})
+			return nil
+		})
+		io.Copy(io.Discard, pr) // (never holds the writer up)
+		if err != nil {
+			list = nil
+		}
+		l.done <- list
+	}()
+	return l
+}
+
+func (l *lister) Write(p []byte) (int, error) { return l.pw.Write(p) }
+
+// keep ends the listing and keeps the list as the file h's; nothing when
+// reading the file failed (err).
+func (l *lister) keep(r *Repo, h string, err error) {
+	l.pw.CloseWithError(err)
+	if list := <-l.done; err == nil && list != nil {
+		r.saveChunkList(h, list)
+	}
+}
+
 // tidyChunkLists forgets the chunk lists of files no longer on this computer.
 func (r *Repo) tidyChunkLists() {
 	entries, _ := os.ReadDir(filepath.Join(r.Dir, chunksDir))
@@ -77,15 +114,21 @@ func (r *Repo) tidyChunkLists() {
 // not delete one this share relies on).
 func (r *Repo) uploadChunked(bs remote.BodyStore, c remote.Backend, h, src string, size int64, t *transfer,
 	hold func([]string) error) error {
-	l, whole, err := chunk.ListFile(src)
-	if err != nil {
-		return err
-	}
 	changed := fmt.Errorf("%s changed while it was being uploaded: save again", filepath.Base(src))
-	if whole != h {
-		return changed
+	// The list the save made reading the file (or an earlier upload or
+	// download did); the pieces sent are checked against it below.
+	l := r.loadChunkList(h)
+	if l == nil {
+		var whole string
+		var err error
+		if l, whole, err = chunk.ListFile(src); err != nil {
+			return err
+		}
+		if whole != h {
+			return changed
+		}
+		r.saveChunkList(h, l)
 	}
-	r.saveChunkList(h, l)
 	hashes := l.Hashes()
 	if err := hold(hashes); err != nil {
 		return err
@@ -129,6 +172,57 @@ func (r *Repo) uploadChunked(bs remote.BodyStore, c remote.Backend, h, src strin
 		defer mu.Unlock()
 		return firstErr
 	}
+	// On a hosted team, the upload URLs are asked for a window of pieces at
+	// a time (and the list's and mark's with the first): not one each.
+	listBody := blob.ChunkList(l.Encode())
+	prep, _ := c.(remote.UploadPreparer)
+	first := true
+	type piece struct {
+		hash, sha string
+		body      []byte
+		raw       int
+	}
+	var window []piece
+	flush := func() {
+		if prep != nil && (len(window) > 0 || first) {
+			bodies := make([]remote.Body, 0, len(window)+1)
+			for _, p := range window {
+				bodies = append(bodies, remote.Body{Hash: p.hash, SHA256: p.sha, Size: int64(len(p.body))})
+			}
+			var marks []string
+			if first {
+				bodies = append(bodies, remote.Body{Hash: h, SHA256: chunk.HashOf(listBody), Size: int64(len(listBody))})
+				marks = []string{h}
+			}
+			prep.PrepareUploads(bodies, marks)
+			first = false
+		}
+		for _, p := range window {
+			sem <- struct{}{}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer func() { <-sem }()
+				t.shrink(int64(p.raw - len(p.body)))
+				err := remote.Retry(remote.RetryAttempts, func() error {
+					cr := t.reader(bytes.NewReader(p.body), int64(len(p.body)))
+					if err := bs.PutObjectBody(p.hash, cr, int64(len(p.body)), p.sha); err != nil {
+						cr.undo()
+						return err
+					}
+					return nil
+				})
+				if err != nil {
+					mu.Lock()
+					if firstErr == nil {
+						firstErr = fmt.Errorf("piece %s: %w", short(p.hash), err)
+					}
+					mu.Unlock()
+				}
+			}()
+		}
+		window = window[:0]
+	}
 	i := 0
 	sent := map[string]bool{}
 	err = chunk.Cut(f, func(p []byte) error {
@@ -144,33 +238,16 @@ func (r *Repo) uploadChunked(bs remote.BodyStore, c remote.Backend, h, src strin
 		if err := failed(); err != nil {
 			return err
 		}
-		raw := len(p)
 		body := blob.EncodeBytes(append([]byte(nil), p...))
-		sem <- struct{}{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer func() { <-sem }()
-			t.shrink(int64(raw - len(body)))
-			bodySHA := chunk.HashOf(body)
-			err := remote.Retry(remote.RetryAttempts, func() error {
-				cr := t.reader(bytes.NewReader(body), int64(len(body)))
-				if err := bs.PutObjectBody(ph, cr, int64(len(body)), bodySHA); err != nil {
-					cr.undo()
-					return err
-				}
-				return nil
-			})
-			if err != nil {
-				mu.Lock()
-				if firstErr == nil {
-					firstErr = fmt.Errorf("piece %s: %w", short(ph), err)
-				}
-				mu.Unlock()
-			}
-		}()
+		window = append(window, piece{ph, chunk.HashOf(body), body, len(p)})
+		if len(window) == cap(sem) {
+			flush()
+		}
 		return nil
 	})
+	if err == nil {
+		flush()
+	}
 	wg.Wait()
 	if err == nil {
 		err = failed()
@@ -186,9 +263,8 @@ func (r *Repo) uploadChunked(bs remote.BodyStore, c remote.Backend, h, src strin
 	if err := remote.Retry(remote.RetryAttempts, func() error { return bs.MarkChunked(h) }); err != nil {
 		return err
 	}
-	body := blob.ChunkList(l.Encode())
 	return remote.Retry(remote.RetryAttempts, func() error {
-		return bs.PutObjectBody(h, bytes.NewReader(body), int64(len(body)), chunk.HashOf(body))
+		return bs.PutObjectBody(h, bytes.NewReader(listBody), int64(len(listBody)), chunk.HashOf(listBody))
 	})
 }
 

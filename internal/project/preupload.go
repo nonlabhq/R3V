@@ -168,17 +168,18 @@ func (r *Repo) Preupload(c remote.Backend, cand PreuploadCandidate, progress fun
 		tmp.Close()
 		return err
 	}
-	h := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tmp, h), src)
+	h, l := sha256.New(), newLister()
+	_, err = io.Copy(io.MultiWriter(tmp, h, l), src)
 	src.Close()
 	if cerr := tmp.Close(); err == nil {
 		err = cerr
 	}
+	if err == nil && hex.EncodeToString(h.Sum(nil)) != cand.Hash {
+		err = ErrChangedSince
+	}
+	l.keep(r, cand.Hash, err)
 	if err != nil {
 		return err
-	}
-	if hex.EncodeToString(h.Sum(nil)) != cand.Hash {
-		return ErrChangedSince
 	}
 	copyPath := filepath.Join(dir, cand.Hash)
 	if err := os.Rename(tmp.Name(), copyPath); err != nil {

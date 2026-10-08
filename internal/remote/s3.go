@@ -671,6 +671,57 @@ type Preparer interface {
 
 var _ Preparer = (*BucketBackend)(nil)
 
+// PutPrep is an upload to get ready: the key, and the size and SHA-256
+// (hex) of the bytes that will go up.
+type PutPrep struct {
+	Key    string
+	Size   int64
+	SHA256 string
+}
+
+// PutPreparer is storage reached through presigned URLs that can ask for
+// many uploads at once (the hosted service; see GetPreparer).
+type PutPreparer interface{ PreparePuts(items []PutPrep) }
+
+// Body is an object's bytes as stored (see BodyStore.PutObjectBody).
+type Body struct {
+	Hash, SHA256 string
+	Size         int64
+}
+
+// UploadPreparer is a backend that can get many uploads ready at once:
+// objects' bodies, and big files' marks.
+type UploadPreparer interface {
+	PrepareUploads(bodies []Body, marks []string) bool
+}
+
+// PrepareUploads gets the uploads of these bodies and big files' marks
+// ready; false when there is nothing to gain (storage reached directly).
+func (s *BucketBackend) PrepareUploads(bodies []Body, marks []string) bool {
+	p, ok := s.b.(PutPreparer)
+	if !ok {
+		return false
+	}
+	var items []PutPrep
+	for _, b := range bodies {
+		if validHex(b.Hash, 64) {
+			items = append(items, PutPrep{s.objectKey(b.Hash), b.Size, b.SHA256})
+		}
+	}
+	for _, h := range marks {
+		if validHex(h, 64) {
+			items = append(items, PutPrep{s.objs + chunkedDir + h, 0, emptySHA})
+		}
+	}
+	if len(items) > 0 {
+		p.PreparePuts(items)
+	}
+	return true
+}
+
+// emptySHA is the SHA-256 of nothing (a big file's mark).
+const emptySHA = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
 func (s *BucketBackend) PrepareObjects(hashes []string) {
 	p, ok := s.b.(GetPreparer)
 	if !ok || len(hashes) < 2 {
