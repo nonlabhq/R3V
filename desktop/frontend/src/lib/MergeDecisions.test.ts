@@ -39,7 +39,7 @@ const props = (over: Record<string, unknown> = {}) => ({
   conflicts: [bass, kick], root: "C:/P", project: "Lighthouse", me: "Yi",
   ours: version("o1", "Yi", "u-yi", "Choir layer"), theirs: version("t1", "Mo", "u-mo", "Bass EQ"),
   combined: [{ file: "Song.als", name: "Choir", what: "added" }, { file: "Samples/snare.wav", name: "", what: "changed" }],
-  kind: "merge", ourBranch: "darker-chorus", theirBranch: "main",
+  kind: "merge" as const, ourBranch: "darker-chorus", theirBranch: "main",
   branches: [{ name: "main" }, { name: "darker-chorus" }],
   onresolve: vi.fn(), onclose: vi.fn(), ...over,
 });
@@ -129,7 +129,7 @@ describe("MergeDecisions", () => {
   });
 
   it("your own versions from another computer: this computer's or the team's", async () => {
-    const p = props({ kind: "update", ourBranch: "main", theirBranch: "", conflicts: [kick], combined: [],
+    const p = props({ kind: "update" as const, ourBranch: "main", theirBranch: "", conflicts: [kick], combined: [],
       theirs: version("t1", "Yi", "u-yi", "From the laptop") });
     render(MergeDecisions, p);
     expect(screen.getByRole("dialog").getAttribute("aria-label")).toBe("Both sides changed kick.wav");
@@ -143,7 +143,7 @@ describe("MergeDecisions", () => {
   });
 
   it("undoing: keep it as it is now, or take it back", async () => {
-    const p = props({ kind: "undo", version: "Bass EQ", conflicts: [kick], ours: version("o1", "Yi", "u-yi", "Later"),
+    const p = props({ kind: "undo" as const, version: "Bass EQ", conflicts: [kick], ours: version("o1", "Yi", "u-yi", "Later"),
       theirs: version("b1", "Mo", "u-mo", "Before") });
     render(MergeDecisions, p);
     expect(screen.getByRole("dialog").getAttribute("aria-label")).toBe("kick.wav changed again after that version");
@@ -156,7 +156,7 @@ describe("MergeDecisions", () => {
   });
 
   it("works with conflicts sent the older way (no sides)", async () => {
-    const p = props({ ours: null, theirs: null, combined: [], kind: "update", ourBranch: "main", theirBranch: "",
+    const p = props({ ours: null, theirs: null, combined: [], kind: "update" as const, ourBranch: "main", theirBranch: "",
       conflicts: [{ key: "k1", file: "Song.als", unit: "Bass", description: "both changed it", canKeepBoth: false }] });
     render(MergeDecisions, p);
     expect(screen.getByRole("dialog").getAttribute("aria-label")).toBe("Both sides changed the same part of Song.als");

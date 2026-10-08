@@ -314,7 +314,7 @@
 "No changes in the set's tracks.": "セットのトラックに変更はありません。",
 "No changes since the version you're on.": "現在のバージョンから変更はありません。",
 "No committed versions of this file yet.": "このファイルにはまだコミットされたバージョンがありません。",
-"No conflicts — your work and theirs combine automatically.": "競合なし — あなたの作業と相手の作業は自動でまとまります。",
+"Nothing both of you changed — your work and theirs combine on their own.": "両方で変更したものはありません。あなたの作業と相手の作業は自動でまとめられます。",
 "No file changes.": "ファイルの変更はありません。",
 "No line changes.": "行の変更はありません。",
 "No longer tracked": "追跡対象外",
