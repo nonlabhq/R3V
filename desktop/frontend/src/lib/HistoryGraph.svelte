@@ -189,7 +189,10 @@
   // done with it. It stays while the pointer is on the dot or the card.
   const CARD_W = 220;
   let hovered = $state<string | null>(null);
-  let cardHeight = $state(140);
+  // Placed by its height folded (its buttons open below on hover, the card
+  // staying where it is): the head's, and the padding.
+  let headHeight = $state(60);
+  let cardHeight = $derived(headHeight + 22);
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
   // Where the graph is in the window when a card opens (the card is put
   // over everything, the sidebar included: see portal).
@@ -455,9 +458,9 @@
       {@const v = card.v}
       <div class="card surface-menu" class:right={card.right} role="group" aria-label={v.message || t("(no description)")} use:portal
         style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
-        bind:clientHeight={cardHeight} onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
+        onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
         <span class="arrow" aria-hidden="true"></span>
-        <div class="card-h">
+        <div class="card-h" bind:clientHeight={headHeight}>
           {#if looks}
             {@const lk = lookOf(v)!}
             <Avatar name={v.author} seed={v.authorId || v.author} color={lk.color} picture={lk.picture} />
@@ -470,7 +473,7 @@
             {#if flags.has(v.id)}<div class="card-flag">⚑ {flags.get(v.id)!.join(" · ")}</div>{/if}
           </div>
         </div>
-        {#if actions}<div class="card-acts">{@render actions(v)}</div>{/if}
+        {#if actions}<div class="acts-fold"><div class="card-acts">{@render actions(v)}</div></div>{/if}
       </div>
     {/if}
   {/if}
@@ -542,9 +545,16 @@
   .mtag b { color: var(--text); font-weight: var(--fw-semibold); }
   .mtag .mname { overflow: hidden; text-overflow: ellipsis; }
   .mline { opacity: .55; }
-  .card-acts { display: flex; flex-direction: column; gap: var(--sp-4); margin-top: var(--sp-10); }
-  .card-acts :global(button) { justify-content: flex-start; }
-  .card-acts :global(button) { padding: var(--sp-4) var(--sp-8); font-size: var(--fs-sm); }
+  /* A card comes in quietly; its buttons open below on hover (the card
+     stays where it is). */
+  .card { animation: card-in .16s ease-out; }
+  @keyframes card-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+  .acts-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .16s ease-out; }
+  .card:hover .acts-fold, .card:focus-within .acts-fold { grid-template-rows: 1fr; }
+  .card-acts { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: var(--sp-2); }
+  .card-acts > :global(:first-child) { margin-top: var(--sp-10); }
+  .card-acts :global(button) { justify-content: flex-start; text-align: left; padding: var(--sp-4) var(--sp-8); font-size: var(--fs-xs); }
+  .card-acts :global(button.danger-act) { color: var(--danger); }
   /* A branch's label: its name (picks its newest version); with settings,
      a ⋯ floats just outside its right end on hover (the label keeps its
      size and frame). */

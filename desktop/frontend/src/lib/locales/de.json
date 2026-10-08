@@ -1541,5 +1541,9 @@
 "A project's .r3v.yaml can narrow this: turn locks off for it, or add and remove kinds of file.": "Die .r3v.yaml eines Projekts kann das einschränken: Sperren für das Projekt ausschalten oder Dateiarten hinzufügen und entfernen.",
 "Turning it on: teammates on an older R3V must update before they can share.": "Beim Einschalten: Wer ein älteres R3V nutzt, muss vor dem Teilen aktualisieren.",
 "Owners and admins change it.": "Inhaber und Admins können das ändern.",
-"File locks": "Dateisperren"
+"File locks": "Dateisperren",
+"Go to this version": "Zu dieser Version",
+"New branch from here": "Neuer Branch von hier",
+"Merge into current version": "In die aktuelle Version zusammenführen",
+"Undo this commit": "Diesen Commit rückgängig machen"
 }

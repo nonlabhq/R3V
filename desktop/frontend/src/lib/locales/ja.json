@@ -1541,5 +1541,9 @@
 "A project's .r3v.yaml can narrow this: turn locks off for it, or add and remove kinds of file.": "プロジェクトの .r3v.yaml でこれを絞り込めます：そのプロジェクトのロックをオフにしたり、ファイルの種類を追加・除外したりできます。",
 "Turning it on: teammates on an older R3V must update before they can share.": "オンにすると、古い R3V を使っているメンバーは共有する前に更新が必要です。",
 "Owners and admins change it.": "オーナーと管理者が変更できます。",
-"File locks": "ファイルロック"
+"File locks": "ファイルロック",
+"Go to this version": "このバージョンに移動",
+"New branch from here": "ここから新しいブランチ",
+"Merge into current version": "現在のバージョンにマージ",
+"Undo this commit": "このコミットを取り消す"
 }

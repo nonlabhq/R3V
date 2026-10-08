@@ -1541,5 +1541,9 @@
 "A project's .r3v.yaml can narrow this: turn locks off for it, or add and remove kinds of file.": "프로젝트의 .r3v.yaml에서 범위를 좁힐 수 있습니다. 그 프로젝트의 잠금을 끄거나 파일 종류를 추가하거나 뺄 수 있습니다.",
 "Turning it on: teammates on an older R3V must update before they can share.": "켜면 이전 버전의 R3V를 쓰는 팀원은 공유하기 전에 업데이트해야 합니다.",
 "Owners and admins change it.": "소유자와 관리자가 바꿀 수 있습니다.",
-"File locks": "파일 잠금"
+"File locks": "파일 잠금",
+"Go to this version": "이 버전으로 이동",
+"New branch from here": "여기서 새 브랜치",
+"Merge into current version": "현재 버전에 병합",
+"Undo this commit": "이 커밋 취소"
 }

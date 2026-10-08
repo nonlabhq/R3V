@@ -12,7 +12,8 @@
 </script>
 
 <script lang="ts">
-  import { typeOf, typeTitle, type FileType } from "./fileTypes";
+  import { programOf, typeOf, typeTitle, type FileType } from "./fileTypes";
+  import { appIcons } from "./appIcons";
   // A small icon per kind of file, so sets, samples, MIDI and the rest are
   // told apart at a glance. Given its path, a file is drawn as its kind by
   // extension (fileTypes.ts); one of none, as kind says.
@@ -26,8 +27,17 @@
   const drawn: Record<FileType, string> = { project: "project", audio: "audio", midi: "midi", image: "image", video: "video",
     model: "model", code: "script", data: "data", doc: "doc", font: "font", archive: "archive" };
   let type = $derived(given ?? (path !== undefined && kind !== "folder" ? typeOf(path) : ""));
-  let k = $derived(type ? drawn[type] : kind);
+  // (the "project" kind's own icon is for the kind alone: a project file
+  // is drawn as its program, or as it was)
+  let k = $derived(type && (type !== "project" || given) ? drawn[type] : kind);
+  // A file a program owns: that program's icon (not for a kind given alone).
+  let app = $derived(!given && path !== undefined && kind !== "folder" ? programOf(path) : "");
 </script>
+
+{#if app && appIcons[app]}
+<svg class="icon {k} app" class:faint viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+  stroke-linejoin="round" aria-hidden="true"><title>{appIcons[app].title}</title>{@html appIcons[app].svg}</svg>
+{:else}
 
 <svg class="icon {k}" class:faint viewBox="0 0 16 16" aria-hidden="true">
   <title>{type ? typeTitle(type) : kindTitle(kind)}</title>
@@ -123,6 +133,7 @@
     <path d="M9 1.5 v3.5 h3.5" class="line" />
   {/if}
 </svg>
+{/if}
 
 <style>
   .icon { width: 16px; height: 16px; flex: none; }
