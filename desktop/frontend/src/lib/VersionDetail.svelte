@@ -182,12 +182,13 @@
 
 <style>
   .version { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-  header { display: flex; align-items: flex-start; gap: var(--sp-12); padding: var(--sp-14) var(--sp-16);
+  header { display: flex; align-items: flex-start; flex-wrap: wrap; gap: var(--sp-10) var(--sp-12); padding: var(--sp-14) var(--sp-16);
     border-bottom: var(--border-width) solid var(--line); }
-  .title { flex: 1; min-width: 0; }
+  /* the title keeps its room: short of it, the buttons go on a line below */
+  .title { flex: 1 1 280px; min-width: 0; }
   h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); user-select: text; }
   .meta { font-size: var(--fs-sm); color: var(--faint); margin-top: var(--sp-2); }
-  .acts { display: flex; gap: var(--sp-6); flex-wrap: wrap; justify-content: flex-end; }
+  .acts { display: flex; gap: var(--sp-6); flex-wrap: wrap; margin-left: auto; }
   .acts :global(button) { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   .body { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; }
   aside { border-right: var(--border-width) solid var(--line); overflow: auto; padding: var(--sp-8); }
