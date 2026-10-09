@@ -34,7 +34,7 @@ var jsonMode bool
 
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "save": true, "update": true, "merge": true,
-	"version": true, "backup": true}
+	"version": true, "backup": true, "switch": true, "checkout": true, "parked": true}
 
 // stripJSON takes --json (or -json) out of args.
 func stripJSON(args []string) ([]string, bool) {
@@ -131,6 +131,7 @@ var codes = []struct {
 	{project.ErrDirty, "unsaved_changes", exitError, "save them first: r3v save -m \"...\" (it also brings in the team's versions)"},
 	{project.ErrOlderVersion, "on_older_version", exitError, "go back to the latest version: r3v checkout latest"},
 	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v save -m ..."},
+	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
 }

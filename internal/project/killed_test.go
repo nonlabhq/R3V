@@ -65,6 +65,9 @@ func killedChild(op string) int {
 			_, err = r.Update(Strategy("fail"))
 		case "checkout":
 			_, _, err = r.Checkout(os.Getenv("R3V_KILL_TO"), false)
+		case "goto-parking":
+			Parking = true
+			_, _, err = r.GoTo(os.Getenv("R3V_KILL_TO"), false)
 		case "preupload":
 			PreuploadMin = 1000 // (as the test that started it)
 			cands, cerr := r.PreuploadCandidates(time.Now().Add(time.Hour))

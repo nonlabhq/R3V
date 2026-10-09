@@ -831,6 +831,8 @@ type SyncResult struct {
 	KeptWork bool
 	// TakenBack: versions a teammate took back, taken out here too.
 	TakenBack []*Manifest
+	// Park: what a switch did with uncommitted changes (Parking).
+	Park *ParkOutcome
 }
 
 // Update brings the workspace up to date with the team branch: a fast
@@ -993,15 +995,7 @@ func (r *Repo) updateKeepingWork(c remote.Backend, head, target string, opts Mer
 	if err := r.save(merged); err != nil {
 		return nil, err
 	}
-	keep := work.ID + "\n" + merged.ID + "\n"
-	if old, err := os.ReadFile(filepath.Join(r.Dir, keptWorkFile)); err == nil {
-		for _, id := range strings.Fields(string(old)) {
-			if !strings.Contains(keep, id) {
-				os.Remove(r.snapshotPath(id))
-			}
-		}
-	}
-	os.WriteFile(filepath.Join(r.Dir, keptWorkFile), []byte(keep), 0o644)
+	r.keepWork(work.ID, merged.ID)
 	res.Action, res.To, res.MergeLog, res.Relinked, res.KeptWork = "fast-forward", target, log, notes, true
 	return res, nil
 }

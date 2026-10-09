@@ -308,9 +308,12 @@ func (r *Repo) PruneObjects() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	// Parked changes stay here whatever the team's storage has: no version
+	// there names them (docs/design/parking.md).
+	parked := r.parkedHashes()
 	var candidates []string
 	for h := range all {
-		if !sets[h] && r.Store.Has(h) {
+		if !sets[h] && !parked[h] && r.Store.Has(h) {
 			candidates = append(candidates, h)
 		}
 	}

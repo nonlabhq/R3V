@@ -50,8 +50,10 @@ func (r *Repo) ensureObjects(m *Manifest) error {
 
 // GoTo puts the project folder in the state of a version ("latest" for the
 // newest). Newer versions are kept: Latest remembers where the branch is.
-// Uncommitted changes make it fail with ErrDirty unless discard is set.
+// Uncommitted changes make it fail with ErrDirty unless discard is set; with
+// Parking they are parked instead (r.Park says what happened).
 func (r *Repo) GoTo(ref string, discard bool) (*Manifest, []string, error) {
+	r.Park = nil
 	latest := r.Latest()
 	if ref == "latest" {
 		ref = latest
@@ -67,8 +69,16 @@ func (r *Repo) GoTo(ref string, discard bool) (*Manifest, []string, error) {
 	if err := r.ensureObjects(m); err != nil {
 		return nil, nil, err
 	}
-	m, notes, err := r.Checkout(id, discard)
-	if err != nil {
+	var notes []string
+	if Parking && !discard {
+		at := ""
+		if id != latest {
+			at = id
+		}
+		if r.Park, notes, err = r.switchKeeping(m, r.BranchName(), at); err != nil {
+			return nil, nil, err
+		}
+	} else if m, notes, err = r.Checkout(id, discard); err != nil {
 		return nil, nil, err
 	}
 	r.Config.Tip = ""
@@ -78,6 +88,7 @@ func (r *Repo) GoTo(ref string, discard bool) (*Manifest, []string, error) {
 	if err := r.SaveConfig(); err != nil {
 		return nil, nil, err
 	}
+	r.arrived()
 	if r.OnOlderVersion() && r.Config.Remote != nil {
 		r.AdoptBranchAtHead()
 	}

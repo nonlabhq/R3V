@@ -265,12 +265,22 @@ func (r *Repo) RecoverSwitch() ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		return r.putFiles(m, r.Head(), id)
+		notes, err := r.putFiles(m, r.Head(), id)
+		if err != nil {
+			return nil, err
+		}
+		// A switch parking these changes: they are here again.
+		if p := r.ParkedAt(r.place()); p != nil && p.Version == work {
+			r.dropParked(*p)
+		}
+		r.arrived()
+		return notes, nil
 	}
 	if h := r.Head(); h != "" {
 		id = h
 	}
 	_, notes, err := r.Checkout(id, true)
+	r.arrived()
 	return notes, err
 }
 
