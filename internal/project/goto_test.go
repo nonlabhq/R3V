@@ -20,6 +20,7 @@ func fileOf(t *testing.T, p string) string {
 }
 
 func TestGoToOlderVersionAndBack(t *testing.T) {
+	parking(t, false) // (parked_test.go: with it on)
 	root := newProject(t)
 	r, _ := Init(root, "yi")
 	v1 := mustSnapshot(t, r, "v1")

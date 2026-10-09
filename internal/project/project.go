@@ -76,6 +76,8 @@ type Repo struct {
 	// Only, when not nil, limits the next commits to the changes of these
 	// paths (from Status); other changes stay uncommitted.
 	Only []string
+	// Park: what the last GoTo did with uncommitted changes (Parking).
+	Park *ParkOutcome
 
 	sizes   map[string]int64  // object sizes known from manifests (knowSizes)
 	remote  map[string]bool   // objects only in the team's storage (remoteOnly)

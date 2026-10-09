@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
-  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type TeamSummary,
+  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type TeamSummary, type ParkedSet,
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
   import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
@@ -280,10 +280,13 @@
   let graphPick = $state("");
   let shown = $derived.by(() => {
     if (!st) return "";
-    if (graphPick === "pending" ? st.changes.length > 0 : st.history.some((v) => v.id === graphPick)) return graphPick;
+    if (graphPick === "pending" ? st.changes.length > 0
+      : graphPick.startsWith("parked:") ? (st.parked ?? []).some((p) => parkKey(p) === graphPick)
+      : st.history.some((v) => v.id === graphPick)) return graphPick;
     return st.changes.length ? "pending" : st.head || st.history[0]?.id || "";
   });
   let shownVersion = $derived(st?.history.find((v) => v.id === shown));
+  let shownParked = $derived((st?.parked ?? []).find((p) => parkKey(p) === shown));
   let overviewWidth = $state(0);
   let graphWidth = $derived(splitPx("graph", 0.36, overviewWidth, 280, 520));
   // The graph's card fills the tab (inset); the details float over its right
@@ -642,8 +645,70 @@
     run({
       name: "switch",
       call: (_res, force) => api.SwitchBranch(root, name, force),
-      done: () => toast(t("Now working on “{branch}”", { branch: bl(name) }) + reopen(), "ok", 8000),
+      done: (r) => toast(t("Now working on “{branch}”", { branch: bl(name) }) + reopen() + parkText(r), "ok", 9000),
     });
+  }
+
+  // --- parked changes (Nightly): kept with the place they were made ---
+
+  // A parked set's id in the graph.
+  const parkKey = (p: ParkedSet) => `parked:${p.branch}@${p.at}`;
+  // Where a set was made, in words.
+  function placeOf(p: ParkedSet): string {
+    if (!p.at) return `“${bl(p.branch)}”`;
+    const v = st?.history.find((x) => x.id === p.at);
+    return `“${v?.message || p.at.slice(0, 8)}”`;
+  }
+  // What a switch did with your changes, for its message.
+  function parkText(r: Result): string {
+    const k = r.park;
+    if (!k) return "";
+    let out = "";
+    if (k.parked) out += ". " + tn(k.parked.files, "Your {n} change is parked on {place}: it comes back when you return.",
+      "Your {n} changes are parked on {place}: they come back when you return.", { place: placeOf(k.parked) });
+    if (k.restored) out += ". " + (k.merged
+      ? tn(k.restored.files, "Brought back your {n} parked change, merged with the versions since.", "Brought back your {n} parked changes, merged with the versions since.")
+      : tn(k.restored.files, "Brought back your {n} parked change.", "Brought back your {n} parked changes."));
+    if (k.waiting) out += ". " + tn(k.waiting.files, "Your {n} parked change here needs choices before it comes back: it's in the graph.",
+      "Your {n} parked changes here need choices before they come back: they're in the graph.");
+    return out;
+  }
+  // Is the project where a set was made?
+  const isHere = (p: ParkedSet) => p.branch === st?.branch && p.at === (st?.olderVersion ? st.head : "");
+  // Go where it was made (the switch brings it back): its branch, else its version.
+  function returnTo(p: ParkedSet) {
+    if (p.branch !== st?.branch) return switchTo(p.branch);
+    const v = p.at ? st.history.find((x) => x.id === p.at) : undefined;
+    graphPick = "";
+    run(goAction(p.at || "latest", false, v?.message ?? ""));
+  }
+  function bringHere(p: ParkedSet) {
+    run({
+      name: "bring",
+      merge: { kind: "merge", branch: p.branch, version: t("parked changes") },
+      call: (res, force) => api.BringParked(root, p.branch, p.at, res, force),
+      done: () => {
+        graphPick = "";
+        toast(tn(p.files, "Brought {n} parked change here: it's in your changes.", "Brought {n} parked changes here: they're in your changes.") + reopen(), "ok", 8000);
+      },
+    });
+  }
+  // A set shown as a version (its files against the version it was made on).
+  const parkedVersion = (p: ParkedSet): Version => ({ id: p.version, short: p.version.slice(0, 10), author: st?.author ?? "",
+    time: p.since, message: tn(p.files, "{n} parked change", "{n} parked changes"), parents: [p.base], branches: [],
+    authorId: "", inBranch: false, notHere: false });
+  let discardingParked = $state<ParkedSet | null>(null);
+  async function discardParked() {
+    const p = discardingParked!;
+    discardingParked = null;
+    try {
+      await api.DiscardParked(root, p.branch, p.at);
+      graphPick = "";
+      toast(tn(p.files, "Discarded {n} parked change", "Discarded {n} parked changes"), "ok");
+    } catch (e) {
+      toast(errorText(e), "error");
+    }
+    await load();
   }
 
   // --- versions: go to, back to latest, keep, export ---
@@ -651,8 +716,8 @@
   const goAction = (id: string, discard: boolean, label: string): Action => ({
     name: "goto",
     call: (_res, force) => api.GoToVersion(root, id, discard, force),
-    done: () => {
-      toast((id === "latest" ? t("Back to the latest version") : t("Now on “{version}”", { version: label })) + reopen(), "ok", 8000);
+    done: (r) => {
+      toast((id === "latest" ? t("Back to the latest version") : t("Now on “{version}”", { version: label })) + reopen() + parkText(r), "ok", 9000);
       if (branchAfterGo === id) { branchAfterGo = ""; newBranch = ""; }
     },
   });
@@ -669,7 +734,7 @@
   // uncommitted changes.
   function goTo(v: Version | null) {
     if (v?.id !== branchAfterGo) branchAfterGo = ""; // going elsewhere: no new branch after it
-    if (st?.changes.length) {
+    if (st?.changes.length && !st.parking) { // (parking: they wait for you there)
       leaving = { target: v, message: "" };
       return;
     }
@@ -914,6 +979,7 @@
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
+              parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since }))}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
           {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
@@ -925,6 +991,18 @@
               </div>
               <div class="pending-body">{@render changesPanel("changes", true)}</div>
               <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
+            {:else if shownParked}
+              {@const p = shownParked}
+              {@const gone = !st.branches.some((b) => b.name === p.branch)}
+              {#snippet parkedActs()}
+                {#if !isHere(p) && !gone}
+                  <button class="primary" onclick={() => returnTo(p)} disabled={!!busy}><ActionIcon name="goto" />{t("Switch and bring back")}</button>
+                {/if}
+                <button onclick={() => bringHere(p)} disabled={!!busy}><ActionIcon name="merge" />{t("Bring changes here")}</button>
+                <button class="danger-act" onclick={() => (discardingParked = p)} disabled={!!busy}>{t("Discard")}</button>
+              {/snippet}
+              <VersionDetail {root} v={parkedVersion(p)} actions={parkedActs}
+                branch={gone ? t("from “{branch}”, deleted", { branch: p.branch }) : placeOf(p)} />
             {:else if shownVersion}
               {@const v = shownVersion}
               {#snippet acts()}{@render versionActions(v)}{/snippet}
@@ -981,6 +1059,13 @@
   {#if combine}
     <CombineDialog {root} preview={combine.data} branch={bl(st.branch)} older={!!st.olderVersion} bind:message={combine.message} busy={!!busy}
       onclose={() => (combine = null)} oncombine={combineAndShare} onbranch={() => putOnBranch(combine!.message)} />
+  {/if}
+
+  {#if discardingParked}
+    {@const p = discardingParked}
+    <ConfirmDialog title={tn(p.files, "Discard {n} parked change?", "Discard {n} parked changes?")} danger confirm={t("Discard")}
+      text={t("The changes parked on {place} will be lost. This can't be undone.", { place: placeOf(p) })}
+      onconfirm={discardParked} onclose={() => (discardingParked = null)} />
   {/if}
 
   {#if discardAllOpen}

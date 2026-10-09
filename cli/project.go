@@ -304,7 +304,7 @@ func cmdLog(args []string) error {
 
 func cmdCheckout(args []string) error {
 	fs := flag.NewFlagSet("checkout", flag.ContinueOnError)
-	force := fs.Bool("force", false, "discard changes that are not snapshotted; ignore a running Live")
+	force := fs.Bool("force", false, "discard uncommitted changes; ignore a running Live")
 	var ref string
 	for len(args) > 0 {
 		if err := fs.Parse(args); err != nil {
@@ -330,13 +330,16 @@ func cmdCheckout(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("now on version %s  %s\n", short(m.ID), m.Message)
-	for _, n := range notes {
-		fmt.Println("  relinked " + n)
-	}
-	if r.OnOlderVersion() {
-		fmt.Println("this is an older version: `r3v checkout latest` goes back, `r3v branch new NAME` continues from here")
-	}
+	result("checkout", moveOf(r, r.Park, notes), func() {
+		fmt.Printf("now on version %s  %s\n", short(m.ID), m.Message)
+		for _, n := range notes {
+			fmt.Println("  relinked " + n)
+		}
+		printPark(r.Park)
+		if r.OnOlderVersion() {
+			fmt.Println("this is an older version: `r3v checkout latest` goes back, `r3v branch new NAME` continues from here")
+		}
+	})
 	return nil
 }
 

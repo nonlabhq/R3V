@@ -47,6 +47,8 @@ branches (advanced):
 advanced:
   snapshot -m MESSAGE                    save a version locally only
   checkout <id|HEAD~N|latest> [--force]  go to a version (files and samples); latest goes back
+  parked [list]                          changes kept while you're on another branch or version
+  parked bring|discard BRANCH[@VERSION]  bring parked changes here, or drop them
   export <id> <folder>                   write a version as a separate project folder
   profile check                          the project's rules (.r3v.yaml) and whether they work
   profile explain <file>...              why a file is tracked or ignored
@@ -130,6 +132,8 @@ func Run(args []string) int {
 		err = cmdLog(rest)
 	case "checkout":
 		err = cmdCheckout(rest)
+	case "parked":
+		err = cmdParked(rest)
 	case "export":
 		err = cmdExport(rest)
 	case "gc":

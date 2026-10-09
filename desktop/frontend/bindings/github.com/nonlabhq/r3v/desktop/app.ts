@@ -144,6 +144,18 @@ export function BreakLock(root: string, path: string): $CancellablePromise<void>
 }
 
 /**
+ * BringParked brings changes parked at a place (branch, at: an older
+ * version, or "" for its latest) into the project where it is, merged with
+ * what's here; uncommitted. Conflicts come back as decisions (call again
+ * with resolutions); nothing changes until then.
+ */
+export function BringParked(root: string, branch: string, at: string, resolutions: { [_ in string]?: string }, force: boolean): $CancellablePromise<$models.Result | null> {
+    return $Call.ByID(3835368762, root, branch, at, resolutions, force).then(($result: any) => {
+        return $$createType12($result);
+    });
+}
+
+/**
  * BringSamplesIn puts samples into the project (Samples/Imported, or back at
  * their place) and points the sets at them: missing ones R3V has a copy
  * of, and/or those only in .r3v. It rewrites sets, so not while one is
@@ -499,6 +511,13 @@ export function DiscardFiles(root: string, files: string[], force: boolean): $Ca
     return $Call.ByID(1372921808, root, files, force).then(($result: any) => {
         return $$createType12($result);
     });
+}
+
+/**
+ * DiscardParked drops changes parked at a place: they are gone.
+ */
+export function DiscardParked(root: string, branch: string, at: string): $CancellablePromise<void> {
+    return $Call.ByID(2853190608, root, branch, at);
 }
 
 /**

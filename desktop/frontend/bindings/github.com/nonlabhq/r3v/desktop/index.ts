@@ -33,6 +33,8 @@ export {
     MemberLook,
     Milestone,
     Overview,
+    ParkedSet,
+    Parking,
     PresetOption,
     Preupload,
     PreuploadFile,

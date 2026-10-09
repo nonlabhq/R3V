@@ -136,6 +136,18 @@ func (r *Repo) SwitchBranch(name string, force bool) (*SyncResult, error) {
 		return nil, err
 	}
 	from := r.Head()
+	if Parking && !force { // the changes here wait for this branch, the other's come back
+		park, notes, err := r.switchKeeping(m, name, "")
+		if err != nil {
+			return nil, err
+		}
+		r.Config.Branch = name
+		if err := r.SaveConfig(); err != nil {
+			return nil, err
+		}
+		r.arrived()
+		return &SyncResult{Action: "switched", From: from, To: target, Relinked: notes, Park: park}, nil
+	}
 	_, notes, err := r.Checkout(target, force)
 	if err != nil {
 		return nil, err

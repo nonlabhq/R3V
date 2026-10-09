@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t, tn } from "./i18n.svelte";
   import { ago, type MemberLook, type Version } from "./api";
   import { colorOf, cssColor } from "./palette";
   import Avatar from "./Avatar.svelte";
@@ -18,13 +18,15 @@
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
+  let { versions, branches, branch, head, incoming, pending, parked = [], selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string }[];
     branch: string;    // the branch you are on
     head: string;      // the version you are on
     incoming: Set<string>;
     pending: number;   // files changed and not committed (0: no dot for them)
+    // Changes parked elsewhere (Nightly): a dashed tag beside the version they were made on.
+    parked?: { key: string; base: string; files: number; since: string }[];
     selected: string;  // a version id, or "pending"
     onselect: (id: string) => void;
     actions?: Snippet<[Version]>; // the hover card's buttons for a version
@@ -74,6 +76,11 @@
   // line out of where they start, ending in a hollow dot (row: a little above).
   let stubs = $derived(g.chains.filter((c) => c.empty && !(pending && c === headChain))
     .map((c) => ({ c, from: g.chainOf.get(c.tip)!, row: g.row.get(c.tip)! + off - 0.8 })));
+  // Parked changes: a tag up beside their version (to the outside of the graph), a dashed line to it.
+  let parks = $derived(parked.filter((p) => byID.has(p.base)).map((p) => {
+    const c = g.chainOf.get(p.base)!;
+    return { ...p, col: c.col, color: c.color, side: c.col < 0 ? -1 : 1 };
+  }));
   // Branches merged into another: quieter.
   let merged = $derived(new Set(g.edges.filter((e) => e.kind === "merge").map((e) => g.chainOf.get(e.to)!)));
 
@@ -379,6 +386,10 @@
           <path d={path(e)} stroke="var(--lane-{c.color})" stroke-width={c.main ? 4 : 3} fill="none" stroke-linecap="round"
             opacity={!c.name ? 0.55 : merged.has(c) ? 0.75 : 1} />
         {/each}
+        {#each parks as p (p.key)}
+          <path d="M {x(p.col)} {y(p.base)} Q {x(p.col) + p.side * 22} {y(p.base) - rowH * 0.45}, {x(p.col) + p.side * 34} {y(p.base) - rowH * 0.45}"
+            stroke="var(--lane-{p.color})" stroke-width="1.5" stroke-dasharray="3 3" fill="none" />
+        {/each}
         {#if pending && headChain}
           <path d={pendingPath()} stroke="var(--lane-{headChain.color})" stroke-width="2" stroke-dasharray="3 4" fill="none" />
         {/if}
@@ -413,6 +424,12 @@
           style:--c="var(--lane-{pendAt.color})" title={t("Your changes")} aria-label={t("Your changes")}
           onclick={() => onselect("pending")}>+</button>
       {/if}
+      {#each parks as p (p.key)}
+        <button class="park" class:on={selected === p.key} class:left={p.side < 0} data-id={p.key}
+          style:left="{x(p.col) + p.side * 34}px" style:top="{y(p.base) - rowH * 0.45}px" style:--c="var(--lane-{p.color})"
+          title={`${tn(p.files, "{n} parked change", "{n} parked changes")} · ${ago(p.since)}`} onclick={() => onselect(p.key)}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4v8M10 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>{t("Parked")} · {p.files}</button>
+      {/each}
       {#each versions as v (v.id)}
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
@@ -522,6 +539,14 @@
   .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  /* parked changes: a dashed tag, not a version */
+  .park { position: absolute; display: inline-flex; align-items: center; gap: var(--sp-4); height: 20px; padding: 0 var(--sp-8) 0 var(--sp-6);
+    transform: translateY(-50%); border: 1.5px dashed var(--c); border-radius: var(--radius-pill); background: var(--panel);
+    color: var(--c); font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }
+  .park.left { transform: translate(-100%, -50%); }
+  .park svg { width: 10px; height: 10px; }
+  .park:hover:not(:disabled) { background: var(--hover); border-color: var(--c); }
+  .park.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .card { position: fixed; z-index: var(--z-menu); padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .arrow { position: absolute; right: -6px; top: var(--ay); width: 10px; height: 10px; margin-top: -5px;

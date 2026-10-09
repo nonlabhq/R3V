@@ -115,7 +115,7 @@ func cmdBranch(args []string) error {
 
 func cmdSwitch(args []string) error {
 	fs := flag.NewFlagSet("switch", flag.ContinueOnError)
-	force := fs.Bool("force", false, "discard unsaved changes and unshared versions; ignore a running Live")
+	force := fs.Bool("force", false, "discard uncommitted changes and unshared versions; ignore a running Live")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
@@ -139,8 +139,11 @@ func cmdSwitch(args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("now on branch %q at %s\n", pos[0], short(res.To))
-	printMerge(res)
+	result("switch", moveOf(r, res.Park, res.Relinked), func() {
+		fmt.Printf("now on branch %q at %s\n", pos[0], short(res.To))
+		printMerge(res)
+		printPark(res.Park)
+	})
 	return nil
 }
 

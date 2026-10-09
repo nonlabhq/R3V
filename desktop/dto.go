@@ -135,6 +135,10 @@ type State struct {
 	// stopped halfway (R3V closed, a file in use); nil normally. The
 	// project is still on Head (OlderVersion or the latest).
 	Unfinished *Version `json:"unfinished"`
+	// Parking: switches keep uncommitted changes (Nightly); Parked the sets
+	// kept, oldest first.
+	Parking bool        `json:"parking"`
+	Parked  []ParkedSet `json:"parked"`
 	// CloudFolder names the syncing service whose folder holds the project
 	// (OneDrive, Dropbox…); "" when none.
 	CloudFolder string `json:"cloudFolder"`
@@ -184,6 +188,28 @@ type Result struct {
 	// Locks: action "locked": the share was refused, someone else holds
 	// these paths; the version stays committed here.
 	Locks []HeldLock `json:"locks"`
+	// Park: a switch kept uncommitted changes (Parking).
+	Park *Parking `json:"park"`
+}
+
+// ParkedSet is uncommitted changes kept on this computer while the project
+// is elsewhere: at a branch's latest version (At "") or an older one.
+type ParkedSet struct {
+	Branch  string `json:"branch"`
+	At      string `json:"at"`
+	Base    string `json:"base"`    // the version they were made on
+	Version string `json:"version"` // the files as they were
+	Files   int    `json:"files"`
+	Bytes   int64  `json:"bytes"`
+	Since   string `json:"since"`
+}
+
+// Parking is what a switch did with uncommitted changes.
+type Parking struct {
+	Parked   *ParkedSet `json:"parked"`   // the changes left behind
+	Restored *ParkedSet `json:"restored"` // the place's own, back
+	Merged   bool       `json:"merged"`   // ...merged with the versions since
+	Waiting  *ParkedSet `json:"waiting"`  // the place's own, needing choices: still parked
 }
 
 type Preview struct {
