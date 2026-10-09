@@ -126,8 +126,8 @@
         <span>{files ? tn(files.length, "{count} file changed", "{count} files changed", { count: files.length }) : t("Changes")}</span>
         {#if files?.length}
           <div class="views" role="group" aria-label={t("Show the changes as")}>
-            <button class:on={view === "list"} aria-pressed={view === "list"} onclick={() => pickChangesView(at, "list")}>{t("List")}</button>
-            <button class:on={view === "tree"} aria-pressed={view === "tree"} onclick={() => pickChangesView(at, "tree")}>{t("Tree")}</button>
+            <button class:on={view === "list"} aria-pressed={view === "list"} onclick={() => pickChangesView(at, "list")} title={t("List")} aria-label={t("List")}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" /></svg></button>
+            <button class:on={view === "tree"} aria-pressed={view === "tree"} onclick={() => pickChangesView(at, "tree")} title={t("Tree")} aria-label={t("Tree")}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3.5h4M6 8h7M6 12.5h7M4 3.5v9h2M4 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg></button>
           </div>
         {/if}
       </div>
@@ -217,6 +217,8 @@
   .views button { border: none; background: transparent; padding: 1px var(--sp-6); border-radius: var(--radius-pill);
     font-size: var(--fs-xs); color: var(--muted); text-transform: none; letter-spacing: 0; width: auto; }
   .views button.on { background: var(--text); color: var(--bg); }
+  .views button { display: inline-flex; align-items: center; }
+  .views svg { width: 13px; height: 13px; }
   li button.folder { padding-left: var(--sp-2); color: var(--muted); }
   li button.tree { padding-left: calc(var(--sp-6) + 14px); }
   .chev { width: 10px; height: 10px; flex: none; transition: transform .12s; }
