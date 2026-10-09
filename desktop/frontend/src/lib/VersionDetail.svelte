@@ -6,6 +6,7 @@
   import { splitPx } from "./splits.svelte";
   import { viewerFor, type Side } from "./viewers";
   import { navKey, ownKey } from "./keynav";
+  import { changesView, pickChangesView } from "./changesview.svelte";
   import type { Snippet } from "svelte";
 
   // A version in the Overview: what it is (header, with what can be done
@@ -42,11 +43,45 @@
     });
   });
   let current = $derived(files?.find((f) => f.path === picked));
+
+  // A list (each file with its folder under its name) or a tree of folders,
+  // as your changes are shown (the same choice, per project).
+  let view = $derived(changesView(at, files?.length ?? 0));
+  type Folder = { path: string; name: string; folders: Map<string, Folder>; files: ProjectFile[]; count: number };
+  let closed = $state<Record<string, boolean>>({});
+  type Row = { folder?: Folder; file?: ProjectFile; depth: number };
+  let rows = $derived.by((): Row[] => {
+    const list = [...(files ?? [])].sort((a, b) => a.path.localeCompare(b.path));
+    if (view === "list") return list.map((f) => ({ file: f, depth: 0 }));
+    const mk = (path: string, name: string): Folder => ({ path, name, folders: new Map(), files: [], count: 0 });
+    const top = mk("", "");
+    for (const f of list) {
+      const parts = f.path.split("/");
+      let node = top;
+      for (let k = 0; k < parts.length - 1; k++) {
+        if (!node.folders.has(parts[k])) node.folders.set(parts[k], mk(parts.slice(0, k + 1).join("/"), parts[k]));
+        node = node.folders.get(parts[k])!;
+        node.count++;
+      }
+      node.files.push(f);
+    }
+    const out: Row[] = [];
+    const walk = (node: Folder, depth: number) => {
+      for (const sub of [...node.folders.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+        out.push({ folder: sub, depth });
+        if (!closed[sub.path]) walk(sub, depth + 1);
+      }
+      for (const f of node.files) out.push({ file: f, depth });
+    };
+    walk(top, 0);
+    return out;
+  });
+  let shownFiles = $derived(rows.filter((r) => r.file).map((r) => r.file!));
   // ↑ ↓ Home End through the files (see keynav.ts).
   let aside = $state<HTMLElement>();
   function onKey(e: KeyboardEvent) {
     if (!ownKey(e) || !files?.length) return;
-    const nav = navKey(files.map((f) => ({ key: f.path })), picked, e.key, 10);
+    const nav = navKey(shownFiles.map((f) => ({ key: f.path })), picked, e.key, 10);
     if (!nav || !("to" in nav)) return;
     e.preventDefault();
     picked = nav.to;
@@ -87,7 +122,15 @@
     {#if bodyWidth}<Splitter key="list" def={0.34} width={bodyWidth} minLeft={240} minRight={300} />{/if}
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <aside bind:this={aside} onkeydown={onKey}>
-      <div class="list-h">{files ? tn(files.length, "{count} file changed", "{count} files changed", { count: files.length }) : t("Changes")}</div>
+      <div class="list-h">
+        <span>{files ? tn(files.length, "{count} file changed", "{count} files changed", { count: files.length }) : t("Changes")}</span>
+        {#if files?.length}
+          <div class="views" role="group" aria-label={t("Show the changes as")}>
+            <button class:on={view === "list"} aria-pressed={view === "list"} onclick={() => pickChangesView(at, "list")}>{t("List")}</button>
+            <button class:on={view === "tree"} aria-pressed={view === "tree"} onclick={() => pickChangesView(at, "tree")}>{t("Tree")}</button>
+          </div>
+        {/if}
+      </div>
       {#if error}
         <p class="error">{error}</p>
       {:else if files === null}
@@ -96,14 +139,27 @@
         <p class="muted pad">{t("No file changes.")}</p>
       {:else}
         <ul>
-          {#each files as f (f.path)}
-            <li>
-              <button class:on={f.path === picked} onclick={() => (picked = f.path)} title={f.path} data-path={f.path}>
-                <FileIcon path={f.path} kind={f.kind} />
-                <span class="names"><span class="fname">{name(f.path)}</span>{#if dir(f.path)}<span class="fdir">{dir(f.path)}</span>{/if}</span>
-                <span class="st {f.status}" title={statusName(f.status)}>{sym[f.status] ?? "?"}</span>
-              </button>
-            </li>
+          {#each rows as row (row.file ? row.file.path : "dir:" + row.folder!.path)}
+            {#if row.folder}
+              {@const d = row.folder}
+              <li style:padding-left="{row.depth * 14}px">
+                <button class="folder" onclick={() => (closed[d.path] = !closed[d.path])} aria-expanded={!closed[d.path]} title={d.path}>
+                  <svg class="chev" class:open={!closed[d.path]} viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 L7 5 L3 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  <FileIcon kind="folder" open={!closed[d.path]} />
+                  <span class="names"><span class="fname">{d.name}</span></span>
+                  <span class="count faint">{d.count}</span>
+                </button>
+              </li>
+            {:else}
+              {@const f = row.file!}
+              <li style:padding-left="{row.depth * 14}px">
+                <button class:on={f.path === picked} class:tree={view === "tree"} onclick={() => (picked = f.path)} title={f.path} data-path={f.path}>
+                  <FileIcon path={f.path} kind={f.kind} />
+                  <span class="names"><span class="fname">{name(f.path)}</span>{#if view === "list" && dir(f.path)}<span class="fdir">{dir(f.path)}</span>{/if}</span>
+                  <span class="st {f.status}" title={statusName(f.status)}>{sym[f.status] ?? "?"}</span>
+                </button>
+              </li>
+            {/if}
           {/each}
         </ul>
       {/if}
@@ -135,7 +191,7 @@
   .acts :global(button) { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   .body { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; }
   aside { border-right: var(--border-width) solid var(--line); overflow: auto; padding: var(--sp-8); }
-  .list-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-4) var(--sp-6) var(--sp-8); }
+  .list-h { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-4) var(--sp-6) var(--sp-8); }
   .pad { padding: 0 var(--sp-6); }
   ul { list-style: none; margin: 0; padding: 0; }
   li button { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent;
@@ -156,4 +212,14 @@
   .dname { display: flex; align-items: center; gap: var(--sp-6); font-weight: var(--fw-semibold); }
   .small { font-size: var(--fs-sm); }
   .error { color: var(--danger); padding: 0 var(--sp-6); }
+  /* List or tree: two small segments (as your changes') */
+  .views { display: flex; border: var(--border-width) solid var(--line-strong); border-radius: var(--radius-pill); padding: 1px; }
+  .views button { border: none; background: transparent; padding: 1px var(--sp-6); border-radius: var(--radius-pill);
+    font-size: var(--fs-xs); color: var(--muted); text-transform: none; letter-spacing: 0; width: auto; }
+  .views button.on { background: var(--text); color: var(--bg); }
+  li button.folder { padding-left: var(--sp-2); color: var(--muted); }
+  li button.tree { padding-left: calc(var(--sp-6) + 14px); }
+  .chev { width: 10px; height: 10px; flex: none; transition: transform .12s; }
+  .chev.open { transform: rotate(90deg); }
+  .count { font-size: var(--fs-xs); }
 </style>
