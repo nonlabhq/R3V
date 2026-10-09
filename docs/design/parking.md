@@ -1,6 +1,6 @@
 # Parked changes
 
-Status: planned. Nightly first; on this computer only.
+Status: built, Nightly (`project.Parking`); on this computer only.
 
 Changes not committed shouldn't stop anyone going elsewhere: to another
 branch, to an older version to listen, and back. Today a switch with
@@ -10,13 +10,13 @@ Nothing to remember, no stash list to manage.
 
 ## The model
 
-- **One parked set per branch.** Leaving a branch with changes parks them
-  on it; coming back to it brings them back. Each branch has at most one.
+- **One parked set per place.** Leaving a branch with changes parks them
+  on it; coming back to it brings them back. A place is a branch's latest
+  version, or an older version of it: at most one set each.
 - **An older version** (Go to this version) is a look back: changes made
   on the latest version are parked on the branch and come back with
-  Back to latest. Changes made while on the older version are parked the
-  same way, on its branch, when leaving it (their base is the older
-  version; see "Coming back to a branch that moved").
+  Back to latest. Changes made while on the older version are parked at
+  that version, and come back when you go to it again.
 - **Where it lives**: this computer only (`.r3v/parked/`). Never shared,
   not a version of the history, not seen by the team.
 - **What it holds**: everything a commit would hold (Repo.Only aside):
@@ -30,14 +30,17 @@ So no team feature is needed: nothing the team stores changes.
 A version that is never shared, made as `updateKeepingWork` makes its
 kept work (`workingManifest`, `save`): its parent is the version the
 changes were made on, its contents in the local store, deduplicated by
-hash. Plus a record, `.r3v/parked/<branch key>.json`:
+hash (every new content copied there, even what the team's storage has).
+Plus a record, `.r3v/parked/<branch key>.json` (`<key>@<version>.json`
+for an older version):
 
 ```json
-{"version": "<id>", "base": "<id>", "branch": "<key>", "files": 3, "bytes": 182733, "since": "2026-10-09T10:12:00Z"}
+{"version": "<id>", "base": "<id>", "branch": "<key>", "at": "<id>", "files": 3, "bytes": 182733, "since": "2026-10-09T10:12:00Z"}
 ```
 
 written whole then renamed. The record is what says a set is parked: a
-version with no record is a leftover, removed on the next tidy.
+version with no record (stopped between the two) is a small leftover, as
+kept work is.
 
 Local cleanup must keep them: `PruneObjects` never removes a parked set's
 contents, even when the team's storage has them (preuploaded contents
@@ -59,13 +62,16 @@ alone.
 4. **Done**: remove the destination's record (its set is back in the
    folder); the version itself stays until the next tidy.
 
-The CLI does the same (`r3v switch`, `r3v goto`): `--json` gains
-`parked: {branch, files}` and `restored: {branch, files}`. `--discard`
-still discards, `--keep` (new) is the default and says it outright.
+The CLI does the same (`r3v switch`, `r3v checkout`): `--json` gives `parked`, `restored`,
+`merged` and `waiting` (docs/agents.md). `--force` still discards.
 
 ## Coming back
 
-Arriving at a branch with a parked set:
+Leaving a place with changes while its own set waits (it came back with
+a conflict, below) is refused (`changes_parked_here`): bring it back or
+discard it first.
+
+Arriving at a place with a parked set:
 
 - **The branch hasn't moved** (its latest is the set's base): the set's
   files are put in place as they are. The changes are back, uncommitted.
@@ -78,9 +84,6 @@ Arriving at a branch with a parked set:
   - A conflict: the switch still happens, the set stays parked, and the
     app offers **Bring back now** (opens Merge decisions) or **Later**.
     Never a merge forced on arrival.
-- **Back to an older version** of a branch with a parked set: the set
-  stays parked (its base is the latest, not where you are going) and
-  comes back with Back to latest.
 
 ## Moving a set
 
@@ -126,18 +129,18 @@ States, and what the app shows in each:
 
 | Stopped | Folder | Records | Next time |
 |---|---|---|---|
-| while parking (step 2) | as it was | none, or a set version without record | nothing to do; a version without record is removed on tidy. The switch can be made again |
-| after parking, before the switch | as it was, changes still in it | a record for the branch left | the record matches the folder: on opening, a record whose version equals the folder's files and whose branch is the current one is dropped (the changes are simply there) |
-| mid-switch (step 3) | partly the target | the left branch's record | `UnfinishedSwitch` → `RecoverSwitch` puts the left branch back, its parked set merged in ("work <id>"), then drops the record: as before the switch |
-| after the switch, before step 4 | the target, the destination's set in it | the destination's record still there | on opening, a record for the current branch whose changes are in the folder is dropped |
+| while parking (step 2) | as it was | none, or a set version without record | nothing to do (a leftover version, a few KB). The switch can be made again |
+| after parking, before the files change | as it was, the changes in it | the left place's record | `tidyParked` (the app reading the project, the next switch): a record here whose files are the folder's goes |
+| the files start changing | as it was | the record; `switching` written | `UnfinishedSwitch` → `RecoverSwitch` puts the parked files back ("work <id>"), drops that record |
+| mid-switch (step 3) | partly the target | the left place's record | the same: as before the switch |
+| after the switch, before step 4 | the target, the destination's set in it | the destination's record, and `parked/arrived` naming it | `arrived` (the next switch, or a recovery) drops it once the project is on the version it names |
 
 The five checks (docs/development.md#interruptions): the team's data
 untouched (nothing shared); files as they were or complete (`putFiles`
 and `switching`); what the app offers next safe (no record is acted on
 without matching the folder); nothing twice (a set brought back has no
-record); nothing left behind (tidy removes set versions with no record).
-Tests: `killed_switch_test.go` gains parking at each step; `crash_test`
-for the records.
+record); nothing left behind (a set version with no record is a few KB).
+Tests: `parked_test.go` (each stop above; killed at every file written).
 
 ## Not now
 

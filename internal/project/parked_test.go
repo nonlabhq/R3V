@@ -332,3 +332,27 @@ func diffKeys(a, b map[string]string) (out []string) {
 	}
 	return out
 }
+
+// Stopped after parking, before the files changed: the record goes, the
+// changes are simply there.
+func TestParkedStoppedBeforeTheFiles(t *testing.T) {
+	parking(t, true)
+	r, v1, _ := twoLocal(t)
+	changesOn(t, r)
+	mine := files(t, r.Root)
+	if p, err := r.parkChanges(); err != nil || p == nil {
+		t.Fatalf("park: %v %v", p, err)
+	}
+	r, _ = Open(r.Root)
+	r.TidyParked()
+	if len(r.ParkedSets()) != 0 {
+		t.Fatalf("still parked: %+v", r.ParkedSets())
+	}
+	if _, _, err := r.GoTo(v1.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	r.GoTo("latest", false)
+	if got := files(t, r.Root); !maps.Equal(got, mine) {
+		t.Fatalf("after going and back: %v", diffKeys(got, mine))
+	}
+}

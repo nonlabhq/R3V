@@ -435,6 +435,7 @@ func (a *App) State(root string) (*State, error) {
 			st.Unfinished = &v
 		}
 	}
+	r.TidyParked()
 	st.Parking, st.Parked = project.Parking, parkedSets(r)
 	if rules, _ := r.Profile(); rules != nil {
 		st.Tool = rules.Tool()

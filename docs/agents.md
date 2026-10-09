@@ -93,6 +93,19 @@ took from each side), `relinked` (sample paths rewritten for this computer),
 (incoming), `changes`, `conflicts` (`key`, `file`, `unit`, `description`,
 `can_keep_both`).
 
+`switch <branch>` and `checkout <version|latest>`: `branch`, `to` (the version
+the files are on), `older` (an older version), `relinked`. On the Nightly
+channel, uncommitted changes don't stop them: they are **parked** on this
+computer at the place they were made (a branch's latest, or an older
+version) and come back when the project returns there. `parked` (the
+changes left behind: `branch`, `at` (the older version, else none), `base`,
+`files`, `bytes`, `since`), `restored` (that place's own changes, back;
+`merged`: with the versions since), `waiting` (they need choices first:
+still parked). `--force` discards instead. `parked` lists them (`parked`);
+`parked bring <branch[@version]> [--strategy …]` merges a set into the
+files here, `parked discard <branch[@version]>` drops one (ask the user
+first). Tell the user what was parked and brought back.
+
 `backup run [folder]` (back up the whole team's storage into a folder; only
 adds): `team`, `kind` (`folder`, or `s3` for a bucket set up in the app),
 `folder` (where), `run` (its record: `<folder>/runs/<run>.json`),
@@ -126,6 +139,7 @@ preview first and ask the user.
 | 1 | `unsaved_changes` | save first (`r3v save -m ...`); `update` keeps them unless you also have versions not shared |
 | 1 | `on_older_version` | an older version is checked out: `r3v checkout latest` |
 | 1 | `unshared_versions` | `r3v save -m ...` shares them |
+| 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `save` again once they are unlocked |
 | 1 | `not_connected` | the project is not in a team (`save` still saves locally) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |

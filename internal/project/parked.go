@@ -328,14 +328,39 @@ func (r *Repo) arrived() {
 	os.Remove(path)
 }
 
-// tidyParked finishes what a switch left: a set brought back whose record
-// is still there (stopped before arrived). Nothing while a switch is
-// unfinished (RecoverSwitch first).
+// tidyParked finishes what a switch left (nothing while one is unfinished:
+// RecoverSwitch first): a set brought back whose record is still there
+// (stopped before arrived), and a set parked here whose changes are still
+// in the folder (stopped before the files changed).
 func (r *Repo) tidyParked() {
-	if r.UnfinishedSwitch() == "" {
-		r.arrived()
+	if r.UnfinishedSwitch() != "" {
+		return
 	}
+	r.arrived()
+	p := r.ParkedAt(r.place())
+	if p == nil || p.Base != r.Head() {
+		return
+	}
+	set, err := r.Load(p.Version)
+	if err != nil {
+		return
+	}
+	ix := r.loadIndex()
+	files, err := r.workingFiles(ix)
+	if err != nil || len(files) != len(set.Files) {
+		return
+	}
+	want := set.FileMap()
+	for _, f := range files {
+		if want[f.Path].Hash != f.Hash {
+			return // a set waiting here (it needed choices), or changed since
+		}
+	}
+	r.dropParked(*p)
 }
+
+// TidyParked: see tidyParked (the app, on reading a project).
+func (r *Repo) TidyParked() { r.tidyParked() }
 
 // keepWork keeps versions that stand for the uncommitted changes (the
 // working files' contents, relinked sets mapping to them) until other work
