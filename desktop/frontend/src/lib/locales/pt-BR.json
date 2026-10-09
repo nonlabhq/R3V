@@ -1567,5 +1567,6 @@
 "from “{branch}”, deleted": "de “{branch}”, excluída",
 "Discard {n} parked change?": "Descartar {n} alteração estacionada?",
 "Discard {n} parked changes?": "Descartar {n} alterações estacionadas?",
-"The changes parked on {place} will be lost. This can't be undone.": "As alterações estacionadas em {place} serão perdidas. Isso não pode ser desfeito."
+"The changes parked on {place} will be lost. This can't be undone.": "As alterações estacionadas em {place} serão perdidas. Isso não pode ser desfeito.",
+"Merge into current branch": "Mesclar no branch atual"
 }

@@ -1567,5 +1567,6 @@
 "from “{branch}”, deleted": "da “{branch}”, eliminato",
 "Discard {n} parked change?": "Scartare {n} modifica parcheggiata?",
 "Discard {n} parked changes?": "Scartare {n} modifiche parcheggiate?",
-"The changes parked on {place} will be lost. This can't be undone.": "Le modifiche parcheggiate su {place} andranno perse. Non si può annullare."
+"The changes parked on {place} will be lost. This can't be undone.": "Le modifiche parcheggiate su {place} andranno perse. Non si può annullare.",
+"Merge into current branch": "Unisci nel branch attuale"
 }

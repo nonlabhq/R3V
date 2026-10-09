@@ -210,7 +210,34 @@
     if (r) origin = { left: r.left, top: r.top };
     hovered = id;
   }
-  function unhover() { clearTimeout(hideTimer); hideTimer = setTimeout(() => (hovered = null), 180); }
+  function unhover() { clearTimeout(hideTimer); hideTimer = setTimeout(() => { hovered = null; previewing = ""; }, 180); }
+  // What a card's button would do, shown on the graph while the pointer is on
+  // it (the button says which: data-preview): going to a version, its dot
+  // glows; merging it or branching from it, the version that would make,
+  // faint, with its lines.
+  let previewing = $state("");
+  function cardOver(e: Event) {
+    previewing = (e.target as HTMLElement).closest<HTMLElement>("[data-preview]")?.dataset.preview ?? "";
+  }
+  let ghost = $derived.by(() => {
+    const v = card?.v;
+    if (!v || !previewing || previewing === "goto") return null;
+    const at = g.chainOf.get(v.id)!;
+    if (previewing === "branch") {
+      const col = g.right + 1, gy = y(v.id) - rowH;
+      return { x: x(col), y: gy, color: at.color, from: [{ x: x(at.col), y: y(v.id), kind: "fork" }], label: t("New branch") };
+    }
+    const into = previewing === "main" ? "main" : branch;
+    const tip = branches.find((b) => b.name === into)?.latest || (into === branch ? head : "");
+    const c = tip ? g.chainOf.get(tip) : undefined;
+    if (!c || !byID.has(tip)) return null;
+    // (above your changes too, on your branch)
+    const gy = Math.min(y(tip), y(v.id), pending && into === branch ? yRow(0) : Infinity) - rowH;
+    return { x: x(c.col), y: gy, color: c.color, label: "",
+      from: [{ x: x(c.col), y: y(tip), kind: "line" }, { x: x(at.col), y: y(v.id), kind: "merge" }] };
+  });
+  const ghostPath = (a: { x: number; y: number }, b: { x: number; y: number }) => a.x === b.x
+    ? `M ${a.x} ${a.y} L ${b.x} ${b.y}` : `M ${a.x} ${a.y} C ${a.x} ${(a.y + b.y) / 2}, ${b.x} ${(a.y + b.y) / 2}, ${b.x} ${b.y}`;
   let card = $derived.by(() => {
     const v = hovered ? byID.get(hovered) : undefined;
     if (!v) return null;
@@ -286,16 +313,18 @@
   }
 
   // Drag to pan (from anywhere but the card); a drag isn't a click.
-  let drag: { x: number; y: number; px: number; py: number; moved: boolean; id: number } | null = null;
+  let drag: { x: number; y: number; px: number; py: number; moved: boolean; id: number; mask: number } | null = null;
   let dragging = $state(false);
+  // (the left button, or the middle one anywhere: it never clicks)
   function onpointerdown(e: PointerEvent) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".card, .toolbar, .zoombar")) return;
-    drag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false, id: e.pointerId };
+    if (e.button === 1) e.preventDefault(); // (no autoscroll)
+    if ((e.button !== 0 && e.button !== 1) || (e.button === 0 && (e.target as HTMLElement).closest(".card, .toolbar, .zoombar"))) return;
+    drag = { x: e.clientX, y: e.clientY, px: panX, py: panY, moved: false, id: e.pointerId, mask: e.button === 1 ? 4 : 1 };
   }
   function onpointermove(e: PointerEvent) {
     if (!drag) return;
     // The button let go outside (where its release wasn't seen): no drag.
-    if (!(e.buttons & 1)) { onpointerup(); return; }
+    if (!(e.buttons & drag.mask)) { onpointerup(); return; }
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     if (!drag.moved) { drag.moved = true; dragging = true; moved = true; hovered = null; try { box?.setPointerCapture(drag.id); } catch { /* not where it can be captured */ } }
@@ -309,6 +338,14 @@
   }
   function onclickcapture(e: MouseEvent) {
     if (dragging) { e.stopPropagation(); e.preventDefault(); dragging = false; }
+  }
+  // A click on the background: back to what matters now (your changes, else
+  // the version you are on).
+  function onclick(e: MouseEvent) {
+    if (!(e.target as HTMLElement).closest("button, .card, .toolbar, .zoombar, .label")) {
+      const id = pending ? "pending" : head;
+      if (id && id !== selected) onselect(id);
+    }
   }
   function ondblclick(e: MouseEvent) {
     if (!(e.target as HTMLElement).closest("button, .card, .toolbar")) { moved = false; resetView(); }
@@ -370,7 +407,8 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={fullWidth} bind:clientHeight={boxHeight} {onkeydown}
-  {onpointerdown} {onpointermove} {onpointerup} onpointercancel={onpointerup} {ondblclick} {onclickcapture}
+  {onpointerdown} {onpointermove} {onpointerup} onpointercancel={onpointerup} {onclick} {ondblclick} {onclickcapture}
+  onauxclick={(e) => e.button === 1 && e.preventDefault()}
   class:dragging>
   {#if versions.length === 0 && !pending}
     <p class="muted empty">{t("No versions yet. Commit your first version from the Changes tab.")}</p>
@@ -397,6 +435,15 @@
           <path d={stubPath(st)} stroke="var(--lane-{st.c.color})" stroke-width="3" fill="none" stroke-linecap="round" />
           <circle cx={x(st.c.col)} cy={yRow(st.row)} r="5" fill="var(--panel)" stroke="var(--lane-{st.c.color})" stroke-width="2" />
         {/each}
+        {#if ghost}
+          <g class="would">
+            {#each ghost.from as f, i (i)}
+              <path d={ghostPath(f, ghost)} stroke="var(--lane-{ghost.color})" stroke-width="3" stroke-dasharray="5 4" fill="none" stroke-linecap="round" />
+            {/each}
+            <circle cx={ghost.x} cy={ghost.y} r="11" fill="var(--panel)" stroke="var(--lane-{ghost.color})" stroke-width="2" stroke-dasharray="4 3" />
+            {#if ghost.label}<text x={ghost.x + 18} y={ghost.y + 4} fill="var(--lane-{ghost.color})">{ghost.label}</text>{/if}
+          </g>
+        {/if}
         {#each marks as m (m.id)}
           <circle class="mring" cx={x(m.col)} cy={top + m.y} r="18" fill="none" stroke="var(--lane-{m.color})" stroke-width="2" />
         {/each}
@@ -433,7 +480,7 @@
       {#each versions as v (v.id)}
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
-        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:now={v.id === head && !pending} class:incoming={incoming.has(v.id)}
+        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v.id === v.id)} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
@@ -473,9 +520,10 @@
     {/if}
     {#if card}
       {@const v = card.v}
+      <!-- svelte-ignore a11y_mouse_events_have_key_events (focusin: the same, from the keyboard) -->
       <div class="card surface-menu" class:right={card.right} role="group" aria-label={v.message || t("(no description)")} use:portal
         style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
-        onmouseenter={() => hover(v.id)} onmouseleave={unhover}>
+        onmouseenter={() => hover(v.id)} onmouseleave={() => { previewing = ""; unhover(); }} onmouseover={cardOver} onfocusin={cardOver}>
         <span class="arrow" aria-hidden="true"></span>
         <div class="card-h" bind:clientHeight={headHeight}>
           {#if looks}
@@ -520,7 +568,7 @@
   .toolbar .light:hover:not(:disabled) { background: var(--switch-knob); border-color: var(--switch-knob); }
   .link { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
   .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
-  svg { position: absolute; left: 0; top: 0; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; } /* (a preview may reach past the graph) */
   .empty { padding: var(--sp-16); }
   .node { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border-radius: 50%;
     border: 2px solid var(--c); background: var(--panel-2); color: var(--text); font-size: var(--fs-xs);
@@ -540,6 +588,9 @@
   .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   /* parked changes: a dashed tag, not a version */
+  /* a card's button previewed: what it would make, faint */
+  .would { opacity: .5; pointer-events: none; }
+  .would text { font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
   .park { position: absolute; display: inline-flex; align-items: center; gap: var(--sp-4); height: 20px; padding: 0 var(--sp-8) 0 var(--sp-6);
     transform: translateY(-50%); border: 1.5px dashed var(--c); border-radius: var(--radius-pill); background: var(--panel);
     color: var(--c); font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }

@@ -34,6 +34,16 @@ function show(over: Record<string, unknown> = {}) {
 afterEach(() => cleanup());
 
 describe("HistoryGraph", () => {
+  it("goes back to your changes (else the version you are on) on a click in the background", async () => {
+    const { onselect } = show({ pending: 2, selected: "m1" });
+    await fireEvent.click(screen.getByRole("listbox"));
+    expect(onselect).toHaveBeenLastCalledWith("pending");
+    cleanup();
+    const second = show({ selected: "m1" });
+    await fireEvent.click(screen.getByRole("listbox"));
+    expect(second.onselect).toHaveBeenLastCalledWith("m3");
+  });
+
   it("draws a branch just made on main's newest version beside main (no crash on the shared version)", () => {
     show({ branches: [main, { name: "idea", latest: "m3" }], branch: "idea" });
     expect(screen.getByText("main")).toBeTruthy();

@@ -1567,5 +1567,6 @@
 "from “{branch}”, deleted": "来自“{branch}”（已删除）",
 "Discard {n} parked change?": "丢弃 {n} 处暂放的更改？",
 "Discard {n} parked changes?": "丢弃 {n} 处暂放的更改？",
-"The changes parked on {place} will be lost. This can't be undone.": "暂放在 {place} 的更改将会丢失，且无法撤销。"
+"The changes parked on {place} will be lost. This can't be undone.": "暂放在 {place} 的更改将会丢失，且无法撤销。",
+"Merge into current branch": "合并到当前分支"
 }
