@@ -1567,5 +1567,6 @@
 "from “{branch}”, deleted": "「{branch}」から（削除済み）",
 "Discard {n} parked change?": "保留中の変更 {n} 件を破棄しますか？",
 "Discard {n} parked changes?": "保留中の変更 {n} 件を破棄しますか？",
-"The changes parked on {place} will be lost. This can't be undone.": "{place} に保留中の変更は失われます。元に戻せません。"
+"The changes parked on {place} will be lost. This can't be undone.": "{place} に保留中の変更は失われます。元に戻せません。",
+"Merge into current branch": "現在のブランチにマージ"
 }

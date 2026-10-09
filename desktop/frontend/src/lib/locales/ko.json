@@ -1567,5 +1567,6 @@
 "from “{branch}”, deleted": "“{branch}”에서(삭제됨)",
 "Discard {n} parked change?": "보관한 변경 {n}개를 버릴까요?",
 "Discard {n} parked changes?": "보관한 변경 {n}개를 버릴까요?",
-"The changes parked on {place} will be lost. This can't be undone.": "{place}에 보관한 변경이 사라집니다. 되돌릴 수 없습니다."
+"The changes parked on {place} will be lost. This can't be undone.": "{place}에 보관한 변경이 사라집니다. 되돌릴 수 없습니다.",
+"Merge into current branch": "현재 브랜치에 병합"
 }

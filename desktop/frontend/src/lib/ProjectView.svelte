@@ -960,19 +960,19 @@
               <!-- only what can be done with this version, from here -->
               {@const isNew = incomingIds.has(v.id)}
               {#if v.id !== st!.head && !isNew && !v.notHere}
-                <button onclick={() => goTo(v)} title={t("Put the project in the state of this version")}><ActionIcon name="goto" />{t("Go to this version")}</button>
+                <button onclick={() => goTo(v)} data-preview="goto"><ActionIcon name="goto" />{t("Go to this version")}</button>
               {/if}
               {#if st!.remoteUrl && !isNew && !v.notHere}
-                <button onclick={() => newBranchFrom(v)} title={t("Start a branch from this version")}><ActionIcon name="branch" />{t("New branch from here")}</button>
+                <button onclick={() => newBranchFrom(v)} data-preview="branch"><ActionIcon name="branch" />{t("New branch from here")}</button>
               {/if}
               {#if st!.remoteUrl && !st!.olderVersion && !v.inBranch && !isNew}
-                <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge into current version")}</button>
+                <button onclick={() => openVersionMerge(v)} data-preview="merge"><ActionIcon name="merge" />{t("Merge into current branch")}</button>
               {/if}
               {#if st!.branch !== "main" && st!.remoteUrl && !st!.olderVersion && !isNew && !inMain.has(v.id) && st!.branches.some((b) => b.name === "main")}
-                <button onclick={() => mergeBackToMain(v)} title={t("Go to main, then merge this version into it")}><ActionIcon name="merge" />{t("Merge back to main")}</button>
+                <button onclick={() => mergeBackToMain(v)} data-preview="main"><ActionIcon name="merge" />{t("Merge back to main")}</button>
               {/if}
               {#if !st!.olderVersion && v.inBranch && !isNew && v.parents.length}
-                <button class="danger-act" onclick={() => (undoing = v)} title={t("Make a new version that takes back what this version changed")}><ActionIcon name="undo" />{t("Undo this commit")}</button>
+                <button class="danger-act" onclick={() => (undoing = v)}><ActionIcon name="undo" />{t("Undo this commit")}</button>
               {/if}
             {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
