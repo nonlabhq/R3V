@@ -43,3 +43,22 @@ it("doesn't read a version's files again when the project is read again", async 
   flushSync();
   await waitFor(() => expect(mocks.api.VersionFiles).toHaveBeenCalledTimes(2));
 });
+
+it("shows a version's files as a list or a tree, as your changes are shown", async () => {
+  localStorage.clear();
+  mocks.api.VersionFiles.mockResolvedValue([file("Samples/Kick.txt"), file("Samples/Loops/Loop.txt"), file("notes.txt")]);
+  render(VersionDetail, { root: "C:/Song", v: version("v2"), branch: "main" });
+  await screen.findByTitle("notes.txt");
+  // a list at first (few files): each with its folder under its name
+  expect(screen.getByText("Samples/Loops/")).toBeTruthy();
+  await fireEvent.click(screen.getByRole("button", { name: "Tree" }));
+  expect(localStorage.getItem("r3v.changesView:C:/Song")).toBe("tree");
+  const samples = screen.getByRole("button", { name: /^Samples/ });
+  expect(samples.getAttribute("aria-expanded")).toBe("true");
+  expect(screen.queryByText("Samples/Loops/")).toBeNull();
+  await fireEvent.click(samples); // closed: its files go
+  expect(screen.queryByTitle("Samples/Kick.txt")).toBeNull();
+  expect(screen.getByTitle("notes.txt")).toBeTruthy();
+  await fireEvent.click(screen.getByRole("button", { name: "List" }));
+  expect(screen.getByTitle("Samples/Kick.txt")).toBeTruthy();
+});
