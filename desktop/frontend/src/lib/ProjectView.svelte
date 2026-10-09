@@ -607,6 +607,20 @@
   // version; elsewhere, main first (as switching branches does), then
   // merged once the project is on main.
   let mergeOnMain = $state("");
+  // The versions main has already (its latest and what it came from): no
+  // "Merge back to main" for them.
+  let inMain = $derived.by(() => {
+    const out = new Set<string>();
+    const tip = st?.branches.find((b) => b.name === "main")?.latest?.id;
+    const parents = new Map((st?.history ?? []).map((v) => [v.id, v.parents]));
+    for (const todo = tip ? [tip] : []; todo.length;) {
+      const id = todo.pop()!;
+      if (out.has(id)) continue;
+      out.add(id);
+      todo.push(...(parents.get(id) ?? []));
+    }
+    return out;
+  });
   function mergeBackToMain(v: Version) {
     if (st?.branch === "main") return openVersionMerge(v);
     mergeOnMain = v.id;
@@ -889,7 +903,7 @@
               {#if st!.remoteUrl && !st!.olderVersion && !v.inBranch && !isNew}
                 <button onclick={() => openVersionMerge(v)} title={t("Merge this version into the branch you are on")}><ActionIcon name="merge" />{t("Merge into current version")}</button>
               {/if}
-              {#if st!.branch !== "main" && st!.remoteUrl && !st!.olderVersion && !isNew && st!.branches.some((b) => b.name === "main")}
+              {#if st!.branch !== "main" && st!.remoteUrl && !st!.olderVersion && !isNew && !inMain.has(v.id) && st!.branches.some((b) => b.name === "main")}
                 <button onclick={() => mergeBackToMain(v)} title={t("Go to main, then merge this version into it")}><ActionIcon name="merge" />{t("Merge back to main")}</button>
               {/if}
               {#if !st!.olderVersion && v.inBranch && !isNew && v.parents.length}

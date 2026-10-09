@@ -722,6 +722,17 @@ describe("ProjectView: review fixes", () => {
     expect(screen.getByRole("button", { name: "Undo this commit" }).classList.contains("danger-act")).toBe(true);
   });
 
+  it("offers Merge back to main only for versions main hasn't got", async () => {
+    // on idea: i1 (idea's own) after h0 (main's)
+    await show({ branch: "idea", head: "i1",
+      branches: [{ name: "main", current: false, latest: version("h0", "v1", { parents: [] }) }, { name: "idea", current: true, latest: null }],
+      history: [version("i1", "idea work", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^idea work,/ }));
+    expect(await screen.findByRole("button", { name: "Merge back to main" })).toBeTruthy();
+    await fireEvent.mouseEnter(screen.getByRole("option", { name: /^v1,/ }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Merge back to main" })).toBeNull());
+  });
+
   it("merges a version back to main from its card: main first, when on another branch", async () => {
     const history = (onMain: boolean) => [version("i1", "idea work", { parents: ["h0"], inBranch: !onMain, branches: ["idea"] }),
       version("h0", "v1", { parents: [] })];
