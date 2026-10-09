@@ -435,6 +435,7 @@ func (a *App) State(root string) (*State, error) {
 			st.Unfinished = &v
 		}
 	}
+	st.Parking, st.Parked = project.Parking, parkedSets(r)
 	if rules, _ := r.Profile(); rules != nil {
 		st.Tool = rules.Tool()
 		st.Openable, _ = rules.Openable(r.Root)
@@ -751,6 +752,7 @@ func syncResult(res *project.SyncResult) *Result {
 	if res != nil {
 		out.Action, out.Log, out.Relinked, out.KeptWork = res.Action, nonNil(res.MergeLog), nonNil(res.Relinked), res.KeptWork
 		out.TakenBack = toVersions(res.TakenBack, nil)
+		out.Park = parkingOf(res.Park)
 	}
 	return out
 }
@@ -914,7 +916,7 @@ func (a *App) GoToVersion(root, id string, discard, force bool) (*Result, error)
 	if err != nil {
 		return nil, err
 	}
-	return &Result{Action: "moved", Log: []string{}, Relinked: nonNil(notes), Conflicts: []Conflict{}}, nil
+	return &Result{Action: "moved", Log: []string{}, Relinked: nonNil(notes), Conflicts: []Conflict{}, Park: parkingOf(r.Park)}, nil
 }
 
 // RecoverSwitch puts the files back as the version the project is on, after

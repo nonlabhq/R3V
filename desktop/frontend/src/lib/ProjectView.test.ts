@@ -365,6 +365,29 @@ describe("ProjectView: versions", () => {
     await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", true, false));
   });
 
+  it("parks uncommitted changes when going to a version (Nightly)", async () => {
+    await show({ parking: true, changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
+    api.GoToVersion.mockResolvedValue({ ...result("moved"), park: { parked: { branch: "main", at: "", base: "h1", version: "p1", files: 1, bytes: 0, since: "" },
+      restored: null, merged: false, waiting: null } });
+    await fireEvent.click(await screen.findByRole("button", { name: "Go to" }));
+    await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", false, false));
+    expect(screen.queryByText("Go to an older version")).toBeNull();
+    await toasted(/Your 1 change is parked on “main”/);
+  });
+
+  it("shows parked changes in the graph, and discards them", async () => {
+    await show({ parking: true, parked: [{ branch: "main", at: "", base: "h0", version: "p1", files: 2, bytes: 0, since: "" }],
+      history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
+    api.VersionFiles.mockResolvedValue([]);
+    await fireEvent.click(screen.getByRole("button", { name: /Parked · 2/ }));
+    await waitFor(() => expect(api.VersionFiles).toHaveBeenCalledWith(ROOT, "p1"));
+    await fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    await fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Discard" }));
+    await waitFor(() => expect(api.DiscardParked).toHaveBeenCalledWith(ROOT, "main", ""));
+  });
+
   it("takes back the latest version", async () => {
     await show({ history: [version("h1", "oops", { author: "Yi" }), version("p", "v1", { parents: [] })] });
     api.PlanUndo.mockResolvedValue({ changed: ["a.txt"], blocked: [], conflicts: [], error: "",
