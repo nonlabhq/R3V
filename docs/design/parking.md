@@ -85,7 +85,7 @@ Arriving at a branch with a parked set:
 ## Moving a set
 
 What stash's "pop on another branch" was for (changes made on the wrong
-branch): **Bring here** on a parked set from another branch merges it
+branch): **Bring changes here** on a parked set from another branch merges it
 into the current branch's files (the same merge, the set's base as base),
 and removes its record. With changes in the folder already, they are
 merged too; a conflict opens Merge decisions with nothing changed until
@@ -96,20 +96,18 @@ it's done.
 - **Graph**: a parked set is a hollow dashed node beside its base,
   labelled `Parked · 3 files` (`{n} file parked` plural forms), its age in
   the tooltip. Its card: **Switch and bring back** (on another branch) /
-  **Bring here** / **Show changes** (its files, as a version's) /
+  **Bring changes here** / **Show changes** (its files, as a version's) /
   **Discard** (red, asked first).
 - **The current node** (your changes) is unchanged.
 - **Notices**, once per switch: "Your 3 changes on main are parked. They
   come back when you switch back." and "Brought back your 3 parked
   changes." Short, in the toast area, with **Undo** for a few seconds
   where it is safe (switch back).
-- **Sidebar and Team home**: a small mark on a project with parked sets,
-  so they aren't forgotten.
 - **Size**: a set over 2 GB (new recordings) says how much it keeps on
   disk when parked; nothing is ever removed by itself. Sets older than 30
   days show their age in the graph, nothing more.
 - **Branch deleted** (by you, or a teammate): its set is kept and shown
-  as `Parked · from <name>` on its base, Bring here or Discard.
+  as `Parked · from <name>` on its base, Bring changes here or Discard.
 
 Behind Nightly: Stable keeps "discard or commit" (a Stable test checks a
 switch with changes still asks). A Stable R3V opening a project with
@@ -154,10 +152,10 @@ for the records.
 0. Both channels, a release ahead: `PruneObjects` keeps what
    `.r3v/parked/` names (see above).
 1. `internal/project`: parked records, park on switch, bring back (same
-   base and merged), Bring here, Discard, tidy, prune keeping them; the
+   base and merged), Bring changes here, Discard, tidy, prune keeping them; the
    interruption tests.
 2. CLI: `switch` / `goto` keep by default, `--json` fields, `r3v parked`
-   (list, bring here, discard).
+   (list, bring changes here, discard).
 3. App: switching without the discard/commit question (Nightly), notices,
-   graph node and card, sidebar mark; locales.
+   graph node and card; locales.
 4. Stable test, smoke, docs (`docs/agents.md`, user docs).
