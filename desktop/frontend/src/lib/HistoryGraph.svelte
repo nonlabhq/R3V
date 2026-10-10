@@ -20,7 +20,7 @@
   // zoom, double-click the background to put it back.
   let { versions, branches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
     versions: Version[];
-    branches: { name: string; latest: string; label?: string; color?: string }[];
+    branches: { name: string; latest: string; label?: string; color?: string; parent?: string }[];
     branch: string;    // the branch you are on
     head: string;      // the version you are on
     incoming: Set<string>;

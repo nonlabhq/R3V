@@ -170,7 +170,7 @@ describe("Project icon and colour", () => {
 
 describe("History graph with looks", () => {
   const version = (id: string, author: string, authorId: string, parents: string[]) => ({
-    id, short: id, author, time: "2026-10-06T10:00:00Z", message: id, parents, branches: [], authorId, inBranch: true, notHere: false,
+    id, short: id, author, time: "2026-10-06T10:00:00Z", message: id, parents, branches: [], authorId, inBranch: true, notHere: false, branch: "",
   });
   const versions = [version("v2", "Robin", "r1", ["v1"]), version("v1", "Yi", "y1", [])];
   const show = (looks?: Record<string, { color: string; picture: string }>) =>

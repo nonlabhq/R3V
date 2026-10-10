@@ -160,6 +160,9 @@ func (r *Repo) HasSnapshot(id string) bool {
 // trees first.
 func (r *Repo) save(m *Manifest) error {
 	m.Version = manifest.Format
+	if m.Branch == "" { // the branch it's made on, for good (docs/design/branch-tree.md)
+		m.Branch = r.BranchName()
+	}
 	if err := r.sealTrees(m); err != nil {
 		return err
 	}

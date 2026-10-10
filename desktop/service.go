@@ -576,7 +576,7 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 		recs := branchRecords(r, fetchNames)
 		for _, b := range r.BranchesFrom(view.Heads) {
 			tips[b.Head] = append(tips[b.Head], b.Name)
-			br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Current: b.Current}
+			br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Parent: recs[b.Name].Parent, Current: b.Current}
 			if b.Latest != nil {
 				v := toVersion(b.Latest, nil)
 				br.Latest = &v

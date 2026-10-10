@@ -1,7 +1,8 @@
 # Branches as a tree
 
-Status: planned (Nightly). Changes the version format: the release that
-ships it forces updating (`-MinVersion`).
+Status: steps 1–3 built (below); 4–5 planned. The version format (2)
+is both channels', as every format is: the release that ships it forces
+updating (`-MinVersion`); older R3Vs can't read format 2 versions.
 
 Today a branch is a pointer, as in Git: which branch a version belongs to
 is guessed by walking back from each branch's latest version, in an order

@@ -17,24 +17,27 @@ describe("branch graph", () => {
   const g = branchGraph(versions, branches, "mine", "main", "y1");
   const col = (id: string) => g.chainOf.get(id)!.col;
   it("puts main in the middle", () => expect([col("m1"), col("m2"), col("m3")]).toEqual([0, 0, 0]));
-  it("puts the branch you're on to the right", () => expect(col("y1")).toBe(1));
-  it("puts other branches to the left", () => expect(col("a1")).toBe(-1));
+  it("puts branches to the right of where they were made, earlier ones nearer", () => expect([col("a1"), col("y1")]).toEqual([1, 2]));
+  it("puts them in the same place wherever you are", () => {
+    const there = branchGraph(versions, branches, "alt", "main", "a2");
+    expect([there.chainOf.get("a1")!.col, there.chainOf.get("y1")!.col]).toEqual([1, 2]);
+  });
   it("follows a branch down to where it split", () => expect(g.chainOf.get("a2")!.ids).toEqual(["a2", "a1"]));
   it("tells forks and merges from lines", () => {
     expect(g.edges).toContainEqual({ from: "a1", to: "m1", kind: "fork" });
     expect(g.edges).toContainEqual({ from: "m3", to: "a2", kind: "merge" });
     expect(g.edges).toContainEqual({ from: "m3", to: "m2", kind: "line" });
   });
-  it("counts the columns on each side", () => expect([g.left, g.right]).toEqual([1, 1]));
+  it("counts the columns on each side", () => expect([g.left, g.right]).toEqual([0, 2]));
 
   it("uses a column again below a branch that ended", () => {
-    // b: b1 from m1 into m2 (merged); c: c1 from m3, later, also on the left.
+    // b: b1 from m1 into m2 (merged); c: c1 from m3, later, in b's column.
     const g2 = branchGraph([
       { id: "c1", parents: ["m3"] }, { id: "m3", parents: ["m2"] }, { id: "x", parents: ["m3"] },
       { id: "m2", parents: ["m1", "b1"] }, { id: "b1", parents: ["m1"] }, { id: "m1", parents: [] },
     ], [{ name: "main", latest: "m3" }, { name: "c", latest: "c1" }, { name: "b", latest: "b1" }, { name: "x", latest: "x" }], "main");
-    expect(g2.chainOf.get("b1")!.col).toBe(-1);
-    expect(g2.chainOf.get("c1")!.col).toBe(-1);
+    expect(g2.chainOf.get("b1")!.col).toBe(1);
+    expect(g2.chainOf.get("c1")!.col).toBe(1);
   });
 
   it("draws a branch just made, with no versions of its own, from where it starts", () => {
@@ -69,6 +72,29 @@ describe("branch graph", () => {
     expect(g6.chains.filter((c) => c.name === "main")).toHaveLength(1);
     expect(g6.chains.filter((c) => c.name === "idea")).toHaveLength(1);
     expect(g6.chainOf.get("m3")!.name).toBe("main");
+  });
+
+  it("keeps a version on the branch it was made on, children beside their parent", () => {
+    // ideal: i1 - i2 from m1, made first; test (t1, from i1) and hello
+    // (h1, from i2) made from it; you are on hello, whose line would
+    // otherwise take i2 and i1 (followed down from h1).
+    const vs = [
+      { id: "h1", parents: ["i2"], branch: "hello" }, { id: "t1", parents: ["i1"], branch: "test" },
+      { id: "i2", parents: ["i1"], branch: "ideal" }, { id: "i1", parents: ["m1"], branch: "ideal" },
+      { id: "m1", parents: [], branch: "main" },
+    ];
+    const bs = [{ name: "main", latest: "m1" }, { name: "ideal", latest: "i2" }, { name: "test", latest: "t1", parent: "ideal" },
+      { name: "hello", latest: "h1", parent: "ideal" }];
+    const t = branchGraph(vs, bs, "hello", "main", "h1");
+    expect(t.chainOf.get("i1")!.name).toBe("ideal");
+    expect(t.chainOf.get("i2")!.name).toBe("ideal");
+    const c = (id: string) => t.chainOf.get(id)!;
+    expect(c("t1").parent).toBe(c("i1"));
+    expect(c("h1").parent).toBe(c("i1"));
+    expect([c("i1").col, c("t1").col, c("h1").col]).toEqual([1, 2, 3]);
+    // and without the team saying parents: from where each starts
+    const u = branchGraph(vs, bs.map(({ name, latest }) => ({ name, latest })), "main", "main", "m1");
+    expect(u.chainOf.get("h1")!.parent!.name).toBe("ideal");
   });
 
   it("copes with a branch the team doesn't list yet, an empty history, loops and missing parents", () => {

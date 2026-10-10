@@ -20,9 +20,9 @@ type FileEntry struct {
 	Size int64  `json:"size"`
 }
 
-// Format is the version record format this code writes; it reads every
-// format up to it.
-const Format = 1
+// Format is the version record format this code writes (2: a version
+// keeps its branch); it reads every format up to it.
+const Format = 2
 
 // ErrNewerFormat: the version was made by a newer R3V.
 var ErrNewerFormat = errors.New("this version was saved by a newer R3V: update R3V to open it")
@@ -37,6 +37,9 @@ type Manifest struct {
 	AuthorID string `json:"author_id,omitempty"`
 	Time     string `json:"time"`
 	Message  string `json:"message"`
+	// Branch is the key of the branch it was made on (format 2 on): which
+	// line of work it is, for good. Empty in older versions.
+	Branch string `json:"branch,omitempty"`
 	// Files inside the project folder. Records hold Tree instead: Files is
 	// filled from the trees (nil in a header).
 	Files []FileEntry `json:"files"`
@@ -65,6 +68,7 @@ type record struct {
 	AuthorID string      `json:"author_id,omitempty"`
 	Time     string      `json:"time"`
 	Message  string      `json:"message"`
+	Branch   string      `json:"branch,omitempty"`
 	Files    int         `json:"files"`
 	Size     int64       `json:"size"`
 	Tree     string      `json:"tree"`
@@ -77,7 +81,7 @@ type record struct {
 // set: see Repo.save).
 func (m *Manifest) Encode() []byte {
 	data, _ := json.MarshalIndent(record{Version: m.Version, Parents: m.Parents, Author: m.Author,
-		AuthorID: m.AuthorID, Time: m.Time, Message: m.Message, Files: m.FileCount, Size: m.TotalSize,
+		AuthorID: m.AuthorID, Time: m.Time, Message: m.Message, Branch: m.Branch, Files: m.FileCount, Size: m.TotalSize,
 		Tree: m.Tree, External: m.External, Packs: m.Packs, Missing: m.Missing}, "", "  ")
 	return append(data, '\n')
 }
@@ -111,7 +115,7 @@ func Parse(id string, data []byte) (*Manifest, error) {
 		return nil, fmt.Errorf("manifest %s: not a version record (tree %q)", short(id), r.Tree)
 	}
 	m := &Manifest{Version: r.Version, Parents: r.Parents, Author: r.Author, AuthorID: r.AuthorID,
-		Time: r.Time, Message: r.Message, Tree: r.Tree, FileCount: r.Files, TotalSize: r.Size,
+		Time: r.Time, Message: r.Message, Branch: r.Branch, Tree: r.Tree, FileCount: r.Files, TotalSize: r.Size,
 		External: r.External, Packs: r.Packs, Missing: r.Missing}
 	m.ID = id
 	return m, nil

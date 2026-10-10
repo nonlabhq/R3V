@@ -15,7 +15,7 @@ globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {
 afterEach(() => cleanup());
 
 const version = (id: string) => ({ id, short: id, author: "Alex", time: "2026-10-06T10:00:00Z", message: "Mix", parents: ["p"],
-  branches: [], authorId: "", inBranch: true, notHere: false });
+  branches: [], authorId: "", inBranch: true, notHere: false, branch: "" });
 const file = (path: string) => ({ path, status: "modified", size: 1, kind: "other", live: "", from: "", edited: false,
   preview: false, video: false, model: false });
 const picked = () => screen.getAllByTitle(/\.txt$/).find((b) => b.classList.contains("on"))?.title;

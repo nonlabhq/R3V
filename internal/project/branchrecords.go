@@ -85,7 +85,7 @@ func (r *Repo) NewBranch(name, color string, switchTo bool) (string, error) {
 	}
 	key := remote.BranchKeyFor(name, func(k string) bool { _, ok := heads[k]; return ok || k == r.BranchName() })
 	// The record first: stopped before the branch, it is never shown.
-	if err := store.PutBranchRecord(pid, key, remote.BranchRecord{Name: name, Color: color}); err != nil {
+	if err := store.PutBranchRecord(pid, key, remote.BranchRecord{Name: name, Color: color, Parent: r.BranchName(), From: r.Head()}); err != nil {
 		return "", err
 	}
 	return key, r.createBranch(key, switchTo)

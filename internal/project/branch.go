@@ -306,7 +306,7 @@ func (r *Repo) FetchSets(hashes []string) error {
 }
 
 func (r *Repo) mergeVersion(c remote.Backend, target, message string, opts MergeOptions) (*SyncResult, error) {
-	res, err := r.integrate(c, target, opts, message, false)
+	res, err := r.integrate(c, target, opts, message, false, true)
 	if err != nil || res.Action == "up-to-date" || res.Action == "ahead" {
 		return res, err
 	}

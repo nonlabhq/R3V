@@ -698,7 +698,7 @@
   // A set shown as a version (its files against the version it was made on).
   const parkedVersion = (p: ParkedSet): Version => ({ id: p.version, short: p.version.slice(0, 10), author: st?.author ?? "",
     time: p.since, message: tn(p.files, "{n} parked change", "{n} parked changes"), parents: [p.base], branches: [],
-    authorId: "", inBranch: false, notHere: false });
+    authorId: "", inBranch: false, notHere: false, branch: p.branch });
   let discardingParked = $state<ParkedSet | null>(null);
   async function discardParked() {
     const p = discardingParked!;
@@ -989,7 +989,7 @@
                 <button class="danger-act" onclick={() => (discardingParked = p)}>{t("Discard")}</button>
               {/if}
             {/snippet}
-            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
+            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color, parent: b.parent }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}

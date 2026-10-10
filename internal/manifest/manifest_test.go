@@ -82,13 +82,13 @@ func TestParseTreeRejectsBadInput(t *testing.T) {
 
 func TestRecord(t *testing.T) {
 	m := &Manifest{Version: Format, Parents: []string{}, Author: "yi", Time: "2026-01-01T00:00:00Z", Message: "m",
-		Tree: hashOf("tree"), FileCount: 3, TotalSize: 42}
+		Branch: "idea", Tree: hashOf("tree"), FileCount: 3, TotalSize: 42}
 	data := m.Seal()
 	got, err := Parse(m.ID, data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Tree != m.Tree || got.FileCount != 3 || got.TotalSize != 42 || got.Files != nil {
+	if got.Tree != m.Tree || got.FileCount != 3 || got.TotalSize != 42 || got.Files != nil || got.Branch != "idea" {
 		t.Fatalf("%+v", got)
 	}
 	// A record must name its tree.
@@ -97,8 +97,8 @@ func TestRecord(t *testing.T) {
 		t.Fatal("a record without a tree was read")
 	}
 	// Newer formats are refused.
-	d2 := []byte(strings.Replace(string(data), `"version": 1`, `"version": 2`, 1))
+	d2 := []byte(strings.Replace(string(data), `"version": 2`, `"version": 3`, 1))
 	if _, err := Parse(ID(d2), d2); !errors.Is(err, ErrNewerFormat) {
-		t.Fatalf("format 2: %v", err)
+		t.Fatalf("format 3: %v", err)
 	}
 }

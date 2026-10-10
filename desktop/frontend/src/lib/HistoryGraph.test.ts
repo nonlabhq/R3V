@@ -19,7 +19,7 @@ HTMLElement.prototype.setPointerCapture ??= function () {};
 const pointer = (el: Element, type: string, init: MouseEventInit) => fireEvent(el, new FakePointer(type, init));
 
 const version = (id: string, message: string, parents: string[], author = "Robin") => ({
-  id, short: id, author, time: "2026-10-06T10:00:00Z", message, parents, branches: [], authorId: "", inBranch: true, notHere: false,
+  id, short: id, author, time: "2026-10-06T10:00:00Z", message, parents, branches: [], authorId: "", inBranch: true, notHere: false, branch: "",
 });
 // main: m3 - m2 - m1
 const versions = [version("m3", "Mix", ["m2"]), version("m2", "Bass", ["m1"]), version("m1", "Sketch", [])];

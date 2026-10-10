@@ -863,14 +863,17 @@ func (r *Repo) Update(opts MergeOptions) (*SyncResult, error) {
 		}
 		r.noteTeamHead(c, target)
 	}
-	return r.integrate(c, target, opts, "Merge versions from the team", true)
+	return r.integrate(c, target, opts, "Merge versions from the team", true, false)
 }
 
 // integrate brings version target (and its history) into the workspace: a
 // fast forward when HEAD is behind, otherwise a merge version with message.
 // keepWork: uncommitted changes don't stop a fast forward; they are merged
 // into the new files and stay uncommitted (updateKeepingWork).
-func (r *Repo) integrate(c remote.Backend, target string, opts MergeOptions, message string, keepWork bool) (*SyncResult, error) {
+// another: target is another branch's; it comes in as a merge version even
+// when it could fast-forward, so the branch's line stays its own
+// (docs/design/branch-tree.md).
+func (r *Repo) integrate(c remote.Backend, target string, opts MergeOptions, message string, keepWork, another bool) (*SyncResult, error) {
 	head := r.Head()
 	res := &SyncResult{From: head, To: head}
 	if target == "" || target == head {
@@ -908,7 +911,7 @@ func (r *Repo) integrate(c remote.Backend, target string, opts MergeOptions, mes
 		if err != nil {
 			return nil, err
 		}
-		if !behind {
+		if !behind || another {
 			merged, log, err := r.mergeWith(c, head, target, opts, message)
 			if err != nil {
 				return nil, err
@@ -1245,8 +1248,8 @@ func (r *Repo) replay(c remote.Backend, ours []*Manifest, onto *Manifest, opts M
 		if err != nil {
 			return nil, nil, err
 		}
-		next.Parents, next.Message, next.Author, next.AuthorID, next.Time =
-			[]string{onto.ID}, m.Message, m.Author, m.AuthorID, m.Time
+		next.Parents, next.Message, next.Author, next.AuthorID, next.Time, next.Branch =
+			[]string{onto.ID}, m.Message, m.Author, m.AuthorID, m.Time, m.Branch
 		if err := r.save(next); err != nil {
 			return nil, nil, err
 		}

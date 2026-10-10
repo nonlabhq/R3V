@@ -74,7 +74,7 @@ func TestMergeConflictSides(t *testing.T) {
 	if _, err := a.Save(root, "first", true, nil, true, nil); err != nil {
 		t.Fatal(err)
 	}
-	key, err := a.CreateBranch(root, "idea", "")
+	key, err := a.CreateBranch(root, "idea", "", true)
 	if err != nil {
 		t.Fatal(err)
 	}
