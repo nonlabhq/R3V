@@ -1700,5 +1700,11 @@
 "Code and documents": "Code et documents",
 "Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "Les fichiers texte (code, notes, réglages) sont fusionnés ligne par ligne quand deux personnes les changent ; un .gitignore est suivi.",
 "Files as they are": "Fichiers tels quels",
-"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Chaque fichier est gardé tel quel ; quand deux personnes changent le même fichier, tu choisis lequel garder."
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Chaque fichier est gardé tel quel ; quand deux personnes changent le même fichier, tu choisis lequel garder.",
+"Added {files}: they go with the project's first version.": "{files} ajouté : ils partent avec la première version du projet.",
+"Add a guide for AI agents?": "Ajouter un guide pour les agents IA ?",
+"Add the guide": "Ajouter le guide",
+"AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md (avec une ligne dans CLAUDE.md qui le lit) indique aux agents IA, Claude Code, Codex et autres, que ce projet est versionné avec R3V et comment y travailler : valider, régler les conflits, travailler à côté d'autres agents. Il est validé avec le projet.",
+"Add R3V's part to the project's guide for AI agents?": "Ajouter la partie de R3V au guide du projet pour les agents IA ?",
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "Ce projet a son propre AGENTS.md (ou CLAUDE.md). La partie de R3V va à la fin, le reste ne change pas : que le projet est versionné avec R3V et comment y travailler (valider, régler les conflits, travailler à côté d'autres agents)."
 }

@@ -302,3 +302,18 @@ func (a *App) AddAgentGuide(root string) ([]string, error) {
 	written, err := agentsetup.Guide(r.Root)
 	return nonNil(written), err
 }
+
+// AgentGuide says whether the project in root has the agents' guide: "has"
+// (AGENTS.md has R3V's part), "theirs" (an AGENTS.md or CLAUDE.md of the
+// project's own, without it: R3V's part goes at its end), "" (none yet).
+func (a *App) AgentGuide(root string) string {
+	if agentsetup.HasGuide(root) {
+		return "has"
+	}
+	for _, name := range []string{"AGENTS.md", "CLAUDE.md"} {
+		if _, err := os.Stat(filepath.Join(root, name)); err == nil {
+			return "theirs"
+		}
+	}
+	return ""
+}

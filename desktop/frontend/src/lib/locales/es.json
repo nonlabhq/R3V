@@ -1700,5 +1700,11 @@
 "Code and documents": "Código y documentos",
 "Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "Los archivos de texto (código, notas, ajustes) se fusionan línea a línea cuando dos personas los cambian; se respeta el .gitignore.",
 "Files as they are": "Archivos tal cual",
-"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Cada archivo se guarda tal cual; cuando dos personas cambian el mismo archivo, eliges cuál conservar."
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Cada archivo se guarda tal cual; cuando dos personas cambian el mismo archivo, eliges cuál conservar.",
+"Added {files}: they go with the project's first version.": "Se añadió {files}: van con la primera versión del proyecto.",
+"Add a guide for AI agents?": "¿Añadir una guía para agentes de IA?",
+"Add the guide": "Añadir la guía",
+"AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md (con una línea en CLAUDE.md que lo lee) indica a los agentes de IA, Claude Code, Codex y otros, que este proyecto se versiona con R3V y cómo trabajar en él: confirmar, resolver conflictos, trabajar junto a otros agentes. Se confirma con el proyecto.",
+"Add R3V's part to the project's guide for AI agents?": "¿Añadir la parte de R3V a la guía del proyecto para agentes de IA?",
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "Este proyecto tiene su propio AGENTS.md (o CLAUDE.md). La parte de R3V va al final y el resto queda igual: que el proyecto se versiona con R3V y cómo trabajar en él (confirmar, resolver conflictos, trabajar junto a otros agentes)."
 }

@@ -1700,5 +1700,11 @@
 "Code and documents": "代码与文档",
 "Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "文本文件（代码、笔记、设置）在两人都修改时逐行合并；遵循 .gitignore。",
 "Files as they are": "按原样保存文件",
-"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "每个文件都按原样保存；两人修改同一文件时，由你选择保留哪一份。"
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "每个文件都按原样保存；两人修改同一文件时，由你选择保留哪一份。",
+"Added {files}: they go with the project's first version.": "已加入 {files}：会随项目的第一个版本一起提交。",
+"Add a guide for AI agents?": "加入给 AI 代理的指引？",
+"Add the guide": "加入指引",
+"AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md（再加上 CLAUDE.md 中读取它的一行）告诉 Claude Code、Codex 等 AI 代理：这个项目用 R3V 做版本管理，以及如何在其中工作（提交、解决冲突、与其他代理并行）。它会随项目一起提交。",
+"Add R3V's part to the project's guide for AI agents?": "把 R3V 的说明加进项目给 AI 代理的指引？",
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "这个项目已有自己的 AGENTS.md（或 CLAUDE.md）。R3V 的说明会加在最后，其余保持不变：说明项目用 R3V 做版本管理，以及如何在其中工作（提交、解决冲突、与其他代理并行）。"
 }

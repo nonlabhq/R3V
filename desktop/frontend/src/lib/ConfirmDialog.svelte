@@ -4,8 +4,8 @@
 
   // Asks before doing something: what happens, and a warning when there is
   // one. danger: the button says it can't be undone (red).
-  let { title, text, warn = "", confirm, danger = false, onconfirm, onclose }: {
-    title: string; text: string; warn?: string; confirm: string; danger?: boolean;
+  let { title, text, warn = "", confirm, cancel = "", danger = false, onconfirm, onclose }: {
+    title: string; text: string; warn?: string; confirm: string; cancel?: string; danger?: boolean;
     onconfirm: () => void; onclose: () => void;
   } = $props();
 </script>
@@ -14,7 +14,7 @@
   <p>{text}</p>
   {#if warn}<p class="warn-text">{warn}</p>{/if}
   {#snippet footer()}
-    <button onclick={onclose}>{t("Cancel")}</button>
+    <button onclick={onclose}>{cancel || t("Cancel")}</button>
     <button class={danger ? "danger" : "primary"} onclick={onconfirm}>{confirm}</button>
   {/snippet}
 </Modal>

@@ -41,6 +41,22 @@ func TestAddProjectAs(t *testing.T) {
 	if !strings.Contains(string(data), "./: none") {
 		t.Fatalf(".r3v.yaml: %s", data)
 	}
+	// The guide for agents: none, then the project's own, then R3V's part
+	// at its end (the rest kept).
+	if g := a.AgentGuide(root); g != "" {
+		t.Fatalf("guide: %q", g)
+	}
+	const ours = "# Our rules\nBe kind.\n"
+	os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte(ours), 0o644)
+	if g := a.AgentGuide(root); g != "theirs" {
+		t.Fatalf("their guide: %q", g)
+	}
+	if _, err := a.AddAgentGuide(root); err != nil {
+		t.Fatal(err)
+	}
+	if data, _ := os.ReadFile(filepath.Join(root, "AGENTS.md")); !strings.HasPrefix(string(data), ours) || a.AgentGuide(root) != "has" {
+		t.Fatalf("AGENTS.md: %s", data)
+	}
 	st, err := a.State(root)
 	if err != nil || len(st.Changes) < 2 {
 		t.Fatalf("its files to commit: %v %+v", err, st)

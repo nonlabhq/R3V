@@ -92,6 +92,15 @@ export function AddWorkspace(root: string, folder: string, branch: string, $from
 }
 
 /**
+ * AgentGuide says whether the project in root has the agents' guide: "has"
+ * (AGENTS.md has R3V's part), "theirs" (an AGENTS.md or CLAUDE.md of the
+ * project's own, without it: R3V's part goes at its end), "" (none yet).
+ */
+export function AgentGuide(root: string): $CancellablePromise<string> {
+    return $Call.ByID(41357018, root);
+}
+
+/**
  * AgentLocks reads a project's agent locks alone: agents take and free
  * them without telling the app, so the page asks again now and then, which
  * mustn't ask the team for its locks each time (ProjectLocks does).

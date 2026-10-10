@@ -1700,5 +1700,11 @@
 "Code and documents": "Código e documentos",
 "Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "Arquivos de texto (código, notas, configurações) são mesclados linha a linha quando duas pessoas os alteram; o .gitignore é seguido.",
 "Files as they are": "Arquivos como estão",
-"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Cada arquivo é guardado como está; quando duas pessoas alteram o mesmo arquivo, você escolhe qual manter."
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Cada arquivo é guardado como está; quando duas pessoas alteram o mesmo arquivo, você escolhe qual manter.",
+"Added {files}: they go with the project's first version.": "{files} adicionado: vão junto com a primeira versão do projeto.",
+"Add a guide for AI agents?": "Adicionar um guia para agentes de IA?",
+"Add the guide": "Adicionar o guia",
+"AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md (com uma linha no CLAUDE.md que o lê) diz aos agentes de IA, Claude Code, Codex e outros, que este projeto é versionado com o R3V e como trabalhar nele: fazer commit, resolver conflitos, trabalhar ao lado de outros agentes. Vai junto com o projeto.",
+"Add R3V's part to the project's guide for AI agents?": "Adicionar a parte do R3V ao guia do projeto para agentes de IA?",
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "Este projeto tem seu próprio AGENTS.md (ou CLAUDE.md). A parte do R3V vai no final e o resto fica como está: que o projeto é versionado com o R3V e como trabalhar nele (fazer commit, resolver conflitos, trabalhar ao lado de outros agentes)."
 }
