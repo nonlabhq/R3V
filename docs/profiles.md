@@ -23,15 +23,19 @@ rules:                   # yours, on top of the presets; later rules win
 
 Each rule is either `ignore:` (leave matching files out of versions) or `track:` (keep them, overriding an ignore from the preset or an earlier rule). When several rules match a file, the **last** one decides. Rules come before the preset.
 
-Patterns work like `.gitignore` lines and ignore upper/lower case:
+Patterns work like `.gitignore` lines and ignore upper/lower case. The one thing to know: **a pattern with a `/` in it (other than at its end) starts at the project folder**; one without matches at any depth. So `target/` leaves out every `target` folder, but `src-tauri/gen/` only the one at the top: write `**/src-tauri/gen/` for any of them.
 
 | Pattern | Matches |
 | --- | --- |
 | `*.tmp` | any file named `….tmp`, in any folder |
-| `Exports/` | any folder named `Exports`, and everything in it |
+| `Exports/` | any folder named `Exports`, at any depth, and everything in it |
 | `/Notes.txt` | `Notes.txt` in the project folder only |
-| `Samples/Recorded/*.wav` | `.wav` files in that folder (relative to the project folder) |
+| `Samples/Recorded/*.wav` | `.wav` files in `Samples/Recorded` of the project folder only |
+| `apps/web/dist/` | that one folder, from the project folder |
 | `**/Bounces/` | a `Bounces` folder at any depth |
+| `**/src-tauri/gen/` | `gen` in any `src-tauri` folder, at any depth |
+
+`r3v rules explain <file>` says which rule decided a file.
 
 ### The project's `.gitignore` files
 
