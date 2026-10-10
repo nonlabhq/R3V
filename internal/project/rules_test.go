@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/profile"
 )
@@ -118,8 +119,21 @@ func TestEnsureRules(t *testing.T) {
 	if did, _ := r.EnsureRules(); did != "" {
 		t.Errorf("again: %q", did)
 	}
-	// A file without presets (written by hand): the presets found are added.
-	os.WriteFile(r.Abs(profile.FileName), []byte("requires: \"0.1.0\"\nrules:\n  - ignore: \"Exports/\"\n"), 0o644)
+	// A file without presets (written by hand): the presets found are added,
+	// once it is written (not while an editor may be saving it).
+	hand := "requires: \"0.1.0\"\nrules:\n  - ignore: \"Exports/\"\n"
+	os.WriteFile(r.Abs(profile.FileName), []byte(hand), 0o644)
+	if did, _ := r.EnsureRules(); did != "" {
+		t.Fatalf("changed while just written: %q", did)
+	}
+	old := time.Now().Add(-time.Minute)
+	os.WriteFile(r.Abs(profile.FileName), nil, 0o644) // (an editor midway)
+	os.Chtimes(r.Abs(profile.FileName), old, old)
+	if did, _ := r.EnsureRules(); did != "" {
+		t.Fatalf("an empty file written over: %q", did)
+	}
+	os.WriteFile(r.Abs(profile.FileName), []byte(hand), 0o644)
+	os.Chtimes(r.Abs(profile.FileName), old, old)
 	if did, err := r.EnsureRules(); err != nil || did != "presets added" {
 		t.Fatalf("no presets: %q %v", did, err)
 	}
@@ -131,6 +145,7 @@ func TestEnsureRules(t *testing.T) {
 	}
 	// A broken file is the person's to fix.
 	os.WriteFile(r.Abs(profile.FileName), []byte("rules: [\n"), 0o644)
+	os.Chtimes(r.Abs(profile.FileName), old, old)
 	if did, _ := r.EnsureRules(); did != "" {
 		t.Errorf("broken file changed: %q", did)
 	}

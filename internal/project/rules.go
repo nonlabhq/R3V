@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/store"
@@ -82,6 +83,10 @@ func (r *Repo) profileOf(m *Manifest) (*profile.Profile, error) {
 // checkout replaced it).
 func (r *Repo) forgetProfile() { r.prof, r.profErr = nil, nil }
 
+// rulesSettle: a .r3v.yaml changed more recently is being written (see
+// EnsureRules).
+var rulesSettle = 2 * time.Second
+
 // EnsureRules makes the project's .r3v.yaml the one place its rules are
 // in: written with what R3V finds when there is none, and given the
 // presets R3V finds when it doesn't say which apply (an older file). It
@@ -99,6 +104,11 @@ func (r *Repo) EnsureRules() (string, error) {
 	}
 	if err != nil {
 		return "", err
+	}
+	// A file being written (an editor saving it: empty, or changed just
+	// now) is left as it is: next time, then. Never written over half read.
+	if fi, err := os.Stat(p); len(data) == 0 || err != nil || time.Since(fi.ModTime()) < rulesSettle {
+		return "", nil
 	}
 	text, err := profile.WithFoundPresets(string(data), r.Root)
 	if err != nil || text == string(data) {
