@@ -108,11 +108,7 @@ func (a *App) BranchList(root string) (*BranchList, error) {
 	}
 	recs := branchRecords(r, true)
 	for _, b := range r.BranchesFrom(view.Heads) {
-		br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Parent: recs[b.Name].Parent, Current: b.Current}
-		if b.Latest != nil {
-			v := toVersion(b.Latest, nil)
-			br.Latest = &v
-		}
+		br := toBranch(b, recs[b.Name])
 		out.Branches = append(out.Branches, br)
 	}
 	return out, nil

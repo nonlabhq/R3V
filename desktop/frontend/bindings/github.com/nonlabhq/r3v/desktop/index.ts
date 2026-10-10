@@ -7,6 +7,7 @@ export {
 };
 
 export {
+    Actor,
     ArchivedBranch,
     BackupInfo,
     BackupOthers,
@@ -25,6 +26,8 @@ export {
     FileVersion,
     FoundProject,
     HeldLock,
+    HunkSide,
+    HunkText,
     IgnoreOption,
     LockItem,
     LockOutcome,

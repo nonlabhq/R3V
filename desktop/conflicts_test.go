@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/remote/s3test"
@@ -110,5 +111,41 @@ func TestMergeConflictSides(t *testing.T) {
 	res, err = a.MergeBranch(root, key, "", map[string]string{res.Conflicts[0].Key: "both"}, true)
 	if err != nil || res.Action == "conflicts" {
 		t.Fatalf("merge: %+v %v", res, err)
+	}
+}
+
+// A text file's hunk is a decision of its own, with its lines on each side.
+func TestConflictsHunk(t *testing.T) {
+	got := toConflicts([]project.ConflictItem{
+		{Key: "text:src/app.ts#2", File: "src/app.ts", Unit: "lines 4–5", Description: "changed on both sides", CanKeepBoth: true,
+			Hunk: 2, Base: &project.HunkSide{Start: 4, Count: 1, Text: "a\n"}, Ours: &project.HunkSide{Start: 4, Count: 2, Text: "b\nc\n"},
+			Theirs: &project.HunkSide{Start: 4, Count: 1, Text: "d\n"}},
+		{Key: "text:src/app.ts#3", File: "src/app.ts", Unit: "after line 9", Description: "deleted by you, changed by others", CanKeepBoth: true,
+			Hunk: 3, Base: &project.HunkSide{Start: 9, Count: 1, Text: "x\n"}, Ours: &project.HunkSide{Start: 10}, Theirs: &project.HunkSide{Start: 9, Count: 1, Text: "y\n"}},
+	})
+	c := got[0]
+	if c.Kind != "hunk" || c.Hunk != 2 || c.Name != "app.ts" || c.Ours != "changed" || c.Theirs != "changed" || c.Text == nil ||
+		c.Text.Ours != (HunkSide{Start: 4, Count: 2, Text: "b\nc\n"}) || c.Text.Base.Text != "a\n" || c.Text.Theirs.Text != "d\n" {
+		t.Errorf("hunk: %+v %+v", c, c.Text)
+	}
+	if d := got[1]; d.Kind != "hunk" || d.Ours != "deleted" || d.Theirs != "changed" || d.Text.Ours.Count != 0 {
+		t.Errorf("deleted hunk: %+v", d)
+	}
+}
+
+// A version says the agent that made it; a branch, that it's an agent's.
+func TestVersionActorAndAgentBranch(t *testing.T) {
+	m := &project.Manifest{ID: "0123456789abcdef", Message: "Fix the renderer\n\nLights were too bright."}
+	if v := toVersion(m, nil); v.Actor != nil {
+		t.Errorf("a person's: %+v", v.Actor)
+	}
+	m.Actor = &manifest.Actor{Kind: manifest.ActorAgent, Tool: "claude-code", Model: "opus", Session: "s1"}
+	if v := toVersion(m, nil); v.Actor == nil || *v.Actor != (Actor{Tool: "claude-code", Model: "opus"}) {
+		t.Errorf("an agent's: %+v", v.Actor)
+	}
+	b := toBranch(project.BranchInfo{Name: "b-1", Current: true, Latest: m},
+		remote.BranchRecord{Name: "renderer", Kind: remote.BranchAgent, Owner: "m1"})
+	if b.Kind != "agent" || b.Owner != "m1" || b.Label != "renderer" || b.Latest == nil || b.Latest.Actor == nil {
+		t.Errorf("agent branch: %+v", b)
 	}
 }
