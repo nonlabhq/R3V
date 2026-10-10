@@ -31,6 +31,8 @@ type fakeCloud struct {
 	// storage answers a try (1, 2, …) of a PUT: true when it handled it.
 	storage func(try int32, w http.ResponseWriter, r *http.Request) bool
 	keyPut  func(w http.ResponseWriter)
+	// urlsAnswer, when set, answers asking for URLs instead.
+	urlsAnswer func(w http.ResponseWriter)
 }
 
 const testPID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -40,6 +42,10 @@ func newFakeCloud(t *testing.T) *fakeCloud {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/teams/t/projects/"+testPID+"/urls", func(w http.ResponseWriter, r *http.Request) {
 		f.urlCalls.Add(1)
+		if f.urlsAnswer != nil {
+			f.urlsAnswer(w)
+			return
+		}
 		var req struct {
 			Put []putItem
 			Get []string
@@ -432,5 +438,23 @@ func TestBrokerPreparedUploads(t *testing.T) {
 	}
 	if n := f.urlCalls.Load(); n != 2 {
 		t.Errorf("an upload of other bytes: %d URL requests, want 2", n)
+	}
+}
+
+// A full team's upload is refused with the service's words, not retried,
+// and known as ErrStorageFull.
+func TestBrokerStorageFull(t *testing.T) {
+	f := newFakeCloud(t)
+	f.urlsAnswer = func(w http.ResponseWriter) {
+		w.WriteHeader(409)
+		w.Write([]byte(`{"error":{"code":"over_limit","message":"This team's storage is full (1024 GB): ask us for more room."}}`))
+	}
+	key, data, sum := object("x")
+	err := f.bucket(t).Put(key, bytes.NewReader(data), int64(len(data)), sum, "")
+	if !errors.Is(err, ErrStorageFull) || !strings.Contains(err.Error(), "storage is full") {
+		t.Errorf("error %v", err)
+	}
+	if n := f.urlCalls.Load(); n != 1 {
+		t.Errorf("asked %d times; a full team isn't asked again", n)
 	}
 }
