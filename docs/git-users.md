@@ -45,10 +45,10 @@ bring changes to another branch.
 **Merging another branch always makes a version.** As `--no-ff` would.
 Updating your own branch with teammates' versions still fast-forwards.
 
-**No detached HEAD.** Going to an older version (`r3v checkout <id>`, the
+**No detached HEAD.** Going to an older version (`r3v goto <id>`, the
 app's **Go to this version**) leaves you "on an older version" of your
 branch: you can look, start a branch from there, or **make it the latest
-version** (a new version with its files). `r3v checkout latest` goes back.
+version** (a new version with its files). `r3v goto latest` goes back.
 
 **No stash: changes are parked.** On the Nightly channel, switching branch
 or going to a version with uncommitted changes parks them with the place
@@ -91,7 +91,7 @@ commit.
 | `git switch <branch>` | `r3v switch <branch>` |
 | `git switch -c <branch>` | `r3v branch new <name>` |
 | `git merge --no-ff <branch>` | `r3v merge <branch>` |
-| `git checkout <commit>` | `r3v checkout <version>` |
+| `git checkout <commit>` | `r3v goto <version>` |
 | `git stash` / `git stash pop` | (parked by themselves) `r3v parked` |
 | `git branch -d` | `r3v branch archive` (then `branch delete`) |
 | `git archive` | `r3v export <version> <folder>` |

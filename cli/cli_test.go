@@ -224,3 +224,25 @@ func TestEditPath(t *testing.T) {
 		}
 	}
 }
+
+// goto goes to a version and back (checkout: its name before).
+func TestGoto(t *testing.T) {
+	a := newFolder(t, map[string]string{"notes.txt": "first"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("second"), 0o644)
+	run(t, a, "commit", "-m", "second")
+	exit, rep := run(t, a, "goto", "HEAD~1")
+	var mv moveJSON
+	json.Unmarshal(rep.Result, &mv)
+	if exit != 0 || rep.Command != "goto" || !mv.Older {
+		t.Fatalf("goto: %s %+v", rep.Result, rep.Error)
+	}
+	exit, rep = run(t, a, "checkout", "latest")
+	json.Unmarshal(rep.Result, &mv)
+	if exit != 0 || mv.Older {
+		t.Fatalf("checkout latest: %s %+v", rep.Result, rep.Error)
+	}
+}

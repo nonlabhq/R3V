@@ -47,7 +47,7 @@ branches (advanced):
 
 advanced:
   commit --local -m MESSAGE              commit on this computer only (your next commit shares it)
-  checkout <id|HEAD~N|latest> [--force]  go to a version (files and samples); latest goes back
+  goto <id|HEAD~N|latest> [--force]      go to a version (files and samples); latest goes back
   parked [list]                          changes kept while you're on another branch or version
   parked bring|discard BRANCH[@VERSION]  bring parked changes here, or drop them
   export <id> <folder>                   write a version as a separate project folder
@@ -131,8 +131,8 @@ func Run(args []string) int {
 		err = cmdCommit(append([]string{"--local"}, rest...))
 	case "log":
 		err = cmdLog(rest)
-	case "checkout":
-		err = cmdCheckout(rest)
+	case "goto", "checkout": // (checkout: its name before 0.1.34)
+		err = cmdGoto(rest)
 	case "parked":
 		err = cmdParked(rest)
 	case "export":

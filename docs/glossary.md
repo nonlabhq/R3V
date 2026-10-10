@@ -32,14 +32,14 @@ committed stay with their place: going to another branch or version
 | Your changes | Your changes | 你的變更 | `status` | working tree + index | No staging area: untick files in the list to leave them for later (`Repo.Only`) |
 | Commit | Commit & Share | 提交並分享 | `commit -m` | `git commit` + `git push` | One step. Teammates' versions are merged in first; a conflict stops it with nothing changed |
 | Commit here only | (no team: Commit) | 提交 | `commit --local` | `git commit` | Shared by the next commit |
-| Discard | Discard changes | 捨棄變更 | `checkout HEAD --force` | `git restore`, `git reset --hard` | Asked first in the app |
+| Discard | Discard changes | 捨棄變更 | `goto HEAD --force` | `git restore`, `git reset --hard` | Asked first in the app |
 | Get updates | Get updates | 取得更新 | `update` (`--preview`) | `git pull` | Never by itself. Your uncommitted changes stay, merged with theirs |
 | What teammates shared | "Mia shared 1 new version" | 「Mia 上傳了 1 個新版本」 | `update --preview`, `status` (`team.incoming`) | `git fetch` + `git log ..origin` | |
 | Combine | Combine and share | 合併並分享 | (`commit` does it) | pull, then push | Teammates committed on your branch meanwhile |
 | Branch | Branch, New branch | 分支、新分支 | `branch`, `branch new` | branch | Names are any text; keeps its parent and the version it started at; its versions are its own for good |
 | Switch | Switch to | 切換到 | `switch` | `git switch` | Changes don't block it: they are parked |
 | Parked changes | Parked, Bring changes here | 暫放、把變更帶到這裡 | `parked`, `parked bring`, `parked discard` | `git stash` | One set per place, kept and brought back by themselves; on this computer only |
-| Go to a version | Go to this version, Back to latest | 前往這個版本、回到最新版本 | `checkout <version>`, `checkout latest` | `git checkout <commit>` (detached HEAD) | Not detached: "on an older version" of your branch, with a way back |
+| Go to a version | Go to this version, Back to latest | 前往這個版本、回到最新版本 | `goto <version>`, `goto latest` | `git checkout <commit>` (detached HEAD) | Not detached: "on an older version" of your branch, with a way back |
 | Keep an older version | Make this the latest version | 把這個版本設為最新 | — | `git checkout <old> -- .` + commit | A new version with the older one's files |
 | Merge | Merge into current branch, Merge back to main | 合併到目前的分支、合併回 main | `merge <branch>`, `merge-sets` | `git merge --no-ff` | Always makes a version. Live sets merge per track; a conflict is a track or a file |
 | Decisions | Keep yours / Keep {who}'s / Keep both | 保留你的／保留 {who} 的／兩者都保留 | `--strategy ours\|theirs\|both` | conflict markers, `-X ours/theirs` | No markers in files: you choose per track or file |
@@ -69,15 +69,12 @@ committed stay with their place: going to another branch or version
 - **upload** for sharing a version: uploading is the bytes going up (big
   files go up early, in the background).
 
-## Still to settle
+## Settled
 
-Settled in 0.1.33: samples R3V brings back are **recovered** ("Recover
-from R3V"; "Restore" is for files from a version, and backups); "Your
-changes" everywhere (not "pending changes"); "Versions you commit"; zh-TW
-says 分支 for branch and 復原 for Undo (撤回 for taking a version back).
+0.1.33: samples R3V brings back are **recovered** ("Recover from R3V";
+"Restore" is for files from a version, and backups); "Your changes"
+everywhere (not "pending changes"); "Versions you commit"; zh-TW says 分支
+for branch and 復原 for Undo (撤回 for taking a version back).
 
-Still open:
-
-| | Now | Proposed |
-|---|---|---|
-| CLI `checkout <version>` | Git's word; the app says "Go to" | (being decided) |
+0.1.34: the CLI goes to a version with `goto`, as the app's "Go to"
+(`checkout`, its name before, still works).
