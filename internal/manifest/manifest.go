@@ -40,6 +40,8 @@ type Manifest struct {
 	// Branch is the key of the branch it was made on (format 2 on): which
 	// line of work it is, for good. Empty in older versions.
 	Branch string `json:"branch,omitempty"`
+	// Actor is the agent that made it for the member (nil: the person).
+	Actor *Actor `json:"actor,omitempty"`
 	// Files inside the project folder. Records hold Tree instead: Files is
 	// filled from the trees (nil in a header).
 	Files []FileEntry `json:"files"`
@@ -60,6 +62,19 @@ type Manifest struct {
 	ID string `json:"-"`
 }
 
+// Actor is what made a version on a member's behalf: an AI agent working
+// for them. Every field may be empty, and a version without one encodes as
+// before (its id unchanged); readers of format 2 skip it.
+type Actor struct {
+	Kind    string `json:"kind,omitempty"` // ActorAgent
+	Tool    string `json:"tool,omitempty"` // "claude-code"
+	Model   string `json:"model,omitempty"`
+	Session string `json:"session,omitempty"`
+}
+
+// ActorAgent is Actor.Kind for an AI agent.
+const ActorAgent = "agent"
+
 // record is a version record as stored.
 type record struct {
 	Version  int         `json:"version"`
@@ -69,6 +84,7 @@ type record struct {
 	Time     string      `json:"time"`
 	Message  string      `json:"message"`
 	Branch   string      `json:"branch,omitempty"`
+	Actor    *Actor      `json:"actor,omitempty"`
 	Files    int         `json:"files"`
 	Size     int64       `json:"size"`
 	Tree     string      `json:"tree"`
@@ -81,9 +97,18 @@ type record struct {
 // set: see Repo.save).
 func (m *Manifest) Encode() []byte {
 	data, _ := json.MarshalIndent(record{Version: m.Version, Parents: m.Parents, Author: m.Author,
-		AuthorID: m.AuthorID, Time: m.Time, Message: m.Message, Branch: m.Branch, Files: m.FileCount, Size: m.TotalSize,
+		AuthorID: m.AuthorID, Time: m.Time, Message: m.Message, Branch: m.Branch, Actor: m.actor(), Files: m.FileCount, Size: m.TotalSize,
 		Tree: m.Tree, External: m.External, Packs: m.Packs, Missing: m.Missing}, "", "  ")
 	return append(data, '\n')
+}
+
+// actor is the actor as encoded: an empty one is none, so that it can't
+// change the id.
+func (m *Manifest) actor() *Actor {
+	if m.Actor == nil || *m.Actor == (Actor{}) {
+		return nil
+	}
+	return m.Actor
 }
 
 // Seal computes and sets the id; call after the manifest is complete.
@@ -115,7 +140,7 @@ func Parse(id string, data []byte) (*Manifest, error) {
 		return nil, fmt.Errorf("manifest %s: not a version record (tree %q)", short(id), r.Tree)
 	}
 	m := &Manifest{Version: r.Version, Parents: r.Parents, Author: r.Author, AuthorID: r.AuthorID,
-		Time: r.Time, Message: r.Message, Branch: r.Branch, Tree: r.Tree, FileCount: r.Files, TotalSize: r.Size,
+		Time: r.Time, Message: r.Message, Branch: r.Branch, Actor: r.Actor, Tree: r.Tree, FileCount: r.Files, TotalSize: r.Size,
 		External: r.External, Packs: r.Packs, Missing: r.Missing}
 	m.ID = id
 	return m, nil
