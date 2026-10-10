@@ -3,8 +3,6 @@
 package desktop
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/actor"
@@ -93,9 +91,9 @@ func TestAppAgentLocks(t *testing.T) {
 	}
 }
 
-// An agent's commit of a file another workspace holds is refused with who
-// holds it; nothing is committed.
-func TestAppCommitRefusedByAgentLock(t *testing.T) {
+// The app is a person's, whoever started it: an agent's lock never refuses
+// its commit (people always win).
+func TestAppCommitNeverRefusedByAgentLock(t *testing.T) {
 	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
 	a := NewApp()
 	root, r := agentProject(t)
@@ -104,22 +102,15 @@ func TestAppCommitRefusedByAgentLock(t *testing.T) {
 	}
 	writeFile(t, root, "tex/rock.png", "rock 2")
 	head := r.Head()
-	t.Setenv(actor.EnvTool, "codex") // (an app started by an agent)
+	t.Setenv(actor.EnvTool, "codex") // (an app started from an agent tool's shell: still a person's)
 	res, err := a.Save(root, "rock", false, nil, true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Action != "agent-locked" || len(res.Locks) != 1 {
-		t.Fatalf("result: %+v", res)
+	if res.Action == "agent-locked" {
+		t.Fatalf("a person's commit refused by an agent's lock: %+v", res)
 	}
-	if l := res.Locks[0]; l.Path != "tex/" || l.Tool != "claude-code" || l.Branch != "renderer" || l.Person {
-		t.Errorf("held: %+v", l)
-	}
-	r2, _ := project.Open(root)
-	if r2.Head() != head {
-		t.Error("committed")
-	}
-	if _, err := os.Stat(filepath.Join(root, "tex", "rock.png")); err != nil {
-		t.Fatal(err)
+	if r2, _ := project.Open(root); r2.Head() == head {
+		t.Error("not committed")
 	}
 }
