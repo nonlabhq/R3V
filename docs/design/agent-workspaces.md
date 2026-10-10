@@ -93,6 +93,18 @@ merge preview and decisions as today, then the branch archived and the
 workspace offered for removal. A coordinating agent can merge from the
 command line (`r3v merge <branch> --json`).
 
+As built (`feat/agents-view`, Nightly: `desktop/agentworkspaces.go`,
+`AgentsView.svelte`): the project's **Agents** tab (a team's project, its
+main copy; the tab counts the workspaces). **Merge into <base>** opens the
+merge preview of its branch (going to the base branch first when the
+project is on another), with the archive offer after as for any branch.
+**Open** shows the workspace in the sidebar under its project (the app's
+`teams.json` `workspaces`; nothing runs in the background there).
+**Remove** asks; refused, it says what's left and offers removing anyway.
+**New workspace** makes one beside the project ("Song (renderer)"), set up
+for Claude Code by default (`internal/agentsetup`, shared with the CLI;
+the hook runs the `bin\r3v.exe` installed with the app).
+
 ## Merging code hunk by hunk
 
 Text files (the `code` preset's handlers: `.ts`, `.rs`, `.json`, `.toml`,
