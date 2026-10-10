@@ -44,16 +44,6 @@
     api.CloudCancelSignIn();
   }
 
-  async function signOut() {
-    error = "";
-    try {
-      await api.CloudSignOut();
-      status = await api.CloudStatus();
-    } catch (e) {
-      error = errorText(e);
-    }
-  }
-
   // Joining: a team that moved in from its own storage brings its people
   // along, to be claimed: "who were you?" first (their versions, name and
   // look then theirs).
@@ -103,8 +93,7 @@
       <button class="primary" onclick={signIn}>{t("Sign in with your browser")}</button></div>
   {/if}
 {:else}
-  <p class="muted">{t("Signed in as {email}.", { email: status.email })}
-    <button class="link" onclick={signOut}>{t("Sign out")}</button></p>
+  <p class="muted">{t("Signed in as {email}.", { email: status.email })}</p>
 
   <form onsubmit={(e) => { e.preventDefault(); run(() => api.CloudCreateTeam(name)); }}>
     <label for="cloud-name">{t("Create a team")}</label>
@@ -150,5 +139,4 @@
   .claim { margin-top: var(--sp-14); }
   .people { display: flex; flex-direction: column; gap: var(--sp-6); margin: var(--sp-10) 0; }
   .people label { display: flex; align-items: center; gap: var(--sp-8); }
-  .link { border: none; background: none; padding: 0; color: var(--muted); text-decoration: underline; font-size: inherit; }
 </style>

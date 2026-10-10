@@ -3896,6 +3896,12 @@ export class TeamSummary {
     "signedOut": boolean;
 
     /**
+     * TestService: a hosted team on another service than this build's (the
+     * test service, api-dev, before R3V Cloud's own): to move from.
+     */
+    "testService": boolean;
+
+    /**
      * NoAccess: a hosted team the account signed in isn't in (any more): it
      * stays, with its projects, until removed.
      */
@@ -3956,6 +3962,9 @@ export class TeamSummary {
         }
         if (!("signedOut" in $$source)) {
             this["signedOut"] = false;
+        }
+        if (!("testService" in $$source)) {
+            this["testService"] = false;
         }
         if (!("noAccess" in $$source)) {
             this["noAccess"] = false;

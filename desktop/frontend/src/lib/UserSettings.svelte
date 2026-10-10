@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { api, errorText, type TeamSummary, type Profile } from "./api";
+  import { api, errorText, type TeamSummary, type Profile, type CloudStatus } from "./api";
 
   import Modal from "./Modal.svelte";
   import Avatar from "./Avatar.svelte";
@@ -18,6 +18,34 @@
   } = $props();
 
   let profile = $state<Profile | null>(null);
+  // R3V Cloud (Nightly): who this computer is signed in as, with the way
+  // out and back in. (Teams on another service, the test one, keep theirs.)
+  let cloud = $state<CloudStatus | null>(null);
+  let signing = $state(false);
+  $effect(() => {
+    api.CloudStatus().then((c) => (cloud = c)).catch(() => {});
+  });
+  async function cloudSignIn() {
+    signing = true;
+    error = "";
+    try {
+      cloud = await api.CloudSignIn();
+    } catch (e) {
+      error = errorText(e);
+    } finally {
+      signing = false;
+    }
+  }
+  async function cloudSignOut() {
+    error = "";
+    try {
+      await api.CloudSignOut();
+      cloud = await api.CloudStatus();
+      toast(t("Signed out of R3V Cloud"), "ok");
+    } catch (e) {
+      error = errorText(e);
+    }
+  }
   let error = $state("");
   let busy = $state(false);
   $effect(() => {
@@ -123,6 +151,24 @@
       <span class="hint">{profile.picture ? t("Shown when your picture can't be.") : t("Your initial shows on this colour.")}</span>
     </section>
 
+    {#if cloud?.available}
+      <section>
+        <h3>{t("R3V Cloud")}</h3>
+        <div class="line">
+          {#if cloud.signedIn}
+            <span class="grow">{t("Signed in as {email}.", { email: cloud.email || "…" })}</span>
+            <button class="small" onclick={cloudSignOut}>{t("Sign out")}</button>
+          {:else if signing}
+            <span class="grow">{t("Finish signing in in your browser…")}</span>
+            <button class="small" onclick={() => { signing = false; api.CloudCancelSignIn(); }}>{t("Cancel")}</button>
+          {:else}
+            <span class="grow">{t("Not signed in.")}</span>
+            <button class="small" onclick={cloudSignIn}>{t("Sign in with your browser")}</button>
+          {/if}
+        </div>
+        <span class="hint">{cloud.service}</span>
+      </section>
+    {/if}
   {/if}
   {#if error}<p class="hint err" role="alert">{error}</p>{/if}
 
@@ -132,6 +178,7 @@
 </Modal>
 
 <style>
+  .grow { flex: 1; }
   .who { display: flex; align-items: center; gap: var(--sp-16); padding-bottom: var(--sp-12); border-bottom: var(--border-width) solid var(--line); }
   .pic { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); }
   .pic .hint { flex-basis: 100%; }
