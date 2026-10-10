@@ -65,7 +65,7 @@ func (r *Repo) Verify(repair bool) (*VerifyReport, error) {
 	var records []*Manifest
 	for _, id := range ids {
 		rep.Versions++
-		data, err := os.ReadFile(r.snapshotPath(id))
+		data, err := r.readSnapshot(id)
 		var m *Manifest
 		if err == nil {
 			m, err = manifest.Parse(id, data)

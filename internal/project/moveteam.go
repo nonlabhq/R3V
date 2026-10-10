@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"slices"
 	"sync"
 
@@ -232,7 +231,7 @@ func (r *Repo) copyTo(c, d remote.Backend, heads, before map[string]string) erro
 		return err
 	}
 	if err := inParallel(need, func(id string) error {
-		data, err := os.ReadFile(r.snapshotPath(id))
+		data, err := r.sharedSnapshot(id)
 		if err != nil {
 			return err
 		}

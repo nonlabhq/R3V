@@ -559,7 +559,7 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	}
 	var stepMu sync.Mutex
 	if err := inParallel(put, func(id string) error {
-		data, err := os.ReadFile(r.snapshotPath(id))
+		data, err := r.sharedSnapshot(id)
 		if err != nil {
 			return err
 		}
