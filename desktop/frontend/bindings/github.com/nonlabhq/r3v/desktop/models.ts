@@ -173,6 +173,11 @@ export class Branch {
      */
     "label": string;
     "color": string;
+
+    /**
+     * the branch it was made from ("": not known)
+     */
+    "parent": string;
     "current": boolean;
     "latest": Version | null;
 
@@ -186,6 +191,9 @@ export class Branch {
         }
         if (!("color" in $$source)) {
             this["color"] = "";
+        }
+        if (!("parent" in $$source)) {
+            this["parent"] = "";
         }
         if (!("current" in $$source)) {
             this["current"] = false;
@@ -201,10 +209,10 @@ export class Branch {
      * Creates a new Branch instance from a string or object.
      */
     static createFrom($$source: any = {}): Branch {
-        const $$createField4_0 = $$createType3;
+        const $$createField5_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("latest" in $$parsedSource) {
-            $$parsedSource["latest"] = $$createField4_0($$parsedSource["latest"]);
+            $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
         }
         return new Branch($$parsedSource as Partial<Branch>);
     }
@@ -4008,6 +4016,11 @@ export class Version {
     "authorId": string;
 
     /**
+     * the branch it was made on ("" for older versions)
+     */
+    "branch": string;
+
+    /**
      * InBranch: the current branch already contains this version (only set
      * in State.History); other versions can be merged in.
      */
@@ -4044,6 +4057,9 @@ export class Version {
         }
         if (!("authorId" in $$source)) {
             this["authorId"] = "";
+        }
+        if (!("branch" in $$source)) {
+            this["branch"] = "";
         }
         if (!("inBranch" in $$source)) {
             this["inBranch"] = false;

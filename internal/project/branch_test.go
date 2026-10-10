@@ -167,3 +167,34 @@ func TestNewBranchStaying(t *testing.T) {
 		t.Fatalf("branches: %v %+v", err, bs)
 	}
 }
+
+// A version keeps the branch it was made on; merging a branch into another
+// always makes a version there, even when it could fast-forward.
+func TestVersionsKeepTheirBranch(t *testing.T) {
+	a, _ := team(t)
+	if m, _ := a.Load(a.Head()); m.Branch != "main" {
+		t.Fatalf("first version on %q", m.Branch)
+	}
+	if err := a.CreateBranch("idea"); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, "idea.txt", "idea")
+	if _, _, err := a.Save("on idea", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	idea := a.Head()
+	if m, _ := a.Load(idea); m.Branch != "idea" {
+		t.Fatalf("version on idea says %q", m.Branch)
+	}
+	if _, err := a.SwitchBranch("main", false); err != nil {
+		t.Fatal(err)
+	}
+	res, err := a.MergeBranch("idea", "", Strategy("fail"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _ := a.Load(a.Head())
+	if res.Action != "merged" || a.Head() == idea || len(m.Parents) != 2 || m.Branch != "main" {
+		t.Fatalf("merge: %+v, version %+v", res, m)
+	}
+}

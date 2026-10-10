@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 const version = (id: string, author: string, authorId: string, message: string): Version => ({
-  id, short: id, author, authorId, message, time: new Date().toISOString(), parents: [], branches: [], inBranch: false, notHere: false,
+  id, short: id, author, authorId, message, time: new Date().toISOString(), parents: [], branches: [], inBranch: false, notHere: false, branch: "",
 });
 const conflict = (over: Partial<Conflict>): Conflict => ({
   key: "k", file: "Song.als", unit: "Song.als", description: "changed on both sides", canKeepBoth: true,

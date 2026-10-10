@@ -36,7 +36,7 @@ func TestBranchNames(t *testing.T) {
 		t.Fatalf("CreateBranchNamed: %q %v (on %q)", key, err, a.BranchName())
 	}
 	recs, err := a.BranchRecords()
-	if err != nil || recs[key].Name != "Mia 的主歌" || recs[key].Color != "b4" {
+	if err != nil || recs[key].Name != "Mia 的主歌" || recs[key].Color != "b4" || recs[key].Parent != "main" || recs[key].From != a.Head() {
 		t.Fatalf("records: %+v %v", recs, err)
 	}
 	for _, taken := range []string{"mia 的主歌", "MAIN"} {

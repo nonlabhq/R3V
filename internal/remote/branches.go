@@ -45,6 +45,10 @@ const MaxBranchName = 64
 type BranchRecord struct {
 	Name  string `json:"name"`
 	Color string `json:"color,omitempty"` // a palette number ("b3"), "" for the app's pick
+	// Parent is the key of the branch it was made from, From the version it
+	// started at (docs/design/branch-tree.md); "" for main and older branches.
+	Parent string `json:"parent,omitempty"`
+	From   string `json:"from,omitempty"`
 	// Deleted: where the branch was when it was deleted, written before
 	// the delete (the branch log is written after, as well as it can be),
 	// so a branch deleted can always come back.
