@@ -24,11 +24,11 @@ beforeEach(() => {
 });
 
 const version = (id: string, author: string, authorId: string, message: string): Version => ({
-  id, short: id, author, authorId, message, time: new Date().toISOString(), parents: [], branches: [], inBranch: false, notHere: false, branch: "",
+  id, short: id, author, authorId, message, time: new Date().toISOString(), parents: [], branches: [], inBranch: false, notHere: false, branch: "", actor: null,
 });
 const conflict = (over: Partial<Conflict>): Conflict => ({
   key: "k", file: "Song.als", unit: "Song.als", description: "changed on both sides", canKeepBoth: true,
-  kind: "file", track: "", name: "Song.als", ours: "changed", theirs: "changed", ...over,
+  kind: "file", track: "", name: "Song.als", ours: "changed", theirs: "changed", hunk: 0, text: null, ...over,
 });
 const bass = conflict({ key: "Song.als#track:14", unit: `AudioTrack "Bass"`, kind: "track", track: "14", name: "Bass",
   description: "modified on both sides" });
@@ -163,5 +163,40 @@ describe("MergeDecisions", () => {
     await fireEvent.click(screen.getByRole("radio", { name: /Keep this computer's/ }));
     await fireEvent.click(next());
     expect(p.onresolve).toHaveBeenCalledWith({ k1: "ours" });
+  });
+
+  // A text file's hunk: the lines on each side, the original below, and
+  // both kept as yours then theirs; decided by its key like a track.
+  it("decides a text file hunk by hunk", async () => {
+    const side = (start: number, text: string) => ({ start, count: text ? text.split("\n").length - 1 : 0, text });
+    const hunk = (n: number, ours: string, theirs: string) => conflict({ key: `text:src/app.ts#${n}`, file: "src/app.ts",
+      unit: `lines ${n * 10}–${n * 10 + 1}`, name: "app.ts", kind: "hunk", hunk: n,
+      text: { base: side(n * 10, "let light = 1\n"), ours: side(n * 10, ours), theirs: side(n * 10, theirs) } });
+    const p = props({ conflicts: [hunk(1, "let light = 2\nlet glow = 1\n", "let light = 3\n"), hunk(4, "", "let fog = 1\n")],
+      combined: [] });
+    p.conflicts[1].ours = "deleted";
+    render(MergeDecisions, p);
+    expect(screen.getByRole("dialog").getAttribute("aria-label")).toBe("You and Mo both changed lines 10–11 of app.ts");
+    const yours = screen.getByRole("radio", { name: /Keep yours/ });
+    const theirs = screen.getByRole("radio", { name: /Keep Mo's/ });
+    within(yours).getByText("let glow = 1");
+    within(yours).getByText("11");
+    within(theirs).getByText("let light = 3");
+    screen.getByText("The lines as they were before both changes");
+    screen.getByText("let light = 1");
+    screen.getByText("Keeps your lines, then Mo's after them");
+    expect(screen.queryByText(/conflict|hunk/i)).toBeNull();
+    await fireEvent.click(screen.getByRole("radio", { name: /Keep both/ }));
+    await fireEvent.click(next());
+
+    // Lines you deleted: no "keep both", yours shows none.
+    expect(screen.getByRole("dialog").getAttribute("aria-label")).toBe("You and Mo both changed the lines after line 39 of app.ts");
+    within(screen.getByRole("radio", { name: /Keep yours/ })).getByText("No lines here");
+    within(screen.getByRole("radio", { name: /Keep yours/ })).getByText(/Deleted by you/);
+    expect(screen.queryByRole("radio", { name: /Keep both/ })).toBeNull();
+    await fireEvent.click(screen.getByRole("radio", { name: /Keep Mo's/ }));
+    await fireEvent.click(next());
+    expect(p.onresolve).toHaveBeenCalledWith({ "text:src/app.ts#1": "both", "text:src/app.ts#4": "theirs" });
+    expect(api.SetOverview).not.toHaveBeenCalled();
   });
 });

@@ -1,7 +1,8 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import { api, errorText, type ProjectFile, type Version } from "./api";
+  import { api, detailsOf, errorText, titleOf, type ProjectFile, type Version } from "./api";
   import FileIcon from "./FileIcon.svelte";
+  import AgentBadge from "./AgentBadge.svelte";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import { viewerFor, type Side } from "./viewers";
@@ -109,11 +110,13 @@
 <div class="version">
   <header>
     <div class="title">
-      <h2>{v.message || t("(no description)")}</h2>
+      <h2>{titleOf(v.message) || t("(no description)")}</h2>
       <div class="meta">
+        {#if v.actor}<AgentBadge tool={v.actor.tool} model={v.actor.model} />{/if}
         {v.author} · {new Date(v.time).toLocaleString()}{#if branch} · {branch}{/if} · <span class="mono">{v.short}</span>
         {#if v.parents.length > 1} · {t("merge")}{/if}
       </div>
+      {#if detailsOf(v.message)}<p class="details">{detailsOf(v.message)}</p>{/if}
       {#if marks}{@render marks()}{/if}
     </div>
     {#if actions}<div class="acts">{@render actions()}</div>{/if}
@@ -188,6 +191,9 @@
   .title { flex: 1 1 280px; min-width: 0; }
   h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); user-select: text; }
   .meta { font-size: var(--fs-sm); color: var(--faint); margin-top: var(--sp-2); }
+  .meta :global(.agent) { margin-right: var(--sp-4); }
+  .details { margin: var(--sp-8) 0 0; font-size: var(--fs-md); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere;
+    max-height: 9em; overflow: auto; user-select: text; }
   .acts { display: flex; gap: var(--sp-6); flex-wrap: wrap; }
   .acts :global(button) { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
   .body { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: 270px 1fr; }

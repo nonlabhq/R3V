@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { Events } from "@wailsio/runtime";
-  import { api, ago, errorText, formatBytes, previewURL, type MemberLook, type ProjectFile, type State, type Version } from "./api";
+  import { api, ago, errorText, formatBytes, previewURL, titleOf, type MemberLook, type ProjectFile, type State, type Version } from "./api";
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
   import FileIcon from "./FileIcon.svelte";
@@ -16,7 +16,8 @@
     type Folder, type Selection } from "./files";
   import LockBadge from "./LockBadge.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
-  import { breakLock, holderName, lockAt, locksOf, lockPaths, unlockPaths } from "./locks.svelte";
+  import { breakLock, holderName, lockAt, locksOf, lockPaths, unlockPaths, type LockItem } from "./locks.svelte";
+  import { branchLabel } from "./branches";
 
   // The Files tab, file-centred (the Overview is version-centred): the
   // project's folders on the left (with how many changed files each holds),
@@ -41,7 +42,16 @@
   let lv = $derived(locksOf(root));
   const folderLock = (p: string) => (lv?.on ? lv.items.find((l) => l.prefix && l.path === p + "/") : undefined);
   const fileLock = (p: string) => lockAt(lv, p);
-  let breaking = $state<{ path: string; name: string } | null>(null);
+  let breaking = $state<{ path: string; name: string; agent: boolean } | null>(null);
+  // An agent's lock names its branch as the team calls it.
+  const branchName = (key: string) => branchLabel(st.branches, key);
+  // Breaking a lock: asked first, but your own agent lock (taken from the
+  // command line) is simply freed.
+  function askBreak(l: LockItem) {
+    menu = null;
+    if (l.agent && l.mine) breakLock(root, l.path, true);
+    else breaking = { path: l.path, name: holderName(l, branchName), agent: l.agent };
+  }
   // Lock or unlock from the menu: the files picked with the one clicked.
   const lockTargets = (m: { path: string; dir: boolean }) =>
     m.dir ? [m.path + "/"] : sel.picked.includes(m.path) ? sel.picked.filter((p) => !fileLock(p)) : [m.path];
@@ -502,7 +512,7 @@
               ondragstart={(e) => e.preventDefault()}>
               <FileIcon kind="folder" open={f.path === dir} />
               <span class="fname">{f.name || t("Project")}</span>
-              {#if folderLock(f.path)}<LockBadge lock={folderLock(f.path)!} {looks} size={14} />{/if}
+              {#if folderLock(f.path)}<LockBadge lock={folderLock(f.path)!} {looks} {branchName} size={14} />{/if}
               {#if f.changed}<span class="pill" title={tn(f.changed, "{n} changed file inside", "{n} changed files inside")}>{f.changed}</span>{/if}
             </button>
           {/if}
@@ -587,7 +597,7 @@
               data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
               <span class="badge folder-badge" role="gridcell"><FileIcon kind="folder" /></span>
               <span class="nm" role="gridcell"><span class="nmline"><span class="fname">{d.name}</span>
-                {#if folderLock(d.path)}<LockBadge lock={folderLock(d.path)!} {looks} />{/if}</span><span class="msg">{insideText(d)}</span></span>
+                {#if folderLock(d.path)}<LockBadge lock={folderLock(d.path)!} {looks} {branchName} />{/if}</span><span class="msg">{insideText(d)}</span></span>
               {#each shownCols as c (c.key)}
                 {#if c.key === "type"}<span class="type faint" role="gridcell">{t("Folder")}</span>
                 {:else if c.key === "status"}<span role="gridcell">{#if d.changed}<span class="pill" title={tn(d.changed, "{n} changed file inside", "{n} changed files inside")}>{d.changed}</span>{/if}</span>
@@ -609,9 +619,9 @@
                     onclick={(e) => e.stopPropagation()} aria-label={t("New name")} />
                 {:else}
                   <span class="nmline"><span class="fname">{baseName(f.path)}</span>
-                    {#if fileLock(f.path)}<LockBadge lock={fileLock(f.path)!} {looks} />{/if}</span>
+                    {#if fileLock(f.path)}<LockBadge lock={fileLock(f.path)!} {looks} {branchName} />{/if}</span>
                 {/if}
-                <span class="msg">{#if searching && whereIn(f)}<span class="where" title={dirOf(f.path)}>{whereIn(f)}</span>{/if}{v ? v.message || t("(no description)") : isChanged(f) ? t("Not committed yet") : ""}</span>
+                <span class="msg">{#if searching && whereIn(f)}<span class="where" title={dirOf(f.path)}>{whereIn(f)}</span>{/if}{v ? titleOf(v.message) || t("(no description)") : isChanged(f) ? t("Not committed yet") : ""}</span>
               </span>
               {#each shownCols as c (c.key)}
                 {#if c.key === "type"}
@@ -639,7 +649,7 @@
               data-file-drop-target={dropAt(d.path)} data-root={root} data-dir={d.path}>
               <span class="thumb"><span class="ph"><FileIcon kind="folder" /></span>
                 {#if d.changed}<span class="pill corner">{d.changed}</span>{/if}
-                {#if folderLock(d.path)}<span class="lock-corner"><LockBadge lock={folderLock(d.path)!} {looks} /></span>{/if}</span>
+                {#if folderLock(d.path)}<span class="lock-corner"><LockBadge lock={folderLock(d.path)!} {looks} {branchName} /></span>{/if}</span>
               <span class="cname">{d.name}</span>
               <span class="cmeta"><span class="faint">{insideText(d)}</span></span>
             </div>
@@ -657,7 +667,7 @@
                     onerror={() => (thumbFailed[f.path] = true)} />
                 {/if}
                 {#if sym[f.status]}<span class="st corner {f.status}" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
-                {#if fileLock(f.path)}<span class="lock-corner"><LockBadge lock={fileLock(f.path)!} {looks} /></span>{/if}
+                {#if fileLock(f.path)}<span class="lock-corner"><LockBadge lock={fileLock(f.path)!} {looks} {branchName} /></span>{/if}
               </span>
               {#if renaming && !renaming.dir && renaming.path === f.path}
                 <input class="rename" bind:value={renaming.value} use:nameField onkeydown={renameKey} onblur={() => finishRename(true)}
@@ -688,7 +698,8 @@
     <div class="vsplit panel-split" style:right="calc(var(--panel-w) + 24px)" onpointerdown={resizePanel}></div>
     <aside class="panel">
       {#if current}
-        <FilePanel {root} {st} file={current} stamp={loadedAt} {onrestore} />
+        <FilePanel {root} {st} file={current} stamp={loadedAt} {onrestore} lock={fileLock(current.path)} {looks} {branchName}
+          onbreak={askBreak} />
       {:else}
         <p class="muted pick-note">{sel.picked.length > 1 ? tn(sel.picked.length, "{n} file picked", "{n} files picked") : t("Pick a file to see it and its history.")}</p>
       {/if}
@@ -716,14 +727,19 @@
       {@const own = m.dir ? folderLock(m.path) : lv.items.find((l) => l.path === m.path)}
       {@const over = m.dir ? lockAt(lv, m.path + "/") : fileLock(m.path)}
       <div class="sep"></div>
-      {#if own?.mine}
+      {#if own?.agent && own.person}
+        <p class="faint note">{t("Your changes: agents leave it alone until you commit")}</p>
+      {:else if own?.agent}
+        <!-- (people always win: any agent lock can be broken) -->
+        <button class="item" class:danger-text={!own.mine} onclick={() => askBreak(own)}>{own.mine ? (m.dir ? t("Unlock folder") : t("Unlock")) : t("Break lock…")}</button>
+      {:else if own?.mine}
         <button class="item" onclick={() => unlockFromMenu(own.path)}>{m.dir ? t("Unlock folder") : t("Unlock")}</button>
       {:else if own && lv.admin}
-        <button class="item danger-text" onclick={() => { breaking = { path: own.path, name: holderName(own) }; menu = null; }}>{t("Break lock…")}</button>
-      {:else if !over}
+        <button class="item danger-text" onclick={() => askBreak(own)}>{t("Break lock…")}</button>
+      {:else if !over && lv.team}
         <button class="item" onclick={() => lockFromMenu(m)}>{m.dir ? t("Lock folder") : t("Lock")}</button>
-      {:else if !over.mine}
-        <p class="faint note">{t("Locked by {name}", { name: holderName(over) })}</p>
+      {:else if over && !over.mine}
+        <p class="faint note">{t("Locked by {name}", { name: holderName(over, branchName) })}</p>
       {/if}
     {/if}
     {#if f && ["added", "modified", "deleted", "renamed"].includes(f.status)}
@@ -762,8 +778,9 @@
 {#if breaking}
   {@const b = breaking}
   <ConfirmDialog title={t("Break the lock?")} danger confirm={t("Break lock")}
-    text={t("{name} holds {file}. Breaking the lock lets others change it; any changes {name} hasn't shared may then clash with theirs.", { name: b.name, file: b.path })}
-    onclose={() => (breaking = null)} onconfirm={() => { const p = b.path; breaking = null; breakLock(root, p); }} />
+    text={b.agent ? t("{name} holds {file}. Breaking the lock lets you and other agents change it; what {name} changed there may then need your decisions when its branch is merged.", { name: b.name, file: b.path })
+      : t("{name} holds {file}. Breaking the lock lets others change it; any changes {name} hasn't shared may then clash with theirs.", { name: b.name, file: b.path })}
+    onclose={() => (breaking = null)} onconfirm={() => { const p = b.path, agent = b.agent; breaking = null; breakLock(root, p, agent); }} />
 {/if}
 
 {#if converting.length}

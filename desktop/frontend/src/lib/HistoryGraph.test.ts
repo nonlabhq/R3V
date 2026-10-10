@@ -19,7 +19,7 @@ HTMLElement.prototype.setPointerCapture ??= function () {};
 const pointer = (el: Element, type: string, init: MouseEventInit) => fireEvent(el, new FakePointer(type, init));
 
 const version = (id: string, message: string, parents: string[], author = "Robin") => ({
-  id, short: id, author, time: "2026-10-06T10:00:00Z", message, parents, branches: [], authorId: "", inBranch: true, notHere: false, branch: "",
+  id, short: id, author, time: "2026-10-06T10:00:00Z", message, parents, branches: [], authorId: "", inBranch: true, notHere: false, branch: "", actor: null,
 });
 // main: m3 - m2 - m1
 const versions = [version("m3", "Mix", ["m2"]), version("m2", "Bass", ["m1"]), version("m1", "Sketch", [])];
@@ -213,5 +213,39 @@ describe("HistoryGraph", () => {
     await pointer(box, "pointerdown", { clientX: 10, clientY: 10, button: 0, buttons: 1 });
     await pointer(box, "pointermove", { clientX: 200, clientY: 200, buttons: 0 });
     expect(canvas.style.transform).toBe(after);
+  });
+});
+
+describe("HistoryGraph with agents", () => {
+  // main: m3 (merged the renderer) - m2 - m1; the agent's branch: r2 - r1 off m1.
+  const agentVersion = (id: string, message: string, parents: string[]) => ({ ...version(id, message, parents), branch: "b-render",
+    actor: { tool: "claude-code", model: "opus" } });
+  const history = [{ ...version("m3", "Merge renderer", ["m2", "r2"]), branch: "main" }, { ...version("m2", "Bass", ["m1"]), branch: "main" },
+    agentVersion("r2", "Fix the renderer\n\nLights were too bright.", ["r1"]), agentVersion("r1", "Renderer", ["m1"]),
+    { ...version("m1", "Sketch", []), branch: "main" }];
+  const branches = [main, { name: "b-render", latest: "r2", label: "renderer", kind: "agent" }];
+
+  it("folds agents' branches away until shown, their labels and versions marked", async () => {
+    show({ versions: history, branches });
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    expect(screen.queryByText("renderer")).toBeNull();
+    const toggle = screen.getByRole("button", { name: "Show agents' branches" });
+    expect(toggle.textContent).toContain("1");
+    await fireEvent.click(toggle);
+    expect(screen.getAllByRole("option")).toHaveLength(5);
+    screen.getByText("renderer");
+    screen.getByTitle("An agent's branch");
+    // An agent's version: its title only, the tool named, a spark on its dot.
+    const dot = screen.getByRole("option", { name: /^Fix the renderer, Robin \(Claude Code\),/ });
+    expect(dot.querySelector("[data-agent='claude-code']")).toBeTruthy();
+    expect(screen.getByRole("option", { name: /^Bass,/ }).querySelector("[data-agent]")).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Hide agents' branches" }));
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+  });
+
+  it("never folds the agent's branch you are on", () => {
+    show({ versions: history, branches, branch: "b-render", head: "r2", selected: "r2" });
+    expect(screen.getAllByRole("option")).toHaveLength(5);
+    expect(screen.queryByRole("button", { name: "Show agents' branches" })).toBeNull();
   });
 });

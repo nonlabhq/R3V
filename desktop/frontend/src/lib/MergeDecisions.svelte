@@ -6,8 +6,8 @@
 
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import { ago, type Conflict, type MemberLook, type Version } from "./api";
-  import type { Combined } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
+  import { ago, titleOf, type Conflict, type MemberLook, type Version } from "./api";
+  import type { Combined, HunkSide } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { branchLabel, branchLane, type BranchLook } from "./branches";
   import Avatar from "./Avatar.svelte";
   import FileIcon from "./FileIcon.svelte";
@@ -16,7 +16,9 @@
   import MergeSetPreview from "./MergeSetPreview.svelte";
 
   // Things both sides changed, decided one at a time over the whole app:
-  // keep yours, keep theirs, or (where it can be) both. Nothing is changed
+  // keep yours, keep theirs, or (where it can be) both. A track of a set
+  // shows as a track, lines of a text file (a hunk) as the lines on each
+  // side, the original lines below. Nothing is changed
   // until the last decision; onresolve gets them all, by Conflict.key.
   let { conflicts, ours = null, theirs = null, combined = [], kind = "update", root, project = "",
     me = "", ourBranch = "", theirBranch = "", version = "", branches = [], looks, onresolve, onclose }: {
@@ -64,11 +66,24 @@
   let theirColor = $derived(kind === "undo" ? "var(--faint)" : lane(theirKey));
 
   // ---- words ----
+  // Where a hunk is in your file: "lines 40–52".
+  function linesOf(x: Conflict): string {
+    const s = x.text?.ours;
+    if (!s) return "";
+    if (s.count === 1) return t("line {n}", { n: s.start });
+    if (s.count > 1) return t("lines {from}–{to}", { from: s.start, to: s.start + s.count - 1 });
+    return s.start > 1 ? t("the lines after line {n}", { n: s.start - 1 }) : t("the first lines");
+  }
   let title = $derived.by(() => {
     if (!c) return "";
     const k = kindOf(c);
     const order = k === "set" && c.key.endsWith("#order");
-    const v = { who: other }; // ({track} and {file} are filled in below, shown apart)
+    const v = { who: other, lines: linesOf(c) }; // ({track} and {file} are filled in below, shown apart)
+    if (k === "hunk") {
+      return kind === "undo" ? t("{lines} of {file} changed again after that version", v)
+        : other ? t("You and {who} both changed {lines} of {file}", v)
+        : t("Both sides changed {lines} of {file}", v);
+    }
     if (kind === "undo") {
       return k === "track" ? t("The {track} track changed again after that version", v)
         : k === "file" ? t("{file} changed again after that version", v)
@@ -113,7 +128,7 @@
   function where(v: Version | null, branch: string): string {
     if (!v) return branch ? t("on {branch}", { branch: bl(branch) }) : "";
     if (!v.id) return t("Your changes, not committed yet");
-    return [branch ? t("on {branch}", { branch: bl(branch) }) : "", v.message || v.short, ago(v.time)].filter(Boolean).join(" · ");
+    return [branch ? t("on {branch}", { branch: bl(branch) }) : "", titleOf(v.message) || v.short, ago(v.time)].filter(Boolean).join(" · ");
   }
   let yoursWhere = $derived(where(ours, ourBranch));
   let theirsWhere = $derived(kind === "undo"
@@ -134,6 +149,10 @@
   let bothText = $derived.by(() => {
     if (!c) return "";
     const name = nameOf(c);
+    if (kindOf(c) === "hunk") {
+      return other ? t("Keeps your lines, then {who}'s after them", { who: other })
+        : t("Keeps this side's lines, then the other side's after them");
+    }
     if (kindOf(c) === "track") {
       const copy = `${name} [theirs]`; // (internal/merge names the copy so)
       return other ? t("Keeps yours and adds {who}'s as another track, “{copy}”", { who: other, copy })
@@ -230,11 +249,29 @@
   </div>
 {/snippet}
 
+{#snippet code(s: HunkSide)}
+  {#if s.count}
+    <div class="code">
+      {#each s.text.replace(/\r?\n$/, "").split(/\r?\n/) as line, i}
+        <div class="ln"><span class="no">{s.start + i}</span><span class="tx">{line}</span></div>
+      {/each}
+    </div>
+  {:else}
+    <p class="code none faint">{t("No lines here")}</p>
+  {/if}
+{/snippet}
+
 {#snippet side(x: Conflict, which: "ours" | "theirs")}
   {@const v = which === "ours" ? ours : theirs}
   {@const color = which === "ours" ? ourColor : theirColor}
   {#if kindOf(x) === "track" && (v || which === "ours")}
     <MergeSetPreview {root} file={x.file} version={v?.id ?? ""} track={x.track} {color} name={nameOf(x)} />
+  {:else if kindOf(x) === "hunk" && x.text}
+    {@const s = which === "ours" ? x.text.ours : x.text.theirs}
+    <div class="hunk">
+      <span class="faint small" title={x.file}>{x.file} · {did(x, which)}</span>
+      {@render code(s)}
+    </div>
   {:else}
     <div class="summary">
       <FileIcon path={x.file} kind={fileKind(x.file)} faint={(which === "ours" ? oursDid(x) : theirsDid(x)) === "deleted"} />
@@ -295,6 +332,12 @@
         {@render card(c, "ours", yoursLabel, yoursWhere, ours, ours?.author || me)}
         {@render card(c, "theirs", theirsLabel, theirsWhere, theirs, other)}
       </div>
+      {#if kindOf(c) === "hunk" && c.text && c.text.base.count}
+        <details class="original">
+          <summary>{t("The lines as they were before both changes")}</summary>
+          {@render code(c.text.base)}
+        </details>
+      {/if}
       {#if canBoth(c)}
         {@const on = choices[c.key] === "both"}
         <div class="card both" class:on role="radio" aria-checked={on} tabindex={on ? 0 : -1} data-choice="both"
@@ -381,6 +424,15 @@
   .summary { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--line-soft); }
   .what { display: flex; flex-direction: column; min-width: 0; }
   .file { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hunk { display: flex; flex-direction: column; gap: var(--sp-6); min-width: 0; }
+  .small { font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .code { max-height: 260px; overflow: auto; margin: 0; padding: var(--sp-6) 0; border-radius: var(--radius-lg);
+    background: var(--bg-sunken); font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.55; cursor: text; user-select: text; }
+  .code.none { padding: var(--sp-10) var(--sp-12); font-family: var(--font-sans); font-size: var(--fs-sm); }
+  .ln { display: flex; min-width: max-content; }
+  .no { flex: none; width: 4ch; padding: 0 var(--sp-8) 0 var(--sp-6); text-align: right; color: var(--faint); user-select: none; }
+  .tx { white-space: pre; padding-right: var(--sp-12); }
+  .original summary { cursor: pointer; color: var(--muted); font-size: var(--fs-sm); margin-bottom: var(--sp-6); }
   footer { display: flex; align-items: center; gap: var(--sp-8); }
   footer .primary { padding-left: var(--sp-18); padding-right: var(--sp-18); }
   .grow { flex: 1; }

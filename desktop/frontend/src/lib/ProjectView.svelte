@@ -1,11 +1,11 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
-  import { api, ago, errorText, formatBytes, type State, type Result, type Preview, type TeamSummary, type ParkedSet,
+  import { api, ago, errorText, formatBytes, titleOf, type State, type Result, type Preview, type TeamSummary, type ParkedSet,
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
   import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
-  import { loadLocks, watchLocks } from "./locks.svelte";
+  import { holderName, loadLocks, watchLocks } from "./locks.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
   import { resetChangesView } from "./changesview.svelte";
@@ -346,6 +346,11 @@
         resetChangesView(root);
         return;
       }
+      if (r.action === "agent-locked") { // (nothing committed: the message stays)
+        toast(agentLockedText(r), "warn", 15000);
+        loadLocks(root);
+        return;
+      }
       const kind = r.action === "nothing" || r.action.startsWith("cancelled") ? "info" : "ok";
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
@@ -577,7 +582,7 @@
   // Merge any version (e.g. one in the middle of another branch) into the
   // current branch.
   async function openVersionMerge(v: Version) {
-    const label = v.branches.length ? bl(v.branches[0]) : `“${v.message || v.short}”`;
+    const label = v.branches.length ? bl(v.branches[0]) : `“${titleOf(v.message) || v.short}”`;
     busy = "preview";
     try {
       const data = await api.PreviewMergeVersion(root, v.id);
@@ -669,7 +674,7 @@
   function placeOf(p: ParkedSet): string {
     if (!p.at) return `“${bl(p.branch)}”`;
     const v = st?.history.find((x) => x.id === p.at);
-    return `“${v?.message || p.at.slice(0, 8)}”`;
+    return `“${titleOf(v?.message) || p.at.slice(0, 8)}”`;
   }
   // What a switch did with your changes, for its message.
   function parkText(r: Result): string {
@@ -692,7 +697,7 @@
     if (p.branch !== st?.branch) return switchTo(p.branch);
     const v = p.at ? st.history.find((x) => x.id === p.at) : undefined;
     graphPick = "";
-    run(goAction(p.at || "latest", false, v?.message ?? ""));
+    run(goAction(p.at || "latest", false, titleOf(v?.message)));
   }
   function bringHere(p: ParkedSet) {
     run({
@@ -708,7 +713,7 @@
   // A set shown as a version (its files against the version it was made on).
   const parkedVersion = (p: ParkedSet): Version => ({ id: p.version, short: p.version.slice(0, 10), author: st?.author ?? "",
     time: p.since, message: tn(p.files, "{n} parked change", "{n} parked changes"), parents: [p.base], branches: [],
-    authorId: "", inBranch: false, notHere: false, branch: p.branch });
+    authorId: "", inBranch: false, notHere: false, branch: p.branch, actor: null });
   let discardingParked = $state<ParkedSet | null>(null);
   async function discardParked() {
     const p = discardingParked!;
@@ -750,7 +755,7 @@
       leaving = { target: v, message: "" };
       return;
     }
-    run(goAction(v?.id ?? "latest", false, v?.message ?? ""));
+    run(goAction(v?.id ?? "latest", false, titleOf(v?.message)));
   }
 
   async function commitThenGo() {
@@ -763,13 +768,13 @@
       call: (res, force) => api.Save(root, l.message, false, res, force, []),
       done: () => (committed = true),
     });
-    if (committed) run(goAction(l.target?.id ?? "latest", false, l.target?.message ?? ""));
+    if (committed) run(goAction(l.target?.id ?? "latest", false, titleOf(l.target?.message)));
   }
 
   function discardThenGo() {
     const l = leaving!;
     leaving = null;
-    run(goAction(l.target?.id ?? "latest", true, l.target?.message ?? ""));
+    run(goAction(l.target?.id ?? "latest", true, titleOf(l.target?.message)));
   }
 
   function keepThisVersion() {
@@ -787,7 +792,7 @@
   let undoing = $state<Version | null>(null);
   function undoCommit(v: Version, msg: string, takeBack: boolean) {
     undoing = null;
-    const version = v.message || v.short;
+    const version = titleOf(v.message) || v.short;
     if (takeBack) {
       run({
         name: "undo",
@@ -814,7 +819,7 @@
     busy = "export";
     try {
       const dir = await api.ExportVersion(root, v.id, parent);
-      toast(t("Saved a copy of “{version}” as {folder}", { version: v.message || v.short, folder: dir }), "ok", 9000);
+      toast(t("Saved a copy of “{version}” as {folder}", { version: titleOf(v.message) || v.short, folder: dir }), "ok", 9000);
       api.ShowFolder(dir);
     } catch (e) {
       toast(errorText(e), "error", 9000);
@@ -875,6 +880,14 @@
     return t("Committed on this computer, not shared: someone else is editing {files}. It's shared once they unlock them (commit again then).", { files: list.join(", ") });
   }
 
+  // A commit refused: another workspace on this computer (an agent's)
+  // holds files it changes. Who holds what.
+  function agentLockedText(r: Result): string {
+    const list = (r.locks ?? []).map((l) => t("{file} ({name})", { file: l.path.replace(/\/$/, "").slice(l.path.replace(/\/$/, "").lastIndexOf("/") + 1),
+      name: holderName({ ...l, agent: true }, (k) => branchLabel(st?.branches ?? [], k)) }));
+    return t("Not committed: {files} are held by an agent's workspace on this computer. Commit them once its work is merged, or break the lock in Files.", { files: list.join(", ") });
+  }
+
   let folderName = $derived(root.split(/[\\/]/).pop()?.replace(/ Project$/, "") ?? root);
 </script>
 
@@ -907,7 +920,7 @@
         done: () => toast(t("Files put back as they were"), "ok") })}
       onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
-      onkeep={() => (keepOpen = t("Back to “{version}”", { version: st!.olderVersion!.message || st!.olderVersion!.short }))}
+      onkeep={() => (keepOpen = t("Back to “{version}”", { version: titleOf(st!.olderVersion!.message) || st!.olderVersion!.short }))}
       onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules}
       onqueue={() => (queue.open = true)} {loadError}
       onlockson={turnLocksOn} onlocksnotnow={locksNotNow} />
@@ -957,7 +970,7 @@
         <button onclick={() => exportVersion(v)} title={t("Save this version as a separate project folder")}><ActionIcon name="export" />{t("Export…")}</button>
       {/if}
       {#if st!.branchNames && !incomingIds.has(v.id)}
-        <button onclick={() => (milestone = { version: v.id, label: `“${v.message || v.short}”` })}
+        <button onclick={() => (milestone = { version: v.id, label: `“${titleOf(v.message) || v.short}”` })}
           title={t("Give this version a name the whole team sees")}><ActionIcon name="flag" />{t("Milestone…")}</button>
       {/if}
     {/snippet}
@@ -999,7 +1012,7 @@
                 <button class="danger-act" onclick={() => (discardingParked = p)}>{t("Discard")}</button>
               {/if}
             {/snippet}
-            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color, parent: b.parent }))}
+            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color, parent: b.parent, kind: b.kind }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
@@ -1034,7 +1047,7 @@
               {#snippet marks()}
                 {#each milestonesOf(v.id) as m (m.id)}
                   <button class="mark" title={m.note || t("Milestone")}
-                    onclick={() => (milestone = { version: v.id, label: `“${v.message || v.short}”`, id: m.id, name: m.name, note: m.note })}>
+                    onclick={() => (milestone = { version: v.id, label: `“${titleOf(v.message) || v.short}”`, id: m.id, name: m.name, note: m.note })}>
                     <ActionIcon name="flag" />{m.name}</button>
                 {/each}
               {/snippet}

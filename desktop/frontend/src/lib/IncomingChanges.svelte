@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { t, tn } from "./i18n.svelte";
-  import { api, ago, errorText, type Change, type Preview, type Version } from "./api";
+  import { api, ago, errorText, titleOf, type Change, type Preview, type Version } from "./api";
   import SetView from "./SetView.svelte";
   import ChangeList from "./ChangeList.svelte";
   import WeightSummary from "./WeightSummary.svelte";
@@ -57,7 +57,7 @@
   {#each versions as v (v.id)}
     <li><button class="v" class:on={picked === v.id || versions.length === 1} onclick={() => (picked = versions.length > 1 ? v.id : "")}>
       <span class="line">
-        <span class="msg">{v.message || t("(no description)")}</span>
+        <span class="msg">{titleOf(v.message) || t("(no description)")}</span>
         <span class="faint">{v.author} · {ago(v.time)}</span>
       </span>
       <span class="what">

@@ -2,7 +2,7 @@
   import { t, tn } from "./i18n.svelte";
   import { folderMoves } from "./moves";
   import type { Snippet } from "svelte";
-  import { api, ago, errorText, formatBytes, type FileVersion, type ProjectFile, type State } from "./api";
+  import { api, ago, errorText, formatBytes, titleOf, type FileVersion, type ProjectFile, type State } from "./api";
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
   import FileIcon from "./FileIcon.svelte";
@@ -49,6 +49,8 @@
   let files = $state<ProjectFile[]>([]);
   let selected = $state("");
   let lv = $derived(locksOf(root)); // file locks (off: none shown)
+  // (your changes holding a file from agents: every one here is yours)
+  const lockOf = (p: string) => { const l = lockAt(lv, p); return l?.person ? undefined : l; };
   // The menu of a file or folder (right click, or ⋯), with the ways to
   // leave it out of versions.
   let menu = $state<{ path: string; x: number; y: number; dir: boolean; ignore: IgnoreOption[] } | null>(null);
@@ -310,7 +312,7 @@
     const hadOne = f.status === "modified" || f.status === "deleted" || f.status === "renamed";
     return { a: f.status === "deleted" ? null : now, b: hadOne ? head : null, compare: true };
   }
-  const versionLabel = (v: FileVersion) => `“${v.version.message || v.version.short}”`;
+  const versionLabel = (v: FileVersion) => `“${titleOf(v.version.message) || v.version.short}”`;
 
   const sym: Record<string, string> = { added: "+", modified: "~", deleted: "−", untracked: "○", renamed: "M", unchanged: "", ignored: "" };
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"), renamed: t("Moved"),
@@ -419,7 +421,7 @@
                   <span class="fdir">{f.status === "renamed" ? `← ${f.from}` : f.path.includes("/") ? f.path.slice(0, f.path.lastIndexOf("/")) : t("Project folder")}</span>
                 </span>
                 <span class="right">
-                  {#if lockAt(lv, f.path)}<LockBadge lock={lockAt(lv, f.path)!} />{/if}
+                  {#if lockOf(f.path)}<LockBadge lock={lockOf(f.path)!} />{/if}
                   {#if f.live}
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive} title={t("Saved with {app}", { app: f.live })}>{v}</span>
@@ -448,7 +450,7 @@
                   <span class="from" title={t(f.edited ? "Moved from {path}, and changed" : "Moved from {path}", { path: f.from })}>← {fromLabel(f)}</span>
                 {/if}
                 <span class="right">
-                  {#if lockAt(lv, f.path)}<LockBadge lock={lockAt(lv, f.path)!} />{/if}
+                  {#if lockOf(f.path)}<LockBadge lock={lockOf(f.path)!} />{/if}
                   {#if f.live}
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive}
@@ -517,7 +519,7 @@
               <li>
                 <button class:on={h.version.id === picked} onclick={() => pick(h.version.id)}>
                   <span class="vsym {h.status}">{sym[h.status]}</span>
-                  <span class="vmsg">{h.version.message || t("(no description)")}</span>
+                  <span class="vmsg">{titleOf(h.version.message) || t("(no description)")}</span>
                   {#if h.status === "renamed"}<span class="from" title={t("Moved here from {path}", { path: h.from })}>← {h.from}</span>{/if}
                   <span class="faint">{h.version.author} · {ago(h.version.time)}</span>
                 </button>
@@ -533,7 +535,7 @@
             <div class="picked">
               {#if h.status !== "deleted"}
                 <div class="restore">
-                  <button onclick={() => onrestore(selected, h.version.id, h.version.message || h.version.short, hp)}
+                  <button onclick={() => onrestore(selected, h.version.id, titleOf(h.version.message) || h.version.short, hp)}
                     title={t("Put this file back as it was in this version; the rest of the project stays")}>{t("Restore this version")}</button>
                   <span class="faint small">{t("Only this file changes; commit it when you're happy.")}</span>
                 </div>
