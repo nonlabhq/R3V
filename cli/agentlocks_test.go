@@ -248,9 +248,13 @@ func TestAgentSetup(t *testing.T) {
 		!strings.Contains(cmd, filepath.ToSlash(os.Args[0][:2])) {
 		t.Fatalf("our hook (this executable, by its path): %v", ours)
 	}
+	// The guide in AGENTS.md (every tool's), imported by CLAUDE.md.
 	guide, _ := os.ReadFile(filepath.Join(dir, "CLAUDE.md"))
-	if !strings.HasPrefix(string(guide), "# My project\nBe nice.\n\n") || !strings.HasSuffix(string(guide), docs.AgentsSnippet) {
+	if string(guide) != "# My project\nBe nice.\n\n@AGENTS.md\n" {
 		t.Fatalf("CLAUDE.md: %q", guide)
+	}
+	if agents, _ := os.ReadFile(filepath.Join(dir, "AGENTS.md")); string(agents) != docs.AgentsSnippet {
+		t.Fatalf("AGENTS.md: %q", agents)
 	}
 
 	// Again: nothing changes.

@@ -225,9 +225,12 @@ type State struct {
 	// AgentWorkspaces: the Agents view is offered (Nightly, a team's
 	// project, its main copy); WorkspaceCount its workspaces here.
 	// WorkspaceOf: this copy is a workspace, of the project in that folder.
-	AgentWorkspaces bool   `json:"agentWorkspaces"`
-	WorkspaceCount  int    `json:"workspaceCount"`
-	WorkspaceOf     string `json:"workspaceOf"`
+	AgentWorkspaces bool `json:"agentWorkspaces"`
+	WorkspaceCount  int  `json:"workspaceCount"`
+	// AgentGuide: the project has the agents' guide (AGENTS.md): agents
+	// know it's versioned with R3V and how to work beside each other.
+	AgentGuide  bool   `json:"agentGuide"`
+	WorkspaceOf string `json:"workspaceOf"`
 }
 
 // Result of save / update / merge / switch.

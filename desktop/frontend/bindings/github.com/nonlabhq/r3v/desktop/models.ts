@@ -3102,6 +3102,12 @@ export class State {
      */
     "agentWorkspaces": boolean;
     "workspaceCount": number;
+
+    /**
+     * AgentGuide: the project has the agents' guide (AGENTS.md): agents
+     * know it's versioned with R3V and how to work beside each other.
+     */
+    "agentGuide": boolean;
     "workspaceOf": string;
 
     /** Creates a new State instance. */
@@ -3210,6 +3216,9 @@ export class State {
         }
         if (!("workspaceCount" in $$source)) {
             this["workspaceCount"] = 0;
+        }
+        if (!("agentGuide" in $$source)) {
+            this["agentGuide"] = false;
         }
         if (!("workspaceOf" in $$source)) {
             this["workspaceOf"] = "";

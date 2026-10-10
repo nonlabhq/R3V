@@ -1687,5 +1687,8 @@
 "Agents": "Agents",
 "{n} workspace": "{n} espace de travail",
 "{n} workspaces": "{n} espaces de travail",
-"Keep the workspace": "Garder l’espace de travail"
+"Keep the workspace": "Garder l’espace de travail",
+"Added {files}: commit them, so every agent's workspace has them.": "{files} ajouté : valide-les pour que chaque espace de travail d'agent les ait.",
+"Agents don't know yet that this project is versioned with R3V, or how to work beside each other. A short guide in the project tells them (AGENTS.md, which Claude Code, Codex and others read).": "Les agents ne savent pas encore que ce projet est versionné avec R3V, ni comment travailler côte à côte. Un court guide dans le projet le leur dit (AGENTS.md, que lisent Claude Code, Codex et d'autres).",
+"Add the guide for agents": "Ajouter le guide pour les agents"
 }

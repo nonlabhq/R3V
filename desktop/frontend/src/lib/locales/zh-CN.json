@@ -1687,5 +1687,8 @@
 "Agents": "智能体",
 "{n} workspace": "{n} 个工作区",
 "{n} workspaces": "{n} 个工作区",
-"Keep the workspace": "保留工作区"
+"Keep the workspace": "保留工作区",
+"Added {files}: commit them, so every agent's workspace has them.": "已加入 {files}：提交后，每个代理的工作区都会有。",
+"Agents don't know yet that this project is versioned with R3V, or how to work beside each other. A short guide in the project tells them (AGENTS.md, which Claude Code, Codex and others read).": "代理还不知道这个项目用 R3V 做版本管理，也不知道如何彼此并行工作。项目里的一份简短指引会告诉它们（AGENTS.md，Claude Code、Codex 等都会读）。",
+"Add the guide for agents": "加入代理指引"
 }
