@@ -267,6 +267,12 @@ func defaultAuthor() string {
 // Abs converts a slash-separated project-relative path to an OS path.
 func (r *Repo) Abs(rel string) string { return filepath.Join(r.Root, filepath.FromSlash(rel)) }
 
+// CommonDir is the .r3v folder every workspace of the project shares (the
+// store, the versions, the workspace list, the agent locks: see
+// docs/design/agent-workspaces.md); this copy's own .r3v (Dir) for a project
+// with no workspaces.
+func (r *Repo) CommonDir() string { return r.Dir }
+
 func writeJSON(path string, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
