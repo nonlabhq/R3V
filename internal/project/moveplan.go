@@ -198,7 +198,7 @@ func PlanMove(t *teams.Team, p remote.Project, sizes *TeamSizes) (*MovePlan, err
 		}
 	}
 	for _, id := range ids {
-		data, err := os.ReadFile(r.snapshotPath(id))
+		data, err := r.readSnapshot(id)
 		if err != nil {
 			return nil, err
 		}

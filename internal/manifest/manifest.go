@@ -152,6 +152,22 @@ func ID(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
+// Restore gives back a record's own bytes when data has the same fields
+// and values only laid out differently, as a code formatter run over the
+// project folder (.r3v included) leaves it: the id says whether it is so.
+func Restore(id string, data []byte) ([]byte, bool) {
+	var r record
+	if err := json.Unmarshal(data, &r); err != nil {
+		return nil, false
+	}
+	out, err := json.MarshalIndent(r, "", "  ")
+	if err != nil {
+		return nil, false
+	}
+	out = append(out, '\n')
+	return out, ID(out) == id
+}
+
 // Parse decodes a manifest and checks it against its id. It comes without
 // Files (read its trees for them).
 func Parse(id string, data []byte) (*Manifest, error) {

@@ -24,7 +24,9 @@ words: [glossary.md](glossary.md).
 - **Never print connection codes** (`r3v connection-code`, `r3v
   remote <code>`, `r3v clone <code>`): they contain the team's storage
   keys. Don't put them in files, logs or messages.
-- **Don't edit `.r3v/`.** It is R3V's own data. `.r3v.yaml` (the
+- **Don't edit `.r3v/`.** It is R3V's own data; keep it out of formatters,
+  linters and search-and-replace too (Biome: `"!**/.r3v"` in
+  `files.includes`; Prettier: `.r3v/` in `.prettierignore`). `.r3v.yaml` (the
   project's rules: what is tracked) is fine to read and edit; `r3v help
   rules` has its syntax, `r3v rules` validates it and `r3v rules
   explain <file>` says why a file is tracked. Leave out what a build or a

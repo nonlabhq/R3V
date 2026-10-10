@@ -96,9 +96,38 @@ func (r *Repo) Load(id string) (*Manifest, error) {
 	return m, r.fillFiles(m)
 }
 
+// readSnapshot reads a stored version record as it was made: one a tool
+// laid out again (a code formatter run over the project folder) is put
+// back. Anything else is returned as read, for Parse to say it's damaged.
+func (r *Repo) readSnapshot(id string) ([]byte, error) {
+	data, err := os.ReadFile(r.snapshotPath(id))
+	if err != nil || manifest.ID(data) == id {
+		return data, err
+	}
+	fixed, ok := manifest.Restore(id, data)
+	if !ok {
+		return data, nil
+	}
+	store.WriteAtomic(r.snapshotPath(id), bytes.NewReader(fixed)) // or again next time
+	return fixed, nil
+}
+
+// sharedSnapshot is a version record to send to the team: never a damaged
+// one.
+func (r *Repo) sharedSnapshot(id string) ([]byte, error) {
+	data, err := r.readSnapshot(id)
+	if err != nil {
+		return nil, err
+	}
+	if manifest.ID(data) != id {
+		return nil, fmt.Errorf("version %s: the version record is damaged (r3v verify --repair)", short(id))
+	}
+	return data, nil
+}
+
 // readRecord reads a version record (format 2: without its files).
 func (r *Repo) readRecord(id string) (*Manifest, error) {
-	data, err := os.ReadFile(r.snapshotPath(id))
+	data, err := r.readSnapshot(id)
 	if err != nil {
 		return nil, err
 	}
