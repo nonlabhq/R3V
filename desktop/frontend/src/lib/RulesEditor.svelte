@@ -17,7 +17,7 @@
   // Why a file is tracked or not, for people.
   function reason(by: string): string {
     let m = by.match(/^preset (\S+): ignore "(.*)"$/);
-    if (m) return t("left out by the {preset} preset ({pattern})", { preset: presetName(m[1]), pattern: m[2] });
+    if (m) return t("left out by the project type {type} ({pattern})", { type: presetName(m[1]), pattern: m[2] });
     m = by.match(/^rule (\d+): (ignore|track) "(.*)"$/);
     if (m) return m[2] === "ignore" ? t("left out by your rule {n}", { n: m[1] }) : t("kept by your rule {n}", { n: m[1] });
     if (by.includes("always tracked")) return t("always tracked: it holds these rules");
@@ -99,7 +99,7 @@
       {/if}
       <FileIcon kind={n.dir ? "folder" : "other"} open={!!open[n.path]} faint={n.ignored} />
       <span class="name" title={n.path}>{n.name}</span>
-      {#if n.preset}<span class="chip" title={t("presets: in .r3v.yaml")}>{presetName(n.preset)}</span>{/if}
+      {#if n.preset}<span class="chip" title={t("Project type (presets: in .r3v.yaml)")}>{presetName(n.preset)}</span>{/if}
       <span class="why faint" title={n.by}>{why}</span>
       {#if !n.dir}<span class="size faint">{formatBytes(n.size)}</span>{/if}
       <input type="checkbox" class="switch" role="switch" checked={!n.ignored} disabled={busy || n.path === ".r3v.yaml"}
@@ -125,8 +125,8 @@
 
 {#if detail}
   <section>
-    <h3>{t("Tools in this project")}</h3>
-    <p class="hint">{t("A tool's preset leaves out what the tool makes again by itself (caches, backups) in its folder.")}</p>
+    <h3>{t("Project types")}</h3>
+    <p class="hint">{t("A project type leaves out what its tool makes again by itself (caches, backups) in its folder.")}</p>
     {#each detail.suggestions as s (s.folder + s.preset)}{@render suggestionRow(s)}{/each}
     {#each detail.presets as e (e.folder)}
       {@const opt = detail.options.find((o) => o.name === e.preset)}

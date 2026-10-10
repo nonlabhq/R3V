@@ -8,7 +8,7 @@ import { fileLocksChanges } from "./lockKinds";
 import type { RulesState } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
 
 export const presetName = (p: string) => ({ ableton: "Ableton Live", unity: "Unity", unreal: "Unreal", godot: "Godot",
-  design: t("Design files"), code: t("Code"), none: t("No preset") } as Record<string, string>)[p] ?? p;
+  design: t("Design files"), code: t("Code and documents"), none: t("Files as they are") } as Record<string, string>)[p] ?? p;
 
 // What a preset leaves out, for people: "Library, Temp, Obj and 9 more".
 export const leftOutText = (pats: string[]) => {
@@ -45,12 +45,12 @@ export function rulesChanges(now: RulesState | null, before: RulesState | null):
   const pb = new Map((b?.presets ?? []).map((e) => [e.folder.toLowerCase(), e]));
   for (const [k, e] of pa) {
     const old = pb.get(k);
-    if (!old) out.push({ kind: "add", text: t("{folder}: {tool} preset", { tool: presetName(e.preset), folder: folderName(e.folder) }) });
-    else if (old.preset !== e.preset) out.push({ kind: "mod", text: t("{folder}: preset changed from {from} to {to}",
+    if (!old) out.push({ kind: "add", text: t("{folder}: {type}", { type: presetName(e.preset), folder: folderName(e.folder) }) });
+    else if (old.preset !== e.preset) out.push({ kind: "mod", text: t("{folder}: project type changed from {from} to {to}",
       { folder: folderName(e.folder), from: presetName(old.preset), to: presetName(e.preset) }) });
   }
   for (const [k, e] of pb) {
-    if (!pa.has(k)) out.push({ kind: "del", text: t("{folder}: no preset named any more (was {tool})", { folder: folderName(e.folder), tool: presetName(e.preset) }) });
+    if (!pa.has(k)) out.push({ kind: "del", text: t("{folder}: no project type any more (was {type})", { folder: folderName(e.folder), type: presetName(e.preset) }) });
   }
 
   // Rules: a pattern added, gone, or switched between left out and kept.

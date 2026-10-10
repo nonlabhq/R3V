@@ -22,9 +22,9 @@ describe("rulesChanges", () => {
     const before = state({ presets: [{ folder: "", preset: "ableton", found: true }, { folder: "Game", preset: "unity", found: false }] });
     const now = state({ presets: [{ folder: "", preset: "none", found: false }, { folder: "Art", preset: "design", found: false }] });
     expect(lines(now, before)).toEqual([
-      "mod The project folder: preset changed from Ableton Live to No preset",
-      "add Art/: Design files preset",
-      "del Game/: no preset named any more (was Unity)",
+      "mod The project folder: project type changed from Ableton Live to Files as they are",
+      "add Art/: Design files",
+      "del Game/: no project type any more (was Unity)",
     ]);
   });
 

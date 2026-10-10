@@ -52,9 +52,9 @@ A few things are never tracked, whatever the rules say: R3V's own `.r3v` folder,
 
 ## Presets
 
-`presets:` says which preset applies to which folder. `./` means the project folder. `none` turns a folder's preset off, so only your rules apply there. A folder `presets:` doesn't name gets no preset.
+`presets:` says which preset applies to which folder (the app calls it the folder's **project type**: "Ableton Live project", "Code and documents", "Files as they are" for `none`). `./` means the project folder. `none` turns a folder's preset off, so only your rules apply there. A folder `presets:` doesn't name gets no preset.
 
-When a project of a tool turns up in a folder `presets:` doesn't name (a Unity project added to a bigger project, say), R3V suggests its preset: in the app as a note above the changes, asked again before committing (or the tool's caches would go up with the version); on the command line in `r3v status`. Taking it, or saying it isn't one, writes the folder into `presets:` (`r3v profile preset <folder> <preset|none>`). R3V looks up to three folders deep, for the projects of tools (presets of priority 0 and up, such as a Live or Unity project); design files or a `.gitignore` in a folder don't make it a project of its own.
+When a project of a tool turns up in a folder `presets:` doesn't name (a Unity project added to a bigger project, say), R3V suggests its preset: in the app as a note above the changes, asked again before committing (or the tool's caches would go up with the version); on the command line in `r3v status`. Taking it, or saying it isn't one, writes the folder into `presets:` (`r3v rules preset <folder> <preset|none>`). R3V looks up to three folders deep, for the projects of tools (presets of priority 0 and up, such as a Live or Unity project); design files or a `.gitignore` in a folder don't make it a project of its own.
 
 A file without `presets:` gets the presets R3V finds added when the project is opened.
 
@@ -113,8 +113,8 @@ file_locks:
 - From the command line, inside the project folder:
 
   ```
-  r3v profile check                 # the rules in use, and whether they work
-  r3v profile explain Exports/mix.wav Backup
+  r3v rules                       # the rules in use, and whether they work
+  r3v rules explain Exports/mix.wav Backup
   ```
 
   `explain` says whether each file is tracked and which rule or preset decided it.

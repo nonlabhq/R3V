@@ -47,7 +47,7 @@
 
 {#snippet summary(r: RulesState)}
   <section>
-    <h3>{t("Tools in this project")}</h3>
+    <h3>{t("Project types")}</h3>
     {#each r.presets as e (e.folder)}
       {@const opt = r.options.find((o) => o.name === e.preset)}
       <div class="tool">
@@ -68,7 +68,7 @@
         <span class="mono">{ru.pattern}</span>
       </div>
     {:else}
-      <p class="faint">{t("None: only the presets decide.")}</p>
+      <p class="faint">{t("None: only the project types decide.")}</p>
     {/each}
     {#if r.rules.length > 1}<p class="faint small">{t("Later rules win.")}</p>{/if}
   </section>

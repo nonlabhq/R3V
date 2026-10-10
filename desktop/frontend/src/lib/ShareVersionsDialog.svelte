@@ -11,8 +11,8 @@
 </script>
 
 <Modal title={t("Share “{name}” with {team}?", { name: st.name, team: st.teamName || t("the team") })} {onclose}>
-  <p>{isLive ? tn(st.history.length, "Upload its {n} version now, samples included?", "Upload its {n} versions now, samples included?")
-    : tn(st.history.length, "Upload its {n} version now?", "Upload its {n} versions now?")}</p>
+  <p>{isLive ? tn(st.history.length, "Share its {n} version now, samples included?", "Share its {n} versions now, samples included?")
+    : tn(st.history.length, "Share its {n} version now?", "Share its {n} versions now?")}</p>
   <ProjectCheck root={st.root} mode="added" />
   <p class="muted">{t("Or later: first look through the files and ignore the folders or files you don't need (right-click › Ignore), then share from the banner at the top. Your team sees the project once it's shared.")}{st.changes.length
       ? " " + tn(st.changes.length, "The {n} uncommitted change stays in Changes either way.", "The {n} uncommitted changes stay in Changes either way.") : ""}</p>

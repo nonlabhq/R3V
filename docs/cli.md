@@ -4,7 +4,7 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `discard`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
 ## Team storage (S3-compatible)
 
@@ -108,6 +108,7 @@ when the work is done (`r3v merge renderer`).
 ```
 r3v goto <id|HEAD~N> [--force]       # put the project in the state of a version (samples relinked)
 r3v goto latest                      # back to the latest version
+r3v discard                          # throw your changes away: the files as in the version you're on
 r3v export <id|HEAD~N> <folder>      # write a version as a separate project folder
 r3v commit --local -m "message"      # commit a version on this computer only
 ```
