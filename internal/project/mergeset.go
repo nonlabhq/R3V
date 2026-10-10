@@ -58,39 +58,47 @@ func (r *Repo) mergeSet(path, baseHash, oursHash, theirsHash string, opts MergeO
 
 // mergeWithHandler merges a file changed on both sides with the merge handler
 // its preset names; ok is false when there is none or the changes collide.
-func (r *Repo) mergeWithHandler(path, baseHash, oursHash, theirsHash string) (FileEntry, bool, error) {
+// Text collides hunk by hunk (mergeHunks): hunks lists those still to decide.
+func (r *Repo) mergeWithHandler(path, baseHash, oursHash, theirsHash string, opts MergeOptions) (
+	entry FileEntry, log []string, ok bool, hunks []ConflictItem, err error) {
 	name := r.rules().Handler(path).Merge
 	fn := handlers.Merge(name)
 	if fn == nil {
-		return FileEntry{}, false, nil
+		return FileEntry{}, nil, false, nil, nil
 	}
 	if err := r.ensureHashes([]string{baseHash, oursHash, theirsHash}); err != nil {
-		return FileEntry{}, false, err
+		return FileEntry{}, nil, false, nil, err
 	}
 	var data [3][]byte
 	for i, h := range []string{baseHash, oursHash, theirsHash} {
 		f, err := r.openObject(h)
 		if err != nil {
-			return FileEntry{}, false, err
+			return FileEntry{}, nil, false, nil, err
 		}
 		data[i], err = io.ReadAll(f)
 		f.Close()
 		if err != nil {
-			return FileEntry{}, false, err
+			return FileEntry{}, nil, false, nil, err
 		}
 	}
-	merged, clean, err := fn(data[0], data[1], data[2])
+	var merged []byte
+	var clean bool
+	if name == "text" {
+		merged, log, clean, hunks, err = mergeHunks(path, data[0], data[1], data[2], opts)
+	} else {
+		merged, clean, err = fn(data[0], data[1], data[2])
+	}
 	if err != nil {
-		return FileEntry{}, false, fmt.Errorf("%s: %s merge: %w", path, name, err)
+		return FileEntry{}, nil, false, nil, fmt.Errorf("%s: %s merge: %w", path, name, err)
 	}
 	if !clean {
-		return FileEntry{}, false, nil
+		return FileEntry{}, nil, false, hunks, nil
 	}
 	h, n, err := r.Store.Put(bytes.NewReader(merged))
 	if err != nil {
-		return FileEntry{}, false, err
+		return FileEntry{}, nil, false, nil, err
 	}
-	return FileEntry{Path: path, Hash: h, Size: n}, true, nil
+	return FileEntry{Path: path, Hash: h, Size: n}, log, true, nil, nil
 }
 
 // setKeySep joins a set path and a merge key in conflict keys: "Song.als#track:14".
@@ -102,6 +110,10 @@ type MergeOptions struct {
 	Strategy string
 	// Resolutions by ConflictItem.Key.
 	Resolutions map[string]string
+	// Resolved gives files changed on both sides as they should be, by
+	// path: each takes that content, its conflicts (hunks, tracks or the
+	// whole file) settled.
+	Resolved map[string][]byte
 }
 
 // Strategy is MergeOptions with one strategy for all conflicts.
@@ -138,8 +150,13 @@ type ConflictItem struct {
 	File        string
 	Unit        string // e.g. `AudioTrack "Bass"`, or the file itself
 	Description string
-	// CanKeepBoth: "both" keeps both versions (tracks and files).
+	// CanKeepBoth: "both" keeps both versions (tracks and files; a text
+	// file's hunk: ours then theirs).
 	CanKeepBoth bool
+	// A text file's hunk (Key text:<path>#<n>): n, and its lines in base,
+	// ours and theirs.
+	Hunk               int
+	Base, Ours, Theirs *HunkSide
 }
 
 func (c ConflictItem) String() string {
