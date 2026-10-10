@@ -513,6 +513,17 @@ type HeldEvent struct {
 	Meanwhile bool `json:"meanwhile"`
 }
 
+// dropWaiting: changes discarded don't wait to be locked any more. Done
+// with the discard, not after (unlockDiscarded runs in the background: a
+// change made again meanwhile must keep waiting).
+func (a *App) dropWaiting(r *project.Repo, paths []string) {
+	lockQueue.Lock()
+	defer lockQueue.Unlock()
+	if w := r.WaitingLocks(); len(w) > 0 {
+		r.SetWaitingLocks(slices.DeleteFunc(w, func(p string) bool { return slices.Contains(paths, p) }))
+	}
+}
+
 // unlockDiscarded frees your own file locks on paths whose changes were
 // discarded (folder locks stay: they were taken by hand).
 func (a *App) unlockDiscarded(root string, paths []string) {
@@ -527,12 +538,6 @@ func (a *App) unlockDiscarded(root string, paths []string) {
 			free = append(free, l.Path)
 		}
 	}
-	lockQueue.Lock()
-	if w := lt.r.WaitingLocks(); len(w) > 0 {
-		keep := slices.DeleteFunc(w, func(p string) bool { return slices.Contains(paths, p) })
-		lt.r.SetWaitingLocks(keep)
-	}
-	lockQueue.Unlock()
 	if len(free) > 0 {
 		cloud.SetLocks(lt.address, lt.r.Config.ProjectID, lt.workspace, nil, free)
 	}
