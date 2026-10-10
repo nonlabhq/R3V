@@ -55,9 +55,9 @@ on, and the version it was on. main has none.
   them (the version they started at, on the branch that had it), else
   main.
 
-The app makes new branches from main by default, and asks when one is
-made from a branch ("Start it from main instead?"): teams keep their tree
-shallow (main, short branches, release lines), as game teams do.
+Teams keep their tree shallow (main, short branches, release lines), as
+game teams do. (Later, maybe: asking "Start it from main instead?" when
+a branch is made from a branch.)
 
 ## Merging into another branch
 
@@ -143,4 +143,3 @@ Drawn from the tree, the same wherever you are:
 4. Workspace record: `changes`, `unshared`, `parked`.
 5. Archive (subtree, the dialog, Unarchive), delete archived only,
    the merge preview's option, a teammate's archived branch.
-6. New branch from a branch: "Start it from main instead?".
