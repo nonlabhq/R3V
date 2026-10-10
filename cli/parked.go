@@ -127,12 +127,13 @@ func cmdParked(args []string) error {
 	}
 	fs := flag.NewFlagSet("parked", flag.ContinueOnError)
 	strategy := fs.String("strategy", "fail", "where both sides changed the same thing: fail, ours, theirs, both")
+	decided := decisionFlags(fs, strategy)
 	pos, err := parseArgs(fs, args[1:])
 	if err != nil {
 		return err
 	}
 	if len(pos) != 1 {
-		return errors.New("usage: r3v parked [list] | bring <branch[@version]> [--strategy S] | discard <branch[@version]>")
+		return errors.New("usage: r3v parked [list] | bring <branch[@version]> [--strategy S] [--resolve K=C] | discard <branch[@version]>")
 	}
 	p, err := findParked(r, pos[0])
 	if err != nil {
@@ -140,10 +141,14 @@ func cmdParked(args []string) error {
 	}
 	switch args[0] {
 	case "bring":
+		opts, err := decided.options(r)
+		if err != nil {
+			return err
+		}
 		if err := guardLiveAlways(r, false); err != nil {
 			return err
 		}
-		notes, err := r.BringParked(p.Branch, p.At, project.Strategy(*strategy))
+		notes, err := r.BringParked(p.Branch, p.At, opts)
 		if err != nil {
 			return err
 		}

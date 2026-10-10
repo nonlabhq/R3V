@@ -250,6 +250,7 @@ func cmdCommit(args []string) error {
 	strategy := strategyFlag(fs)
 	force := fs.Bool("force", false, "merge even while Ableton Live is running")
 	local := fs.Bool("local", false, "on this computer only: shared with the next commit")
+	decided := decisionFlags(fs, strategy)
 	if _, err := parseArgs(fs, args); err != nil {
 		return err
 	}
@@ -258,6 +259,10 @@ func cmdCommit(args []string) error {
 		return usageError(`a message is required: r3v commit -m "what changed" [-m "details"]`)
 	}
 	r, err := openRepo()
+	if err != nil {
+		return err
+	}
+	opts, err := decided.options(r)
 	if err != nil {
 		return err
 	}
@@ -278,7 +283,7 @@ func cmdCommit(args []string) error {
 			err = project.ErrNoRemote // (said as for a project in no team)
 		}
 	} else {
-		m, res, err = r.Save(msg, project.Strategy(*strategy))
+		m, res, err = r.Save(msg, opts)
 	}
 	var out syncJSON
 	switch {
@@ -334,10 +339,15 @@ func cmdUpdate(args []string) error {
 	preview := fs.Bool("preview", false, "show what the team changed, change nothing")
 	strategy := strategyFlag(fs)
 	force := fs.Bool("force", false, "update even while Ableton Live is running")
+	decided := decisionFlags(fs, strategy)
 	if _, err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	r, err := openRepo()
+	if err != nil {
+		return err
+	}
+	opts, err := decided.options(r)
 	if err != nil {
 		return err
 	}
@@ -353,7 +363,7 @@ func cmdUpdate(args []string) error {
 		return err
 	}
 	defer tidy(r)
-	res, err := r.Update(project.Strategy(*strategy))
+	res, err := r.Update(opts)
 	if err != nil {
 		return err
 	}
