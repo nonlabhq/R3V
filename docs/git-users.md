@@ -97,6 +97,6 @@ commit.
 | `git archive` | `r3v export <version> <folder>` |
 | `git fsck` | `r3v verify` |
 | `git diff` (a .als) | `r3v diff a.als b.als` |
-| `.gitignore` | `.r3v.yaml` (`r3v profile check`) |
+| `.gitignore` | `.r3v.yaml` (`r3v rules`) |
 
 For agents: [agents.md](agents.md) (`r3v help agents`).

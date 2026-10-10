@@ -32,7 +32,7 @@ const props = (o: Record<string, unknown>) =>
 it("shows a version's rules in plain words", async () => {
   mocks.api.RulesAt.mockResolvedValue(rules({ requires: "0.1.0", gitignore: true }));
   render(RulesViewer, { props: props({ editable: true }) });
-  expect(await screen.findByText("Tools in this project")).toBeTruthy();
+  expect(await screen.findByText("Project types")).toBeTruthy();
   expect(mocks.api.RulesAt).toHaveBeenCalledWith("C:/Song", ".r3v.yaml", "v1");
   expect(screen.getByText("Ableton Live")).toBeTruthy();
   expect(screen.getByText("· leaves out Backup")).toBeTruthy();
@@ -60,7 +60,7 @@ it("offers the rules' editing for the file now", async () => {
   cleanup();
   mocks.api.ProjectRules.mockClear();
   render(RulesViewer, { props: props({ a: side("") }) });
-  await screen.findByText("Tools in this project");
+  await screen.findByText("Project types");
   expect(mocks.api.ProjectRules).not.toHaveBeenCalled();
 });
 
@@ -73,7 +73,7 @@ it("shows the changes rule by rule", async () => {
   const added = await screen.findByText("Left out: *.wav");
   expect(added.classList.contains("add")).toBe(true);
   expect(screen.getByText("No longer left out: Renders/").classList.contains("del")).toBe(true);
-  expect(screen.getByText("The project folder: preset changed from Ableton Live to Unity").classList.contains("mod")).toBe(true);
+  expect(screen.getByText("The project folder: project type changed from Ableton Live to Unity").classList.contains("mod")).toBe(true);
 });
 
 // A file R3V can't read: said plainly, and its text shown.
@@ -88,15 +88,15 @@ it("shows the text of rules it can't read", async () => {
 it("switches to the text and back, remembered", async () => {
   mocks.api.RulesAt.mockResolvedValue(rules());
   render(RulesViewer, { props: props({}) });
-  await screen.findByText("Tools in this project");
+  await screen.findByText("Project types");
   await fireEvent.click(screen.getByText("Text"));
   await waitFor(() => expect(mocks.api.TextFile).toHaveBeenCalled());
-  expect(screen.queryByText("Tools in this project")).toBeNull();
+  expect(screen.queryByText("Project types")).toBeNull();
   expect(localStorage.getItem("r3v.rulesPane")).toBe("text");
   cleanup();
   render(RulesViewer, { props: props({}) });
-  expect(screen.queryByText("Tools in this project")).toBeNull(); // still text
+  expect(screen.queryByText("Project types")).toBeNull(); // still text
   await fireEvent.click(screen.getByText("Rules"));
-  expect(await screen.findByText("Tools in this project")).toBeTruthy();
+  expect(await screen.findByText("Project types")).toBeTruthy();
   expect(localStorage.getItem("r3v.rulesPane")).toBe("rules");
 });

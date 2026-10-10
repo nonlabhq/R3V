@@ -67,7 +67,7 @@ func printSuggestions(r *project.Repo) {
 		if folder == "" {
 			folder = "."
 		}
-		fmt.Printf("found: %s; its rules leave out %s.\n  r3v profile preset %q %s   (or none: not a project)\n",
+		fmt.Printf("found: %s; its rules leave out %s.\n  r3v rules preset %q %s   (or none: not a project)\n",
 			s, strings.Join(s.LeftOut, ", "), folder, s.Preset)
 	}
 }
@@ -286,6 +286,31 @@ func cmdLog(args []string) error {
 			}
 			fmt.Printf("%s  %s  %-12s %s%s\n", short(m.ID), when(m), byLine(out.Versions[i].Author, m), manifest.Title(m.Message), mark)
 		}
+	})
+	return nil
+}
+
+// cmdDiscard: r3v discard, the app's "Discard changes": your changes
+// thrown away, the files as in the version you're on (goto HEAD --force,
+// without the Git word).
+func cmdDiscard(args []string) error {
+	if len(args) != 0 {
+		return usageError("usage: r3v discard")
+	}
+	r, err := openRepo()
+	if err != nil {
+		return err
+	}
+	if err := guardLiveAlways(r, false); err != nil {
+		return err
+	}
+	defer tidy(r)
+	m, notes, err := r.GoTo(r.Head(), true)
+	if err != nil {
+		return err
+	}
+	result("discard", moveOf(r, nil, notes), func() {
+		fmt.Printf("your changes are discarded: the files are as in version %s  %s\n", short(m.ID), m.Message)
 	})
 	return nil
 }

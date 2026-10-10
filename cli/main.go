@@ -50,12 +50,14 @@ branches (advanced):
 advanced:
   commit --local -m MESSAGE              commit on this computer only (your next commit shares it)
   goto <id|HEAD~N|latest> [--force]      go to a version (files and samples); latest goes back
+  discard                                throw your changes away: the files as in the version
+                                         you're on (ask the user first)
   parked [list]                          changes kept while you're on another branch or version
   parked bring|discard BRANCH[@VERSION]  bring parked changes here, or drop them
   export <id> <folder>                   write a version as a separate project folder
-  profile check                          the project's rules (.r3v.yaml) and whether they work
-  profile explain <file>...              why a file is tracked or ignored
-  profile preset <folder> <preset|none>  which preset applies to a folder (presets: in .r3v.yaml)
+  rules [check]                          the project's rules (.r3v.yaml) and whether they work
+  rules explain <file>...                why a file is tracked or ignored
+  rules preset <folder> <preset|none>    a folder's project type (presets: in .r3v.yaml)
   gc                                     free space in .r3v (files the team's storage has,
                                          leftovers no version uses)
   verify [--repair]                      check the history: every version and stored file;
@@ -156,8 +158,10 @@ func Run(args []string) int {
 		err = cmdBackup(rest)
 	case "storage-cleanup":
 		err = cmdStorageCleanup(rest)
-	case "profile":
-		err = cmdProfile(rest)
+	case "rules", "profile": // (profile: its name before 0.1.40)
+		err = cmdRules(rest)
+	case "discard":
+		err = cmdDiscard(rest)
 	case "remote":
 		err = cmdRemote(rest)
 	case "teams":

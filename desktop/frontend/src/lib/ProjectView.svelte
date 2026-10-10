@@ -1171,7 +1171,7 @@
   {#if rulesAsk && st?.rules.suggestions.length}
     <Modal title={t("Before you commit")} onclose={() => (rulesAsk = false)}>
       <p>{st.rules.suggestions.length === 1 ? t("R3V found a project of another tool in this one.") : t("R3V found projects of other tools in this one.")}
-        {t("A tool's rules leave out what it makes again by itself (caches, backups), so that doesn't go up with the version.")}</p>
+        {t("A project type leaves out what its tool makes again by itself (caches, backups), so that doesn't go up with the version.")}</p>
       {#each st.rules.suggestions as s (s.folder + s.preset)}
         <div class="suggestion"><RuleSuggestion {s} onpreset={(p) => setPreset(s, p)} /></div>
       {/each}

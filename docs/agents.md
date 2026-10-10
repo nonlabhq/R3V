@@ -14,18 +14,19 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked`, `backup`, `lock` and `locks`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `discard`, `parked`, `backup`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
-- **Don't use `--force` on your own.** It makes R3V rewrite sets while
-  Ableton Live may have them open, or discard changes. Ask the user.
+- **Don't use `--force` or `r3v discard` on your own.** `--force` makes
+  R3V rewrite sets while Ableton Live may have them open, or discard
+  changes; `discard` throws the changes away. Ask the user.
 - **Never print connection codes** (`r3v connection-code`, `r3v
   remote <code>`, `r3v clone <code>`): they contain the team's storage
   keys. Don't put them in files, logs or messages.
 - **Don't edit `.r3v/`.** It is R3V's own data. `.r3v.yaml` (the
   project's rules: what is tracked) is fine to read and edit; `r3v help
-  rules` has its syntax, `r3v profile check` validates it and `r3v profile
+  rules` has its syntax, `r3v rules` validates it and `r3v rules
   explain <file>` says why a file is tracked. Leave out what a build or a
   tool makes again (caches, renders, build outputs) before the first
   commit: `rules: - ignore: "renders/"`.
@@ -139,7 +140,7 @@ when a field changes meaning; new fields may appear any time.
 | `on_older_version`, `latest` | on an older version; `r3v goto latest` goes back |
 | `team` | `null` without a team, else `reachable`, `incoming` (others shared versions: update), `error` |
 | `changes` | `path`, `status` (`added`, `modified`, `deleted`, `renamed` with `from`, `untracked`: still on disk but the rules leave it out), `set_changes` (for Live sets: tracks, devices, clips changed, one line each), `weight` (for Live sets, the biggest kind of change: `noise` a plugin re-saving its own state, `tidy` names/colors/order/groups, `mix`, `sound` devices, `arrangement` clips/notes/tracks/tempo) |
-| `suggestions` | tool projects found in folders the rules don't cover: `r3v profile preset <folder> <preset>` |
+| `suggestions` | tool projects found in folders the rules don't cover: `r3v rules preset <folder> <preset>` |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
 
 `log` (`-n N` for the newest N): `versions`, newest first: `id`, `time`

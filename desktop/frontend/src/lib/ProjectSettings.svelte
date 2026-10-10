@@ -178,7 +178,7 @@
   let rulesOpen = $state(false);
   let unlinkSure = $state(false);
   const presetName = (preset: string) => ({ ableton: t("Ableton Live project"), unity: t("Unity project"),
-    unreal: t("Unreal project"), godot: t("Godot project"), design: t("Design files"), code: t("Code"), none: t("No preset") } as Record<string, string>)[preset] ?? preset;
+    unreal: t("Unreal project"), godot: t("Godot project"), design: t("Design files"), code: t("Code and documents"), none: t("Files as they are") } as Record<string, string>)[preset] ?? preset;
 </script>
 
 <svelte:window onkeydowncapture={lookKey} onclick={lookClick} onresize={() => closeLook()} />
@@ -306,7 +306,7 @@
           <li><strong>{presetName(a.preset)}</strong>
             <span class="faint">{a.folder ? t("in {folder}", { folder: `${a.folder}/` }) : t("the project folder")}{a.detected ? ` · ${t("detected")}` : ""}</span></li>
         {:else}
-          <li class="faint">{t("No preset: every file is tracked.")}</li>
+          <li class="faint">{t("Files as they are: every file is tracked.")}</li>
         {/each}
       </ul>
       {#if info.rules.error}<p class="error">⚠ {info.rules.error}</p>{/if}

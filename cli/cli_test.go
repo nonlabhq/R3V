@@ -248,3 +248,34 @@ func TestGoto(t *testing.T) {
 		t.Fatalf("checkout latest: %s %+v", rep.Result, rep.Error)
 	}
 }
+
+// discard throws the changes away (the app's "Discard changes"), staying
+// on an older version when on one.
+func TestDiscard(t *testing.T) {
+	a := newFolder(t, map[string]string{"notes.txt": "first"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("second"), 0o644)
+	run(t, a, "commit", "-m", "second")
+	run(t, a, "goto", "HEAD~1")
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("changed"), 0o644)
+	os.WriteFile(filepath.Join(a, "new.txt"), []byte("new"), 0o644)
+	exit, rep := run(t, a, "discard")
+	var mv moveJSON
+	json.Unmarshal(rep.Result, &mv)
+	if exit != 0 || rep.Command != "discard" || !mv.Older {
+		t.Fatalf("discard: %s %+v", rep.Result, rep.Error)
+	}
+	if data, _ := os.ReadFile(filepath.Join(a, "notes.txt")); string(data) != "first" {
+		t.Errorf("notes.txt: %q", data)
+	}
+	if _, err := os.Stat(filepath.Join(a, "new.txt")); err == nil {
+		t.Error("an added file left")
+	}
+	_, rep = run(t, a, "parked")
+	if strings.Contains(string(rep.Result), "notes.txt") {
+		t.Errorf("parked instead: %s", rep.Result)
+	}
+}

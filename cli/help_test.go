@@ -13,8 +13,8 @@ func TestHelpFor(t *testing.T) {
 		want string
 		not  string
 	}{
-		{[]string{"profile", "--help"}, "profile explain", ""},
-		{[]string{"profile", "preset", "--help"}, "profile preset <folder>", "profile check"},
+		{[]string{"profile", "--help"}, "rules explain", ""},
+		{[]string{"rules", "preset", "--help"}, "rules preset <folder>", "rules [check]"},
 		{[]string{"save", "-h"}, "commit --local", ""},
 		{[]string{"branch", "archive", "-h"}, "branch archive NAME", "branch new"},
 	} {
@@ -34,5 +34,13 @@ func TestHelpFor(t *testing.T) {
 	}
 	if !strings.Contains(usage, "run inside a project folder") {
 		t.Error("the usage still says Live projects only")
+	}
+}
+
+// rules is profile's new name; both answer.
+func TestRulesName(t *testing.T) {
+	text, ok := helpFor("profile", []string{"--help"})
+	if !ok || !strings.Contains(text, "rules explain") || strings.Contains(usage, "  profile ") {
+		t.Errorf("profile help: %v\n%s", ok, text)
 	}
 }

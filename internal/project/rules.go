@@ -165,6 +165,6 @@ func ChooseKind(folder, preset string) error {
 	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	text := "# What R3V keeps of this project, and how: `r3v profile check`.\npresets:\n  ./: " + preset + "\n"
+	text := "# What R3V keeps of this project, and how: `r3v rules`.\npresets:\n  ./: " + preset + "\n"
 	return store.WriteAtomic(path, strings.NewReader(text))
 }

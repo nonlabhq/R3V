@@ -10,10 +10,11 @@ import (
 	"github.com/nonlabhq/r3v/internal/profile"
 )
 
-// cmdProfile: `r3v profile check` and `r3v profile explain <file>...`.
-func cmdProfile(args []string) error {
+// cmdRules: `r3v rules [check]`, `r3v rules explain <file>...` and `r3v
+// rules preset <folder> <preset|none>` (profile: their name before 0.1.40).
+func cmdRules(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: r3v profile check | r3v profile explain <file>...")
+		args = []string{"check"}
 	}
 	r, err := openRepo()
 	if err != nil {
@@ -51,7 +52,7 @@ func cmdProfile(args []string) error {
 		return loadErr
 	case "explain":
 		if len(args) < 2 {
-			return errors.New("usage: r3v profile explain <file>...")
+			return errors.New("usage: r3v rules explain <file>...")
 		}
 		cwd, _ := os.Getwd()
 		for _, arg := range args[1:] {
@@ -83,7 +84,7 @@ func cmdProfile(args []string) error {
 		return loadErr
 	case "preset":
 		if len(args) != 3 {
-			return errors.New("usage: r3v profile preset <folder> <preset|none>")
+			return errors.New("usage: r3v rules preset <folder> <preset|none>")
 		}
 		folder := filepath.ToSlash(filepath.Clean(args[1]))
 		if err := r.SetPreset(folder, args[2]); err != nil {
@@ -92,5 +93,5 @@ func cmdProfile(args []string) error {
 		fmt.Printf("%s: %s now uses %s (commit it with the project)\n", profile.FileName, args[1], args[2])
 		return nil
 	}
-	return fmt.Errorf("unknown profile command %q (check, explain, preset)", args[0])
+	return fmt.Errorf("unknown rules command %q (check, explain, preset)", args[0])
 }
