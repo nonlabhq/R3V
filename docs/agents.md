@@ -33,8 +33,9 @@ words: [glossary.md](glossary.md).
 
 - One command commits and shares (`commit`); there is no staging, push,
   rebase or force push.
-- A conflict is a track of a Live set or a whole file, never markers in a
-  file: decide with the user, then `--strategy ours|theirs|both`.
+- A conflict is a track of a Live set, a hunk of a text file or a whole
+  file, never markers in a file: decide each (`--resolve <key>=<choice>`),
+  or all at once (`--strategy ours|theirs|both`).
 - `update` never runs by itself, and keeps uncommitted changes.
 - Every version keeps the branch it was made on (`log --json`:
   `made_on`); merging another branch always makes a version.
@@ -72,7 +73,40 @@ r3v commit -m "..." --strategy theirs --json
 
 Strategies: `ours` (keep this computer's), `theirs` (keep the team's),
 `both` (keep both: the track twice, or the file under a new name, when
-`can_keep_both`). A strategy applies to every conflict of that run.
+`can_keep_both`). A strategy applies to every conflict of that run not
+decided otherwise.
+
+### Code: hunk by hunk
+
+Text files (code: `.ts`, `.rs`, `.json`, `.toml`, `.glsl`…) merge line by
+line. Where you and a teammate changed the same lines, each such place is
+a conflict of its own, a **hunk**: key `text:<path>#<n>` (`n` from 1, in
+file order), `unit` (`"lines 40–52"`, in your file), `hunk` (n), and its
+lines on each side: `base`, `ours`, `theirs`, each `{"start", "count",
+"text"}` (`start` from 1; `count` 0 when that side has none there).
+
+1. Run the command (`commit`, `update`, `merge`, `parked bring`); on
+   `merge_conflict`, read `error.conflicts`. Nothing was changed.
+2. Decide each hunk: `ours`, `theirs`, or `both` (ours, then theirs).
+   Or write the file as it should be (both sides' changes combined by
+   hand) to a file outside the project.
+3. Run the same command again with the decisions:
+
+```sh
+r3v commit -m "..." --resolve "text:src/render.ts#1=theirs" --resolve "text:src/render.ts#2=both" --json
+r3v commit -m "..." --decisions decisions.json --json   # {"text:src/render.ts#1": "theirs", ...}; "-": stdin
+r3v commit -m "..." --resolved src/render.ts=/tmp/render.ts --json   # the file as it should be
+```
+
+The file is written only once all its hunks are decided; with some left,
+the run stops again listing only those (same keys). `--strategy` decides
+whatever is left. `file:<path>` decides a whole file (all its hunks, the
+other side's other changes too). A bad key or choice is a `usage` error.
+
+Lockfiles (`package-lock.json`, `Cargo.lock`, `pnpm-lock.yaml`…) merge as
+text too; when they conflict, don't combine hunks: take one side whole
+(`--resolve file:package-lock.json=theirs`), then regenerate it (`npm
+install`, `cargo update -w`) and commit.
 
 To only get the team's versions: `r3v update --json`. Changes not
 committed yet stay as they are (still not committed) and the team's versions are merged
@@ -130,7 +164,8 @@ took from each side), `relinked` (sample paths rewritten for this computer),
 
 `update --preview` and `merge <branch> --preview`: `action`, `versions`
 (incoming), `changes`, `conflicts` (`key`, `file`, `unit`, `description`,
-`can_keep_both`).
+`can_keep_both`; a text file's hunk also `hunk`, `base`, `ours`,
+`theirs`).
 
 `switch <branch>` and `goto <version|latest>`: `branch`, `to` (the version
 the files are on), `older` (an older version), `relinked`. On the Nightly
@@ -167,7 +202,7 @@ preview first and ask the user.
 | exit | code | what to do |
 |---|---|---|
 | 2 | `usage` | fix the command (`r3v help`) |
-| 3 | `merge_conflict` | show `conflicts` to the user; run again with `--strategy ours\|theirs\|both` |
+| 3 | `merge_conflict` | read `conflicts` (decide with the user); run again with `--resolve <key>=<choice>`, `--decisions`, `--resolved <path>=<file>` or `--strategy ours\|theirs\|both` |
 | 4 | `set_open_in_live` | ask the user to save and close `set` in Live, then run again |
 | 5 | `team_unreachable` | network or storage down: try again later |
 | 5 | `project_busy` | the R3V app or another command is using the project: try again in a moment |

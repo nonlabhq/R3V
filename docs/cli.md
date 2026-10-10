@@ -32,6 +32,16 @@ r3v teams                         # teams this computer is connected to
 
 `commit` and `update` merge Live Sets track by track. When you and a teammate changed the same track (or the same sample file) they stop and ask for `--strategy ours|theirs|both`. They refuse to rewrite sets while Ableton Live is running if the team's changes must be merged in.
 
+Text files (code, on Nightly) merge line by line; where both changed the same lines, each such place (a hunk) is a decision of its own. `commit`, `update`, `merge` and `parked bring` take decisions one by one, by the conflict's key, besides `--strategy` (which decides whatever is left):
+
+```
+r3v commit -m "..." --resolve "text:src/app.ts#1=theirs" --resolve "Song.als#track:14=ours"
+r3v commit -m "..." --decisions decisions.json   # {"<key>": "ours|theirs|both"}; "-" reads stdin
+r3v commit -m "..." --resolved src/app.ts=merged.ts   # the file as it should be
+```
+
+Keys: `text:<path>#<n>` a hunk (`both`: yours, then theirs), `file:<path>` a whole file (settles all its hunks), `<set>#<key>` a part of a Live set. Nothing changes until every conflict is decided.
+
 ## Branches (advanced)
 
 ```
