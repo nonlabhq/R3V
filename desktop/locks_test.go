@@ -172,6 +172,7 @@ func TestAppFileLocks(t *testing.T) {
 	writeFile(t, root, "Art/ship.blend", "offline again")
 	a.autoLock(root, []string{"Art/ship.blend"})
 	f.Down.Store(false)
+	a.unlockDiscarded(root, []string{"Art/ship.blend"}) // (the discard's, late: the change made since still waits)
 	t.Setenv("R3V_CLOUD_TOKEN", "kai")
 	cloud.SetLocks(f.Address, tp.ID, "ws-k", []string{"Art/"}, nil)
 	t.Setenv("R3V_CLOUD_TOKEN", "token")
