@@ -158,11 +158,11 @@ describe("HistoryGraph", () => {
 
   it("offers a way back to your changes, or to the version you are on", async () => {
     const a = show({ pending: 1, selected: "m1" });
-    await fireEvent.click(screen.getByRole("button", { name: "View pending changes" }));
+    await fireEvent.click(screen.getByRole("button", { name: "View your changes" }));
     expect(a.onselect).toHaveBeenLastCalledWith("pending");
     cleanup();
     const b = show({ selected: "m1" });
-    expect(screen.queryByRole("button", { name: "View pending changes" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "View your changes" })).toBeNull();
     await fireEvent.click(screen.getByRole("button", { name: "View current version" }));
     expect(b.onselect).toHaveBeenLastCalledWith("m3");
     cleanup();

@@ -138,7 +138,7 @@
           : mode === "added"
           ? tn(s.missing.length, "{n} sample missing. Best found in Live before you share (File › Manage Files), so the team hears the same.", "{n} samples missing. Best found in Live before you share (File › Manage Files), so the team hears the same.")
           : tn(s.missing.length, "{n} sample missing. Find it in Live (File › Manage Files) before your next share.", "{n} samples missing. Find them in Live (File › Manage Files) before your next share.")}
-          {#if onrestore && s.restorable}<button class="link strong" onclick={onrestore}>{tn(s.restorable, "Restore it from R3V", "Restore {n} from R3V")}</button>{/if}
+          {#if onrestore && s.restorable}<button class="link strong" onclick={onrestore}>{tn(s.restorable, "Recover it from R3V", "Recover {n} from R3V")}</button>{/if}
           <button class="link" onclick={() => toggle("missing")}>{open === "missing" ? t("Hide") : t("Show")}</button></li>
       {/if}
       {#if here && pluginsMissing.length}

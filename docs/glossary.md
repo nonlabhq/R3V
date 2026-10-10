@@ -45,6 +45,7 @@ committed stay with their place: going to another branch or version
 | Decisions | Keep yours / Keep {who}'s / Keep both | 保留你的／保留 {who} 的／兩者都保留 | `--strategy ours\|theirs\|both` | conflict markers, `-X ours/theirs` | No markers in files: you choose per track or file |
 | Undo a commit | Undo this commit | 復原這次提交 | — | `git reset` + force push, or `git revert` | Taken back when no one has it yet, else a new version that undoes it |
 | Restore a file | Restore… | 還原… | — | `git restore --source` | |
+| Recover samples | Recover from R3V | 從 R3V 救回 | — | — | Samples a set uses that are missing here, from R3V's copy |
 | Milestone | Milestone | 里程碑 | — | annotated tag | Named by the team, renamed or taken away any time |
 | Export | Export… | 匯出… | `export` | `git archive`, a worktree | A separate project folder that opens on its own (samples copied) |
 | Archive a branch | Archive branch… | 封存分支… | `branch archive`, `branch archived`, `branch unarchive` | `git branch -d` (reflog) | With the branches made from it; comes back whole |
@@ -70,13 +71,13 @@ committed stay with their place: going to another branch or version
 
 ## Still to settle
 
-Found while writing this; to decide before they change:
+Settled in 0.1.33: samples R3V brings back are **recovered** ("Recover
+from R3V"; "Restore" is for files from a version, and backups); "Your
+changes" everywhere (not "pending changes"); "Versions you commit"; zh-TW
+says 分支 for branch and 復原 for Undo (撤回 for taking a version back).
+
+Still open:
 
 | | Now | Proposed |
 |---|---|---|
-| CLI `checkout <version>` | Git's word; the app says "Go to" | `goto`, `checkout` kept as its other name |
-| "Restore" | a file from a version, from a backup, missing samples ("Restore from R3V"), a branch (now Unarchive) | "Restore" for files and backups; "Recover" for samples R3V brings back |
-| "Your changes" / "pending changes" | both in the app ("View pending changes") | "Your changes" everywhere |
-| "Created … Versions you save now go there." | "save" | "Versions you commit now go there." |
-| zh-TW "分支" / "Branch" | mixed (fixed to 分支 in 0.1.33) | 分支 |
-| zh-TW "復原" / "撤銷" for Undo | both | 復原 |
+| CLI `checkout <version>` | Git's word; the app says "Go to" | (being decided) |
