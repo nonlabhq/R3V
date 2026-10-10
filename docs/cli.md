@@ -4,7 +4,7 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `checkout`, `parked` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`.
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`.
 
 ## Team storage (S3-compatible)
 
@@ -55,8 +55,8 @@ Teams on storage keep a log of every branch move (each move is its own record, n
 ## Older versions
 
 ```
-r3v checkout <id|HEAD~N> [--force]   # put the project in the state of a version (samples relinked)
-r3v checkout latest                  # back to the latest version
+r3v goto <id|HEAD~N> [--force]       # put the project in the state of a version (samples relinked)
+r3v goto latest                      # back to the latest version
 r3v export <id|HEAD~N> <folder>      # write a version as a separate project folder
 r3v commit --local -m "message"      # commit a version on this computer only
 ```

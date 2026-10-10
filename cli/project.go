@@ -178,7 +178,7 @@ func cmdStatus(args []string) error {
 func printStatus(r *project.Repo, s statusJSON) {
 	switch {
 	case s.OnOlderVersion:
-		fmt.Printf("on an older version %s (latest: %s; `r3v checkout latest` goes back)\n", short(s.Version), short(s.Latest))
+		fmt.Printf("on an older version %s (latest: %s; `r3v goto latest` goes back)\n", short(s.Version), short(s.Latest))
 	case s.Version != "":
 		fmt.Printf("on version %s\n", short(s.Version))
 	default:
@@ -270,8 +270,8 @@ func cmdLog(args []string) error {
 	return nil
 }
 
-func cmdCheckout(args []string) error {
-	fs := flag.NewFlagSet("checkout", flag.ContinueOnError)
+func cmdGoto(args []string) error {
+	fs := flag.NewFlagSet("goto", flag.ContinueOnError)
 	force := fs.Bool("force", false, "discard uncommitted changes; ignore a running Live")
 	var ref string
 	for len(args) > 0 {
@@ -284,7 +284,7 @@ func cmdCheckout(args []string) error {
 		}
 	}
 	if ref == "" {
-		return errors.New("usage: r3v checkout <id|HEAD> [--force]")
+		return errors.New("usage: r3v goto <version|HEAD~N|latest> [--force]")
 	}
 	r, err := openRepo()
 	if err != nil {
@@ -298,14 +298,14 @@ func cmdCheckout(args []string) error {
 	if err != nil {
 		return err
 	}
-	result("checkout", moveOf(r, r.Park, notes), func() {
+	result("goto", moveOf(r, r.Park, notes), func() {
 		fmt.Printf("now on version %s  %s\n", short(m.ID), m.Message)
 		for _, n := range notes {
 			fmt.Println("  relinked " + n)
 		}
 		printPark(r.Park)
 		if r.OnOlderVersion() {
-			fmt.Println("this is an older version: `r3v checkout latest` goes back, `r3v branch new NAME` continues from here")
+			fmt.Println("this is an older version: `r3v goto latest` goes back, `r3v branch new NAME` continues from here")
 		}
 	})
 	return nil

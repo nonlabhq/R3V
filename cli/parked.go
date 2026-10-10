@@ -27,7 +27,7 @@ func parkedOf(p *project.Parked) *parkedJSON {
 	return &parkedJSON{Branch: p.Branch, At: p.At, Base: p.Base, Files: p.Files, Bytes: p.Bytes, Since: p.Since}
 }
 
-// moveJSON is what switch and checkout did.
+// moveJSON is what switch and goto did.
 type moveJSON struct {
 	Branch string `json:"branch"`
 	To     string `json:"to"`

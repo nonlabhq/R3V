@@ -280,7 +280,7 @@ func guardLiveAlways(r *project.Repo, force bool) error {
 }
 
 // branchLog prints how the team's branches moved (who, when, from which
-// version to which): to put back one moved by mistake, `r3v checkout`
+// version to which): to put back one moved by mistake, `r3v goto`
 // the version it was on.
 func branchLog(r *project.Repo, name string) error {
 	moves, names, err := r.BranchLog(name)

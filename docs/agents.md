@@ -8,13 +8,13 @@ version) and `r3v help agents --snippet` (a few lines for a project's
 R3V is version control for creative projects: Ableton Live sets, Unity,
 Unreal and Godot projects. A project folder with a `.r3v` folder is tracked.
 **`commit` makes a version and shares it with the team in one step**; there
-is no separate push. (`save` and `snapshot`, its names before 0.1.33, still
-work.) Coming from Git: [git-users.md](git-users.md); the words:
-[glossary.md](glossary.md).
+is no separate push. (`save`, `snapshot` and `checkout`, the names of
+`commit`, `commit --local` and `goto` before, still work.) Coming from Git: [git-users.md](git-users.md); the
+words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `checkout`, `parked` and `backup`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked` and `backup`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -89,7 +89,7 @@ when a field changes meaning; new fields may appear any time.
 |---|---|
 | `project`, `branch` | names |
 | `version` | the version the files are on (`""` before the first) |
-| `on_older_version`, `latest` | an older version is checked out; `r3v checkout latest` goes back |
+| `on_older_version`, `latest` | on an older version; `r3v goto latest` goes back |
 | `team` | `null` without a team, else `reachable`, `incoming` (others shared versions: update), `error` |
 | `changes` | `path`, `status` (`added`, `modified`, `deleted`, `renamed` with `from`, `untracked`: still on disk but the rules leave it out), `set_changes` (for Live sets: tracks, devices, clips changed, one line each), `weight` (for Live sets, the biggest kind of change: `noise` a plugin re-saving its own state, `tidy` names/colors/order/groups, `mix`, `sound` devices, `arrangement` clips/notes/tracks/tempo) |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v profile preset <folder> <preset>` |
@@ -116,7 +116,7 @@ took from each side), `relinked` (sample paths rewritten for this computer),
 (incoming), `changes`, `conflicts` (`key`, `file`, `unit`, `description`,
 `can_keep_both`).
 
-`switch <branch>` and `checkout <version|latest>`: `branch`, `to` (the version
+`switch <branch>` and `goto <version|latest>`: `branch`, `to` (the version
 the files are on), `older` (an older version), `relinked`. On the Nightly
 channel, uncommitted changes don't stop them: they are **parked** on this
 computer at the place they were made (a branch's latest, or an older
@@ -160,7 +160,7 @@ preview first and ask the user.
 | 6 | `needs_nightly` | a Unity/Unreal/Godot (…) project: the user must switch R3V to the Nightly channel |
 | 6 | `team_needs_features` | the team turned on features this R3V lacks: update, or switch to Nightly |
 | 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared |
-| 1 | `on_older_version` | an older version is checked out: `r3v checkout latest` |
+| 1 | `on_older_version` | on an older version: `r3v goto latest` |
 | 1 | `unshared_versions` | `r3v commit -m ...` shares them |
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |
