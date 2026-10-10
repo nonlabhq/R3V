@@ -335,7 +335,32 @@ func failed(resp *http.Response, what string) error {
 			text = m[1]
 		}
 	}
+	// The service's own errors say what to tell the person.
+	var e struct {
+		Error struct{ Code, Message string }
+	}
+	if strings.HasPrefix(text, "{") && json.Unmarshal(data, &e) == nil && e.Error.Message != "" {
+		return &ServiceError{Status: resp.StatusCode, Code: e.Error.Code, Message: e.Error.Message}
+	}
 	return fmt.Errorf("%s: %d %s", what, resp.StatusCode, text)
+}
+
+// ErrStorageFull: the hosted team's storage is full (the service's
+// over_limit); nothing more goes up until it has room.
+var ErrStorageFull = errors.New("the team's storage is full")
+
+// ServiceError is an error R3V-Cloud explained: its code, and a message
+// for people.
+type ServiceError struct {
+	Status        int
+	Code, Message string
+}
+
+func (e *ServiceError) Error() string { return "R3V-Cloud: " + e.Message }
+
+// Is lets errors.Is(err, ErrStorageFull) find a full team's.
+func (e *ServiceError) Is(target error) bool {
+	return target == ErrStorageFull && e.Code == "over_limit"
 }
 
 var xmlCode = regexp.MustCompile(`<Code>([A-Za-z0-9.]+)</Code>`)
