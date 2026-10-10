@@ -57,6 +57,18 @@ export function AddMilestone(root: string, version: string, name: string, note: 
 }
 
 /**
+ * AddProjectAs adds a folder R3V finds nothing of a kind it knows in (only
+ * documents, say), as preset says: "code" (text merged line by line, its
+ * .gitignore followed) or "none" (every file as it is). The choice goes
+ * in a .r3v.yaml, committed with the project.
+ */
+export function AddProjectAs(teamID: string, folder: string, preset: string): $CancellablePromise<$models.TeamProject> {
+    return $Call.ByID(716236165, teamID, folder, preset).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
+/**
  * AddProjectToTeam starts tracking an Ableton project folder as part of a
  * team. It returns quickly; the frontend then commits and uploads the first
  * version with Save, showing its progress.

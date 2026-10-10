@@ -3,7 +3,8 @@
   import { untrack } from "svelte";
   import { Events } from "@wailsio/runtime";
   import ProgressBar from "./ProgressBar.svelte";
-  import { api, errorText, savedAuthor, rememberAuthor, type Overview, type Progress,
+  import KindDialog from "./KindDialog.svelte";
+  import { api, errorText, unknownKind, savedAuthor, rememberAuthor, type Overview, type Progress,
     type TeamSummary } from "./api";
   import JoinOrCreate from "./JoinOrCreate.svelte";
   import IdentityForm from "./IdentityForm.svelte";
@@ -71,18 +72,27 @@
     }
   }
 
+  // A folder R3V doesn't recognise: asked how to keep it (KindDialog).
+  let kindAsk = $state<string | null>(null);
+  let nightly = $state(false);
+  api.Channel().then((c) => (nightly = c.build === "nightly")).catch(() => {});
   async function addFolder() {
     const folder = await api.ChooseFolder(t("Choose a project folder to share with the team"));
-    if (!folder || !team) return;
+    if (folder) add(folder);
+  }
+  async function add(folder: string, preset = "") {
+    if (!team) return;
     busy = "add";
     error = "";
     try {
       // Open it right away: its view uploads the first version and shows how
       // that is going.
-      const p = await api.AddProjectToTeam(team.id, folder);
+      const p = preset ? await api.AddProjectAs(team.id, folder, preset) : await api.AddProjectToTeam(team.id, folder);
+      kindAsk = null;
       onfinish(p.root, true);
     } catch (e) {
-      error = errorText(e);
+      if (!preset && unknownKind(e)) kindAsk = folder;
+      else error = errorText(e);
     } finally {
       busy = "";
     }
@@ -169,6 +179,11 @@
     {/if}
   </div>
 </div>
+
+{#if kindAsk}
+  <KindDialog folder={kindAsk} code={nightly} busy={busy === "add"} onpick={(preset) => add(kindAsk!, preset)}
+    onclose={() => (kindAsk = null)} />
+{/if}
 
 <style>
   .onboarding { height: 100%; display: flex; align-items: center; justify-content: center; padding: var(--sp-24); overflow: auto; }

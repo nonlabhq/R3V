@@ -52,6 +52,10 @@ export function errorText(e: unknown): string {
   return String(e);
 }
 
+// A folder R3V finds nothing of a kind it knows in (project.ErrUnknownKind):
+// asked how to keep it (KindDialog).
+export const unknownKind = (e: unknown) => /does not look like a project R3V knows/.test(errorText(e));
+
 export function ago(iso: string): string {
   const t = Date.parse(iso);
   if (isNaN(t)) return "";

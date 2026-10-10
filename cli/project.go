@@ -86,6 +86,7 @@ func short(id string) string { return id[:min(10, len(id))] }
 func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	author := fs.String("author", "", "name recorded on snapshots (default: OS user)")
+	preset := fs.String("preset", "", "for a folder R3V doesn't recognise: code (text merged line by line, .gitignore followed) or none (every file as it is)")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -93,7 +94,15 @@ func cmdInit(args []string) error {
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
 	}
+	if *preset != "" {
+		if err := project.ChooseKind(dir, *preset); err != nil {
+			return err
+		}
+	}
 	r, err := project.Init(dir, *author)
+	if errors.Is(err, project.ErrUnknownKind) {
+		return fmt.Errorf("%w; to keep it all the same: r3v init --preset code (code and documents) or --preset none (files as they are)", err)
+	}
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, titleOf, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -33,6 +33,7 @@
   import Tooltip from "./lib/Tooltip.svelte";
   import Avatar from "./lib/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
+  import KindDialog from "./lib/KindDialog.svelte";
 
 
   let overview = $state<Overview | null>(null);
@@ -643,15 +644,21 @@
     if (folder) share(folder);
   }
 
-  async function share(folder: string) {
+  // A folder R3V doesn't recognise (only documents, a new project): asked
+  // how to keep it, then added as said.
+  let kindAsk = $state<string | null>(null);
+  async function share(folder: string, preset = "") {
     busy = "add";
     try {
-      const got = await api.AddProjectToTeam(overview!.currentTeam, folder);
+      const got = preset ? await api.AddProjectAs(overview!.currentTeam, folder, preset)
+        : await api.AddProjectToTeam(overview!.currentTeam, folder);
+      kindAsk = null;
       firstShare = got.root;
       await reload();
       select(got);
     } catch (e) {
-      toast(errorText(e), "error", 9000);
+      if (!preset && unknownKind(e)) kindAsk = folder;
+      else toast(errorText(e), "error", 9000);
     } finally {
       busy = "";
     }
@@ -1088,6 +1095,11 @@
   <AppSettings version={appVersion} {edition} {autostart} autoUpdate={updState.auto} {downloadDir} {update}
     checking={checkingNow} onautostart={toggleAutostart} onautoupdate={setAutoUpdate} oncheck={checkUpdateNow}
     ondownloaddir={changeDownloadDir} onupdate={(u) => (update = u)} onclose={() => (appSettings = false)} />
+{/if}
+
+{#if kindAsk}
+  <KindDialog folder={kindAsk} code={nightly} busy={busy === "add"} onpick={(preset) => share(kindAsk!, preset)}
+    onclose={() => (kindAsk = null)} />
 {/if}
 
 {#if userSettings}

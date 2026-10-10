@@ -152,3 +152,19 @@ func (r *Repo) SetPreset(folder, preset string) error {
 	r.forgetProfile()
 	return nil
 }
+
+// ChooseKind says how a folder R3V finds nothing of a kind it knows in is
+// kept (ErrUnknownKind), before Init: preset "code" (text merged line by
+// line, its .gitignore followed) or "none" (every file as it is), written
+// in a new .r3v.yaml. A folder that has one is left as it is.
+func ChooseKind(folder, preset string) error {
+	if _, ok := profile.Builtin(preset); !ok && preset != "none" {
+		return fmt.Errorf("%q is not a kind R3V knows", preset)
+	}
+	path := filepath.Join(folder, profile.FileName)
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	text := "# What R3V keeps of this project, and how: `r3v profile check`.\npresets:\n  ./: " + preset + "\n"
+	return store.WriteAtomic(path, strings.NewReader(text))
+}

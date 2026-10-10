@@ -18,6 +18,7 @@ The same as **Create a team** in the app, for scripts: checks that the key can r
 
 ```
 r3v init [--author NAME]          # start tracking this project
+r3v init --preset code            # a folder R3V doesn't recognise: as code and documents (or none: files as they are)
 r3v remote <connection code>      # connect it to the team's storage
 r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
 r3v commit -m "title" -m "details" # a title, then details (a blank line between, as git)

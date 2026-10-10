@@ -1694,5 +1694,11 @@
 "R3V Cloud (test service)": "R3V Cloud(테스트 서비스)",
 "Signed out of R3V Cloud": "R3V Cloud에서 로그아웃했습니다",
 "R3V Cloud": "R3V Cloud",
-"Not signed in.": "로그인하지 않았습니다."
+"Not signed in.": "로그인하지 않았습니다.",
+"How should R3V keep “{name}”?": "R3V가 “{name}”을(를) 어떻게 관리할까요?",
+"R3V doesn't recognise what this folder is (no Live set, game engine project or code project in it). Say how to keep it: you can change it later in the project's rules.": "R3V가 이 폴더가 무엇인지 알아보지 못했습니다(Live 세트, 게임 엔진 프로젝트, 코드 프로젝트가 없음). 관리 방법을 정하세요. 나중에 프로젝트 규칙에서 바꿀 수 있습니다.",
+"Code and documents": "코드와 문서",
+"Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "텍스트 파일(코드, 메모, 설정)은 두 사람이 바꾸면 줄 단위로 병합됩니다. .gitignore를 따릅니다.",
+"Files as they are": "파일 그대로",
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "모든 파일을 그대로 관리합니다. 두 사람이 같은 파일을 바꾸면 누구 것을 남길지 고릅니다."
 }

@@ -860,3 +860,15 @@ func rememberTeamProjects(teamID string, ps []remote.Project) {
 		os.WriteFile(teamProjectsFile(), data, 0o644)
 	}
 }
+
+// AddProjectAs adds a folder R3V finds nothing of a kind it knows in (only
+// documents, say), as preset says: "code" (text merged line by line, its
+// .gitignore followed) or "none" (every file as it is). The choice goes
+// in a .r3v.yaml, committed with the project.
+func (a *App) AddProjectAs(teamID, folder, preset string) (TeamProject, error) {
+	folder = projectFolder(folder)
+	if err := project.ChooseKind(folder, preset); err != nil {
+		return TeamProject{}, err
+	}
+	return a.AddProjectToTeam(teamID, folder)
+}
