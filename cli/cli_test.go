@@ -100,7 +100,7 @@ func TestJSON(t *testing.T) {
 	if err := ra.SetRemote(code); err != nil {
 		t.Fatal(err)
 	}
-	exit, rep = run(t, a, "save", "-m", "shared")
+	exit, rep = run(t, a, "commit", "-m", "shared")
 	json.Unmarshal(rep.Result, &sv)
 	if exit != 0 || sv.Action != "published" {
 		t.Fatalf("save: %s", rep.Result)
@@ -136,7 +136,7 @@ func TestJSON(t *testing.T) {
 	if exit != 0 || len(pv.Versions) != 1 || len(pv.Changes) != 1 {
 		t.Fatalf("preview: %s", rep.Result)
 	}
-	exit, rep = run(t, b, "save", "-m", "B's notes")
+	exit, rep = run(t, b, "commit", "-m", "B's notes")
 	if exit != 3 || rep.Error.Code != "merge_conflict" || len(rep.Error.Conflicts) != 1 ||
 		rep.Error.Conflicts[0].File != "notes.txt" || !strings.Contains(rep.Error.Hint, "--strategy") {
 		t.Fatalf("conflict: %d %+v", exit, rep.Error)
@@ -144,12 +144,12 @@ func TestJSON(t *testing.T) {
 
 	// The set is open in Live: B is told, nothing changes.
 	openSet = func(string) string { return "Song.als" }
-	exit, rep = run(t, b, "save", "-m", "B's notes", "--strategy", "theirs")
+	exit, rep = run(t, b, "commit", "-m", "B's notes", "--strategy", "theirs")
 	openSet = func(string) string { return "" }
 	if exit != 4 || rep.Error.Code != "set_open_in_live" || rep.Error.Set != "Song.als" {
 		t.Fatalf("Live open: %d %+v", exit, rep.Error)
 	}
-	exit, rep = run(t, b, "save", "-m", "B's notes", "--strategy", "theirs")
+	exit, rep = run(t, b, "commit", "-m", "B's notes", "--strategy", "theirs")
 	json.Unmarshal(rep.Result, &sv)
 	// Theirs taken: nothing of B's left to commit, B is just up to date.
 	if exit != 0 || sv.Action != "fast-forward" || sv.Saved != nil || len(sv.Merged) == 0 {
@@ -158,6 +158,28 @@ func TestJSON(t *testing.T) {
 	if got, _ := os.ReadFile(filepath.Join(b, "notes.txt")); string(got) != "A's notes" {
 		t.Errorf("theirs kept %q", got)
 	}
+
+	// A commit on this computer only: the next commit shares it.
+	os.WriteFile(filepath.Join(b, "local.txt"), []byte("here"), 0o644)
+	exit, rep = run(t, b, "commit", "--local", "-m", "here only")
+	json.Unmarshal(rep.Result, &sv)
+	if exit != 0 || rep.Command != "commit" || sv.Action != "local" || sv.Saved == nil || sv.Saved.Message != "here only" {
+		t.Fatalf("commit --local: %s %+v", rep.Result, rep.Error)
+	}
+	exit, rep = run(t, b, "status")
+	json.Unmarshal(rep.Result, &st)
+	if exit != 0 || len(st.Changes) != 0 {
+		t.Fatalf("status after commit --local: %s", rep.Result)
+	}
+	exit, rep = run(t, b, "commit", "-m", "nothing new")
+	json.Unmarshal(rep.Result, &sv)
+	if exit != 0 || sv.Action != "published" {
+		t.Fatalf("the next commit: %s", rep.Result)
+	}
+	ra.Update(project.Strategy("fail"))
+	if got, _ := os.ReadFile(filepath.Join(a, "local.txt")); string(got) != "here" {
+		t.Errorf("A has %q", got)
+	}
 }
 
 func TestErrors(t *testing.T) {
@@ -165,10 +187,10 @@ func TestErrors(t *testing.T) {
 	if exit, rep := run(t, empty, "status"); exit != 6 || rep.Error.Code != "not_a_project" {
 		t.Fatalf("not a project: %d %+v", exit, rep.Error)
 	}
-	if exit, rep := run(t, empty, "save", "--bogus"); exit != 2 || rep.Error.Code != "usage" {
+	if exit, rep := run(t, empty, "commit", "--bogus"); exit != 2 || rep.Error.Code != "usage" {
 		t.Fatalf("unknown flag: %d %+v", exit, rep.Error)
 	}
-	if exit, rep := run(t, empty, "save"); exit != 2 || rep.Error.Code != "usage" {
+	if exit, rep := run(t, empty, "commit"); exit != 2 || rep.Error.Code != "usage" {
 		t.Fatalf("no message: %d %+v", exit, rep.Error)
 	}
 	if exit, rep := run(t, empty, "frobnicate"); exit != 2 || rep.Error.Code != "usage" {

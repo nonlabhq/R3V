@@ -96,7 +96,7 @@ func cmdInit(args []string) error {
 	}
 	ensureRules(r)
 	fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
-	fmt.Println("next: r3v remote <connection-code>, then r3v save -m \"first version\"")
+	fmt.Println("next: r3v remote <connection-code>, then r3v commit -m \"first version\"")
 	return nil
 }
 
@@ -216,38 +216,6 @@ func printStatus(r *project.Repo, s statusJSON) {
 			fmt.Println("    " + line)
 		}
 	}
-}
-
-func cmdSnapshot(args []string) error {
-	fs := flag.NewFlagSet("snapshot", flag.ContinueOnError)
-	msg := fs.String("m", "", "snapshot message")
-	if err := fs.Parse(args); err != nil {
-		return err
-	}
-	if *msg == "" {
-		return errors.New(`a message is required: r3v snapshot -m "what changed"`)
-	}
-	r, err := openRepo()
-	if err != nil {
-		return err
-	}
-	m, err := r.Snapshot(*msg)
-	if errors.Is(err, project.ErrNothingToSnapshot) {
-		fmt.Println(err)
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	fmt.Printf("snapshot %s  %s\n", short(m.ID), m.Message)
-	fmt.Printf("  %d file(s), %d external sample(s)\n", len(m.Files), len(m.External))
-	if len(m.Packs) > 0 {
-		fmt.Printf("  uses Live packs: %s\n", strings.Join(m.Packs, ", "))
-	}
-	for _, p := range m.Missing {
-		fmt.Printf("  warning: referenced sample not found: %s\n", p)
-	}
-	return nil
 }
 
 func cmdLog(args []string) error {

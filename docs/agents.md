@@ -7,12 +7,14 @@ version) and `r3v help agents --snippet` (a few lines for a project's
 
 R3V is version control for creative projects: Ableton Live sets, Unity,
 Unreal and Godot projects. A project folder with a `.r3v` folder is tracked.
-**`save` makes a version and shares it with the team in one step**; there
-is no separate commit and push.
+**`commit` makes a version and shares it with the team in one step**; there
+is no separate push. (`save` and `snapshot`, its names before 0.1.33, still
+work.) Coming from Git: [git-users.md](git-users.md); the words:
+[glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `save`, `update`, `merge` and `backup`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `checkout`, `parked` and `backup`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -27,29 +29,43 @@ is no separate commit and push.
 - Version ids are long hex strings; any unique prefix (10 characters, as
   the text output shows) works where a command takes one.
 
+## If you know Git
+
+- One command commits and shares (`commit`); there is no staging, push,
+  rebase or force push.
+- A conflict is a track of a Live set or a whole file, never markers in a
+  file: decide with the user, then `--strategy ours|theirs|both`.
+- `update` never runs by itself, and keeps uncommitted changes.
+- Every version keeps the branch it was made on (`log --json`:
+  `made_on`); merging another branch always makes a version.
+- Switching with uncommitted changes parks them (Nightly); they come back
+  on return (`switch --json`: `parked`, `restored`).
+- Branches are archived (`branch archive`), not deleted; only an archived
+  branch is deleted for good (`branch delete`: ask the user).
+
 ## Everyday flow
 
 ```sh
 r3v status --json            # what changed; is the team ahead?
-r3v update --preview --json  # what the team saved: versions, changes, conflicts
-r3v save -m "Brighter mix on the chorus" --json
+r3v update --preview --json  # what the team shared: versions, changes, conflicts
+r3v commit -m "Brighter mix on the chorus" --json
 ```
 
-`save` merges what teammates saved in the meantime before sharing. When the
+`commit` merges what teammates shared in the meantime before sharing. When the
 same track (or file) changed on both sides it stops with `merge_conflict`:
 
 ```sh
 r3v update --preview --json  # result.conflicts: file, unit (track), description
 # decide with the user, then:
-r3v save -m "..." --strategy theirs --json
+r3v commit -m "..." --strategy theirs --json
 ```
 
 Strategies: `ours` (keep this computer's), `theirs` (keep the team's),
 `both` (keep both: the track twice, or the file under a new name, when
 `can_keep_both`). A strategy applies to every conflict of that run.
 
-To only get the team's versions: `r3v update --json`. Changes not saved
-yet stay as they are (still not saved) and the team's versions are merged
+To only get the team's versions: `r3v update --json`. Changes not
+committed yet stay as they are (still not committed) and the team's versions are merged
 into the files; when you and a teammate changed the same file or track it
 stops with `merge_conflict` first (`--strategy` decides). `result.kept_work`
 is true when uncommitted changes were kept.
@@ -60,7 +76,7 @@ Every `--json` command prints one object on stdout:
 
 ```json
 {"schema": 1, "ok": true, "command": "status", "result": { ... }}
-{"schema": 1, "ok": false, "command": "save",
+{"schema": 1, "ok": false, "command": "commit",
  "error": {"code": "merge_conflict", "message": "...", "hint": "...", "exit": 3, "conflicts": [ ... ]}}
 ```
 
@@ -74,7 +90,7 @@ when a field changes meaning; new fields may appear any time.
 | `project`, `branch` | names |
 | `version` | the version the files are on (`""` before the first) |
 | `on_older_version`, `latest` | an older version is checked out; `r3v checkout latest` goes back |
-| `team` | `null` without a team, else `reachable`, `incoming` (others saved versions: update), `error` |
+| `team` | `null` without a team, else `reachable`, `incoming` (others shared versions: update), `error` |
 | `changes` | `path`, `status` (`added`, `modified`, `deleted`, `renamed` with `from`, `untracked`: still on disk but the rules leave it out), `set_changes` (for Live sets: tracks, devices, clips changed, one line each), `weight` (for Live sets, the biggest kind of change: `noise` a plugin re-saving its own state, `tidy` names/colors/order/groups, `mix`, `sound` devices, `arrangement` clips/notes/tracks/tempo) |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v profile preset <folder> <preset>` |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
@@ -90,9 +106,9 @@ one you're on); `branch archived` lists them; `branch unarchive NAME` brings
 one back; `branch delete NAME` deletes an archived branch for good (ask the
 user first).
 
-`save`, `update` and `merge`: `action` (`published`, `local`,
+`commit`, `update` and `merge`: `action` (`published`, `local`,
 `nothing-changed`, `up-to-date`, `ahead`, `fast-forward`, `merged`),
-`saved` (the version saved, or null), `from`, `to`, `merged` (what a merge
+`saved` (the version committed, or null), `from`, `to`, `merged` (what a merge
 took from each side), `relinked` (sample paths rewritten for this computer),
 `reopen_sets` (sets changed under Live: the user must reopen them).
 
@@ -143,12 +159,12 @@ preview first and ask the user.
 | 6 | `newer_version_needed` | the team uses a newer R3V: the user must update |
 | 6 | `needs_nightly` | a Unity/Unreal/Godot (…) project: the user must switch R3V to the Nightly channel |
 | 6 | `team_needs_features` | the team turned on features this R3V lacks: update, or switch to Nightly |
-| 1 | `unsaved_changes` | save first (`r3v save -m ...`); `update` keeps them unless you also have versions not shared |
+| 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared |
 | 1 | `on_older_version` | an older version is checked out: `r3v checkout latest` |
-| 1 | `unshared_versions` | `r3v save -m ...` shares them |
+| 1 | `unshared_versions` | `r3v commit -m ...` shares them |
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
-| 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `save` again once they are unlocked |
-| 1 | `not_connected` | the project is not in a team (`save` still saves locally) |
+| 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |
+| 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `backup_folder_missing` | the backup folder isn't there: ask the user to connect the drive |

@@ -2,7 +2,9 @@
 
 The desktop app covers everyday use, including creating a team on Cloudflare R2. The command line tool `r3v.exe` is for a few advanced tasks, scripts and AI agents. It is installed in the `bin` folder of the R3V install folder (`%LOCALAPPDATA%\Programs\R3V\bin`), and the installer puts that folder on your PATH: open a new terminal and type `r3v`. Run `r3v help` for the full list.
 
-**Scripts and AI agents:** `status`, `log`, `save`, `update`, `merge` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`.
+Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
+
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `checkout`, `parked` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`.
 
 ## Team storage (S3-compatible)
 
@@ -17,7 +19,7 @@ The same as **Create a team** in the app, for scripts: checks that the key can r
 ```
 r3v init [--author NAME]          # start tracking this project
 r3v remote <connection code>      # connect it to the team's storage
-r3v save -m "added drums"         # commit a version and share it (merges the team's versions first)
+r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
 r3v update [--preview]            # get the team's latest versions (or just look)
 r3v status                        # what changed since your last version
 r3v log                           # versions
@@ -27,7 +29,7 @@ r3v teams                         # teams this computer is connected to
 
 `r3v watch` keeps running while you work and tells you when someone commits a new version on your branch. It never changes your files. The desktop app does the same in the background.
 
-`save` and `update` merge Live Sets track by track. When you and a teammate changed the same track (or the same sample file) they stop and ask for `--strategy ours|theirs|both`. They refuse to rewrite sets while Ableton Live is running if the team's changes must be merged in.
+`commit` and `update` merge Live Sets track by track. When you and a teammate changed the same track (or the same sample file) they stop and ask for `--strategy ours|theirs|both`. They refuse to rewrite sets while Ableton Live is running if the team's changes must be merged in.
 
 ## Branches (advanced)
 
@@ -48,7 +50,7 @@ On a team that keeps branch names (Nightly), a branch can be called anything
 (`r3v branch new Mia's verse`, `r3v switch "Mia 的主歌"`); commands take its
 name or its key.
 
-Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and save from there.
+Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and commit from there.
 
 ## Older versions
 
@@ -56,7 +58,7 @@ Teams on storage keep a log of every branch move (each move is its own record, n
 r3v checkout <id|HEAD~N> [--force]   # put the project in the state of a version (samples relinked)
 r3v checkout latest                  # back to the latest version
 r3v export <id|HEAD~N> <folder>      # write a version as a separate project folder
-r3v snapshot -m "message"            # commit a version on this computer only
+r3v commit --local -m "message"      # commit a version on this computer only
 ```
 
 On an older version, newer versions are kept. Committing, getting updates and merging wait until you go back to the latest version; to continue from the older one, start a branch there (`r3v branch new NAME`). An exported copy has no R3V history; samples from outside the project are copied into its `Samples/Imported`.

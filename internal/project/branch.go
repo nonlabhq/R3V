@@ -53,7 +53,7 @@ func (r *Repo) BranchesFrom(heads map[string]string) []BranchInfo {
 }
 
 // ErrUnshared means the workspace has versions the current branch lacks.
-var ErrUnshared = errors.New("you have versions that are not shared yet; run `r3v save` first")
+var ErrUnshared = errors.New("you have versions that are not shared yet; run `r3v commit` first")
 
 // shared reports whether HEAD is already on the current team branch.
 func (r *Repo) shared(c remote.Backend) (bool, error) {
