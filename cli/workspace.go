@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
@@ -64,7 +65,7 @@ func cmdWorkspace(args []string) error {
 			return err
 		}
 		if *agent != "" { // (the workspace is made: set up, or said why not)
-			if _, err := setupClaudeCode(e.Folder, hookCommand(), false); err != nil {
+			if _, err := agentsetup.ClaudeCode(e.Folder, hookCommand(), false); err != nil {
 				return fmt.Errorf("the workspace is made, but setting %s up failed: %w (run r3v agent setup there)", *agent, err)
 			}
 		}
