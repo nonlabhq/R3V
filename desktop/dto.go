@@ -7,6 +7,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/diff"
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/remote"
 )
 
 // Data sent to the frontend. Field names become the TypeScript model.
@@ -27,6 +28,23 @@ type Version struct {
 	// NotHere: some of its files are only in the storage of a team the
 	// project is no longer in (going to it needs that team).
 	NotHere bool `json:"notHere"`
+	// Actor: the AI agent that made it for its author (nil: the author did).
+	// Its message is a title (the first line) and details (the rest).
+	Actor *Actor `json:"actor"`
+}
+
+// Actor is the agent tool that made a version ("claude-code") and its
+// model, when it said.
+type Actor struct {
+	Tool  string `json:"tool"`
+	Model string `json:"model"`
+}
+
+func actorOf(m *project.Manifest) *Actor {
+	if m.Actor == nil || m.Actor.Tool == "" && m.Actor.Model == "" {
+		return nil
+	}
+	return &Actor{Tool: m.Actor.Tool, Model: m.Actor.Model}
 }
 
 type Change struct {
@@ -69,6 +87,21 @@ type Branch struct {
 	Parent  string   `json:"parent"` // the branch it was made from ("": not known)
 	Current bool     `json:"current"`
 	Latest  *Version `json:"latest"`
+	// Kind is "agent" for an AI agent's branch (folded away in the graph),
+	// "" for a person's; Owner the member it works for.
+	Kind  string `json:"kind"`
+	Owner string `json:"owner"`
+}
+
+// toBranch is a branch with what the team keeps of it (rec: its record).
+func toBranch(b project.BranchInfo, rec remote.BranchRecord) Branch {
+	br := Branch{Name: b.Name, Label: rec.Name, Color: rec.Color, Parent: rec.Parent, Current: b.Current,
+		Kind: rec.Kind, Owner: rec.Owner}
+	if b.Latest != nil {
+		v := toVersion(b.Latest, nil)
+		br.Latest = &v
+	}
+	return br
 }
 
 type Conflict struct {
@@ -78,14 +111,41 @@ type Conflict struct {
 	Description string `json:"description"`
 	CanKeepBoth bool   `json:"canKeepBoth"`
 	// Kind is what it is: "track" (a track of a Live Set; Track its id,
-	// Name its name), "file" (a whole file), or "set" (another part of a
-	// set: track order, a send, the set's settings).
+	// Name its name), "file" (a whole file), "hunk" (lines of a text file
+	// both sides changed: Hunk its number, Text its lines; Name the file's
+	// name), or "set" (another part of a set: track order, a send, the
+	// set's settings).
 	Kind  string `json:"kind"`
 	Track string `json:"track"`
 	Name  string `json:"name"`
 	// Ours and Theirs: what each side did to it, "changed" or "deleted".
-	Ours   string `json:"ours"`
-	Theirs string `json:"theirs"`
+	Ours   string    `json:"ours"`
+	Theirs string    `json:"theirs"`
+	Hunk   int       `json:"hunk"`
+	Text   *HunkText `json:"text"`
+}
+
+// HunkText is a hunk's lines in the version both sides started from, in
+// yours and in theirs.
+type HunkText struct {
+	Base   HunkSide `json:"base"`
+	Ours   HunkSide `json:"ours"`
+	Theirs HunkSide `json:"theirs"`
+}
+
+// HunkSide is a hunk's lines on one side: Start the first line's number
+// (from 1); with no lines (Count 0), where they would be (before Start).
+type HunkSide struct {
+	Start int    `json:"start"`
+	Count int    `json:"count"`
+	Text  string `json:"text"`
+}
+
+func hunkSide(s *project.HunkSide) HunkSide {
+	if s == nil {
+		return HunkSide{}
+	}
+	return HunkSide{Start: s.Start, Count: s.Count, Text: s.Text}
 }
 
 // Combined is a thing a merge took in on its own: a track or a file
@@ -188,7 +248,9 @@ type Result struct {
 	Theirs   *Version   `json:"theirs"`
 	Combined []Combined `json:"combined"`
 	// Locks: action "locked": the share was refused, someone else holds
-	// these paths; the version stays committed here.
+	// these paths; the version stays committed here. Action
+	// "agent-locked": the commit was refused, another workspace on this
+	// computer holds them (nothing committed).
 	Locks []HeldLock `json:"locks"`
 	// Park: a switch kept uncommitted changes (Parking).
 	Park *Parking `json:"park"`
@@ -233,7 +295,7 @@ func toVersion(m *project.Manifest, tips map[string][]string) Version {
 		parents = []string{}
 	}
 	return Version{ID: m.ID, Short: m.ID[:10], Author: m.Author, Time: m.Time, Message: m.Message,
-		Parents: parents, Branches: tips[m.ID], AuthorID: m.AuthorID, Branch: m.Branch}
+		Parents: parents, Branches: tips[m.ID], AuthorID: m.AuthorID, Branch: m.Branch, Actor: actorOf(m)}
 }
 
 // renameAuthors shows members' current names (a rename applies to
@@ -268,6 +330,9 @@ func toConflicts(cs []project.ConflictItem) []Conflict {
 			CanKeepBoth: c.CanKeepBoth, Kind: "set", Name: c.Unit, Ours: "changed", Theirs: "changed"}
 		_, inSet, _ := strings.Cut(c.Key, "#")
 		switch {
+		case c.Hunk > 0 && strings.HasPrefix(c.Key, "text:"):
+			x.Kind, x.Name, x.Hunk = "hunk", path.Base(c.File), c.Hunk
+			x.Text = &HunkText{Base: hunkSide(c.Base), Ours: hunkSide(c.Ours), Theirs: hunkSide(c.Theirs)}
 		case c.Unit == c.File:
 			x.Kind, x.Name = "file", path.Base(c.File)
 		case strings.HasPrefix(inSet, "track:"):

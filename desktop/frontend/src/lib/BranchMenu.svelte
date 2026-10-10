@@ -2,6 +2,7 @@
   import { t } from "./i18n.svelte";
   import { ago, type State } from "./api";
   import { branchLabel, branchLane } from "./branches";
+  import AgentBadge from "./AgentBadge.svelte";
 
   // The branch you are on, and its menu: switch to another, merge one into
   // it, or start a new one from where you are. (Above the Overview's graph.)
@@ -45,7 +46,7 @@
       {#each others as b (b.name)}
         <div class="row">
           <button class="item" onclick={() => { open = false; onswitch(b.name); }}>
-            <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, b.name)})"></span>{label(b.name)}</span>
+            <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, b.name)})"></span>{label(b.name)}{#if b.kind === "agent"} <AgentBadge tool={b.latest?.actor?.tool ?? ""} compact title={t("An agent's branch")} />{/if}</span>
             <span class="faint">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
           </button>
           {#if st.branchNames && onsettings}
@@ -60,7 +61,7 @@
       <div class="menu-h">{t("Merge into {branch}", { branch: label(st.branch) })}</div>
       {#each others as b (b.name)}
         <button class="item" onclick={() => { open = false; onmerge(b.name); }}>
-          <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, b.name)})"></span>{label(b.name)}</span>
+          <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, b.name)})"></span>{label(b.name)}{#if b.kind === "agent"} <AgentBadge tool={b.latest?.actor?.tool ?? ""} compact title={t("An agent's branch")} />{/if}</span>
         </button>
       {:else}
         <div class="item faint">{t("no other branches")}</div>

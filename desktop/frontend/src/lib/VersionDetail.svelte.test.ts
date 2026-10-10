@@ -15,7 +15,7 @@ globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {
 afterEach(() => cleanup());
 
 const version = (id: string) => ({ id, short: id, author: "Alex", time: "2026-10-06T10:00:00Z", message: "Mix", parents: ["p"],
-  branches: [], authorId: "", inBranch: true, notHere: false, branch: "" });
+  branches: [], authorId: "", inBranch: true, notHere: false, branch: "", actor: null });
 const file = (path: string) => ({ path, status: "modified", size: 1, kind: "other", live: "", from: "", edited: false,
   preview: false, video: false, model: false });
 const picked = () => screen.getAllByTitle(/\.txt$/).find((b) => b.classList.contains("on"))?.title;
@@ -61,4 +61,20 @@ it("shows a version's files as a list or a tree, as your changes are shown", asy
   expect(screen.getByTitle("notes.txt")).toBeTruthy();
   await fireEvent.click(screen.getByRole("button", { name: "List" }));
   expect(screen.getByTitle("Samples/Kick.txt")).toBeTruthy();
+});
+
+it("heads a version with its title, its details below and the agent that made it", async () => {
+  mocks.api.VersionFiles.mockResolvedValue([]);
+  const v = { ...version("v3"), message: "Fix the renderer\n\nLights were too bright.\nSee issue 4.",
+    actor: { tool: "claude-code", model: "opus" } };
+  render(VersionDetail, { root: "C:/Game", v, branch: "renderer" });
+  expect(screen.getByRole("heading").textContent).toBe("Fix the renderer");
+  expect(screen.getByText(/^Lights were too bright\./).textContent).toBe("Lights were too bright.\nSee issue 4.");
+  const badge = screen.getByLabelText("Made by Claude Code (opus)");
+  expect(badge.textContent).toContain("Claude Code");
+  cleanup();
+  // A person's version: no mark, no details.
+  render(VersionDetail, { root: "C:/Game", v: version("v4"), branch: "main" });
+  expect(screen.getByRole("heading").textContent).toBe("Mix");
+  expect(screen.queryByLabelText(/Made by/)).toBeNull();
 });

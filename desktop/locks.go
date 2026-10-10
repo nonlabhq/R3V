@@ -29,10 +29,17 @@ import (
 // team's switch, the project's .r3v.yaml, a team on its own storage, a
 // Stable build), nothing about locks shows or happens.
 
-// LocksView is a project's file locks, as the app shows them.
+// LocksView is a project's file locks, as the app shows them: the team's
+// and, on this computer, the agents' (agentlocks.go).
 type LocksView struct {
 	// On: locks exist in this project; nothing below matters otherwise.
 	On bool `json:"on"`
+	// Team: the team's file locks are on (locking and unlocking offered);
+	// without it, the items are agent locks only.
+	Team bool `json:"team"`
+	// Agents: agent locks are in this build (the page looks for them now
+	// and then: AgentLocks).
+	Agents bool `json:"agents"`
 	// Me: your member id in the team; Admin: you may break others' locks.
 	Me    string `json:"me"`
 	Admin bool   `json:"admin"`
@@ -54,6 +61,19 @@ type LockItem struct {
 	Name     string `json:"name"` // the holder's name ("" when not known)
 	Since    string `json:"since"`
 	Mine     bool   `json:"mine"`
+	// Agent: an agent lock, between the workspaces on this computer.
+	Agent bool `json:"agent"`
+	AgentHolder
+}
+
+// AgentHolder says who holds an agent lock: an agent's workspace on this
+// computer (Tool, Branch), or you, with your changes not committed
+// (Person).
+type AgentHolder struct {
+	Tool   string `json:"tool"`   // the agent tool ("claude-code"; "" not known)
+	Branch string `json:"branch"` // its workspace's branch
+	Person bool   `json:"person"`
+	Stale  bool   `json:"stale"` // its agent hasn't been heard of for a while
 }
 
 // HeldLock is a path someone else holds, for telling why something was
@@ -62,6 +82,7 @@ type HeldLock struct {
 	Path     string `json:"path"`
 	MemberID string `json:"memberId"`
 	Name     string `json:"name"`
+	AgentHolder
 }
 
 // lockTarget is what locking a project needs: the team's address, the
@@ -253,15 +274,26 @@ func (a *App) ProjectLocks(root string) (*LocksView, error) {
 	if !knownProject(root) {
 		return out, nil
 	}
+	a.teamLocks(root, out)
+	out.Agents = project.AgentLocks
+	if items := agentLockItems(root); len(items) > 0 {
+		out.On = true
+		out.Items = append(out.Items, items...)
+	}
+	return out, nil
+}
+
+// teamLocks fills in the team's file locks.
+func (a *App) teamLocks(root string, out *LocksView) {
 	lt, err := lockTargetOf(root)
 	if err != nil {
 		out.Offline = err.Error()
-		return out, nil
+		return
 	}
 	if lt == nil {
-		return out, nil
+		return
 	}
-	out.On, out.Me, out.AutoLock = true, lt.team.MemberID, len(lt.locking.Auto) > 0
+	out.On, out.Team, out.Me, out.AutoLock = true, true, lt.team.MemberID, len(lt.locking.Auto) > 0
 	out.Admin = isAdmin(myRole(lt.team))
 	out.Waiting = lt.r.WaitingLocks()
 	ls, err := lt.read()
@@ -273,7 +305,6 @@ func (a *App) ProjectLocks(root string) (*LocksView, error) {
 		out.Items = append(out.Items, LockItem{Path: l.Path, Prefix: l.Prefix, MemberID: l.MemberID, Name: names[l.MemberID],
 			Since: l.Since.UTC().Format(time.RFC3339), Mine: l.MemberID == out.Me})
 	}
-	return out, nil
 }
 
 // LockOutcome is what locking did: what is now yours, and what someone

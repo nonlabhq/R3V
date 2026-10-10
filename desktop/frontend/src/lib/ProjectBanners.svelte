@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import { ago, type State, type Progress, type RuleSuggestion as Suggestion } from "./api";
+  import { ago, titleOf, type State, type Progress, type RuleSuggestion as Suggestion } from "./api";
   import Tx from "./Tx.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import RuleSuggestion from "./RuleSuggestion.svelte";
@@ -148,7 +148,7 @@
   {@const v = st.unfinished}
   <div class="banner warn">
     <div>
-      <Tx text={t("Switching to {version} didn't finish")} strong={{ version: `“${v.message || v.short}”` }} />
+      <Tx text={t("Switching to {version} didn't finish")} strong={{ version: `“${titleOf(v.message) || v.short}”` }} />
       <span class="muted">{t("— R3V was closed or a file was in use. Some files are from that version, some aren't. Put them back as they were, then try again.")}</span>
     </div>
     <button class="primary" disabled={!!busy} onclick={onrecover}>{t("Put files back")}</button>
@@ -163,7 +163,7 @@
   {@const v = st.olderVersion}
   <div class="banner older">
     <div>
-      <Tx text={t("You're on an older version: {version}")} strong={{ version: `“${v.message || v.short}”` }} />
+      <Tx text={t("You're on an older version: {version}")} strong={{ version: `“${titleOf(v.message) || v.short}”` }} />
       <span class="muted">— {v.author}, {ago(v.time)}. {t("Newer versions are kept.")}</span>
     </div>
     {#if st.remoteUrl && st.changes.length}
@@ -201,7 +201,7 @@
     <div>
       <Tx text={tn(news.length, "{who} shared {n} new version:", "{who} shared {n} new versions:")}
         strong={{ who: [...new Set(news.map((v) => v.author))].join(", ") }} />
-      <span class="muted">{news.slice(0, 3).map((v) => `“${v.message}”`).join(", ")}{news.length > 3 ? "…" : ""}</span>
+      <span class="muted">{news.slice(0, 3).map((v) => `“${titleOf(v.message)}”`).join(", ")}{news.length > 3 ? "…" : ""}</span>
       {#if st.changes.length && !st.olderVersion}<span class="keep">{t("Your uncommitted changes stay as they are.")}</span>{/if}
     </div>
     {#if st.olderVersion}

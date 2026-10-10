@@ -27,6 +27,25 @@ export type { Member } from "../../bindings/github.com/nonlabhq/r3v/internal/rem
 export const api = App;
 import { t, tn, language } from "./i18n.svelte";
 
+// A version's message is a title, its first line, and details, the rest
+// (Git's way; docs/design/agent-workspaces.md, "Title and details").
+/** A version's title: its message's first line. */
+export const titleOf = (message: string | undefined | null) => (message ?? "").split("\n", 1)[0].trimEnd();
+/** A version's details: its message after the title, blank lines round them left out. */
+export function detailsOf(message: string | undefined | null): string {
+  const m = message ?? "", i = m.indexOf("\n");
+  return i < 0 ? "" : m.slice(i + 1).replace(/^[\r\n]+/, "").trimEnd();
+}
+
+// Agent tools by the names their makers give them (not translated).
+const TOOLS: Record<string, string> = { "claude-code": "Claude Code", codex: "Codex", cursor: "Cursor",
+  "gemini-cli": "Gemini CLI", copilot: "GitHub Copilot", aider: "Aider" };
+/** An agent tool's name as people know it ("claude-code": "Claude Code"); "" when not known. */
+export function toolName(tool: string | undefined | null): string {
+  if (!tool) return "";
+  return TOOLS[tool] ?? tool.split(/[-_]/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+}
+
 export function errorText(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (typeof e === "object" && e && "message" in e) return String((e as any).message);

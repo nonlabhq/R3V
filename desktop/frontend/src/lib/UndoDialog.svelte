@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import { t, tn } from "./i18n.svelte";
-  import { api, errorText, type Version } from "./api";
+  import { api, errorText, titleOf, type Version } from "./api";
   import Modal from "./Modal.svelte";
 
   // Undo commit. Your latest version, while no one else has it, is taken
@@ -20,7 +20,7 @@
   type Plan = Awaited<ReturnType<typeof api.PlanUndo>>;
   let plan = $state<Plan>(null);
   let error = $state("");
-  let label = untrack(() => version.message || version.short);
+  let label = untrack(() => titleOf(version.message) || version.short);
   let message = $state(t("Undo “{version}”", { version: label }));
   // Keep it in the history (a new version) even though it can be taken back.
   let keep = $state(false);

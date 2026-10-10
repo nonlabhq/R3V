@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, titleOf, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -669,7 +669,7 @@
       const name = entries.find((p) => p.root === e.root)?.name ?? "";
       switch (e.kind) {
         case "new-versions":
-          toast(`${name}: ${e.versions.map((v) => t("{author} saved “{message}”", { author: v.author, message: v.message })).join("\n")}`, "info", 8000);
+          toast(`${name}: ${e.versions.map((v) => t("{author} saved “{message}”", { author: v.author, message: titleOf(v.message) })).join("\n")}`, "info", 8000);
           break;
       }
       if (e.root === selected.root) refreshKey++;

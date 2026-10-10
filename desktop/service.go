@@ -579,11 +579,7 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 		recs := branchRecords(r, fetchNames)
 		for _, b := range r.BranchesFrom(view.Heads) {
 			tips[b.Head] = append(tips[b.Head], b.Name)
-			br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Parent: recs[b.Name].Parent, Current: b.Current}
-			if b.Latest != nil {
-				v := toVersion(b.Latest, nil)
-				br.Latest = &v
-			}
+			br := toBranch(b, recs[b.Name])
 			part.Branches = append(part.Branches, br)
 		}
 		if in, err := r.IncomingFrom(view.Heads); err == nil {
@@ -722,6 +718,9 @@ func blocked(set string) *Result {
 // what was combined on its own.
 func conflictResult(r *project.Repo, err error) (*Result, error) {
 	if out, ok := lockedResult(r, err); ok {
+		return out, nil
+	}
+	if out, ok := agentLockedResult(r, err); ok {
 		return out, nil
 	}
 	var c *project.MergeConflictError

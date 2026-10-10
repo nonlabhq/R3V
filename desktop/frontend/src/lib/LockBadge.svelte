@@ -4,21 +4,33 @@
   import { holderName, lockText, type LockItem } from "./locks.svelte";
 
   // A lock on a file or folder: a padlock and who holds it (their picture
-  // or initial), the rest in its tooltip.
-  let { lock, looks, size = 16 }: { lock: LockItem; looks?: Record<string, MemberLook | undefined>; size?: number } = $props();
+  // or initial; an agent's workspace, a spark; your changes, the padlock
+  // alone), the rest in its tooltip.
+  let { lock, looks, size = 16, branchName }: { lock: LockItem; looks?: Record<string, MemberLook | undefined>; size?: number;
+    branchName?: (key: string) => string } = $props();
+  let text = $derived(lockText(lock, branchName));
 </script>
 
-<span class="lock" class:mine={lock.mine} title={lockText(lock)} aria-label={lockText(lock)}>
+<span class="lock" class:mine={lock.mine} class:agent={lock.agent && !lock.mine} class:stale={lock.stale} title={text} aria-label={text}>
   <svg viewBox="0 0 16 16" aria-hidden="true" style:width="{size - 4}px" style:height="{size - 4}px">
     <rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor" />
     <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.6" />
   </svg>
-  <Avatar name={lock.name || holderName(lock)} seed={lock.memberId} color={looks?.[lock.memberId]?.color ?? ""}
-    picture={looks?.[lock.memberId]?.picture ?? ""} {size} />
+  {#if lock.agent && !lock.mine}
+    <svg class="spark" viewBox="0 0 16 16" aria-hidden="true" style:width="{size - 6}px" style:height="{size - 6}px">
+      <path d="M8 1.5 9.4 6.6 14.5 8 9.4 9.4 8 14.5 6.6 9.4 1.5 8 6.6 6.6z" fill="currentColor" />
+    </svg>
+  {:else if !lock.agent}
+    <Avatar name={lock.name || holderName(lock)} seed={lock.memberId} color={looks?.[lock.memberId]?.color ?? ""}
+      picture={looks?.[lock.memberId]?.picture ?? ""} {size} />
+  {/if}
 </span>
 
 <style>
   .lock { flex: none; display: inline-flex; align-items: center; gap: var(--sp-2); padding: 1px var(--sp-4) 1px var(--sp-2);
     border-radius: var(--radius-pill); background: var(--warn-soft); color: var(--warn); }
   .lock.mine { background: var(--accent-soft); color: var(--accent); }
+  .lock.agent { background: var(--info-chip); color: var(--info-text); }
+  .lock.stale { opacity: .6; }
+  .spark { margin: 0 var(--sp-2); }
 </style>

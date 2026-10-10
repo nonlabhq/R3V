@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/svelte";
 
 // File locks on the page: what a lock holds, what locks say in words (the
 // .r3v.yaml viewer's too), and the Files tab's padlocks and menu. The Go
@@ -14,7 +14,7 @@ vi.mock("./api", async (orig) => ({ ...(await orig<typeof import("./api")>()), a
 vi.mock("./notify.svelte", () => ({ toast: mocks.toast }));
 
 import FileExplorer from "./FileExplorer.svelte";
-import { loadLocks, lockAt, lockText, type LocksView } from "./locks.svelte";
+import { loadAgentLocks, loadLocks, lockAt, locksOf, lockText, type LocksView } from "./locks.svelte";
 import { fileLocksChanges, lockingLines, patternText } from "./lockKinds";
 import { rulesChanges } from "./rules";
 import type { State } from "./api";
@@ -26,8 +26,9 @@ const ROOT = "C:/Game";
 const KAI = "0000000000000000000000000000000b", ME = "0000000000000000000000000000000a";
 const since = new Date(Date.now() - 3 * 86400000).toISOString();
 const view = (items: Partial<LocksView["items"][number]>[], extra: Partial<LocksView> = {}): LocksView => ({
-  on: true, me: ME, admin: false, autoLock: true, waiting: [], offline: "",
-  items: items.map((l) => ({ path: "", prefix: false, memberId: KAI, name: "Kai", since, mine: false, ...l })), ...extra,
+  on: true, team: true, agents: false, me: ME, admin: false, autoLock: true, waiting: [], offline: "",
+  items: items.map((l) => ({ path: "", prefix: false, memberId: KAI, name: "Kai", since, mine: false,
+    agent: false, tool: "", branch: "", person: false, stale: false, ...l })), ...extra,
 });
 
 describe("locks", () => {
@@ -128,7 +129,7 @@ describe("the Files tab's locks", () => {
     expect(api.UnlockFiles).toHaveBeenCalledWith(ROOT, ["ship.blend"]);
 
     await fireEvent.contextMenu(rowOf("Harbor.umap"));
-    await fireEvent.click(screen.getByText("Break lock…"));
+    await fireEvent.click(within(document.querySelector<HTMLElement>(".ctx")!).getByText("Break lock…"));
     expect(api.BreakLock).not.toHaveBeenCalled();
     await fireEvent.click(screen.getByRole("button", { name: "Break lock" }));
     expect(api.BreakLock).toHaveBeenCalledWith(ROOT, "Harbor.umap");
@@ -140,5 +141,52 @@ describe("the Files tab's locks", () => {
     expect(menuItems()).not.toContain("Lock");
     expect(menuItems()).not.toContain("Break lock…");
     expect(screen.getByText("Locked by Kai")).toBeTruthy();
+  });
+
+  // Agent locks (between the workspaces on this computer): the same
+  // padlock, held by an agent's workspace (its tool, its branch) or your
+  // changes; anyone breaks an agent's, after asking; the team's Lock isn't
+  // offered when only agent locks are on.
+  const agentLock = (over: Partial<LocksView["items"][number]>) =>
+    ({ memberId: "", name: "", agent: true, tool: "claude-code", branch: "b-render", ...over });
+  const agents = (items: Partial<LocksView["items"][number]>[]) =>
+    view(items, { team: false, agents: true, me: "", autoLock: false });
+
+  it("shows an agent's lock and your changes, and breaks the agent's after asking", async () => {
+    await show(agents([agentLock({ path: "ship.blend" }), agentLock({ path: "Harbor.umap", person: true, mine: true, tool: "", branch: "main" })]));
+    const ship = rowOf("ship.blend").querySelector(".lock")!;
+    expect(ship.classList.contains("agent")).toBe(true);
+    expect(ship.getAttribute("title")).toBe("Claude Code on b-render is changing this file (since 3 days ago): other agents leave it alone until its work is merged");
+    expect(ship.querySelector(".av")).toBeNull(); // (a spark, not a member's picture)
+    expect(rowOf("Harbor.umap").querySelector(".lock.mine")?.getAttribute("title")).toMatch(/^You changed this file and haven't committed it/);
+
+    await fireEvent.contextMenu(rowOf("Hero.uasset"));
+    expect(menuItems()).not.toContain("Lock");
+    await fireEvent.contextMenu(rowOf("Harbor.umap"));
+    expect(menuItems()).not.toContain("Break lock…");
+    screen.getByText("Your changes: agents leave it alone until you commit");
+
+    await fireEvent.contextMenu(rowOf("ship.blend"));
+    await fireEvent.click(within(document.querySelector<HTMLElement>(".ctx")!).getByText("Break lock…"));
+    screen.getByText(/Claude Code on b-render holds ship\.blend\. Breaking the lock lets you and other agents change it/);
+    expect(api.BreakAgentLock).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole("button", { name: "Break lock" }));
+    expect(api.BreakAgentLock).toHaveBeenCalledWith(ROOT, "ship.blend");
+    expect(api.BreakLock).not.toHaveBeenCalled();
+  });
+
+  it("reads agents' locks again now and then, keeping the team's", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    try {
+      api.ProjectLocks.mockResolvedValue(view([{ path: "Harbor.umap" }], { agents: true }));
+      await loadLocks(ROOT);
+      api.AgentLocks.mockResolvedValue([{ ...view([agentLock({ path: "ship.blend" })]).items[0] }]);
+      await loadAgentLocks(ROOT);
+      const v = locksOf(ROOT)!;
+      expect(v.items.map((l) => l.path)).toEqual(["Harbor.umap", "ship.blend"]);
+      expect(api.ProjectLocks).toHaveBeenCalledTimes(1); // (the team isn't asked again)
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

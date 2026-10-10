@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import { api, ago, errorText, formatBytes, type FileVersion, type ProjectFile, type State } from "./api";
+  import { api, ago, errorText, formatBytes, titleOf, type FileVersion, type MemberLook, type ProjectFile, type State } from "./api";
   import { toast } from "./notify.svelte";
   import { viewerFor, type Side } from "./viewers";
   import { branchGraph } from "./branchGraph";
@@ -8,16 +8,22 @@
   import { initial } from "./palette";
   import { baseName, isChanged } from "./files";
   import FileIcon from "./FileIcon.svelte";
+  import LockBadge from "./LockBadge.svelte";
+  import { lockText, type LockItem } from "./locks.svelte";
 
   // The Files tab's file panel: the file large, where it is, what you
   // changed (when you did), and its history; a version picked in the
   // history shows instead, and can be restored (this one file only).
-  let { root, st, file, stamp, onrestore }: {
+  let { root, st, file, stamp, onrestore, lock, looks, branchName, onbreak }: {
     root: string;
     st: State;
     file: ProjectFile;
     stamp: number; // changes when the folder may have changed
     onrestore: (path: string, version: string, label: string, source: string) => void;
+    lock?: LockItem;  // who holds the file (a team's or an agent lock)
+    looks?: Record<string, MemberLook | undefined>;
+    branchName?: (key: string) => string;
+    onbreak?: (lock: LockItem) => void; // breaking it (asked first; offered for agent locks)
   } = $props();
 
   let history = $state<FileVersion[] | null>(null);
@@ -33,7 +39,7 @@
       .catch((e) => { if (historyOf === key) { history = []; toast(errorText(e), "error"); } });
   });
 
-  const label = (h: FileVersion) => `“${h.version.message || h.version.short}”`;
+  const label = (h: FileVersion) => `“${titleOf(h.version.message) || h.version.short}”`;
   let View = $derived(viewerFor(file).component);
   let pickedV = $derived(picked ? history?.find((h) => h.version.id === picked) : undefined);
   // In the version you're on (a moved file: where it was).
@@ -97,6 +103,15 @@
     <strong class="name" title={file.path}>{baseName(file.path)}</strong>
     {#if sym[file.status]}<span class="st {file.status}" title={statusName(file.status)}>{sym[file.status]}</span>{/if}
   </header>
+  {#if lock && !lock.person}
+    <p class="lockline">
+      <LockBadge {lock} {looks} {branchName} />
+      <span class="locktext">{lockText(lock, branchName)}</span>
+      {#if lock.agent && onbreak}
+        <button class="link" onclick={() => onbreak(lock)}>{lock.mine ? t("Unlock") : t("Break lock…")}</button>
+      {/if}
+    </p>
+  {/if}
 
   <div class="body" bind:clientHeight={bodyH}>
     <div class="top" style:height={file.status === "ignored" ? undefined : `${topPx}px`}>
@@ -143,14 +158,14 @@
                   aria-pressed={picked === h.version.id}>
                   <span class="node" aria-hidden="true">{initial(h.version.author || "?")}</span>
                   <span class="txt">
-                    <span class="msg">{h.version.message || t("(no description)")}</span>
+                    <span class="msg">{titleOf(h.version.message) || t("(no description)")}</span>
                     <span class="sub">{h.version.author} · {ago(h.version.time)} · <span class="br">{branchLabel(st.branches, b)}</span></span>
                   </span>
                   {#if i === 0}<span class="cur">{t("current")}</span>{/if}
                 </button>
                 {#if (i > 0 || isChanged(file)) && h.status !== "deleted"}
                   <button class="restore" title={t("Put this file back as it was in this version; the rest of the project stays")}
-                    onclick={() => onrestore(file.path, h.version.id, h.version.message || h.version.short, h.path || file.path)}>↶ {t("Restore")}</button>
+                    onclick={() => onrestore(file.path, h.version.id, titleOf(h.version.message) || h.version.short, h.path || file.path)}>↶ {t("Restore")}</button>
                 {/if}
               </li>
             {/each}
@@ -180,6 +195,9 @@
   .st.added { background: var(--add-soft); color: var(--add); }
   .st.deleted { background: var(--del-soft); color: var(--del); }
   .st.renamed { background: var(--warn-soft); color: var(--warn); }
+  .lockline { flex: none; display: flex; align-items: center; gap: var(--sp-8); margin: 0 var(--sp-18) var(--sp-10);
+    font-size: var(--fs-sm); color: var(--muted); }
+  .locktext { flex: 1; min-width: 0; }
   .body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   /* the file (and your changes) above, its history below: the line between them is dragged */
   .top { flex: none; min-height: 0; overflow: auto; }

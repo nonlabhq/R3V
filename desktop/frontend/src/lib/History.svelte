@@ -1,6 +1,7 @@
 <script lang="ts">
+  import AgentBadge from "./AgentBadge.svelte";
   import { t } from "./i18n.svelte";
-  import { api, ago, errorText, type Change, type Version } from "./api";
+  import { api, ago, errorText, detailsOf, titleOf, type Change, type Version } from "./api";
   import { layout } from "./graph";
   import ChangeList from "./ChangeList.svelte";
 
@@ -92,14 +93,14 @@
           <div class="row" style:height="{ROW}px" role="button" tabindex="0" title={t("Show what this version changed")}
             onclick={() => toggle(v)} onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(v); } }}>
             <span class="msg">
-              {autoMerge(v) ? t("Combined with the team's versions") : v.message || t("(no description)")}
+              {autoMerge(v) ? t("Combined with the team's versions") : titleOf(v.message) || t("(no description)")}
               {#each v.branches as b}<span class="tag">{b}</span>{/each}
               {#if v.id === head}<span class="tag here">{t("you are here")}</span>{/if}
               {#if v.id === latest && latest !== head}<span class="tag">{t("latest")}</span>{/if}
               {#if incoming.has(v.id)}<span class="tag new">{t("new")}</span>{/if}
               {#if v.notHere}<span class="tag away" title={t("Some of its files are only in the storage of the team this project was in")}>{t("files in team storage")}</span>{/if}
             </span>
-            <span class="who">{v.author}</span>
+            <span class="who">{#if v.actor}<AgentBadge tool={v.actor.tool} model={v.actor.model} compact /> {/if}{v.author}</span>
             <span class="when faint">{ago(v.time)}</span>
             <span class="id mono faint">{v.short}</span>
             {#if ongoto || onexport || onmerge || onundo}
@@ -122,7 +123,7 @@
           </div>
           {#if open[v.id]}
             <div class="details" bind:clientHeight={extra[v.id]}>
-              {#if v.message}<p class="full">{v.message}</p>{/if}
+              {#if detailsOf(v.message)}<p class="full">{detailsOf(v.message)}</p>{/if}
               <div class="meta faint">
                 {v.author} · {new Date(v.time).toLocaleString()} · <span class="mono">{v.short}</span>
                 {#if v.parents.length > 1} · {t("merge")}{/if}

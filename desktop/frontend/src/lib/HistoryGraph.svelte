@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import { ago, type MemberLook, type Version } from "./api";
+  import { ago, titleOf, toolName, type MemberLook, type Version } from "./api";
+  import AgentBadge from "./AgentBadge.svelte";
   import { colorOf, cssColor } from "./palette";
   import Avatar from "./Avatar.svelte";
   import { branchGraph } from "./branchGraph";
@@ -17,10 +18,12 @@
   // Your changes not committed yet are a dashed dot
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
-  // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
+  // zoom, double-click the background to put it back. AI agents' branches
+  // are folded away (but the one you're on) until shown from the zoom bar;
+  // an agent's version has a spark on its dot.
+  let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
     versions: Version[];
-    branches: { name: string; latest: string; label?: string; color?: string; parent?: string }[];
+    branches: { name: string; latest: string; label?: string; color?: string; parent?: string; kind?: string }[];
     branch: string;    // the branch you are on
     head: string;      // the version you are on
     incoming: Set<string>;
@@ -37,6 +40,15 @@
     milestones?: { version: string; name: string }[]; // versions the team named
     onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
   } = $props();
+
+  // Agents' branches: folded away unless shown (the one you're on, and the
+  // version you're on, always show).
+  let showAgents = $state(false);
+  let agentKeys = $derived(new Set(allBranches.filter((b) => b.kind === "agent").map((b) => b.name)));
+  let folded = $derived(showAgents ? new Set<string>() : new Set([...agentKeys].filter((k) => k !== branch)));
+  let versions = $derived(folded.size ? allVersions.filter((v) => v.id === head || !(v.branch && folded.has(v.branch))) : allVersions);
+  let branches = $derived(folded.size ? allBranches.filter((b) => !folded.has(b.name)) : allBranches);
+  let foldable = $derived([...agentKeys].filter((k) => k !== branch).length);
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
   // them out or packs them in; the dots, lines and labels keep their size.
@@ -138,7 +150,7 @@
       const rowY = atPending ? 0 : c.empty ? g.row.get(c.tip)! + off - 0.8 : g.row.get(c.tip)! + off;
       // As wide as the name, up to LABEL_W (the settings button grows out
       // on hover: it takes no room).
-      const w = Math.min(LABEL_W, Math.ceil(textWidth(labelOf(c.name))) + 20);
+      const w = Math.min(LABEL_W, Math.ceil(textWidth(labelOf(c.name))) + 20 + (agentKeys.has(c.name) ? 14 : 0));
       const h = 24;
       const at = c.col * colW;
       const lean = c.col > 0 ? [at - w / 2, at - 14, at + 14 - w] : [at - w / 2, at + 14 - w, at - 14];
@@ -412,6 +424,10 @@
   }
 </script>
 
+{#snippet spark()}
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.4 6.6 14.5 8 9.4 9.4 8 14.5 6.6 9.4 1.5 8 6.6 6.6z" fill="currentColor" /></svg>
+{/snippet}
+
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div class="graph-col" role="listbox" tabindex="-1" aria-label={t("Versions")} bind:this={box} bind:clientWidth={fullWidth} bind:clientHeight={boxHeight} {onkeydown}
   {onpointerdown} {onpointermove} {onpointerup} onpointercancel={onpointerup} {onclick} {ondblclick} {onclickcapture}
@@ -464,7 +480,7 @@
       {/each}
       {#each labels as l (l.name + "@" + l.id)}
         <div class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})">
-          <button class="lpick" tabindex="-1" onclick={() => onselect(l.id)}><span class="bname">{labelOf(l.name)}</span></button>
+          <button class="lpick" tabindex="-1" onclick={() => onselect(l.id)}>{#if agentKeys.has(l.name)}<span class="lagent" title={t("An agent's branch")}>{@render spark()}</span>{/if}<span class="bname">{labelOf(l.name)}</span></button>
           {#if onsettings}
             <button class="lset" tabindex="-1" title={t("Branch settings")} aria-label={t("Branch settings")}
               onclick={() => onsettings(l.name)}><span aria-hidden="true">⋯</span></button>
@@ -492,14 +508,19 @@
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
-          aria-label={`${v.message || t("(no description)")}, ${v.author}, ${ago(v.time)}${flags.has(v.id) ? `, ⚑ ${flags.get(v.id)!.join(", ")}` : ""}`}
+          aria-label={`${titleOf(v.message) || t("(no description)")}, ${v.author}${v.actor ? ` (${toolName(v.actor.tool) || t("An agent")})` : ""}, ${ago(v.time)}${flags.has(v.id) ? `, ⚑ ${flags.get(v.id)!.join(", ")}` : ""}`}
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
           onclick={() => onselect(v.id)}>{#if showPic(lk)}<img src={lk!.picture} alt="" draggable="false"
-            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}</button>
+            onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}{#if v.actor}<span class="amark" data-agent={v.actor.tool}>{@render spark()}</span>{/if}</button>
       {/each}
 
     </div>
     <div class="zoombar" style:left="{width - 14}px">
+      {#if foldable}
+        {@const label = showAgents ? t("Hide agents' branches") : t("Show agents' branches")}
+        <button class="ghost agents" class:on={showAgents} aria-pressed={showAgents} onclick={() => (showAgents = !showAgents)}
+          aria-label={label} title={label}>{@render spark()}<span>{foldable}</span></button>
+      {/if}
       <button class="ghost" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out") + " (Ctrl+scroll)"}>−</button>
       <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>
       <button class="ghost" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in") + " (Ctrl+scroll)"}>+</button>
@@ -544,7 +565,7 @@
     {:else if card?.v}
       {@const v = card.v}
       <!-- svelte-ignore a11y_mouse_events_have_key_events (focusin: the same, from the keyboard) -->
-      <div class="card surface-menu" class:right={card.right} role="group" aria-label={v.message || t("(no description)")} use:portal
+      <div class="card surface-menu" class:right={card.right} role="group" aria-label={titleOf(v.message) || t("(no description)")} use:portal
         style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
         onmouseenter={() => hover(v.id)} onmouseleave={() => { previewing = ""; unhover(); }} onmouseover={cardOver} onfocusin={cardOver}>
         <span class="arrow" aria-hidden="true"></span>
@@ -556,8 +577,9 @@
             <span class="avatar" style:--c="var(--lane-{g.chainOf.get(v.id)!.color})">{initial(v.author)}</span>
           {/if}
           <div class="card-t">
-            <div class="card-msg" title={v.short}>{v.message || t("(no description)")}</div>
+            <div class="card-msg" title={v.short}>{titleOf(v.message) || t("(no description)")}</div>
             <div class="card-meta">{v.author} · {ago(v.time)}{#if card.branch} · {labelOf(card.branch)}{/if}</div>
+            {#if v.actor}<div class="card-agent"><AgentBadge tool={v.actor.tool} model={v.actor.model} /></div>{/if}
             {#if flags.has(v.id)}<div class="card-flag">⚑ {flags.get(v.id)!.join(" · ")}</div>{/if}
           </div>
         </div>
@@ -627,6 +649,17 @@
   .card-msg { font-size: var(--fs-md); font-weight: var(--fw-semibold); display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3;
     -webkit-box-orient: vertical; overflow: hidden; user-select: text; }
   .card-meta { font-size: var(--fs-xs); color: var(--faint); margin-top: var(--sp-2); }
+  .card-agent { margin-top: var(--sp-4); }
+  /* an agent's version: a small spark on its dot's corner */
+  .amark { position: absolute; right: -5px; bottom: -5px; width: 12px; height: 12px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; background: var(--info-chip); color: var(--info-text);
+    box-shadow: 0 0 0 1.5px var(--panel-2); pointer-events: none; }
+  .amark svg { position: static; width: 8px; height: 8px; }
+  .lagent { flex: none; display: inline-flex; margin-right: var(--sp-4); color: var(--c); opacity: .8; }
+  .lagent svg { position: static; width: 9px; height: 9px; }
+  .zoombar .agents { gap: var(--sp-2); margin-right: var(--sp-4); }
+  .zoombar .agents svg { width: 10px; height: 10px; }
+  .zoombar .agents.on { color: var(--info-text); background: var(--info-chip); }
   .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
   /* A milestone: a capsule at the left edge, a dashed line to its dot, a ring round the dot. */
   .mtag { position: absolute; height: 22px; transform: translateY(-50%); display: inline-flex; align-items: center;
