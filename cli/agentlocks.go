@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nonlabhq/r3v/internal/actor"
 	"io"
 	"io/fs"
 	"os"
@@ -485,7 +486,7 @@ func setupClaudeCode(root, command string) ([]string, error) {
 	if env == nil {
 		env = map[string]any{}
 	}
-	env[project.ActorEnv] = "claude-code"
+	env[actor.EnvTool] = "claude-code"
 	settings["env"] = env
 	hooks, _ := settings["hooks"].(map[string]any)
 	if hooks == nil {

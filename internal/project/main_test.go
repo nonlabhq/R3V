@@ -15,6 +15,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	os.Setenv("R3V_CONFIG_DIR", dir)
+	os.Setenv("R3V_ACTOR", "none") // run by an agent or not (CLAUDECODE), the same results
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)

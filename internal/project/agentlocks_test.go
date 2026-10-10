@@ -2,6 +2,7 @@ package project
 
 import (
 	"errors"
+	"github.com/nonlabhq/r3v/internal/actor"
 	"os"
 	"path/filepath"
 	"testing"
@@ -60,7 +61,7 @@ func TestAgentCommitRefused(t *testing.T) {
 	os.WriteFile(filepath.Join(r.Root, "tex", "rock.png"), []byte("rock 2"), 0o644)
 	os.WriteFile(filepath.Join(r.Root, "models", "ship.glb"), []byte("ship 2"), 0o644)
 
-	t.Setenv(ActorEnv, "claude-code")
+	t.Setenv(actor.EnvTool, "claude-code")
 	head := r.Head()
 	_, err := r.Snapshot("an agent's")
 	var locked *ErrLockedByAgent
@@ -72,13 +73,13 @@ func TestAgentCommitRefused(t *testing.T) {
 	}
 
 	// The person's commit is never refused.
-	t.Setenv(ActorEnv, "")
+	t.Setenv(actor.EnvTool, actor.None)
 	if _, err := r.Snapshot("the person's"); err != nil {
 		t.Fatalf("a person's commit: %v", err)
 	}
 
 	// An agent's commit of files no one holds takes them.
-	t.Setenv(ActorEnv, "claude-code")
+	t.Setenv(actor.EnvTool, "claude-code")
 	os.WriteFile(filepath.Join(r.Root, "models", "ship.glb"), []byte("ship 3"), 0o644)
 	os.WriteFile(filepath.Join(r.Root, "notes.txt"), []byte("notes 2"), 0o644)
 	if _, err := r.Snapshot("an agent's"); err != nil {
@@ -112,7 +113,7 @@ func TestPersonHolds(t *testing.T) {
 	mainCopy = func(*Repo) string { return person }
 	t.Cleanup(func() { mainCopy = was })
 
-	t.Setenv(ActorEnv, "claude-code")
+	t.Setenv(actor.EnvTool, "claude-code")
 	if _, err := agent.TakeAgentLocks([]string{"tex/rock.png"}, agentlock.KindLock, "s"); err != nil {
 		t.Fatalf("the person changed nothing: %v", err)
 	}
@@ -160,9 +161,9 @@ func TestPersonHolds(t *testing.T) {
 	}
 
 	// Their commit settles it.
-	t.Setenv(ActorEnv, "")
+	t.Setenv(actor.EnvTool, actor.None)
 	mustSnapshot(t, pr, "the person's")
-	t.Setenv(ActorEnv, "claude-code")
+	t.Setenv(actor.EnvTool, "claude-code")
 	if _, err := agent.TakeAgentLocks([]string{"tex/"}, agentlock.KindLock, "s"); err != nil {
 		t.Fatalf("committed: no longer held: %v", err)
 	}

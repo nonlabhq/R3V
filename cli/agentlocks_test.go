@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/nonlabhq/r3v/internal/actor"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,7 +76,7 @@ func hookCall(tool, path, cwd string) string {
 func TestHookPreTool(t *testing.T) {
 	withAgentLocks(t)
 	dir, r := agentFolder(t)
-	t.Setenv(project.ActorEnv, "claude-code")
+	t.Setenv(actor.EnvTool, "claude-code")
 	if _, err := r.AgentLockList().Take(otherWS, []string{"tex/rock.png"}, agentlock.KindLock, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +136,7 @@ func TestHookPreTool(t *testing.T) {
 func TestLockCommands(t *testing.T) {
 	withAgentLocks(t)
 	dir, r := agentFolder(t)
-	t.Setenv(project.ActorEnv, "claude-code")
+	t.Setenv(actor.EnvTool, "claude-code")
 	r.AgentLockList().Take(otherWS, []string{"tex/rock.png"}, agentlock.KindLock, nil)
 
 	// All or none.
@@ -198,7 +199,7 @@ func TestLockCommands(t *testing.T) {
 	if exit != 1 || rep.Error.Code != "files_locked_by_agent" || rep.Error.Locks[0].Path != "tex/" {
 		t.Fatalf("commit: %+v", rep.Error)
 	}
-	t.Setenv(project.ActorEnv, "")
+	t.Setenv(actor.EnvTool, actor.None)
 	if exit, rep := run(t, dir, "commit", "--local", "-m", "person"); exit != 0 {
 		t.Fatalf("a person's commit: %+v", rep.Error)
 	}
