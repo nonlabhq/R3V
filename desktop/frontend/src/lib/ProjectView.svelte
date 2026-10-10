@@ -89,6 +89,8 @@
   let conflicts = $state<{ result: Result; run: Action; force: boolean } | null>(null);
   let liveBlocked = $state<{ run: Action; resolutions: Record<string, string>; set: string } | null>(null);
   let newBranch = $state<string | null>(null);
+  let branchSwitch = $state(true); // go on with the new branch (most do: it's why they made it)
+  $effect(() => { if (newBranch === null) branchSwitch = true; }); // (asked anew each time)
   // What a branch is called (its key where the team keeps no names).
   const bl = (key: string) => branchLabel(st?.branches, key);
   let branchSettings = $state<string | null>(null); // a branch's key: its settings open
@@ -817,7 +819,8 @@
     if (!name) return;
     busy = "branch";
     try {
-      await api.CreateBranch(root, name, freeColor(st?.branches ?? []));
+      const go = branchSwitch || !!branchThenCommit;
+      await api.CreateBranch(root, name, freeColor(st?.branches ?? []), go);
       newBranch = null;
       const msg = branchThenCommit;
       branchThenCommit = "";
@@ -827,7 +830,8 @@
           toast(t("Your work is on the new branch “{branch}”; “{base}” is unchanged. Merge it when you're ready.", { branch: name, base: bl(st?.branch ?? "") }), "info", 9000); } });
         return;
       }
-      toast(t("Created “{branch}”. Versions you save now go there.", { branch: name }), "ok");
+      toast(go ? t("Created “{branch}”. Versions you save now go there.", { branch: name })
+        : t("Created “{branch}”. You're still on “{base}”.", { branch: name, base: bl(st?.branch ?? "") }), "ok");
       await load();
       onchanged();
     } catch (e) {
@@ -975,11 +979,22 @@
                 <button class="danger-act" onclick={() => (undoing = v)}><ActionIcon name="undo" />{t("Undo this commit")}</button>
               {/if}
             {/snippet}
+            {#snippet parkedActions(key: string)}
+              {@const p = (st!.parked ?? []).find((x) => parkKey(x) === key)}
+              {#if p}
+                {#if !isHere(p) && st!.branches.some((b) => b.name === p.branch)}
+                  <button onclick={() => returnTo(p)}><ActionIcon name="goto" />{t("Go to parked changes")}</button>
+                {/if}
+                <button onclick={() => bringHere(p)}><ActionIcon name="merge" />{t("Bring changes here")}</button>
+                <button class="danger-act" onclick={() => (discardingParked = p)}>{t("Discard")}</button>
+              {/if}
+            {/snippet}
             <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
-              parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since }))}
+              parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since, where: placeOf(p) }))}
+              {parkedActions}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
           {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
@@ -1165,7 +1180,11 @@
     <PromptDialog title={t("New branch")} label={t("Branch name")} placeholder={st.branchNames ? t("Chorus idea") : "chorus-idea"} confirm={t("Create")}
       text={t("A branch is your own line of versions (e.g. to try an idea). The team keeps working on “{branch}”; merge back when you're happy.", { branch: bl(st.branch) })}
       bind:value={() => newBranch ?? "", (v) => (newBranch = v)} busy={busy === "branch"}
-      onconfirm={createBranch} onclose={() => (newBranch = null)} />
+      onconfirm={createBranch} onclose={() => (newBranch = null)}>
+      {#if !branchThenCommit}
+        <label class="check"><input type="checkbox" bind:checked={branchSwitch} />{t("Switch to it now")}</label>
+      {/if}
+    </PromptDialog>
   {/if}
 
   {#if milestone}
@@ -1178,6 +1197,7 @@
 {/if}
 
 <style>
+  label.check { display: flex; align-items: center; gap: var(--sp-8); margin-top: var(--sp-12); color: var(--text); font-size: var(--fs-base); }
   .view { display: flex; flex-direction: column; height: 100%; }
   .pad { padding: var(--sp-24); }
   /* Same place as the loaded header's title, so nothing jumps. */

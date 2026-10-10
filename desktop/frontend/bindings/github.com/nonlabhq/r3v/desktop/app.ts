@@ -428,10 +428,10 @@ export function CopyIntoProject(root: string, dir: string, sources: string[]): $
 /**
  * CreateBranch starts a branch called name (any text where the team keeps
  * branch records) with color (a palette number, "" for the app's pick), and
- * switches to it. It returns the branch's key.
+ * switches to it when switchTo is set. It returns the branch's key.
  */
-export function CreateBranch(root: string, name: string, color: string): $CancellablePromise<string> {
-    return $Call.ByID(779167049, root, name, color);
+export function CreateBranch(root: string, name: string, color: string, switchTo: boolean): $CancellablePromise<string> {
+    return $Call.ByID(779167049, root, name, color, switchTo);
 }
 
 /**

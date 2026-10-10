@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -149,4 +150,20 @@ func TestMergeVersionFromTheMiddleOfABranch(t *testing.T) {
 		t.Fatalf("branches: %+v", heads)
 	}
 	assertClean(t, b)
+}
+
+// A branch made without switching to it: the project stays where it was.
+func TestNewBranchStaying(t *testing.T) {
+	a, _ := team(t)
+	key, err := a.NewBranch("later", "", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.BranchName() != "main" {
+		t.Fatalf("on %q, want main", a.BranchName())
+	}
+	bs, err := a.Branches()
+	if err != nil || !slices.ContainsFunc(bs, func(b BranchInfo) bool { return b.Name == key }) {
+		t.Fatalf("branches: %v %+v", err, bs)
+	}
 }

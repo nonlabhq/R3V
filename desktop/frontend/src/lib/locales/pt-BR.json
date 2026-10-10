@@ -1568,5 +1568,8 @@
 "Discard {n} parked change?": "Descartar {n} alteração estacionada?",
 "Discard {n} parked changes?": "Descartar {n} alterações estacionadas?",
 "The changes parked on {place} will be lost. This can't be undone.": "As alterações estacionadas em {place} serão perdidas. Isso não pode ser desfeito.",
-"Merge into current branch": "Mesclar no branch atual"
+"Merge into current branch": "Mesclar no branch atual",
+"Created “{branch}”. You're still on “{base}”.": "“{branch}” criado. Você continua em “{base}”.",
+"Go to parked changes": "Ir para as alterações estacionadas",
+"Switch to it now": "Mudar agora"
 }

@@ -1568,5 +1568,8 @@
 "Discard {n} parked change?": "捨棄 {n} 項暫放的變更？",
 "Discard {n} parked changes?": "捨棄 {n} 項暫放的變更？",
 "The changes parked on {place} will be lost. This can't be undone.": "暫放在 {place} 的變更將會遺失，且無法復原。",
-"Merge into current branch": "合併到目前的 Branch"
+"Merge into current branch": "合併到目前的 Branch",
+"Created “{branch}”. You're still on “{base}”.": "已建立「{branch}」。你仍在「{base}」上。",
+"Go to parked changes": "前往暫放的變更",
+"Switch to it now": "立即切換"
 }

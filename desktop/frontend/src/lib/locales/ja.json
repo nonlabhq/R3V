@@ -1568,5 +1568,8 @@
 "Discard {n} parked change?": "保留中の変更 {n} 件を破棄しますか？",
 "Discard {n} parked changes?": "保留中の変更 {n} 件を破棄しますか？",
 "The changes parked on {place} will be lost. This can't be undone.": "{place} に保留中の変更は失われます。元に戻せません。",
-"Merge into current branch": "現在のブランチにマージ"
+"Merge into current branch": "現在のブランチにマージ",
+"Created “{branch}”. You're still on “{base}”.": "「{branch}」を作成しました。「{base}」のままです。",
+"Go to parked changes": "保留中の変更へ移動",
+"Switch to it now": "すぐに切り替える"
 }

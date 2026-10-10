@@ -341,7 +341,17 @@ describe("ProjectView: the team", () => {
     await fireEvent.click(screen.getByRole("button", { name: "New branch from here…" }));
     await fireEvent.input(screen.getByLabelText("Branch name"), { target: { value: "yi-idea" } });
     await fireEvent.click(screen.getByRole("button", { name: "Create" }));
-    await waitFor(() => expect(api.CreateBranch).toHaveBeenCalledWith(ROOT, "yi-idea", "b1")); // the palette's first colour no branch has
+    await waitFor(() => expect(api.CreateBranch).toHaveBeenCalledWith(ROOT, "yi-idea", "b1", true)); // the palette's first colour no branch has
+  });
+
+  it("makes a new branch without switching to it, when asked", async () => {
+    await show();
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(screen.getByRole("button", { name: "New branch from here…" }));
+    await fireEvent.input(screen.getByLabelText("Branch name"), { target: { value: "later" } });
+    await fireEvent.click(screen.getByLabelText("Switch to it now"));
+    await fireEvent.click(screen.getByRole("button", { name: "Create" }));
+    await waitFor(() => expect(api.CreateBranch).toHaveBeenCalledWith(ROOT, "later", "b1", false));
   });
 });
 
@@ -381,7 +391,7 @@ describe("ProjectView: versions", () => {
     await show({ parking: true, parked: [{ branch: "main", at: "", base: "h0", version: "p1", files: 2, bytes: 0, since: "" }],
       history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     api.VersionFiles.mockResolvedValue([]);
-    await fireEvent.click(screen.getByRole("button", { name: /Parked · 2/ }));
+    await fireEvent.click(screen.getByRole("button", { name: "2 parked changes" }));
     await waitFor(() => expect(api.VersionFiles).toHaveBeenCalledWith(ROOT, "p1"));
     await fireEvent.click(screen.getByRole("button", { name: "Discard" }));
     await fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Discard" }));
