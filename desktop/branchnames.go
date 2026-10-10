@@ -53,14 +53,14 @@ func keepsBranchRecords(r *project.Repo) bool {
 
 // CreateBranch starts a branch called name (any text where the team keeps
 // branch records) with color (a palette number, "" for the app's pick), and
-// switches to it. It returns the branch's key.
-func (a *App) CreateBranch(root, name, color string) (string, error) {
+// switches to it when switchTo is set. It returns the branch's key.
+func (a *App) CreateBranch(root, name, color string, switchTo bool) (string, error) {
 	r, unlock, err := a.open(root)
 	if err != nil {
 		return "", err
 	}
 	defer unlock()
-	key, err := r.CreateBranchNamed(strings.TrimSpace(name), color)
+	key, err := r.NewBranch(strings.TrimSpace(name), color, switchTo)
 	if err == nil {
 		branchRecords(r, true)
 	}

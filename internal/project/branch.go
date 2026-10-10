@@ -78,7 +78,11 @@ func (r *Repo) shared(c remote.Backend) (bool, error) {
 }
 
 // CreateBranch starts a branch at the current version and switches to it.
-func (r *Repo) CreateBranch(name string) error {
+func (r *Repo) CreateBranch(name string) error { return r.createBranch(name, true) }
+
+// createBranch starts a branch at the current version; switchTo: the
+// project goes on with it (else it stays where it is).
+func (r *Repo) createBranch(name string, switchTo bool) error {
 	c, err := r.Client()
 	if err != nil {
 		return err
@@ -92,6 +96,9 @@ func (r *Repo) CreateBranch(name string) error {
 			return fmt.Errorf("branch %q already exists", name)
 		}
 		return err
+	}
+	if !switchTo {
+		return nil
 	}
 	r.Config.Branch = name
 	r.Config.Tip = "" // a branch started from an older version continues from there

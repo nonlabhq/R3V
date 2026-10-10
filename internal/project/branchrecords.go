@@ -48,13 +48,19 @@ func branchLabel(recs map[string]remote.BranchRecord, key string) string {
 // switches to it. It returns the branch's key. On a team that keeps no
 // records, name is the key (CreateBranch).
 func (r *Repo) CreateBranchNamed(name, color string) (string, error) {
+	return r.NewBranch(name, color, true)
+}
+
+// NewBranch is CreateBranchNamed, the project going on with the branch only
+// when switchTo is set (else it stays where it is).
+func (r *Repo) NewBranch(name, color string, switchTo bool) (string, error) {
 	c, err := r.Client()
 	if err != nil {
 		return "", err
 	}
 	store, ok := remote.BranchRecordsOf(c)
 	if !ok {
-		return name, r.CreateBranch(name)
+		return name, r.createBranch(name, switchTo)
 	}
 	if r.Head() == "" {
 		return "", errors.New("save a first version before creating branches")
@@ -82,7 +88,7 @@ func (r *Repo) CreateBranchNamed(name, color string) (string, error) {
 	if err := store.PutBranchRecord(pid, key, remote.BranchRecord{Name: name, Color: color}); err != nil {
 		return "", err
 	}
-	return key, r.CreateBranch(key)
+	return key, r.createBranch(key, switchTo)
 }
 
 // SetBranchRecord renames branch key and sets its colour, for the whole

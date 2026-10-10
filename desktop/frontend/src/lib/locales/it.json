@@ -1568,5 +1568,8 @@
 "Discard {n} parked change?": "Scartare {n} modifica parcheggiata?",
 "Discard {n} parked changes?": "Scartare {n} modifiche parcheggiate?",
 "The changes parked on {place} will be lost. This can't be undone.": "Le modifiche parcheggiate su {place} andranno perse. Non si può annullare.",
-"Merge into current branch": "Unisci nel branch attuale"
+"Merge into current branch": "Unisci nel branch attuale",
+"Created “{branch}”. You're still on “{base}”.": "Creato “{branch}”. Sei ancora su “{base}”.",
+"Go to parked changes": "Vai alle modifiche parcheggiate",
+"Switch to it now": "Passaci subito"
 }

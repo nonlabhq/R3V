@@ -18,7 +18,7 @@
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back.
-  let { versions, branches, branch, head, incoming, pending, parked = [], selected, onselect, actions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
+  let { versions, branches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string }[];
     branch: string;    // the branch you are on
@@ -26,10 +26,11 @@
     incoming: Set<string>;
     pending: number;   // files changed and not committed (0: no dot for them)
     // Changes parked elsewhere (Nightly): a dashed tag beside the version they were made on.
-    parked?: { key: string; base: string; files: number; since: string }[];
+    parked?: { key: string; base: string; files: number; since: string; where: string }[];
     selected: string;  // a version id, or "pending"
     onselect: (id: string) => void;
     actions?: Snippet<[Version]>; // the hover card's buttons for a version
+    parkedActions?: Snippet<[string]>; // ...for parked changes (by key)
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
@@ -81,6 +82,8 @@
     const c = g.chainOf.get(p.base)!;
     return { ...p, col: c.col, color: c.color, side: c.col < 0 ? -1 : 1 };
   }));
+  const parkX = (p: { col: number; side: number }) => x(p.col) + p.side * colW * 0.6;
+  const parkY = (p: { base: string }) => y(p.base) - rowH * 0.5;
   // Branches merged into another: quieter.
   let merged = $derived(new Set(g.edges.filter((e) => e.kind === "merge").map((e) => g.chainOf.get(e.to)!)));
 
@@ -239,19 +242,23 @@
   const ghostPath = (a: { x: number; y: number }, b: { x: number; y: number }) => a.x === b.x
     ? `M ${a.x} ${a.y} L ${b.x} ${b.y}` : `M ${a.x} ${a.y} C ${a.x} ${(a.y + b.y) / 2}, ${b.x} ${(a.y + b.y) / 2}, ${b.x} ${b.y}`;
   let card = $derived.by(() => {
-    const v = hovered ? byID.get(hovered) : undefined;
-    if (!v) return null;
-    const c = g.chainOf.get(v.id)!;
+    if (!hovered) return null;
+    // (parked changes: their dot, beside their version)
+    const park = parks.find((p) => p.key === hovered) ?? null;
+    const v = park ? null : byID.get(hovered) ?? null;
+    if (!park && !v) return null;
+    const c = park ? { col: park.col, name: "" } : g.chainOf.get(v!.id)!;
+    const ax = park ? parkX(park) : x(c.col), ay = park ? parkY(park) : y(v!.id);
     // To the left of the dot, centred on it: the pointer can go up and down
     // the versions without the card in the way. No room on the left (the
     // window's edge): to its right, never over the dot. The little arrow
     // points at the dot. (In the window: over the sidebar if it comes to that.)
-    const nx = origin.left + panX + x(c.col), ny = origin.top + panY + y(v.id), gap = 22;
+    const nx = origin.left + panX + ax, ny = origin.top + panY + ay, gap = 22;
     const vh = typeof window === "undefined" ? 800 : window.innerHeight;
     const right = nx - gap - CARD_W < 8;
     const left = right ? nx + gap : nx - gap - CARD_W;
     const top = Math.min(Math.max(8, ny - cardHeight / 2), Math.max(8, vh - 8 - cardHeight));
-    return { v, branch: c.name, left, top, right, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
+    return { v, park, branch: c.name, left, top, right, arrow: Math.min(Math.max(14, ny - top), cardHeight - 14) };
   });
 
   // At first (and on double-click): main in the middle, a short history in
@@ -425,8 +432,8 @@
             opacity={!c.name ? 0.55 : merged.has(c) ? 0.75 : 1} />
         {/each}
         {#each parks as p (p.key)}
-          <path d="M {x(p.col)} {y(p.base)} Q {x(p.col) + p.side * 22} {y(p.base) - rowH * 0.45}, {x(p.col) + p.side * 34} {y(p.base) - rowH * 0.45}"
-            stroke="var(--lane-{p.color})" stroke-width="1.5" stroke-dasharray="3 3" fill="none" />
+          <path d="M {x(p.col)} {y(p.base)} C {x(p.col)} {parkY(p) + rowH * 0.25}, {parkX(p)} {parkY(p) + rowH * 0.25}, {parkX(p)} {parkY(p)}"
+            stroke="var(--lane-{p.color})" stroke-width="2" stroke-dasharray="3 4" fill="none" />
         {/each}
         {#if pending && headChain}
           <path d={pendingPath()} stroke="var(--lane-{headChain.color})" stroke-width="2" stroke-dasharray="3 4" fill="none" />
@@ -472,15 +479,16 @@
           onclick={() => onselect("pending")}>+</button>
       {/if}
       {#each parks as p (p.key)}
-        <button class="park" class:on={selected === p.key} class:left={p.side < 0} data-id={p.key}
-          style:left="{x(p.col) + p.side * 34}px" style:top="{y(p.base) - rowH * 0.45}px" style:--c="var(--lane-{p.color})"
-          title={`${tn(p.files, "{n} parked change", "{n} parked changes")} · ${ago(p.since)}`} onclick={() => onselect(p.key)}>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4v8M10 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>{t("Parked")} · {p.files}</button>
+        <button class="node pending" class:on={selected === p.key} data-id={p.key}
+          style:left="{parkX(p)}px" style:top="{parkY(p)}px" style:--c="var(--lane-{p.color})"
+          aria-label={tn(p.files, "{n} parked change", "{n} parked changes")}
+          onmouseenter={() => hover(p.key)} onmouseleave={unhover} onfocus={() => hover(p.key)}
+          onclick={() => onselect(p.key)}>P</button>
       {/each}
       {#each versions as v (v.id)}
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
-        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v.id === v.id)} class:incoming={incoming.has(v.id)}
+        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v?.id === v.id)} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
@@ -518,7 +526,22 @@
           stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 4" fill="none" />
       </svg>
     {/if}
-    {#if card}
+    {#if card?.park}
+      {@const p = card.park}
+      <div class="card surface-menu" class:right={card.right} role="group" aria-label={tn(p.files, "{n} parked change", "{n} parked changes")} use:portal
+        style:left="{card.left}px" style:top="{card.top}px" style:width="{CARD_W}px" style:--ay="{card.arrow}px"
+        onmouseenter={() => hover(p.key)} onmouseleave={unhover}>
+        <span class="arrow" aria-hidden="true"></span>
+        <div class="card-h" bind:clientHeight={headHeight}>
+          <span class="avatar pmark" style:--c="var(--lane-{p.color})">P</span>
+          <div class="card-t">
+            <div class="card-msg">{tn(p.files, "{n} parked change", "{n} parked changes")}</div>
+            <div class="card-meta">{p.where} · {ago(p.since)}</div>
+          </div>
+        </div>
+        {#if parkedActions}<div class="acts-fold"><div class="card-acts">{@render parkedActions(p.key)}</div></div>{/if}
+      </div>
+    {:else if card?.v}
       {@const v = card.v}
       <!-- svelte-ignore a11y_mouse_events_have_key_events (focusin: the same, from the keyboard) -->
       <div class="card surface-menu" class:right={card.right} role="group" aria-label={v.message || t("(no description)")} use:portal
@@ -587,17 +610,10 @@
   .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-  /* parked changes: a dashed tag, not a version */
   /* a card's button previewed: what it would make, faint */
   .would { opacity: .5; pointer-events: none; }
   .would text { font-size: var(--fs-xs); font-weight: var(--fw-semibold); }
-  .park { position: absolute; display: inline-flex; align-items: center; gap: var(--sp-4); height: 20px; padding: 0 var(--sp-8) 0 var(--sp-6);
-    transform: translateY(-50%); border: 1.5px dashed var(--c); border-radius: var(--radius-pill); background: var(--panel);
-    color: var(--c); font-size: var(--fs-xs); font-weight: var(--fw-semibold); white-space: nowrap; }
-  .park.left { transform: translate(-100%, -50%); }
-  .park svg { width: 10px; height: 10px; }
-  .park:hover:not(:disabled) { background: var(--hover); border-color: var(--c); }
-  .park.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
+  .avatar.pmark { border-style: dashed; color: var(--c); background: var(--panel); } /* parked changes: as your changes are drawn */
   .card { position: fixed; z-index: var(--z-menu); padding: var(--sp-10) var(--sp-12); border: var(--border-width) solid var(--line);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .arrow { position: absolute; right: -6px; top: var(--ay); width: 10px; height: 10px; margin-top: -5px;
