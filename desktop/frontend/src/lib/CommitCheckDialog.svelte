@@ -20,7 +20,7 @@
 <Modal title={warnings.length || restorable ? t("Before you commit") : t("No longer tracked")} {onclose}>
   {#if restorable}
     <p class="restore-note">⚠ {tn(missingSamples, "{n} sample is missing.", "{n} samples are missing.")}
-      {tn(restorable, "R3V has a copy: restore it into the project first, so the team hears the same.", "R3V has copies of {n}: restore them into the project first, so the team hears the same.")}</p>
+      {tn(restorable, "R3V has a copy: recover it into the project first, so the team hears the same.", "R3V has copies of {n}: recover them into the project first, so the team hears the same.")}</p>
   {/if}
   {#if warnings.length}
     <ul class="warnings">
@@ -40,7 +40,7 @@
     <button onclick={onclose}>{t("Cancel")}</button>
     {#if restorable}
       <button onclick={oncommit}>{t("Commit without them")}</button>
-      <button class="primary" onclick={onrestore}>{t("Restore and commit")}</button>
+      <button class="primary" onclick={onrestore}>{t("Recover and commit")}</button>
     {:else}
       <button class="primary" onclick={oncommit}>{warnings.length ? t("Commit anyway") : t("Commit")}</button>
     {/if}

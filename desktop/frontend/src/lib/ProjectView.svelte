@@ -226,7 +226,7 @@
     done: (r) => {
       restored = true;
       const n = Number(r.log[0] ?? 0);
-      toast(tn(n, "Restored {n} sample into the project: commit to share it", "Restored {n} samples into the project: commit to share them") + reopen(), "ok", 9000);
+      toast(tn(n, "Recovered {n} sample into the project: commit to share it", "Recovered {n} samples into the project: commit to share them") + reopen(), "ok", 9000);
     },
   };
   async function restoreSamples(thenCommit = false) {
@@ -840,7 +840,7 @@
           toast(t("Your work is on the new branch “{branch}”; “{base}” is unchanged. Merge it when you're ready.", { branch: name, base: bl(st?.branch ?? "") }), "info", 9000); } });
         return;
       }
-      toast(go ? t("Created “{branch}”. Versions you save now go there.", { branch: name })
+      toast(go ? t("Created “{branch}”. Versions you commit now go there.", { branch: name })
         : t("Created “{branch}”. You're still on “{base}”.", { branch: name, base: bl(st?.branch ?? "") }), "ok");
       await load();
       onchanged();

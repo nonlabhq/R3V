@@ -219,7 +219,7 @@
       {tn(restorable, "R3V has a copy.", "R3V has copies of {n}.")}</div>
     <button class="ghost" onclick={() => (spotsDismissed = restorable)} disabled={!!busy}>{t("Later")}</button>
     <button class="primary" onclick={onrestore} disabled={!!busy}
-      title={t("Copies them into Samples/Imported and points the sets there")}>{t("Restore from R3V")}</button>
+      title={t("Copies them into Samples/Imported and points the sets there")}>{t("Recover from R3V")}</button>
   </div>
 {/if}
 

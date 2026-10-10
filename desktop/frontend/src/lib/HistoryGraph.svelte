@@ -514,7 +514,7 @@
     {#if backTo}
       <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
         {#if backTo === "pending"}
-          <button class="primary back" onclick={goBack}>{t("View pending changes")}</button>
+          <button class="primary back" onclick={goBack}>{t("View your changes")}</button>
         {:else}
           <button class="back light" onclick={goBack}>{t("View current version")}</button>
         {/if}
