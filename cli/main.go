@@ -168,6 +168,8 @@ func Run(args []string) int {
 			"display": version.Display()}, func() { fmt.Println("r3v " + version.Display()) })
 	case "path":
 		err = cmdPath(rest)
+	case "hook": // agent tools' hooks (agentlocks.go); not in the usage
+		err = cmdHook(rest)
 	default:
 		if f, ok := extraCommands[command]; ok {
 			err = f(rest)

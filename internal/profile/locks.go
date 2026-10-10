@@ -37,7 +37,7 @@ var LockKinds = []LockKind{
 	{"blender", []string{"*.blend"}, true},
 	{"source-art", []string{"*.psd", "*.psb", "*.kra", "*.spp", "*.ma", "*.mb", "*.max", "*.c4d"}, true},
 	{"godot-text", []string{"*.tscn", "*.tres"}, false},
-	{"images", []string{"*.png", "*.jpg", "*.jpeg", "*.tga", "*.tif", "*.tiff", "*.exr"}, false},
+	{"images", []string{"*.png", "*.jpg", "*.jpeg", "*.tga", "*.tif", "*.tiff", "*.exr", "*.hdr"}, false},
 	{"models", []string{"*.fbx", "*.obj", "*.gltf", "*.glb", "*.usd", "*.usdc", "*.abc"}, false},
 	{"audio", []string{"*.wav", "*.aif", "*.aiff", "*.flac", "*.mp3", "*.ogg"}, false},
 	{"video", []string{"*.mp4", "*.mov", "*.mkv", "*.avi"}, false},
@@ -48,6 +48,20 @@ func DefaultLockKinds() []string {
 	var out []string
 	for _, k := range LockKinds {
 		if k.Default {
+			out = append(out, k.ID)
+		}
+	}
+	return out
+}
+
+// AgentLockKinds are the kinds that lock between the agents of one
+// computer (docs/design/agent-workspaces.md) when the team has no lock
+// settings of its own: every kind that can't be merged. Godot's text
+// scenes merge as text, as code does.
+func AgentLockKinds() []string {
+	var out []string
+	for _, k := range LockKinds {
+		if k.ID != "godot-text" {
 			out = append(out, k.ID)
 		}
 	}

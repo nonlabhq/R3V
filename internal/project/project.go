@@ -90,6 +90,8 @@ type Repo struct {
 	pinned  map[string]string // contents a step keeps outside the store (see pin)
 	prof    *profile.Profile  // the project's rules (Profile)
 	profErr error
+	// agentLocking: what locks between workspaces (AgentLocking), once read.
+	agentLocking *profile.Locking
 }
 
 // ErrNotRepo is returned when no .r3v directory is found.

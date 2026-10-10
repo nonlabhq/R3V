@@ -191,7 +191,11 @@ func (r *Repo) MergeBranch(name, message string, opts MergeOptions) (*SyncResult
 	if message == "" {
 		message = "Merge branch " + r.BranchLabel(name)
 	}
-	return r.mergeVersion(c, target, message, opts)
+	res, err := r.mergeVersion(c, target, message, opts)
+	if err == nil {
+		r.releaseMergedLocks(name)
+	}
+	return res, err
 }
 
 // MergeVersion merges any version (e.g. one on another branch, not only its
