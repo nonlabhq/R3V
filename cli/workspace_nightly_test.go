@@ -92,3 +92,49 @@ func TestWorkspaceCommands(t *testing.T) {
 		t.Errorf("the folder is still there: %v", err)
 	}
 }
+
+// A workspace made for an agent: its branch is an agent's, the agent's tool
+// is set up in it; removed once merged, its branch is archived.
+func TestWorkspaceForAnAgent(t *testing.T) {
+	a := teamProject(t)
+	ws := filepath.Join(t.TempDir(), "renderer")
+	exit, rep := run(t, a, "workspace", "add", ws, "--branch", "renderer", "--agent", "claude-code")
+	if exit != 0 {
+		t.Fatalf("add: %+v", rep.Error)
+	}
+	if _, err := os.Stat(filepath.Join(ws, ".claude", "settings.local.json")); err != nil {
+		t.Fatalf("not set up: %v", err)
+	}
+	r, _ := project.Open(a)
+	recs, _ := r.BranchRecords()
+	if recs["renderer"].Kind != remote.BranchAgent {
+		t.Fatalf("branch record: %+v", recs["renderer"])
+	}
+	if exit, rep := run(t, a, "workspace", "remove", ws); exit != 0 {
+		t.Fatalf("remove: %+v", rep.Error)
+	}
+	if gone, _ := r.ArchivedBranches(); len(gone) != 1 || gone[0].Key != "renderer" {
+		t.Fatalf("archived: %+v", gone)
+	}
+}
+
+// teamProject is a project committed and shared on a team's storage.
+func teamProject(t *testing.T) string {
+	t.Helper()
+	fake := s3test.New("team")
+	t.Cleanup(fake.Close)
+	code := remote.EncodeConnectionCode(remote.Config{URL: "s3+" + fake.URL + "/team/r3v",
+		AccessKey: "key", SecretKey: "secret"})
+	a := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "src/main.ts": "export {};\n"})
+	ra, err := project.Init(a, "yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ra.SetRemote(code); err != nil {
+		t.Fatal(err)
+	}
+	if exit, rep := run(t, a, "commit", "-m", "first"); exit != 0 {
+		t.Fatalf("commit: %+v", rep.Error)
+	}
+	return a
+}

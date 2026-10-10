@@ -34,13 +34,14 @@ func workspaceOf(e project.WorkspaceEntry) workspaceJSON {
 }
 
 func cmdWorkspace(args []string) error {
-	usage := errors.New("usage: r3v workspace add <folder> --branch NAME [--from BRANCH|VERSION] | list | remove <folder> [--force]")
+	usage := errors.New("usage: r3v workspace add <folder> --branch NAME [--from BRANCH|VERSION] [--agent claude-code] | list | remove <folder> [--force]")
 	if len(args) == 0 {
 		return usage
 	}
 	fs := flag.NewFlagSet("workspace", flag.ContinueOnError)
 	branch := fs.String("branch", "", "the name of the workspace's branch (made for it)")
 	from := fs.String("from", "", "a branch or version to start from (default: where this copy is)")
+	agent := fs.String("agent", "", "set it up for an agent tool (claude-code): its hook and R3V_ACTOR")
 	force := fs.Bool("force", false, "remove even with work not merged or not committed (it is lost)")
 	pos, err := parseArgs(fs, args[1:])
 	if err != nil {
@@ -55,15 +56,26 @@ func cmdWorkspace(args []string) error {
 		if len(pos) != 1 || *branch == "" {
 			return usage
 		}
+		if *agent != "" && *agent != "claude-code" {
+			return usageError("agent tools set up for now: claude-code")
+		}
 		e, err := r.AddWorkspace(pos[0], project.WorkspaceOptions{Branch: *branch, From: *from})
 		if err != nil {
 			return err
+		}
+		if *agent != "" { // (the workspace is made: set up, or said why not)
+			if _, err := setupClaudeCode(e.Folder, hookCommand(), false); err != nil {
+				return fmt.Errorf("the workspace is made, but setting %s up failed: %w (run r3v agent setup there)", *agent, err)
+			}
 		}
 		out := workspaceOf(*e)
 		out.BranchName = r.BranchLabel(e.Branch)
 		result("workspace", map[string]any{"workspace": out}, func() {
 			fmt.Printf("workspace %s on branch %s (from %s)\n", e.Folder, out.BranchName, r.BranchLabel(e.Base))
 			fmt.Println("  what the rules leave out (node_modules/, target/) isn't there: build it there")
+			if *agent != "" {
+				fmt.Printf("  set up for %s (its hook and R3V_ACTOR, in .claude/settings.local.json)\n", *agent)
+			}
 		})
 	case "list":
 		if len(pos) != 0 {

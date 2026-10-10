@@ -47,7 +47,7 @@ func cmdBranch(args []string) error {
 			what = "agent branch"
 		}
 		fmt.Printf("created %s %q from your current version and switched to it\n", what, name)
-		fmt.Printf("versions you save now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
+		fmt.Printf("versions you commit now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
 		return nil
 	}
 	// archivedKey finds an archived branch by its key or its name.

@@ -216,7 +216,8 @@ way, no format change). The app shows the title, the details unfolded;
 `r3v agent setup [--tool claude-code]` in a workspace: writes the hooks
 (`PreToolUse` → `r3v hook pre-tool`, reading the tool call and answering
 allow or deny), `R3V_ACTOR`, and the agents' guide where the tool reads
-them (`.claude/settings.json`, `CLAUDE.md`); run by `workspace add
+them (`.claude/settings.local.json`, this copy's and never tracked;
+`CLAUDE.md` in the main copy, committed); run by `workspace add
 --agent claude-code`.
 
 ## Stopping half-way

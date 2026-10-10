@@ -312,7 +312,13 @@ func (r *Repo) AddWorkspace(folder string, opts WorkspaceOptions) (*WorkspaceEnt
 	// Its branch, at that version.
 	key := ws.BranchName()
 	if key == link.Base {
-		if key, err = ws.NewBranch(name, "", true); err != nil {
+		// An agent's branch (kind, owner: folded away in the graph); a team
+		// that keeps no branch records gets an ordinary one.
+		key, err = ws.NewBranchWith(name, BranchOptions{Switch: true, Agent: true})
+		if errors.Is(err, remote.ErrNoBranchRecords) {
+			key, err = ws.NewBranch(name, "", true)
+		}
+		if err != nil {
 			k, ok := ws.adoptBranch(c, name, link.Base)
 			if !ok {
 				return nil, err
@@ -616,8 +622,20 @@ func (r *Repo) RemoveWorkspace(folder string, force bool) error {
 			os.Remove(r.snapshotPath(id))
 		}
 	}
+	wsID := ws.Config.WorkspaceID
 	unlock()
-	return removeFolder(root)
+	if err := removeFolder(root); err != nil {
+		return err
+	}
+	// Its agent locks go with it; its branch, all merged, is archived (its
+	// versions stay; as well as can be: it may be someone's now).
+	if wsID != "" {
+		r.AgentLockList().ReleaseWorkspace(wsID)
+	}
+	if !force {
+		r.ArchiveBranch(entry.Branch)
+	}
+	return nil
 }
 
 func (r *Repo) unregister(root string) error {
