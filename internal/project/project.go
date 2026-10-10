@@ -78,6 +78,9 @@ type Repo struct {
 	Only []string
 	// Park: what the last GoTo did with uncommitted changes (Parking).
 	Park *ParkOutcome
+	// Actor, when set, is the agent the versions made here are by (the
+	// CLI finds it in the environment: package actor); nil, a person's.
+	Actor *Actor
 
 	sizes   map[string]int64  // object sizes known from manifests (knowSizes)
 	remote  map[string]bool   // objects only in the team's storage (remoteOnly)

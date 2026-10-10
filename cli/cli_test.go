@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nonlabhq/r3v/internal/actor"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/remote/s3test"
@@ -20,6 +21,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	os.Setenv("R3V_CONFIG_DIR", dir)
+	os.Setenv(actor.EnvTool, actor.None)        // run by an agent or not, the same results
 	openSet = func(string) string { return "" } // Live is not running
 	code := m.Run()
 	os.RemoveAll(dir)

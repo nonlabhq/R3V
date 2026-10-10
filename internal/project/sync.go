@@ -1231,8 +1231,8 @@ func (r *Repo) replayOnto(c remote.Backend, target string, opts MergeOptions) (l
 }
 
 // replay puts versions (oldest first, each with one parent) after onto,
-// each merged with what came before it, keeping their messages, authors and
-// times; it returns the last. Only new versions are stored.
+// each merged with what came before it, keeping their messages, authors,
+// actors and times; it returns the last. Only new versions are stored.
 func (r *Repo) replay(c remote.Backend, ours []*Manifest, onto *Manifest, opts MergeOptions) (*Manifest, []string, error) {
 	var log []string
 	for _, m := range ours {
@@ -1248,9 +1248,9 @@ func (r *Repo) replay(c remote.Backend, ours []*Manifest, onto *Manifest, opts M
 		if err != nil {
 			return nil, nil, err
 		}
-		next.Parents, next.Message, next.Author, next.AuthorID, next.Time, next.Branch =
-			[]string{onto.ID}, m.Message, m.Author, m.AuthorID, m.Time, m.Branch
-		if err := r.save(next); err != nil {
+		next.Parents, next.Message, next.Author, next.AuthorID, next.Time, next.Branch, next.Actor =
+			[]string{onto.ID}, m.Message, m.Author, m.AuthorID, m.Time, m.Branch, m.Actor
+		if err := r.saveAsIs(next); err != nil {
 			return nil, nil, err
 		}
 		log = append(log, l...)

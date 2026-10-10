@@ -102,3 +102,57 @@ func TestRecord(t *testing.T) {
 		t.Fatalf("format 3: %v", err)
 	}
 }
+
+// A version without an actor encodes exactly as before actors were added:
+// the ids of every version already made must not change.
+func TestNoActorEncodesAsBefore(t *testing.T) {
+	const before = "{\n  \"version\": 2,\n  \"parents\": [\n    \"148de9c5a7a44d19e56cd9ae1a554bf67847afb0c58f6e12fa29ac7ddfca9940\"\n  ],\n  \"author\": \"Mia\",\n  \"author_id\": \"m1\",\n  \"time\": \"2026-10-10T08:00:00Z\",\n  \"message\": \"Title\\n\\nDetails\",\n  \"branch\": \"main\",\n  \"files\": 3,\n  \"size\": 42,\n  \"tree\": \"e3b98a4da31a127d4bde6e43033f66ba274cab0eb7eb1c70ec41402bf6273dd8\"\n}\n"
+	const id = "c0a5c8dea520cbe24cf953f81d4b289b664d754825ecba81ca56be2f1baee4b6"
+	for _, a := range []*Actor{nil, {}} { // an empty actor is none
+		m := &Manifest{Version: 2, Parents: []string{hashOf("p")}, Author: "Mia", AuthorID: "m1",
+			Time: "2026-10-10T08:00:00Z", Message: "Title\n\nDetails", Branch: "main", FileCount: 3, TotalSize: 42,
+			Tree: hashOf("t"), Actor: a}
+		if data := m.Seal(); string(data) != before || m.ID != id {
+			t.Fatalf("actor %v: encoding changed:\n%s", a, data)
+		}
+	}
+	got, err := Parse(id, []byte(before))
+	if err != nil || got.Actor != nil {
+		t.Fatalf("%v %+v", err, got.Actor)
+	}
+}
+
+func TestTitleAndDetails(t *testing.T) {
+	msg := Message(" Fix the renderer ", "", "Lights were too bright.\n\nSee issue 4.")
+	if msg != "Fix the renderer\n\nLights were too bright.\n\nSee issue 4." {
+		t.Fatalf("%q", msg)
+	}
+	if Title(msg) != "Fix the renderer" || Details(msg) != "Lights were too bright.\n\nSee issue 4." {
+		t.Fatalf("%q %q", Title(msg), Details(msg))
+	}
+	if Title("one line") != "one line" || Details("one line") != "" || Title("a\r\nb") != "a" || Details("a\r\nb") != "b" {
+		t.Fatal("one line, or CRLF")
+	}
+}
+
+func TestActorRoundTrip(t *testing.T) {
+	a := &Actor{Kind: ActorAgent, Tool: "claude-code", Model: "opus", Session: "s1"}
+	m := &Manifest{Version: Format, Parents: []string{}, Author: "yi", Time: "2026-01-01T00:00:00Z", Message: "m",
+		Tree: hashOf("tree"), Actor: a}
+	data := m.Seal()
+	if !strings.Contains(string(data), `"actor": {`) || !strings.Contains(string(data), `"tool": "claude-code"`) {
+		t.Fatalf("%s", data)
+	}
+	got, err := Parse(m.ID, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Actor == nil || *got.Actor != *a {
+		t.Fatalf("%+v", got.Actor)
+	}
+	// Only what is known is written.
+	m.Actor = &Actor{Kind: ActorAgent, Tool: "claude-code"}
+	if data := m.Seal(); strings.Contains(string(data), "model") || strings.Contains(string(data), "session") {
+		t.Fatalf("%s", data)
+	}
+}

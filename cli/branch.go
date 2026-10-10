@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 )
@@ -25,11 +26,27 @@ func cmdBranch(args []string) error {
 	}
 	if len(args) >= 2 && args[0] == "new" {
 		// (the name may be several words: `r3v branch new Mia's verse`)
-		name := strings.Join(args[1:], " ")
-		if _, err := r.CreateBranchNamed(name, ""); err != nil {
+		var words []string
+		agent := false
+		for _, a := range args[1:] {
+			if a == "--agent" || a == "-agent" {
+				agent = true
+				continue
+			}
+			words = append(words, a)
+		}
+		if len(words) == 0 {
+			return usageError("usage: r3v branch new NAME [--agent]")
+		}
+		name := strings.Join(words, " ")
+		if _, err := r.NewBranchWith(name, project.BranchOptions{Switch: true, Agent: agent}); err != nil {
 			return err
 		}
-		fmt.Printf("created branch %q from your current version and switched to it\n", name)
+		what := "branch"
+		if agent {
+			what = "agent branch"
+		}
+		fmt.Printf("created %s %q from your current version and switched to it\n", what, name)
 		fmt.Printf("versions you save now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
 		return nil
 	}
@@ -100,13 +117,14 @@ func cmdBranch(args []string) error {
 		return branchLog(r, name)
 	}
 	if len(args) > 0 {
-		return errors.New("usage: r3v branch [new NAME | archive NAME | archived | unarchive NAME | delete NAME | log [NAME]]")
+		return errors.New("usage: r3v branch [new NAME [--agent] | archive NAME | archived | unarchive NAME | delete NAME | log [NAME]]")
 	}
 	branches, err := r.Branches()
 	if err != nil {
 		return err
 	}
 	recs, _ := r.BranchRecords()
+	var names map[string]string
 	for _, b := range branches {
 		mark := "  "
 		if b.Current {
@@ -114,11 +132,24 @@ func cmdBranch(args []string) error {
 		}
 		latest := "(no versions yet)"
 		if b.Latest != nil {
-			latest = fmt.Sprintf("%s  %s  %-10s %s", short(b.Head), when(b.Latest), b.Latest.Author, b.Latest.Message)
+			latest = fmt.Sprintf("%s  %s  %-10s %s", short(b.Head), when(b.Latest), byLine(b.Latest.Author, b.Latest), manifest.Title(b.Latest.Message))
 		}
+		rec := recs[b.Name]
 		name := b.Name
-		if n := recs[b.Name].Name; n != "" {
-			name = n
+		if rec.Name != "" {
+			name = rec.Name
+		}
+		if rec.Kind == remote.BranchAgent { // whose agent it is
+			if names == nil {
+				names = r.MemberNames()
+			}
+			kind := "agent"
+			if owner := names[rec.Owner]; owner != "" {
+				kind += " for " + owner
+			}
+			latest += "  (" + kind + ")"
+		} else if rec.Kind != "" { // a kind a newer R3V knows
+			latest += "  (" + rec.Kind + ")"
 		}
 		fmt.Printf("%s%-16s %s\n", mark, name, latest)
 	}
@@ -196,7 +227,7 @@ func printPreview(p *project.Preview, what string) {
 	}
 	fmt.Printf("%d new version(s) from %s:\n", len(p.Versions), what)
 	for _, m := range p.Versions {
-		fmt.Printf("  %s  %s  %-10s %s\n", short(m.ID), when(m), m.Author, m.Message)
+		fmt.Printf("  %s  %s  %-10s %s\n", short(m.ID), when(m), byLine(m.Author, m), manifest.Title(m.Message))
 	}
 	fmt.Println("\nchanges:")
 	sym := map[string]string{"added": "+", "modified": "~", "deleted": "-"}

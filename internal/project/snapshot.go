@@ -20,6 +20,7 @@ import (
 type (
 	FileEntry = manifest.FileEntry
 	Manifest  = manifest.Manifest
+	Actor     = manifest.Actor
 )
 
 func (r *Repo) snapshotPath(id string) string { return filepath.Join(r.Dir, "snapshots", id+".json") }
@@ -159,6 +160,15 @@ func (r *Repo) HasSnapshot(id string) bool {
 // save seals m (computing its id) and stores it, as format 2: its folders'
 // trees first.
 func (r *Repo) save(m *Manifest) error {
+	if m.Actor == nil { // a version made here is by this process's agent, if any
+		m.Actor = r.Actor
+	}
+	return r.saveAsIs(m)
+}
+
+// saveAsIs is save keeping m's actor, none included (a replayed version
+// stays who made it).
+func (r *Repo) saveAsIs(m *Manifest) error {
 	m.Version = manifest.Format
 	if m.Branch == "" { // the branch it's made on, for good (docs/design/branch-tree.md)
 		m.Branch = r.BranchName()

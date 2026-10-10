@@ -218,6 +218,8 @@ type versionJSON struct {
 	Parents  []string `json:"parents"`
 	Branches []string `json:"branches,omitempty"` // team branches at this version
 	MadeOn   string   `json:"made_on,omitempty"`  // the branch it was made on (its key; older versions: none)
+	// Actor: the agent that made it for the author (none: the author did).
+	Actor *project.Actor `json:"actor,omitempty"`
 }
 
 func versionOf(m *project.Manifest, names map[string]string) versionJSON {
@@ -226,7 +228,20 @@ func versionOf(m *project.Manifest, names map[string]string) versionJSON {
 		parents = []string{}
 	}
 	return versionJSON{ID: m.ID, Time: m.Time, Author: project.AuthorName(m, names), AuthorID: m.AuthorID,
-		Message: m.Message, Parents: parents, MadeOn: m.Branch}
+		Message: m.Message, Parents: parents, MadeOn: m.Branch, Actor: m.Actor}
+}
+
+// byLine is who made m, for a line of text: the author, and the agent
+// that worked for them ("Mia (claude-code)").
+func byLine(author string, m *project.Manifest) string {
+	if a := m.Actor; a != nil {
+		tool := a.Tool
+		if tool == "" {
+			tool = "agent"
+		}
+		return author + " (" + tool + ")"
+	}
+	return author
 }
 
 type changeJSON struct {

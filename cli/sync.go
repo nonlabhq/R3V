@@ -9,6 +9,7 @@ import (
 
 	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/livecheck"
+	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teams"
@@ -244,15 +245,17 @@ func syncOf(res *project.SyncResult) syncJSON {
 // name before 0.1.33, still taken.)
 func cmdCommit(args []string) error {
 	fs := flag.NewFlagSet("commit", flag.ContinueOnError)
-	msg := fs.String("m", "", "what changed")
+	var parts stringList
+	fs.Var(&parts, "m", "what changed: the title; again for details (a blank line between, as git)")
 	strategy := strategyFlag(fs)
 	force := fs.Bool("force", false, "merge even while Ableton Live is running")
 	local := fs.Bool("local", false, "on this computer only: shared with the next commit")
 	if _, err := parseArgs(fs, args); err != nil {
 		return err
 	}
-	if *msg == "" {
-		return usageError(`a message is required: r3v commit -m "what changed"`)
+	msg := manifest.Message(parts...)
+	if manifest.Title(msg) == "" {
+		return usageError(`a message is required: r3v commit -m "what changed" [-m "details"]`)
 	}
 	r, err := openRepo()
 	if err != nil {
@@ -267,7 +270,7 @@ func cmdCommit(args []string) error {
 	var m *project.Manifest
 	var res *project.SyncResult
 	if *local { // (a version here only: the next commit shares it)
-		m, err = r.Snapshot(*msg)
+		m, err = r.Snapshot(msg)
 		if errors.Is(err, project.ErrNothingToSnapshot) {
 			m, err = nil, nil
 		}
@@ -275,7 +278,7 @@ func cmdCommit(args []string) error {
 			err = project.ErrNoRemote // (said as for a project in no team)
 		}
 	} else {
-		m, res, err = r.Save(*msg, project.Strategy(*strategy))
+		m, res, err = r.Save(msg, project.Strategy(*strategy))
 	}
 	var out syncJSON
 	switch {
@@ -310,7 +313,7 @@ func cmdCommit(args []string) error {
 			return
 		}
 		if m != nil {
-			fmt.Printf("committed version %s  %s\n", short(m.ID), m.Message)
+			fmt.Printf("committed version %s  %s\n", short(m.ID), manifest.Title(m.Message))
 		}
 		printMerge(res)
 		switch res.Action {

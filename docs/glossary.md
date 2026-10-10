@@ -37,6 +37,9 @@ committed stay with their place: going to another branch or version
 | What teammates shared | "Mia shared 1 new version" | 「Mia 上傳了 1 個新版本」 | `update --preview`, `status` (`team.incoming`) | `git fetch` + `git log ..origin` | |
 | Combine | Combine and share | 合併並分享 | (`commit` does it) | pull, then push | Teammates committed on your branch meanwhile |
 | Branch | Branch, New branch | 分支、新分支 | `branch`, `branch new` | branch | Names are any text; keeps its parent and the version it started at; its versions are its own for good |
+| Agent branch | — | — | `branch new NAME --agent` | — | A branch marked an AI agent's (`kind: agent`), with the member it works for (`owner`) |
+| Actor | — | — | `log --json` (`actor`), `R3V_ACTOR` | `Co-Authored-By`, the committer | The agent that made a version; the member it works for stays the author. None: a person |
+| Title, details | — | — | `commit -m TITLE -m DETAILS` | subject, body | A version's message: its first line, the rest (Git's way) |
 | Switch | Switch to | 切換到 | `switch` | `git switch` | Changes don't block it: they are parked |
 | Parked changes | Parked, Bring changes here | 暫放、把變更帶到這裡 | `parked`, `parked bring`, `parked discard` | `git stash` | One set per place, kept and brought back by themselves; on this computer only |
 | Go to a version | Go to this version, Back to latest | 前往這個版本、回到最新版本 | `goto <version>`, `goto latest` | `git checkout <commit>` (detached HEAD) | Not detached: "on an older version" of your branch, with a way back |
