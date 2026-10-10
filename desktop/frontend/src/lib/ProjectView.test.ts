@@ -442,6 +442,46 @@ describe("ProjectView: tabs", () => {
   });
 });
 
+describe("ProjectView: agents (Nightly)", () => {
+  const ws = (over: Record<string, unknown> = {}) => ({ folder: "C:/Projects/Song (renderer)", branch: "b-r1", label: "renderer",
+    base: "main", baseLabel: "main", created: "2026-10-10T08:00:00Z", ahead: 2, behind: 0, changes: 0, parked: 0,
+    lastActivity: new Date().toISOString(), missing: false, locks: [], tool: "claude-code", owner: "", stale: false, opened: false, ...over });
+  const branches = [{ name: "main", label: "", color: "", parent: "", current: true, latest: null, kind: "" },
+    { name: "b-r1", label: "renderer", color: "", parent: "main", current: false, latest: null, kind: "agent" },
+    { name: "idea", label: "", color: "", parent: "main", current: false, latest: null, kind: "" }];
+
+  it("shows the Agents tab with how many workspaces, only where offered", async () => {
+    await show({ agentWorkspaces: true, workspaceCount: 2 });
+    const tab = screen.getByRole("button", { name: /^Agents/ });
+    expect(tab.querySelector(".count")?.textContent).toBe("2");
+  });
+
+  it("merges a workspace's branch from the Agents tab: the merge preview of it", async () => {
+    await show({ agentWorkspaces: true, workspaceCount: 1, branches });
+    api.AgentWorkspaces.mockResolvedValue([ws()]);
+    api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge renderer", versions: [], changes: [], conflicts: [] });
+    await fireEvent.click(screen.getByRole("button", { name: /^Agents/ }));
+    await fireEvent.click(await screen.findByRole("button", { name: "Merge into main" }));
+    await waitFor(() => expect(api.PreviewMerge).toHaveBeenCalledWith(ROOT, "b-r1"));
+    expect(await screen.findByRole("dialog", { name: "Merge “renderer” into “main”" })).toBeTruthy();
+    expect(api.SwitchBranch).not.toHaveBeenCalled();
+  });
+
+  it("goes to the workspace's base branch first when the project is on another", async () => {
+    await show({ agentWorkspaces: true, workspaceCount: 1, branch: "idea", branches });
+    api.AgentWorkspaces.mockResolvedValue([ws()]);
+    api.SwitchBranch.mockImplementation(async () => {
+      api.State.mockResolvedValue(state({ agentWorkspaces: true, workspaceCount: 1, branch: "main", branches }));
+      return result("switched");
+    });
+    api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge renderer", versions: [], changes: [], conflicts: [] });
+    await fireEvent.click(screen.getByRole("button", { name: /^Agents/ }));
+    await fireEvent.click(await screen.findByRole("button", { name: "Merge into main" }));
+    await waitFor(() => expect(api.PreviewMerge).toHaveBeenCalledWith(ROOT, "b-r1"));
+    expect(api.SwitchBranch).toHaveBeenCalledWith(ROOT, "main", false);
+  });
+});
+
 describe("ProjectView: a project just added", () => {
   it("asks to commit and share a first version", async () => {
     const onfirstshared = vi.fn();

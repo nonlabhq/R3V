@@ -416,6 +416,14 @@ func (a *App) State(root string) (*State, error) {
 	if st.Name == "" {
 		st.Name = filepath.Base(r.Root)
 	}
+	if r.IsWorkspace() {
+		st.WorkspaceOf = r.MainRoot()
+	} else if project.AgentWorkspaces && r.Config.Remote != nil {
+		st.AgentWorkspaces = true
+		if list, err := r.LocalWorkspaces(); err == nil {
+			st.WorkspaceCount = len(list)
+		}
+	}
 	rules, _ := r.Profile()
 	st.Rules = RulesInfo{Applied: rules.Applied(), FromFile: rules.FromFile, Suggestions: suggestions(r)}
 	if err := r.CheckRules(); err != nil {

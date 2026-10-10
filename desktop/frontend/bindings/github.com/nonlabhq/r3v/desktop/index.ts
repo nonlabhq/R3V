@@ -8,6 +8,7 @@ export {
 
 export {
     Actor,
+    AgentWorkspace,
     ArchivedBranch,
     BackupInfo,
     BackupOthers,
@@ -78,5 +79,8 @@ export {
     VerifyProblem,
     VerifyResult,
     Version,
-    Workspace
+    Workspace,
+    WorkspaceAdded,
+    WorkspaceLeft,
+    WorkspaceRemoval
 } from "./models.js";

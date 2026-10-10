@@ -8,6 +8,28 @@ export function sortByOrder<T>(list: T[], keyOf: (x: T) => string, order: string
   return list.map((x, i) => ({ x, i })).sort((a, b) => rank(a.x) - rank(b.x) || a.i - b.i).map((y) => y.x);
 }
 
+// besideMain puts each agent's workspace shown as a project right after its
+// project's main copy (by its folder, as Windows compares them); one whose
+// main copy isn't listed goes last.
+export function besideMain<T extends { root: string; workspace?: boolean; mainRoot?: string }>(list: T[]): T[] {
+  const same = (a: string, b: string) => a.replace(/[\\/]+$/, "").toLowerCase() === b.replace(/[\\/]+$/, "").toLowerCase();
+  const spaces = list.filter((p) => p.workspace);
+  if (!spaces.length) return list;
+  const out: T[] = [];
+  const placed = new Set<T>();
+  for (const p of list) {
+    if (p.workspace) continue;
+    out.push(p);
+    for (const w of spaces) {
+      if (!placed.has(w) && !!p.root && !!w.mainRoot && same(p.root, w.mainRoot)) {
+        out.push(w);
+        placed.add(w);
+      }
+    }
+  }
+  return [...out, ...spaces.filter((w) => !placed.has(w))];
+}
+
 // moveKey moves key to position to (an index among keys, before the move:
 // keys.length for the end).
 export function moveKey(keys: string[], key: string, to: number): string[] {

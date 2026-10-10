@@ -8,14 +8,12 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/nonlabhq/r3v/docs"
 	"github.com/nonlabhq/r3v/internal/agentlock"
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
-	"github.com/nonlabhq/r3v/internal/store"
 )
 
 // Agent locks between the workspaces of a project on this computer
@@ -251,8 +249,6 @@ func cmdLocks(args []string) error {
 // hookTools are Claude Code's tools that change a file.
 var hookTools = map[string]bool{"Edit": true, "Write": true, "MultiEdit": true, "NotebookEdit": true}
 
-const hookMatcher = "Edit|Write|MultiEdit|NotebookEdit"
-
 // hookInput is what Claude Code sends a PreToolUse hook (only what's used).
 type hookInput struct {
 	SessionID string `json:"session_id"`
@@ -432,7 +428,7 @@ func cmdAgent(args []string) error {
 		return err
 	}
 	r.RefreshAgentTeamLocks()
-	changed, err := setupClaudeCode(r.Root, hookCommand(), !r.IsWorkspace()) // (the guide: in the main copy, committed once)
+	changed, err := agentsetup.ClaudeCode(r.Root, hookCommand(), !r.IsWorkspace()) // (the guide: in the main copy, committed once)
 	if err != nil {
 		return err
 	}
@@ -447,112 +443,14 @@ func cmdAgent(args []string) error {
 	return nil
 }
 
-// hookCommand is how Claude Code runs this R3V's hook: `r3v` when that is
-// this program, else its full path (another r3v on PATH may be a build
-// without agent locks, or none).
+// hookCommand is how Claude Code runs this R3V's hook (see
+// agentsetup.HookCommand).
 func hookCommand() string {
 	exe, err := os.Executable()
 	if err != nil {
-		return "r3v hook pre-tool"
+		return agentsetup.HookCommand("")
 	}
-	if p, err := exec.LookPath("r3v"); err == nil {
-		a, _ := filepath.EvalSymlinks(p)
-		b, _ := filepath.EvalSymlinks(exe)
-		if a != "" && strings.EqualFold(a, b) {
-			return "r3v hook pre-tool"
-		}
-	}
-	return `"` + filepath.ToSlash(exe) + `" hook pre-tool`
-}
-
-// setupClaudeCode writes Claude Code's settings for this copy in root
-// (.claude/settings.local.json, which R3V never tracks: the hook's path and
-// R3V_ACTOR are this computer's; merged with what's there) and, with guide,
-// the agents' guide in CLAUDE.md (the project's: committed). Running it
-// again changes nothing.
-func setupClaudeCode(root, command string, guide bool) ([]string, error) {
-	var changed []string
-	path := filepath.Join(root, ".claude", "settings.local.json")
-	settings := map[string]any{}
-	data, err := os.ReadFile(path)
-	switch {
-	case err == nil:
-		if err := json.Unmarshal(data, &settings); err != nil {
-			return nil, fmt.Errorf("%s isn't JSON R3V can read (%v): fix it, then run this again", path, err)
-		}
-	case !errors.Is(err, fs.ErrNotExist):
-		return nil, err
-	}
-	before, _ := json.Marshal(settings)
-	env, _ := settings["env"].(map[string]any)
-	if env == nil {
-		env = map[string]any{}
-	}
-	env[actor.EnvTool] = "claude-code"
-	settings["env"] = env
-	hooks, _ := settings["hooks"].(map[string]any)
-	if hooks == nil {
-		hooks = map[string]any{}
-	}
-	pre, _ := hooks["PreToolUse"].([]any)
-	ours := map[string]any{"type": "command", "command": command}
-	found := false
-	for _, e := range pre {
-		entry, _ := e.(map[string]any)
-		list, _ := entry["hooks"].([]any)
-		for i, hk := range list {
-			if m, _ := hk.(map[string]any); m != nil && isOurHook(m["command"]) {
-				list[i], found = ours, true
-				entry["matcher"] = hookMatcher
-			}
-		}
-	}
-	if !found {
-		pre = append(pre, map[string]any{"matcher": hookMatcher, "hooks": []any{ours}})
-	}
-	hooks["PreToolUse"] = pre
-	settings["hooks"] = hooks
-	if after, _ := json.Marshal(settings); string(after) != string(before) {
-		out, err := json.MarshalIndent(settings, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		if err := store.WriteAtomic(path, strings.NewReader(string(out)+"\n")); err != nil {
-			return nil, err
-		}
-		changed = append(changed, filepath.ToSlash(filepath.Join(".claude", "settings.local.json")))
-	}
-	if !guide {
-		return changed, nil
-	}
-
-	guidePath := filepath.Join(root, "CLAUDE.md")
-	old, err := os.ReadFile(guidePath)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return changed, err
-	}
-	heading, _, _ := strings.Cut(docs.AgentsSnippet, "\n")
-	if !strings.Contains(string(old), heading) {
-		text := string(old)
-		if text != "" && !strings.HasSuffix(text, "\n") {
-			text += "\n"
-		}
-		if text != "" {
-			text += "\n"
-		}
-		if err := store.WriteAtomic(guidePath, strings.NewReader(text+docs.AgentsSnippet)); err != nil {
-			return changed, err
-		}
-		changed = append(changed, "CLAUDE.md")
-	}
-	return changed, nil
-}
-
-// isOurHook: a hook command that runs R3V's PreToolUse hook (whichever
-// r3v it names).
-func isOurHook(c any) bool {
-	s, _ := c.(string)
-	return strings.HasSuffix(strings.TrimSpace(s), "hook pre-tool")
+	return agentsetup.HookCommand(exe)
 }
 
 // openAgent opens the project in dir without taking its lock (the hook runs

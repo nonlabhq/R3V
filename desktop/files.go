@@ -738,7 +738,7 @@ func knownProject(root string) bool {
 	if err != nil {
 		return false
 	}
-	for _, r := range append(store.Roots(), store.Local...) {
+	for _, r := range append(append(store.Roots(), store.Local...), store.Workspaces...) {
 		if strings.EqualFold(filepath.Clean(r), filepath.Clean(root)) {
 			return true
 		}

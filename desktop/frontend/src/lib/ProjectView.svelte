@@ -2,7 +2,8 @@
   import { t, tn } from "./i18n.svelte";
   import { untrack, type Snippet } from "svelte";
   import { api, ago, errorText, formatBytes, titleOf, type State, type Result, type Preview, type TeamSummary, type ParkedSet,
-    type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject } from "./api";
+    type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject,
+    type AgentWorkspace } from "./api";
   import { appIconFor } from "./appIcons";
   import { toast } from "./notify.svelte";
   import { holderName, loadLocks, watchLocks } from "./locks.svelte";
@@ -43,12 +44,14 @@
   import LeaveChangesDialog from "./LeaveChangesDialog.svelte";
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
+  import AgentsView from "./AgentsView.svelte";
 
   // firstShare: the project was just added (to a team, or this computer).
   // With no versions yet, it asks whether to commit (and share) a first one
   // now or after a look through the files; a project with versions shares
   // them right away.
-  let { root, refreshKey, teams, entry, firstShare = false, downloaded = false, onchanged, onfirstshared, ondownloadseen, onsettings, onteamsettings, settings }: {
+  let { root, refreshKey, teams, entry, firstShare = false, downloaded = false, onchanged, onfirstshared, ondownloadseen, onsettings, onteamsettings, settings,
+    onopenproject }: {
     root: string; refreshKey: number; teams: TeamSummary[]; firstShare?: boolean;
     entry?: TeamProject; // the project in the team's list (its id, icon and colour)
     onteamsettings?: (team: TeamSummary) => void; // the header's ⚙ of the project's team
@@ -57,6 +60,7 @@
     onchanged: () => void; onfirstshared?: () => void;
     onsettings: () => void; // the project's settings (name, rules, …)
     settings?: Snippet; // the Settings tab (without it, onsettings opens them)
+    onopenproject?: (p: TeamProject) => void; // a workspace shown in the sidebar (the Agents tab): go to it
   } = $props();
 
   let st = $state<State | null>(cachedState(untrack(() => root)));
@@ -64,9 +68,10 @@
   // The tab is remembered per project. Overview: the history graph, then the
   // picked version (or your changes) and its files; Changes and History are
   // the earlier layout, hidden now (OLD_TABS) and kept for a while.
-  type Tab = "overview" | "files" | "settings" | "changes" | "history";
+  // Agents: the project's workspaces (Nightly, a team's project).
+  type Tab = "overview" | "files" | "agents" | "settings" | "changes" | "history";
   const OLD_TABS = false;
-  const tabs: Tab[] = OLD_TABS ? ["overview", "files", "settings", "changes", "history"] : ["overview", "files", "settings"];
+  const tabs: Tab[] = OLD_TABS ? ["overview", "files", "agents", "settings", "changes", "history"] : ["overview", "files", "agents", "settings"];
   const tabKey = `r3v.tab:${untrack(() => root)}`;
   let tab = $state<Tab>((() => {
     try {
@@ -80,6 +85,8 @@
     const t = tab;
     try { localStorage.setItem(tabKey, t); } catch { /* not remembered */ }
   });
+  // (the Agents tab remembered, and not offered now: Versions)
+  $effect(() => { if (st && tab === "agents" && !st.agentWorkspaces) tab = "overview"; });
   let message = $state("");
   let busy = $state("");
   let progress = $state<Progress | null>(null);
@@ -579,6 +586,20 @@
     }
   }
 
+  // A workspace's branch merged into the branch it came from: the project
+  // goes there first (as switching does) when it's on another.
+  async function mergeWorkspace(w: AgentWorkspace) {
+    if (st?.branch !== w.base) {
+      await run({
+        name: "switch",
+        call: (_res, force) => api.SwitchBranch(root, w.base, force),
+        done: (r) => toast(t("Now working on “{branch}”", { branch: bl(w.base) }) + reopen() + parkText(r), "ok", 9000),
+      });
+      if (st?.branch !== w.base) return; // (it didn't: said why)
+    }
+    openMergePreview(w.branch);
+  }
+
   // Merge any version (e.g. one in the middle of another branch) into the
   // current branch.
   async function openVersionMerge(v: Version) {
@@ -932,6 +953,11 @@
           aria-label={tn(st.changes.length, "{n} change not committed", "{n} changes not committed")}></span>{/if}
       </button>
       <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
+      {#if st.agentWorkspaces}
+        <button class:on={tab === "agents"} onclick={() => (tab = "agents")}>
+          {t("Agents")}{#if st.workspaceCount}<span class="count" title={tn(st.workspaceCount, "{n} workspace", "{n} workspaces")}>{st.workspaceCount}</span>{/if}
+        </button>
+      {/if}
       {#if settings}
         <button class:on={tab === "settings"} onclick={() => (tab = "settings")}
           title={st.rules.error ? `⚠ ${st.rules.error}` : undefined}>{t("Settings")}{#if st.rules.error} <span class="bad">⚠</span>{/if}</button>
@@ -1061,6 +1087,11 @@
       {:else if tab === "files"}
         <FileExplorer {root} st={st} {looks} onrules={() => load()} ondiscard={(p) => (discardFile = p)}
           onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
+      {:else if tab === "agents" && st.agentWorkspaces}
+        <div class="pane scroll">
+          <AgentsView {root} name={st.name} branch={st.branch} branches={st.branches} version={`${st.head} ${st.branch} ${refreshKey}`}
+            onmerge={mergeWorkspace} onopen={(p) => onopenproject?.(p)} onchanged={() => { load(); onchanged(); }} />
+        </div>
       {:else if tab === "settings" && settings}
         <div class="pane scroll"><div class="settings">{@render settings()}</div></div>
       {:else if tab === "changes"}
@@ -1257,6 +1288,9 @@
   .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
   .graph-bar { position: absolute; top: var(--sp-14); left: var(--sp-16); z-index: 2; }
   nav .bad { color: var(--warn); }
+  /* how many workspaces, by Agents */
+  nav .count { display: inline-block; min-width: 18px; margin-left: var(--sp-6); padding: 0 var(--sp-6); border-radius: var(--radius-pill);
+    background: var(--hover); color: var(--muted); font-size: var(--fs-2xs); line-height: 18px; text-align: center; }
   /* The details float over the card: one see-through colour for all of it,
      parts set apart by lines, no frame. */
   .detail-pane { position: absolute; z-index: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
