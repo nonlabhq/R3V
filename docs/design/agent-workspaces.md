@@ -1,0 +1,189 @@
+# Several agents on one project
+
+Status: being built (Nightly). From "R3V 的機會" (direction 1, case A: one
+computer, several agents), with the small things it needs first. Agent
+tools: Claude Code first, then Codex.
+
+Several AI agents (and the person) work on one project at once on one
+computer: one writes the renderer, one the app's shell, one sorts the
+textures. Each needs a copy of its own: editors open one copy of a project
+at a time (Live one set per computer, Unity and Godot one editor per
+folder), builds write into the folder, and binary files can't be shared
+by hunk the way GitButler shares one working folder. So: a **workspace**
+per agent, on a branch of its own; merging that settles code **hunk by
+hunk**; **locks** on what can't be merged; an **overview** where the
+person merges what's done.
+
+## Workspaces
+
+A workspace is another folder with the same project, on this computer:
+
+```
+r3v workspace add <folder> --branch <name> [--from <version|branch>] [--agent claude-code]
+r3v workspace list [--json]
+r3v workspace remove <folder>        # when merged; asks (fails) if not
+```
+
+- **Made from what's here**: the files come from the store on this
+  computer, never downloaded again. Copied with block cloning where the
+  drive has it (ReFS, Dev Drive: no space taken until changed), else
+  copied. Never hard links: tools write files in place, which would
+  change every copy.
+- **One store**: the workspaces share the main copy's store and versions
+  (`.r3v/objects`, `.r3v/snapshots`), as `git worktree` does
+  (`Repo.CommonDir`); each has its own `.r3v` for the rest (where it is,
+  its index, its parked changes). The main copy keeps the list
+  (`workspaces.json` in the common dir); local cleanup keeps what any of
+  them needs.
+- **Its own branch**: a team branch marked `kind: agent`, `owner` (the
+  member it works for), made from the main copy's branch unless said.
+  Commits share on it as any commit does (the team's storage backs the
+  work up). Agent branches are folded away in the graph; once merged,
+  archived (their versions stay).
+- What the rules leave out (`node_modules/`, Rust's `target/`, Unity's
+  `Library/`) each workspace builds for itself: `npm ci`, a first `cargo
+  build`. Each keeps its own `target/` (a shared one makes builds wait
+  for each other).
+
+## The overview
+
+`r3v workspace list --json` and the app's **Agents** view (in the
+project): for each workspace its folder, branch, owner and agent (actor,
+below), versions ahead of and behind its base branch, files changed,
+locks held, last activity, and whether it has changes not committed.
+
+**Merging** is the person's by default: a button per workspace, the
+merge preview and decisions as today, then the branch archived and the
+workspace offered for removal. A coordinating agent can merge from the
+command line (`r3v merge <branch> --json`).
+
+## Merging code hunk by hunk
+
+Text files (the `code` preset's handlers: `.ts`, `.rs`, `.json`, `.toml`,
+`.glsl`…) are merged line by line already; where both sides changed the
+same lines, the whole file is one conflict today. Instead, each place
+both changed is a conflict of its own:
+
+- `conflicts[]` gains, for a text file, one item per hunk: its key
+  (`text:<path>#<n>`), lines, and base, ours and theirs as text.
+- Each is decided apart: `ours`, `theirs`, `both` (ours then theirs);
+  the file is written once all are.
+- Or the agent gives the file as it should be:
+  `--resolved <path>=<file>` (any text it made, merged by hand).
+- On the command line: `--resolve <key>=<choice>` (repeatable),
+  `--decisions <file.json>` (`{"<key>": "<choice>"}`, `--decisions -`
+  from stdin). `--strategy` still decides everything else.
+- The app's merge decisions go hunk by hunk for text, as track by track
+  for sets.
+- Lockfiles (`package-lock.json`, `Cargo.lock`) merge as text; when they
+  don't, the agents' guide says: take one side, then regenerate (`npm
+  install`, `cargo update -w`).
+
+## Locks
+
+One kind of lock to the person: a padlock with who holds it, a person
+("Kai") or an agent ("renderer", one of your workspaces). Taken,
+freed and broken the same way. Underneath, two scopes:
+
+| | Team locks (built) | Agent locks (new) |
+|---|---|---|
+| Between | people of the team | the workspaces on this computer |
+| Held by | a member | a workspace (and its session) |
+| Kept | by R3V Cloud | on this computer, beside the shared store |
+| Enforced | by the service, at a share | by the hook before a change, and at commit |
+| Until | shared | merged into the base branch |
+
+What locks itself is the team's choice of kinds (`profile.LockKinds`;
+`.r3v.yaml`'s `file_locks` narrows it), the same for both: files that
+can't be merged (`.glb`, textures, `.hdr`, `.exr`, sounds, `.blend`).
+**Code never locks**: it merges hunk by hunk. On R3V Cloud with team
+locks on, an agent's first change to such a file takes both.
+
+Agent locks:
+
+- **Taken on first touch**: the hook locks a file of a locking kind the
+  moment an agent first changes it; refused with who holds it. No agent
+  waits for a lock (refused, it moves on), so nothing deadlocks. An agent
+  can also lock ahead (`r3v lock <paths…> --json`, all or none; a folder
+  covers what's under it; too wide is warned about).
+- **The person's changes count**: a file changed and not committed in a
+  copy a person works in (no workspace's agent) is held by them.
+- **Held until merged** into the base branch: conflicts happen at the
+  merge, not the commit.
+- **Two checks**: before a change (the `PreToolUse` hook refuses an
+  agent's Edit or Write on a path another holds), and at commit (a commit
+  changing such a path is refused: catches a tool's own save, an editor
+  driven through MCP).
+- **People always win**: the app shows every lock and breaks any; an
+  agent's lock never stops a person's commit.
+- **Left over** (an agent killed): each hook call is a heartbeat; a lock
+  with none for a while is stale, shown so, and the next lock asked over
+  it takes it.
+
+**Claims** (optional, for code): "I'm on `src/renderer/`" warns other
+agents (the hook says so once) and blocks nothing: it's about not doing
+the same work twice, not about merging.
+
+## Who did it: actor
+
+A version records who made it, besides the member responsible:
+
+```json
+"actor": {"kind": "agent", "tool": "claude-code", "model": "…", "session": "…"}
+```
+
+- `agent setup` puts `R3V_ACTOR` (and the workspace) in the agent tool's
+  own environment settings (Claude Code's `env`), which every command it
+  runs inherits; without it, the CLI looks for the variables the tools
+  set themselves. Nothing found: no actor (a person).
+- `author_id` stays the member: an agent works for someone.
+- The history marks an agent's versions and can filter them. Format: an
+  `omitempty` field of the version record (format 2 readers ignore it),
+  so no team feature.
+
+## Title and details
+
+A version's message: its first line the title, the rest details (Git's
+way, no format change). The app shows the title, the details unfolded;
+`r3v commit -m <title> -m <details>`.
+
+## Setting agents up
+
+`r3v agent setup [--tool claude-code]` in a workspace: writes the hooks
+(`PreToolUse` → `r3v hook pre-tool`, reading the tool call and answering
+allow or deny), `R3V_ACTOR`, and the agents' guide where the tool reads
+them (`.claude/settings.json`, `CLAUDE.md`); run by `workspace add
+--agent claude-code`.
+
+## Stopping half-way
+
+Each step lists its states (docs/development.md#interruptions):
+
+- `workspace add`: the folder written, then registered. Stopped before,
+  the folder is a leftover that `workspace add` again finishes or
+  `remove` clears; registered, it works.
+- Locks: a lock file is whole or absent (made then renamed); asking for
+  several, any refused takes back the ones just made.
+- `workspace remove`: unregistered first, then the folder deleted only if
+  all its work is merged (or the person said so).
+- A hunk-by-hunk merge writes nothing until every hunk is decided.
+
+## Lanes
+
+Built in parallel, each lane on its branch in a worktree of its own,
+reviewed and merged by Core:
+
+1. **Records** (`feat/agent-records`): actor and its detection, title and
+   details, branch `kind`/`owner`.
+2. **Workspaces** (`feat/workspaces`): add, list, remove, the shared
+   store, block cloning, cleanup over all.
+3. **Hunks** (`feat/hunk-merge`): hunk conflicts, `--resolve`,
+   `--decisions`, `--resolved`.
+4. **Locks** (`feat/agent-locks`): the agent lock list, `lock`/`unlock`,
+   first-touch locking, the commit check, claims, `hook pre-tool`,
+   `agent setup`.
+5. **The app**: the Agents view, merging and archiving, hunk decisions,
+   locks shown and broken, the actor in the history. After 1–4.
+6. **E2E**: a small web app (code and assets), two scripted agents in two
+   workspaces: different lines of one `.ts` (merged), the same lines
+   (hunk decisions), one texture (refused), both merged.
