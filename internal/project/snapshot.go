@@ -295,6 +295,9 @@ func (r *Repo) Snapshot(message string) (*Manifest, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := r.checkAgentLocks(m); err != nil {
+		return nil, err
+	}
 	if err := r.stopped(); err != nil {
 		return nil, err
 	}

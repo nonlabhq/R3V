@@ -93,10 +93,17 @@ type cliError struct {
 	Locks     []lockJSON
 }
 
-// lockJSON is a path someone else holds (a share refused: files_locked).
+// lockJSON is a path someone else holds: a member of the team (a share
+// refused: files_locked), or another workspace on this computer
+// (files_locked_by_agent: holder "agent" or "person", its workspace,
+// branch and agent tool).
 type lockJSON struct {
-	Path     string `json:"path"`
-	MemberID string `json:"member_id"`
+	Path      string `json:"path"`
+	MemberID  string `json:"member_id,omitempty"`
+	Holder    string `json:"holder,omitempty"`
+	Workspace string `json:"workspace,omitempty"`
+	Branch    string `json:"branch,omitempty"`
+	Actor     string `json:"actor,omitempty"`
 }
 
 func (e *cliError) Error() string { return e.Err.Error() }
@@ -157,7 +164,16 @@ func classify(err error) *cliError {
 		ce := &cliError{Code: "files_locked", Exit: exitError, Err: err,
 			Hint: "someone else holds these files: the versions stay here; save again once they're unlocked"}
 		for _, l := range locked.Locks {
-			ce.Locks = append(ce.Locks, lockJSON{l.Path, l.MemberID})
+			ce.Locks = append(ce.Locks, lockJSON{Path: l.Path, MemberID: l.MemberID})
+		}
+		return ce
+	}
+	var byAgent *project.ErrLockedByAgent
+	if errors.As(err, &byAgent) {
+		ce := &cliError{Code: "files_locked_by_agent", Exit: exitError, Err: err,
+			Hint: "another workspace here holds these files: leave them, or ask the user (who can break the lock)"}
+		for _, l := range byAgent.Locks {
+			ce.Locks = append(ce.Locks, lockJSONOf(l))
 		}
 		return ce
 	}
