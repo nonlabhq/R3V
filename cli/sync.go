@@ -55,7 +55,7 @@ func cmdRemote(args []string) error {
 		return err
 	}
 	t, _ := r.Team()
-	fmt.Printf("connected to team %q (%s)\nnext: r3v save -m \"message\" to share this project\n", t.Name, t.Remote.Display())
+	fmt.Printf("connected to team %q (%s)\nnext: r3v commit -m \"message\" to share this project\n", t.Name, t.Remote.Display())
 	return nil
 }
 
@@ -239,28 +239,44 @@ func syncOf(res *project.SyncResult) syncJSON {
 		Relink: nonNil(res.Relinked), ReopenSets: len(res.MergeLog) > 0, KeptWork: res.KeptWork}
 }
 
-func cmdSave(args []string) error {
-	fs := flag.NewFlagSet("save", flag.ContinueOnError)
+// cmdCommit commits the changes as a version and shares it (merging the
+// team's versions first); --local, on this computer only. ("save" is its
+// name before 0.1.33, still taken.)
+func cmdCommit(args []string) error {
+	fs := flag.NewFlagSet("commit", flag.ContinueOnError)
 	msg := fs.String("m", "", "what changed")
 	strategy := strategyFlag(fs)
 	force := fs.Bool("force", false, "merge even while Ableton Live is running")
+	local := fs.Bool("local", false, "on this computer only: shared with the next commit")
 	if _, err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if *msg == "" {
-		return usageError(`a message is required: r3v save -m "what changed"`)
+		return usageError(`a message is required: r3v commit -m "what changed"`)
 	}
 	r, err := openRepo()
 	if err != nil {
 		return err
 	}
-	if r.Config.Remote != nil {
+	if r.Config.Remote != nil && !*local {
 		if err := guardLive(r, *force); err != nil {
 			return err
 		}
 	}
 	defer tidy(r)
-	m, res, err := r.Save(*msg, project.Strategy(*strategy))
+	var m *project.Manifest
+	var res *project.SyncResult
+	if *local { // (a version here only: the next commit shares it)
+		m, err = r.Snapshot(*msg)
+		if errors.Is(err, project.ErrNothingToSnapshot) {
+			m, err = nil, nil
+		}
+		if err == nil {
+			err = project.ErrNoRemote // (said as for a project in no team)
+		}
+	} else {
+		m, res, err = r.Save(*msg, project.Strategy(*strategy))
+	}
 	var out syncJSON
 	switch {
 	case errors.Is(err, project.ErrNoRemote):
@@ -280,17 +296,21 @@ func cmdSave(args []string) error {
 		v := versionOf(m, nil)
 		out.Saved = &v
 	}
-	result("save", out, func() {
+	result("commit", out, func() {
 		switch out.Action {
 		case "local":
-			fmt.Printf("saved version %s locally (not connected to a team; see `r3v remote`)\n", short(m.ID))
+			if *local && r.Config.Remote != nil {
+				fmt.Printf("committed version %s on this computer: your next commit shares it\n", short(m.ID))
+			} else {
+				fmt.Printf("committed version %s on this computer (not connected to a team; see `r3v remote`)\n", short(m.ID))
+			}
 			return
 		case "nothing-changed":
 			fmt.Println("nothing changed")
 			return
 		}
 		if m != nil {
-			fmt.Printf("saved version %s  %s\n", short(m.ID), m.Message)
+			fmt.Printf("committed version %s  %s\n", short(m.ID), m.Message)
 		}
 		printMerge(res)
 		switch res.Action {
@@ -339,7 +359,7 @@ func cmdUpdate(args []string) error {
 		case "up-to-date":
 			fmt.Println("already up to date")
 		case "ahead":
-			fmt.Println("you have versions the team does not have yet: r3v save -m \"...\" to share them")
+			fmt.Println("you have versions the team does not have yet: r3v commit -m \"...\" to share them")
 		case "fast-forward", "merged":
 			fmt.Printf("updated to %s\n", short(res.To))
 			printMerge(res)
@@ -347,7 +367,7 @@ func cmdUpdate(args []string) error {
 				fmt.Println("your uncommitted changes are kept (still uncommitted)")
 			}
 			if res.Action == "merged" {
-				fmt.Println("your versions and the team's were merged; run `r3v save` to share the result")
+				fmt.Println("your versions and the team's were merged; run `r3v commit` to share the result")
 			}
 		}
 	})

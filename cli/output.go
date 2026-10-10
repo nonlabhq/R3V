@@ -20,7 +20,7 @@ import (
 // stderr):
 //
 //	{"schema": 1, "ok": true, "command": "status", "result": {...}}
-//	{"schema": 1, "ok": false, "command": "save", "error": {"code": "merge_conflict", ...}}
+//	{"schema": 1, "ok": false, "command": "commit", "error": {"code": "merge_conflict", ...}}
 //
 // Errors have a fixed code (see the table in docs/agents.md) and an exit
 // status by kind: 2 usage, 3 merge conflict, 4 a set is open in Live, 5 try
@@ -33,7 +33,7 @@ const jsonSchema = 1
 var jsonMode bool
 
 // jsonCommands support --json.
-var jsonCommands = map[string]bool{"status": true, "log": true, "save": true, "update": true, "merge": true,
+var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
 	"version": true, "backup": true, "switch": true, "checkout": true, "parked": true}
 
 // stripJSON takes --json (or -json) out of args.
@@ -128,9 +128,9 @@ var codes = []struct {
 	{manifest.ErrNewerFormat, "newer_version_needed", exitUpgrade, "install the current R3V"},
 	{blob.ErrNewerFormat, "newer_version_needed", exitUpgrade, "install the current R3V"},
 	{project.ErrNoRemote, "not_connected", exitError, "connect the project to a team: r3v remote <connection-code>"},
-	{project.ErrDirty, "unsaved_changes", exitError, "save them first: r3v save -m \"...\" (it also brings in the team's versions)"},
+	{project.ErrDirty, "unsaved_changes", exitError, "commit them first: r3v commit -m \"...\" (it also brings in the team's versions)"},
 	{project.ErrOlderVersion, "on_older_version", exitError, "go back to the latest version: r3v checkout latest"},
-	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v save -m ..."},
+	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v commit -m ..."},
 	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},

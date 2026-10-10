@@ -19,7 +19,7 @@ import (
 const usage = `usage: r3v <command> [args]
 
 everyday (run inside an Ableton project folder):
-  save -m MESSAGE                        save a version and share it with the team
+  commit -m MESSAGE                      commit your changes as a version and share it with the team
   update [--preview]                     get the team's latest versions (or just look)
   status                                 what changed since your last version
   watch                                  keep running: tell you about new versions (never changes
@@ -46,7 +46,7 @@ branches (advanced):
   merge NAME [--preview]                 merge another branch into yours (or just look)
 
 advanced:
-  snapshot -m MESSAGE                    save a version locally only
+  commit --local -m MESSAGE              commit on this computer only (your next commit shares it)
   checkout <id|HEAD~N|latest> [--force]  go to a version (files and samples); latest goes back
   parked [list]                          changes kept while you're on another branch or version
   parked bring|discard BRANCH[@VERSION]  bring parked changes here, or drop them
@@ -127,8 +127,8 @@ func Run(args []string) int {
 		err = cmdInit(rest)
 	case "status":
 		err = cmdStatus(rest)
-	case "snapshot":
-		err = cmdSnapshot(rest)
+	case "snapshot": // (commit --local, as it was called before 0.1.33)
+		err = cmdCommit(append([]string{"--local"}, rest...))
 	case "log":
 		err = cmdLog(rest)
 	case "checkout":
@@ -157,8 +157,8 @@ func Run(args []string) int {
 		err = cmdClone(rest)
 	case "watch":
 		err = cmdWatch(rest)
-	case "save":
-		err = cmdSave(rest)
+	case "commit", "save": // (save: its name before 0.1.33)
+		err = cmdCommit(rest)
 	case "update":
 		err = cmdUpdate(rest)
 	case "-h", "--help", "help":
