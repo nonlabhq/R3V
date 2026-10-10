@@ -54,7 +54,7 @@ func movingProject(t *testing.T, code string) (*Repo, []byte) {
 	if _, err := a.SwitchBranch("main", false); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.DeleteBranch(gone); err != nil {
+	if err := a.ArchiveBranch(gone); err != nil {
 		t.Fatal(err)
 	}
 	return a, big
@@ -107,9 +107,9 @@ func TestMoveProjectToAnotherTeam(t *testing.T) {
 	if !slices.Contains(names, "Mia 的主歌") {
 		t.Errorf("branch names: %v", names)
 	}
-	if gone, _ := b.DeletedBranches(); len(gone) != 1 {
+	if gone, _ := b.ArchivedBranches(); len(gone) != 1 {
 		t.Errorf("deleted branches to get back: %+v", gone)
-	} else if err := b.RestoreBranch(gone[0].Key); err != nil {
+	} else if err := b.UnarchiveBranch(gone[0].Key); err != nil {
 		t.Errorf("getting the deleted branch back: %v", err)
 	}
 	if ms, _ := b.Milestones(); len(ms) != 1 {

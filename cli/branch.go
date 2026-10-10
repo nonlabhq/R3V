@@ -33,35 +33,47 @@ func cmdBranch(args []string) error {
 		fmt.Printf("versions you save now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
 		return nil
 	}
-	if len(args) >= 2 && args[0] == "delete" {
+	// archivedKey finds an archived branch by its key or its name.
+	archivedKey := func(name string) string {
+		if gone, err := r.ArchivedBranches(); err == nil {
+			recs, _ := r.BranchRecords()
+			for _, d := range gone {
+				if d.Key == name || remote.SameBranchName(recs[d.Key].Name, name) {
+					return d.Key
+				}
+			}
+		}
+		return name
+	}
+	if len(args) >= 2 && args[0] == "archive" {
 		key, err := r.ResolveBranch(strings.Join(args[1:], " "))
 		if err != nil {
 			return err
 		}
-		if err := r.DeleteBranch(key); err != nil {
+		if err := r.ArchiveBranch(key); err != nil {
 			return err
 		}
-		fmt.Printf("deleted branch %q from the team; its versions stay (`r3v branch restore %s` brings it back)\n", key, key)
+		fmt.Printf("archived branch %q; its versions stay (`r3v branch unarchive %s` brings it back)\n", key, key)
 		return nil
 	}
-	if len(args) >= 2 && args[0] == "restore" {
-		key := strings.Join(args[1:], " ")
-		if gone, err := r.DeletedBranches(); err == nil {
-			recs, _ := r.BranchRecords()
-			for _, d := range gone {
-				if remote.SameBranchName(recs[d.Key].Name, key) {
-					key = d.Key
-				}
-			}
-		}
-		if err := r.RestoreBranch(key); err != nil {
+	if len(args) >= 2 && args[0] == "unarchive" {
+		key := archivedKey(strings.Join(args[1:], " "))
+		if err := r.UnarchiveBranch(key); err != nil {
 			return err
 		}
 		fmt.Printf("branch %q is back where it was\n", key)
 		return nil
 	}
-	if len(args) == 1 && args[0] == "deleted" {
-		gone, err := r.DeletedBranches()
+	if len(args) >= 2 && args[0] == "delete" {
+		key := archivedKey(strings.Join(args[1:], " "))
+		if err := r.DeleteBranch(key); err != nil {
+			return err
+		}
+		fmt.Printf("deleted archived branch %q for good; its versions stay where other branches have them\n", key)
+		return nil
+	}
+	if len(args) == 1 && args[0] == "archived" {
+		gone, err := r.ArchivedBranches()
 		if err != nil {
 			return err
 		}
@@ -76,7 +88,7 @@ func cmdBranch(args []string) error {
 			if by == "" {
 				by = "someone"
 			}
-			fmt.Printf("%-16s %s  deleted by %s %s\n", label, short(d.Head), by, d.Time.Local().Format("2006-01-02 15:04"))
+			fmt.Printf("%-16s %s  archived by %s %s\n", label, short(d.Head), by, d.Time.Local().Format("2006-01-02 15:04"))
 		}
 		return nil
 	}
@@ -88,7 +100,7 @@ func cmdBranch(args []string) error {
 		return branchLog(r, name)
 	}
 	if len(args) > 0 {
-		return errors.New("usage: r3v branch [new NAME | delete NAME | deleted | restore NAME | log [NAME]]")
+		return errors.New("usage: r3v branch [new NAME | archive NAME | archived | unarchive NAME | delete NAME | log [NAME]]")
 	}
 	branches, err := r.Branches()
 	if err != nil {

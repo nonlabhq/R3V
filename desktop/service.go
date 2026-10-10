@@ -461,6 +461,9 @@ func (a *App) State(root string) (*State, error) {
 	if len(changed) > 0 && r.Config.Remote != nil {
 		go a.autoLock(r.Root, changed) // (files of a locked kind changed meanwhile)
 	}
+	if r.Config.Remote != nil {
+		a.noteWorkLater(r.Root, len(changes))
+	}
 	st.MyEdits = nonNil(project.EditsIn(changes))
 	st.InUse = nonNil(r.InUse())
 	sw.lap("edits")
@@ -513,7 +516,7 @@ type TeamPart struct {
 	BranchNames bool `json:"branchNames"`
 	// BranchGone: the branch you are on was deleted from the team (nil
 	// otherwise): the page says so and offers it back.
-	BranchGone *DeletedBranch `json:"branchGone"`
+	BranchGone *ArchivedBranch `json:"branchGone"`
 	// Milestones: versions given a name for the team, newest first.
 	Milestones []Milestone `json:"milestones"`
 	// LocksOffer: offer to turn file locks on for the team (you its admin;
@@ -553,7 +556,7 @@ func (a *App) TeamState(root string) (*TeamPart, error) {
 		part.LocksOffer = locksOffer(r)
 		part.BranchNames = keepsBranchRecords(r)
 		if b := r.BranchName(); view.Heads[b] == "" && b != "main" {
-			if gone, err := a.deletedBranches(r); err == nil {
+			if gone, err := a.archivedBranches(r); err == nil {
 				for i := range gone {
 					if gone[i].Name == b {
 						part.BranchGone = &gone[i]

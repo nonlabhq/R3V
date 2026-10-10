@@ -31,6 +31,65 @@ import * as teammove$0 from "../internal/teammove/models.js";
 import * as textdiff$0 from "../internal/textdiff/models.js";
 
 /**
+ * ArchivedBranch is a branch archived, for getting it back.
+ */
+export class ArchivedBranch {
+    /**
+     * its key
+     */
+    "name": string;
+    "label": string;
+    "color": string;
+
+    /**
+     * who archived it ("" unknown)
+     */
+    "by": string;
+    "time": string;
+
+    /**
+     * Latest: its latest version then (nil when not on this computer).
+     */
+    "latest": Version | null;
+
+    /** Creates a new ArchivedBranch instance. */
+    constructor($$source: Partial<ArchivedBranch> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("label" in $$source)) {
+            this["label"] = "";
+        }
+        if (!("color" in $$source)) {
+            this["color"] = "";
+        }
+        if (!("by" in $$source)) {
+            this["by"] = "";
+        }
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+        if (!("latest" in $$source)) {
+            this["latest"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ArchivedBranch instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ArchivedBranch {
+        const $$createField5_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("latest" in $$parsedSource) {
+            $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
+        }
+        return new ArchivedBranch($$parsedSource as Partial<ArchivedBranch>);
+    }
+}
+
+/**
  * BackupInfo is a team's backup, for Team Settings.
  */
 export class BackupInfo {
@@ -152,7 +211,7 @@ export class BackupOthers {
      * Creates a new BackupOthers instance from a string or object.
      */
     static createFrom($$source: any = {}): BackupOthers {
-        const $$createField0_0 = $$createType1;
+        const $$createField0_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("others" in $$parsedSource) {
             $$parsedSource["others"] = $$createField0_0($$parsedSource["others"]);
@@ -209,7 +268,7 @@ export class Branch {
      * Creates a new Branch instance from a string or object.
      */
     static createFrom($$source: any = {}): Branch {
-        const $$createField5_0 = $$createType3;
+        const $$createField5_0 = $$createType1;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("latest" in $$parsedSource) {
             $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
@@ -665,65 +724,6 @@ export class ConvertFormat {
 }
 
 /**
- * DeletedBranch is a branch deleted from the team, for getting it back.
- */
-export class DeletedBranch {
-    /**
-     * its key
-     */
-    "name": string;
-    "label": string;
-    "color": string;
-
-    /**
-     * who deleted it ("" unknown)
-     */
-    "by": string;
-    "time": string;
-
-    /**
-     * Latest: its latest version then (nil when not on this computer).
-     */
-    "latest": Version | null;
-
-    /** Creates a new DeletedBranch instance. */
-    constructor($$source: Partial<DeletedBranch> = {}) {
-        if (!("name" in $$source)) {
-            this["name"] = "";
-        }
-        if (!("label" in $$source)) {
-            this["label"] = "";
-        }
-        if (!("color" in $$source)) {
-            this["color"] = "";
-        }
-        if (!("by" in $$source)) {
-            this["by"] = "";
-        }
-        if (!("time" in $$source)) {
-            this["time"] = "";
-        }
-        if (!("latest" in $$source)) {
-            this["latest"] = null;
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new DeletedBranch instance from a string or object.
-     */
-    static createFrom($$source: any = {}): DeletedBranch {
-        const $$createField5_0 = $$createType3;
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("latest" in $$parsedSource) {
-            $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
-        }
-        return new DeletedBranch($$parsedSource as Partial<DeletedBranch>);
-    }
-}
-
-/**
  * DownloadSize is the size of a team project's latest version, shown
  * before downloading it.
  */
@@ -838,7 +838,7 @@ export class FileVersion {
      * Creates a new FileVersion instance from a string or object.
      */
     static createFrom($$source: any = {}): FileVersion {
-        const $$createField0_0 = $$createType2;
+        const $$createField0_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("version" in $$parsedSource) {
             $$parsedSource["version"] = $$createField0_0($$parsedSource["version"]);
@@ -1999,8 +1999,8 @@ export class Result {
         const $$createField2_0 = $$createType6;
         const $$createField3_0 = $$createType34;
         const $$createField7_0 = $$createType30;
-        const $$createField8_0 = $$createType3;
-        const $$createField9_0 = $$createType3;
+        const $$createField8_0 = $$createType1;
+        const $$createField9_0 = $$createType1;
         const $$createField10_0 = $$createType41;
         const $$createField11_0 = $$createType19;
         const $$createField12_0 = $$createType43;
@@ -2721,7 +2721,7 @@ export class State {
     /**
      * BranchGone: from TeamState (TeamPart.BranchGone).
      */
-    "branchGone": DeletedBranch | null;
+    "branchGone": ArchivedBranch | null;
 
     /**
      * (TeamPart.Milestones)
@@ -2844,8 +2844,8 @@ export class State {
     static createFrom($$source: any = {}): State {
         const $$createField0_0 = $$createType35;
         const $$createField15_0 = $$createType6;
-        const $$createField16_0 = $$createType3;
-        const $$createField18_0 = $$createType3;
+        const $$createField16_0 = $$createType1;
+        const $$createField18_0 = $$createType1;
         const $$createField20_0 = $$createType61;
         const $$createField22_0 = $$createType32;
         const $$createField23_0 = $$createType6;
@@ -3233,7 +3233,7 @@ export class TeamPart {
      * BranchGone: the branch you are on was deleted from the team (nil
      * otherwise): the page says so and offers it back.
      */
-    "branchGone": DeletedBranch | null;
+    "branchGone": ArchivedBranch | null;
 
     /**
      * Milestones: versions given a name for the team, newest first.
@@ -3299,7 +3299,7 @@ export class TeamPart {
         const $$createField3_0 = $$createType30;
         const $$createField4_0 = $$createType30;
         const $$createField5_0 = $$createType30;
-        const $$createField6_0 = $$createType3;
+        const $$createField6_0 = $$createType1;
         const $$createField8_0 = $$createType70;
         const $$createField10_0 = $$createType65;
         const $$createField11_0 = $$createType67;
@@ -4088,11 +4088,82 @@ export class Version {
     }
 }
 
+/**
+ * Workspace is another copy of a project, as it last told the team.
+ */
+export class Workspace {
+    /**
+     * their name (their id when the team has none)
+     */
+    "member": string;
+    "memberId": string;
+    "branch": string;
+
+    /**
+     * files changed, not committed
+     */
+    "changes": number;
+
+    /**
+     * versions not shared
+     */
+    "unshared": number;
+
+    /**
+     * branches with changes parked
+     */
+    "parked": string[];
+
+    /**
+     * RFC 3339
+     */
+    "time": string;
+
+    /** Creates a new Workspace instance. */
+    constructor($$source: Partial<Workspace> = {}) {
+        if (!("member" in $$source)) {
+            this["member"] = "";
+        }
+        if (!("memberId" in $$source)) {
+            this["memberId"] = "";
+        }
+        if (!("branch" in $$source)) {
+            this["branch"] = "";
+        }
+        if (!("changes" in $$source)) {
+            this["changes"] = 0;
+        }
+        if (!("unshared" in $$source)) {
+            this["unshared"] = 0;
+        }
+        if (!("parked" in $$source)) {
+            this["parked"] = [];
+        }
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Workspace instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Workspace {
+        const $$createField5_0 = $$createType6;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("parked" in $$parsedSource) {
+            $$parsedSource["parked"] = $$createField5_0($$parsedSource["parked"]);
+        }
+        return new Workspace($$parsedSource as Partial<Workspace>);
+    }
+}
+
 // Private type creation functions
-const $$createType0 = MemberBackup.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = Version.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
+const $$createType0 = Version.createFrom;
+const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = MemberBackup.createFrom;
+const $$createType3 = $Create.Array($$createType2);
 const $$createType4 = Branch.createFrom;
 const $$createType5 = $Create.Array($$createType4);
 const $$createType6 = $Create.Array($Create.Any);
@@ -4119,7 +4190,7 @@ const $$createType26 = ParkedSet.createFrom;
 const $$createType27 = $Create.Nullable($$createType26);
 const $$createType28 = PreuploadFile.createFrom;
 const $$createType29 = $Create.Array($$createType28);
-const $$createType30 = $Create.Array($$createType2);
+const $$createType30 = $Create.Array($$createType0);
 const $$createType31 = Change.createFrom;
 const $$createType32 = $Create.Array($$createType31);
 const $$createType33 = Conflict.createFrom;
@@ -4153,7 +4224,7 @@ const $$createType60 = $Create.Array($$createType59);
 const $$createType61 = $Create.Array($$createType26);
 const $$createType62 = project$0.TrackEdit.createFrom;
 const $$createType63 = $Create.Array($$createType62);
-const $$createType64 = DeletedBranch.createFrom;
+const $$createType64 = ArchivedBranch.createFrom;
 const $$createType65 = $Create.Nullable($$createType64);
 const $$createType66 = Milestone.createFrom;
 const $$createType67 = $Create.Array($$createType66);

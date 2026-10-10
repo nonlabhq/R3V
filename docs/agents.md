@@ -81,7 +81,14 @@ when a field changes meaning; new fields may appear any time.
 
 `log` (`-n N` for the newest N): `versions`, newest first: `id`, `time`
 (RFC 3339), `author`, `message`, `parents`, `branches` (team branches at
-that version).
+that version), `made_on` (the branch it was made on, for good; none on
+versions from before R3V kept it). Merging another branch always makes a
+version.
+
+`branch archive NAME` puts a branch away (versions stay; not main, not the
+one you're on); `branch archived` lists them; `branch unarchive NAME` brings
+one back; `branch delete NAME` deletes an archived branch for good (ask the
+user first).
 
 `save`, `update` and `merge`: `action` (`published`, `local`,
 `nothing-changed`, `up-to-date`, `ahead`, `fast-forward`, `merged`),

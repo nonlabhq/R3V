@@ -108,7 +108,7 @@ func (a *App) BranchList(root string) (*BranchList, error) {
 	}
 	recs := branchRecords(r, true)
 	for _, b := range r.BranchesFrom(view.Heads) {
-		br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Current: b.Current}
+		br := Branch{Name: b.Name, Label: recs[b.Name].Name, Color: recs[b.Name].Color, Parent: recs[b.Name].Parent, Current: b.Current}
 		if b.Latest != nil {
 			v := toVersion(b.Latest, nil)
 			br.Latest = &v
@@ -118,27 +118,27 @@ func (a *App) BranchList(root string) (*BranchList, error) {
 	return out, nil
 }
 
-// DeletedBranch is a branch deleted from the team, for getting it back.
-type DeletedBranch struct {
+// ArchivedBranch is a branch archived, for getting it back.
+type ArchivedBranch struct {
 	Name  string `json:"name"` // its key
 	Label string `json:"label"`
 	Color string `json:"color"`
-	By    string `json:"by"` // who deleted it ("" unknown)
+	By    string `json:"by"` // who archived it ("" unknown)
 	Time  string `json:"time"`
 	// Latest: its latest version then (nil when not on this computer).
 	Latest *Version `json:"latest"`
 }
 
-func (a *App) deletedBranches(r *project.Repo) ([]DeletedBranch, error) {
-	gone, err := r.DeletedBranches()
+func (a *App) archivedBranches(r *project.Repo) ([]ArchivedBranch, error) {
+	gone, err := r.ArchivedBranches()
 	if err != nil {
 		return nil, err
 	}
 	recs := branchRecords(r, true)
 	names := a.memberNames(r)
-	out := []DeletedBranch{}
+	out := []ArchivedBranch{}
 	for _, d := range gone {
-		db := DeletedBranch{Name: d.Key, Label: recs[d.Key].Name, Color: recs[d.Key].Color, By: names[d.By],
+		db := ArchivedBranch{Name: d.Key, Label: recs[d.Key].Name, Color: recs[d.Key].Color, By: names[d.By],
 			Time: d.Time.Format(time.RFC3339)}
 		if r.HasSnapshot(d.Head) {
 			if m, err := r.Load(d.Head); err == nil {
@@ -151,18 +151,18 @@ func (a *App) deletedBranches(r *project.Repo) ([]DeletedBranch, error) {
 	return out, nil
 }
 
-// DeletedBranches lists project root's branches deleted from the team, the
-// last deleted first.
-func (a *App) DeletedBranches(root string) ([]DeletedBranch, error) {
+// ArchivedBranches lists project root's archived branches, the last
+// archived first.
+func (a *App) ArchivedBranches(root string) ([]ArchivedBranch, error) {
 	r, err := project.Open(root)
 	if err != nil {
 		return nil, err
 	}
-	return a.deletedBranches(r)
+	return a.archivedBranches(r)
 }
 
 // VersionsOnlyOnBranch counts the versions of branch key no other branch
-// has (what deleting it leaves on no branch: they stay recoverable).
+// has (what archiving it leaves on no branch: they stay recoverable).
 func (a *App) VersionsOnlyOnBranch(root, key string) (int, error) {
 	r, err := project.Open(root)
 	if err != nil {
@@ -171,8 +171,25 @@ func (a *App) VersionsOnlyOnBranch(root, key string) (int, error) {
 	return r.OnlyOnBranch(key)
 }
 
-// DeleteBranch deletes branch key from the team (not main, not the one
-// you are on); it can be got back (RestoreBranch).
+// ArchiveBranches archives branches (a branch and those made from it: not
+// main, not the one you are on); keep: those made from them that stay,
+// each with the branch it now comes from. They can be got back
+// (UnarchiveBranch).
+func (a *App) ArchiveBranches(root string, keys []string, keep map[string]string) error {
+	r, unlock, err := a.open(root)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if err := r.ArchiveBranches(keys, keep); err != nil {
+		return err
+	}
+	a.refetchTeam(r)
+	branchRecords(r, true)
+	return nil
+}
+
+// DeleteBranch deletes archived branch key for good (listed no more).
 func (a *App) DeleteBranch(root, key string) error {
 	r, unlock, err := a.open(root)
 	if err != nil {
@@ -182,19 +199,18 @@ func (a *App) DeleteBranch(root, key string) error {
 	if err := r.DeleteBranch(key); err != nil {
 		return err
 	}
-	a.refetchTeam(r)
 	branchRecords(r, true)
 	return nil
 }
 
-// RestoreBranch puts deleted branch key back where it was.
-func (a *App) RestoreBranch(root, key string) error {
+// UnarchiveBranch puts archived branch key back where it was.
+func (a *App) UnarchiveBranch(root, key string) error {
 	r, unlock, err := a.open(root)
 	if err != nil {
 		return err
 	}
 	defer unlock()
-	if err := r.RestoreBranch(key); err != nil {
+	if err := r.UnarchiveBranch(key); err != nil {
 		return err
 	}
 	a.refetchTeam(r)

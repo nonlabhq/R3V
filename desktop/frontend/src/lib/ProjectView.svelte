@@ -36,6 +36,7 @@
   import ProjectCheck from "./ProjectCheck.svelte";
   import MergeDecisions, { type MergeKind } from "./MergeDecisions.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
+  import ArchiveDialog from "./ArchiveDialog.svelte";
   import LiveBlockedDialog from "./LiveBlockedDialog.svelte";
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
   import PromptDialog from "./PromptDialog.svelte";
@@ -85,7 +86,11 @@
   let refreshing = $state(false);
 
   // dialogs
-  let preview = $state<{ title: string; label: string; data: Preview; run: Action; blocked: string } | null>(null);
+  let preview = $state<{ title: string; label: string; data: Preview; run: Action; blocked: string; archive?: string } | null>(null);
+  // Merging a branch offers archiving it after (ticked at first): the
+  // archive dialog then opens on it, for the branches made from it.
+  let archiveAfter = $state(true);
+  let archiving = $state<{ branch: string; merged: boolean } | null>(null);
   let conflicts = $state<{ result: Result; run: Action; force: boolean } | null>(null);
   let liveBlocked = $state<{ run: Action; resolutions: Record<string, string>; set: string } | null>(null);
   let newBranch = $state<string | null>(null);
@@ -546,15 +551,20 @@
       const data = await api.PreviewMerge(root, name);
       if (!data) return;
       mergeMessage = data.message;
+      archiveAfter = true;
       preview = {
         title: t("Merge “{from}” into “{into}”", { from: bl(name), into: bl(st?.branch ?? "") }), label: t("Merge and share"), data,
         blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
+        archive: name !== "main" ? name : undefined,
         run: {
           name: "merge",
           merge: { kind: "merge", branch: name },
           call: (res, force) => api.MergeBranch(root, name, mergeMessage ?? "", res, force),
-          done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
-            ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
+          done: (r) => {
+            const nothing = r.action === "up-to-date" || r.action === "ahead";
+            toast(nothing ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000);
+            if (archiveAfter && name !== "main") archiving = { branch: name, merged: true };
+          },
         },
       };
     } catch (e) {
@@ -591,13 +601,13 @@
     }
   }
 
-  // The branch you are on was deleted from the team: back where it was.
+  // The branch you are on was archived: back where it was.
   async function restoreGoneBranch() {
     const g = st?.branchGone;
     if (!g) return;
     busy = "restore-branch";
     try {
-      await api.RestoreBranch(root, g.name);
+      await api.UnarchiveBranch(root, g.name);
       toast(t("“{branch}” is back, where it was.", { branch: g.label || g.name }), "ok");
       await load();
       onchanged();
@@ -1138,6 +1148,7 @@
   {#if preview}
     {@const p = preview}
     <PreviewDialog {root} keepsWork={p.run === updateAction && !!st.changes.length} title={p.title} preview={p.data} actionLabel={p.label} blocked={p.blocked} bind:message={mergeMessage}
+      archive={p.archive ? `“${bl(p.archive)}”` : ""} bind:archiveAfter
       onclose={() => (preview = null)}
       onconfirm={() => { const action = p.run; preview = null; run(action); }} />
   {/if}
@@ -1192,7 +1203,12 @@
   {/if}
 
   {#if branchSettings !== null}
-    <BranchSettings {root} branch={branchSettings} branches={st.branches} onchanged={() => { load(); onchanged(); }} onclose={() => (branchSettings = null)} />
+    <BranchSettings {root} branch={branchSettings} branches={st.branches} history={st.history} onchanged={() => { load(); onchanged(); }} onclose={() => (branchSettings = null)} />
+  {/if}
+
+  {#if archiving}
+    <ArchiveDialog {root} branch={archiving.branch} branches={st.branches} history={st.history} current={st.branch} merged={archiving.merged}
+      onarchived={() => { load(); onchanged(); }} onclose={() => (archiving = null)} />
   {/if}
 {/if}
 

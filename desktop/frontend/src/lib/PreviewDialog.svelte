@@ -4,7 +4,8 @@
   import IncomingChanges from "./IncomingChanges.svelte";
   import { type Preview } from "./api";
 
-  let { root, title, preview, actionLabel, onconfirm, onclose, blocked = "", keepsWork = false, message = $bindable(null) }: {
+  let { root, title, preview, actionLabel, onconfirm, onclose, blocked = "", keepsWork = false, message = $bindable(null),
+    archive = "", archiveAfter = $bindable(true) }: {
     root: string;
     title: string;
     preview: Preview;
@@ -15,6 +16,10 @@
     keepsWork?: boolean; // uncommitted changes stay (an update)
     // The new version's description (merges), editable; null: none.
     message?: string | null;
+    // A branch merged in: archive it after (and the branches made from
+    // it: asked next), ticked at first. "": not offered.
+    archive?: string;
+    archiveAfter?: boolean;
   } = $props();
 
   // Only a real merge makes a new version (a fast-forward takes theirs).
@@ -69,6 +74,9 @@
       <label for="merge-msg">{t("Description of the merge version")}</label>
       <textarea id="merge-msg" rows="2" bind:value={message}></textarea>
     {/if}
+    {#if archive && !blocked}
+      <label class="check"><input type="checkbox" bind:checked={archiveAfter} />{t("Archive {branch} after merging", { branch: archive })}</label>
+    {/if}
     {#if blocked}<p class="blocked">{blocked}</p>{/if}
   {/if}
   {#snippet footer()}
@@ -80,6 +88,7 @@
 </Modal>
 
 <style>
+  label.check { display: flex; align-items: center; gap: var(--sp-8); margin-top: var(--sp-12); color: var(--text); }
   .effects { margin-top: var(--sp-14); padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); border: var(--border-width) solid var(--line); }
   .effects ul { margin: var(--sp-6) 0 0; padding-left: var(--sp-20); }
   .conflicts {

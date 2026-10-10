@@ -1,6 +1,6 @@
 # Branches as a tree
 
-Status: steps 1–3 built (below); 4–5 planned. The version format (2)
+Status: built. The version format (2)
 is both channels', as every format is: the release that ships it forces
 updating (`-MinVersion`); older R3Vs can't read format 2 versions.
 
@@ -81,8 +81,9 @@ can be deleted.
   and said so ("Kai is on Hello: 1 version not shared, 2 hours ago").
   Children left unticked stay, under the archived branch's parent.
 - **Merging offers it**: the merge preview has "Archive Amazing Ideal
-  after merging (and Test, Hello)", ticked by default, each child
-  untickable as above.
+  after merging", ticked by default; once merged, the archive dialog
+  above opens on it (its children untickable as above, "Keep it" to
+  leave it be).
 - **Unarchive** brings the subtree back as it was.
 - **Delete** (archived branches only, asked again): the branch's key and
   record go for good. Its versions stay (storage cleanup never deletes a
@@ -91,19 +92,21 @@ can be deleted.
 - main is never archived; neither is the branch you are on (switch
   first).
 
-Archiving is the record's `archived: {head, by, time}` and the key
-removed, as deleting is today (`deleted` becomes `archived`; the
-interruption table in [branches.md](branches.md) stands, with the
-subtree's branches one by one, parent last). Deleting removes the record
-and the branch log keeps the move.
+Archiving is the record's `deleted: {head, by, time}` (its first name,
+kept) and the key removed (`Repo.ArchiveBranch`; the interruption table
+in [branches.md](branches.md) stands), the subtree's branches one by one,
+those made from others first (`ArchiveBranches`; the ones kept get their
+new `parent` before). Deleting marks the record `removed` (listed no
+more, the key free again); the branch log keeps the moves. A new branch
+never takes an archived branch's key.
 
 ### A teammate's branch archived
 
 Their work is never lost, whatever was known when archiving: their files
 and versions stay on their computer. The project's page says "Test was
-archived by Yi" with **Unarchive**, **Bring my changes to another branch**
-(Parked's Bring changes here) and **Start a new branch here** (their
-unshared versions go on it).
+archived by Yi" with **Unarchive it**, **Switch to main** (their changes
+parked on the archived branch, brought anywhere with Bring changes here)
+and **Go on in a new branch** (their unshared versions go on it).
 
 ## Who is working where
 

@@ -296,36 +296,57 @@ describe("ProjectView: the team", () => {
     await waitFor(() => expect(api.SetBranchRecord).toHaveBeenLastCalledWith(ROOT, "b-1a2b3c4d", "Verse, take 2", "b7"));
   });
 
-  it("deletes a branch, saying what stays", async () => {
-    await show({ branchNames: true, branches: [{ name: "main", label: "", color: "", current: true, latest: null },
-      { name: "idea", label: "Idea", color: "", current: false, latest: null }] });
+  it("archives a branch with those made from it, keeping one a teammate works on", async () => {
+    const br = (name: string, parent = "", current = false) => ({ name, label: "", color: "", parent, current, latest: null });
+    await show({ branchNames: true, branches: [br("main", "", true), br("idea", "main"), br("test", "idea"), br("hello", "idea")] });
+    api.Workspaces.mockResolvedValue([{ member: "Kai", memberId: "k", branch: "hello", changes: 3, unshared: 1, parked: [], time: new Date().toISOString() }]);
+    api.VersionsOnlyOnBranch.mockResolvedValue(2);
+    api.ArchiveBranches.mockResolvedValue(undefined);
     await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
     await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: "Branch settings" })[1]);
-    api.VersionsOnlyOnBranch.mockResolvedValue(2);
-    api.DeleteBranch.mockResolvedValue(undefined);
-    await fireEvent.click(screen.getByRole("button", { name: "Delete branch…" }));
-    expect(await screen.findByText(/2 versions are only on this branch/)).toBeTruthy();
-    await fireEvent.click(screen.getByRole("button", { name: "Delete branch" }));
-    await waitFor(() => expect(api.DeleteBranch).toHaveBeenCalledWith(ROOT, "idea"));
-    await toasted(/Deleted “Idea”/);
+    await fireEvent.click(screen.getByRole("button", { name: "Archive branch…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Archive “idea”?" });
+    expect(await within(dialog).findByText(/Kai is on it: 3 changes not committed, 1 version not shared/)).toBeTruthy();
+    const box = (name: string) => within(dialog).getByText(`“${name}”`).closest("label")!.querySelector("input")!;
+    await waitFor(() => expect(box("test").checked).toBe(true));
+    expect(box("hello").checked).toBe(false); // (Kai's work)
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Archive" }));
+    await waitFor(() => expect(api.ArchiveBranches).toHaveBeenCalledWith(ROOT, ["idea", "test"], { hello: "main" }));
+    await toasted(/Archived 2 branches/);
   });
 
-  it("can't delete the branch you're on, nor main", async () => {
-    await show({ branchNames: true, branch: "idea", branches: [{ name: "main", label: "", color: "", current: false, latest: null },
-      { name: "idea", label: "", color: "", current: true, latest: null }] });
+  it("offers archiving a branch merged in (ticked), and asks about it after", async () => {
+    await show({ branches: [{ name: "main", label: "", color: "", parent: "", current: true, latest: null },
+      { name: "idea", label: "", color: "", parent: "main", current: false, latest: null }] });
+    api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge idea", versions: [], changes: [], conflicts: [] });
+    api.MergeBranch.mockResolvedValue(result("merged"));
+    api.Workspaces.mockResolvedValue([]);
+    api.VersionsOnlyOnBranch.mockResolvedValue(0);
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: /^idea$/ }).at(-1)!); // (under "Merge into main")
+    const archive = await screen.findByLabelText("Archive “idea” after merging") as HTMLInputElement;
+    expect(archive.checked).toBe(true);
+    await fireEvent.click(screen.getByRole("button", { name: "Merge and share" }));
+    await waitFor(() => expect(api.MergeBranch).toHaveBeenCalled());
+    expect(await screen.findByRole("dialog", { name: "Archive “idea” now that it's merged?" })).toBeTruthy();
+  });
+
+  it("can't archive the branch you're on, nor main", async () => {
+    await show({ branchNames: true, branch: "idea", branches: [{ name: "main", label: "", color: "", parent: "", current: false, latest: null },
+      { name: "idea", label: "", color: "", parent: "main", current: true, latest: null }] });
     await fireEvent.click(screen.getByRole("button", { name: /idea ▾/ }));
     const gears = within(screen.getByRole("menu")).getAllByRole("button", { name: "Branch settings" });
     await fireEvent.click(gears[0]); // the one you're on
-    expect(screen.getByText(/switch to another one to delete it/)).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Delete branch…" })).toBeNull();
+    expect(screen.getByText(/switch to another one to archive it/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Archive branch…" })).toBeNull();
   });
 
-  it("says the branch you're on was deleted, and brings it back", async () => {
+  it("says the branch you're on was archived, and brings it back", async () => {
     await show({ branch: "idea", branchGone: { name: "idea", label: "Idea", color: "", by: "Mia", time: new Date().toISOString(), latest: null } });
-    expect(screen.getByText(/was deleted from the team by Mia/)).toBeTruthy();
-    api.RestoreBranch.mockResolvedValue(undefined);
-    await fireEvent.click(screen.getByRole("button", { name: "Restore it" }));
-    await waitFor(() => expect(api.RestoreBranch).toHaveBeenCalledWith(ROOT, "idea"));
+    expect(screen.getByText(/was archived by Mia/)).toBeTruthy();
+    api.UnarchiveBranch.mockResolvedValue(undefined);
+    await fireEvent.click(screen.getByRole("button", { name: "Unarchive it" }));
+    await waitFor(() => expect(api.UnarchiveBranch).toHaveBeenCalledWith(ROOT, "idea"));
     await toasted(/“Idea” is back/);
   });
 
