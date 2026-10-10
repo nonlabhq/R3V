@@ -45,6 +45,42 @@ r3v workspace remove <folder>        # when merged; asks (fails) if not
   build`. Each keeps its own `target/` (a shared one makes builds wait
   for each other).
 
+Built (`feat/workspaces`; `internal/project/workspaces.go`, `r3v
+workspace` on Nightly):
+
+| Shared: the main copy's `.r3v` (`CommonDir`) | Each copy's own `.r3v` (`Dir`) |
+|---|---|
+| `objects/` (the store, its `tmp/`) | `config.json`: branch, workspace id, tip (team, project id and name are read from the main copy's) |
+| `snapshots/`, `trees/` (the versions) | `HEAD`, `index.bin`, `switching` |
+| `chunks/` (chunk lists, by content) | `parked/`, `kept-work` (their versions are in the shared `snapshots/`) |
+| `remote-objects` (what only the team's storage has) | `preupload/`, `preuploaded` |
+| `workspaces.json` (the registry), `agent-locks/` | `external/` (samples for its own sets), `lock`, `locks-waiting.json`, `team-seen.json`, `workspace-noted.json` |
+| | `workspace.json` (a workspace's only): the main copy's `.r3v`, the base branch and the version it started at |
+
+- What is written whole and named by its content is shared; what says
+  where a copy is, or what it has under way, is its own.
+- Cleanup in any copy keeps every copy's needs: the shared versions
+  include every copy's parked sets and kept work (GC keeps their files);
+  pruning keeps every copy's parked content; dropping kept work never
+  drops what another copy parked or kept; cleanup keeps every copy's early
+  uploads listed. It takes every other copy's lock first (not waiting): a
+  copy committing has files in the store no version names yet.
+- A copy's files stand in for the store for every copy (each used only
+  while as it was hashed, and checked again after it is copied): making
+  a workspace after the store gave the team's files up downloads nothing.
+- Files are put in place by the system's copy (`CopyFileW`: block cloning
+  on ReFS and Dev Drive), then given the time they were written (a build
+  tool must not take them for old ones).
+- A workspace can't be in another copy's folder, or hold one. Connecting
+  it to a team or moving it to another is refused (`in_workspace`): it
+  follows the main copy. Its branch is made with the existing branch
+  calls; marking it `kind: agent` comes with Records.
+- Not yet: the app; `--agent` (agent setup); archiving the branch when
+  the workspace goes; a workspace whose main copy moved (it says so,
+  `workspace_orphaned`: make it again). Older R3V versions don't know
+  workspaces: one run in a workspace folder finds no versions there (it
+  changes nothing of the main copy's).
+
 ## The overview
 
 `r3v workspace list --json` and the app's **Agents** view (in the
@@ -180,7 +216,8 @@ way, no format change). The app shows the title, the details unfolded;
 `r3v agent setup [--tool claude-code]` in a workspace: writes the hooks
 (`PreToolUse` → `r3v hook pre-tool`, reading the tool call and answering
 allow or deny), `R3V_ACTOR`, and the agents' guide where the tool reads
-them (`.claude/settings.json`, `CLAUDE.md`); run by `workspace add
+them (`.claude/settings.local.json`, this copy's and never tracked;
+`CLAUDE.md` in the main copy, committed); run by `workspace add
 --agent claude-code`.
 
 ## Stopping half-way
@@ -189,11 +226,21 @@ Each step lists its states (docs/development.md#interruptions):
 
 - `workspace add`: the folder written, then registered. Stopped before,
   the folder is a leftover that `workspace add` again finishes or
-  `remove` clears; registered, it works.
+  `remove` clears; registered, it works. In order: its `.r3v/workspace.json`
+  (from then on the folder is known as this project's leftover), its
+  config, the files (a switch: `switching` until they are all there, then
+  `HEAD`), its branch on the team (stopped after the branch but before
+  the workspace knew it, `add` again takes that branch when it is at the
+  workspace's version), the registry. The main copy is never written.
+- `workspace remove`: checked first, then unregistered, then the folder
+  deleted, only if all its work is merged (or the person said so).
+  Checked: work not merged, changes, parked; a command at work in it:
+  busy. Unregistered, then its parked and kept
+  versions dropped (those no other copy holds), then its files, its
+  `.r3v` last (so a stop leaves a folder still known as a leftover:
+  `remove` again clears it).
 - Locks: a lock file is whole or absent (made then renamed); asking for
   several, any refused takes back the ones just made.
-- `workspace remove`: unregistered first, then the folder deleted only if
-  all its work is merged (or the person said so).
 - A hunk-by-hunk merge writes nothing until every hunk is decided.
 
 ## Lanes

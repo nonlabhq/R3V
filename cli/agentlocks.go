@@ -432,7 +432,7 @@ func cmdAgent(args []string) error {
 		return err
 	}
 	r.RefreshAgentTeamLocks()
-	changed, err := setupClaudeCode(r.Root, hookCommand())
+	changed, err := setupClaudeCode(r.Root, hookCommand(), !r.IsWorkspace()) // (the guide: in the main copy, committed once)
 	if err != nil {
 		return err
 	}
@@ -465,12 +465,14 @@ func hookCommand() string {
 	return `"` + filepath.ToSlash(exe) + `" hook pre-tool`
 }
 
-// setupClaudeCode writes Claude Code's settings in root (merged with
-// what's there: only the hook and R3V_ACTOR are R3V's) and the agents'
-// guide in CLAUDE.md. Running it again changes nothing.
-func setupClaudeCode(root, command string) ([]string, error) {
+// setupClaudeCode writes Claude Code's settings for this copy in root
+// (.claude/settings.local.json, which R3V never tracks: the hook's path and
+// R3V_ACTOR are this computer's; merged with what's there) and, with guide,
+// the agents' guide in CLAUDE.md (the project's: committed). Running it
+// again changes nothing.
+func setupClaudeCode(root, command string, guide bool) ([]string, error) {
 	var changed []string
-	path := filepath.Join(root, ".claude", "settings.json")
+	path := filepath.Join(root, ".claude", "settings.local.json")
 	settings := map[string]any{}
 	data, err := os.ReadFile(path)
 	switch {
@@ -518,11 +520,14 @@ func setupClaudeCode(root, command string) ([]string, error) {
 		if err := store.WriteAtomic(path, strings.NewReader(string(out)+"\n")); err != nil {
 			return nil, err
 		}
-		changed = append(changed, filepath.ToSlash(filepath.Join(".claude", "settings.json")))
+		changed = append(changed, filepath.ToSlash(filepath.Join(".claude", "settings.local.json")))
+	}
+	if !guide {
+		return changed, nil
 	}
 
-	guide := filepath.Join(root, "CLAUDE.md")
-	old, err := os.ReadFile(guide)
+	guidePath := filepath.Join(root, "CLAUDE.md")
+	old, err := os.ReadFile(guidePath)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return changed, err
 	}
@@ -535,7 +540,7 @@ func setupClaudeCode(root, command string) ([]string, error) {
 		if text != "" {
 			text += "\n"
 		}
-		if err := store.WriteAtomic(guide, strings.NewReader(text+docs.AgentsSnippet)); err != nil {
+		if err := store.WriteAtomic(guidePath, strings.NewReader(text+docs.AgentsSnippet)); err != nil {
 			return changed, err
 		}
 		changed = append(changed, "CLAUDE.md")

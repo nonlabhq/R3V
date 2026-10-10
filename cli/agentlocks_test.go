@@ -217,15 +217,15 @@ func TestAgentSetup(t *testing.T) {
     "Stop": [{"hooks": [{"type": "command", "command": "notify"}]}]
   }
 }`
-	os.WriteFile(filepath.Join(dir, ".claude", "settings.json"), []byte(existing), 0o644)
+	os.WriteFile(filepath.Join(dir, ".claude", "settings.local.json"), []byte(existing), 0o644)
 	os.WriteFile(filepath.Join(dir, "CLAUDE.md"), []byte("# My project\nBe nice."), 0o644)
 
 	exit, rep := run(t, dir, "agent", "setup")
-	if exit != 0 || !strings.Contains(string(rep.Result), "settings.json") || !strings.Contains(string(rep.Result), "CLAUDE.md") {
+	if exit != 0 || !strings.Contains(string(rep.Result), "settings.local.json") || !strings.Contains(string(rep.Result), "CLAUDE.md") {
 		t.Fatalf("setup: %s %+v", rep.Result, rep.Error)
 	}
 	read := func() map[string]any {
-		data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.json"))
+		data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json"))
 		var s map[string]any
 		if err := json.Unmarshal(data, &s); err != nil {
 			t.Fatal(err)
@@ -266,11 +266,11 @@ func TestAgentSetup(t *testing.T) {
 	}
 
 	// Settings R3V can't read are left alone.
-	os.WriteFile(filepath.Join(dir, ".claude", "settings.json"), []byte("{broken"), 0o644)
+	os.WriteFile(filepath.Join(dir, ".claude", "settings.local.json"), []byte("{broken"), 0o644)
 	if exit, _ := run(t, dir, "agent", "setup"); exit == 0 {
 		t.Fatal("broken settings overwritten")
 	}
-	if data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.json")); string(data) != "{broken" {
+	if data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json")); string(data) != "{broken" {
 		t.Fatal("changed")
 	}
 	if exit, rep := run(t, dir, "agent", "setup", "--tool", "codex"); exit != 2 || rep.Error.Code != "usage" {

@@ -141,6 +141,11 @@ var codes = []struct {
 	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
+	{project.ErrWorkspaceNotDone, "workspace_not_merged", exitError,
+		"merge its branch (r3v merge <branch> in the main copy), commit or discard its changes; or --force to lose them"},
+	{project.ErrInWorkspace, "in_workspace", exitError, "run it in the project's main copy"},
+	{project.ErrWorkspaceOrphaned, "workspace_orphaned", exitError, "the project's main copy was moved or deleted: make the workspace again"},
+	{project.ErrWorkspacesNotInBuild, "needs_nightly", exitUpgrade, "the user must switch R3V to the Nightly channel (Settings → Updates)"},
 }
 
 // classify gives err its code.

@@ -60,6 +60,10 @@ type Repo struct {
 	Store  *store.Store
 	Config Config
 
+	// common: the main copy's .r3v when this copy is a workspace (see
+	// CommonDir); empty for the main copy.
+	common string
+
 	// OnProgress, when set, hears about long steps (see Progress).
 	OnProgress func(Progress)
 	// stop, when set, is asked as data goes up or down: an error stops the
@@ -191,11 +195,35 @@ func Open(dir string) (*Repo, error) {
 		}
 		dir = parent
 	}
-	r := &Repo{Root: dir, Dir: filepath.Join(dir, metaDir)}
+	return openAt(dir)
+}
+
+// openAt opens the project whose folder is root (not searching upward). A
+// workspace takes its team and project from the main copy (renamed or
+// moved there, it is here too) and uses the main copy's store.
+func openAt(root string) (*Repo, error) {
+	r := &Repo{Root: root, Dir: filepath.Join(root, metaDir)}
+	link, err := readLink(r.Dir)
+	if err != nil {
+		return nil, err
+	}
+	if link != nil {
+		r.common = filepath.Clean(link.Common)
+		if fi, err := os.Stat(r.common); err != nil || !fi.IsDir() {
+			return nil, fmt.Errorf("%w: its main copy (%s) is gone", ErrWorkspaceOrphaned, filepath.Dir(r.common))
+		}
+	}
 	if err := readJSON(filepath.Join(r.Dir, "config.json"), &r.Config); err != nil {
 		return nil, err
 	}
-	r.Store, err = store.Open(filepath.Join(r.Dir, "objects"))
+	if link != nil {
+		var main Config
+		if err := readJSON(filepath.Join(r.common, "config.json"), &main); err != nil {
+			return nil, err
+		}
+		r.Config.ProjectID, r.Config.Name, r.Config.Remote = main.ProjectID, main.Name, main.Remote
+	}
+	r.Store, err = store.Open(filepath.Join(r.CommonDir(), "objects"))
 	return r, err
 }
 
@@ -274,9 +302,14 @@ func (r *Repo) Abs(rel string) string { return filepath.Join(r.Root, filepath.Fr
 
 // CommonDir is the .r3v folder every workspace of the project shares (the
 // store, the versions, the workspace list, the agent locks: see
-// docs/design/agent-workspaces.md); this copy's own .r3v (Dir) for a project
-// with no workspaces.
-func (r *Repo) CommonDir() string { return r.Dir }
+// docs/design/agent-workspaces.md and the table in workspaces.go): the main
+// copy's .r3v, which is Dir there.
+func (r *Repo) CommonDir() string {
+	if r.common != "" {
+		return r.common
+	}
+	return r.Dir
+}
 
 func writeJSON(path string, v any) error {
 	data, err := json.MarshalIndent(v, "", "  ")

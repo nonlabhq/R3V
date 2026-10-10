@@ -1,0 +1,20 @@
+//go:build nightly
+
+package cli
+
+// Workspaces (several agents on one project) are on the Nightly channel
+// while they're new.
+func init() {
+	extraCommands["workspace"] = cmdWorkspace
+	jsonCommands["workspace"] = true
+	extraUsage += `
+workspaces (several agents on one project; Nightly):
+  workspace add <folder> --branch NAME [--from BRANCH|VERSION]
+                                         another copy of the project on a branch of its own, made
+                                         from the files here; --agent claude-code sets it up
+                                         for the agent (hook, R3V_ACTOR)
+  workspace list                         each workspace: branch, ahead/behind its base, changes
+  workspace remove <folder> [--force]    once its branch is merged (archived then; --force: lose
+                                         its work)
+`
+}

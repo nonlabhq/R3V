@@ -469,6 +469,9 @@ func core(rel string, isDir bool) string {
 	if segs[0] == ".r3v" {
 		return "R3V's own folder"
 	}
+	if rel == ".claude/settings.local.json" {
+		return "an agent tool's settings for this copy" // (r3v agent setup: this computer's paths)
+	}
 	for i, s := range segs {
 		dir := i < len(segs)-1 || isDir
 		if dir && s == ".git" {

@@ -118,6 +118,8 @@ type statusJSON struct {
 	InUse []string `json:"in_use"`
 	// Suggestions: projects of tools found in folders the rules don't name.
 	Suggestions []suggestionJSON `json:"suggestions"`
+	// MainCopy: in a workspace, the folder of the project's main copy.
+	MainCopy string `json:"main_copy,omitempty"`
 }
 
 type teamJSON struct {
@@ -144,6 +146,9 @@ func cmdStatus(args []string) error {
 		OnOlderVersion: r.OnOlderVersion(), Changes: []changeJSON{}, Suggestions: []suggestionJSON{}}
 	if out.OnOlderVersion {
 		out.Latest = r.Latest()
+	}
+	if r.IsWorkspace() {
+		out.MainCopy = r.MainRoot()
 	}
 	if r.Config.Remote != nil {
 		incoming, err := r.Incoming()
@@ -179,6 +184,9 @@ func cmdStatus(args []string) error {
 }
 
 func printStatus(r *project.Repo, s statusJSON) {
+	if s.MainCopy != "" {
+		fmt.Printf("workspace on branch %s (the project's main copy: %s)\n", r.BranchLabel(s.Branch), s.MainCopy)
+	}
 	switch {
 	case s.OnOlderVersion:
 		fmt.Printf("on an older version %s (latest: %s; `r3v goto latest` goes back)\n", short(s.Version), short(s.Latest))
