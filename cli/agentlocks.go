@@ -103,7 +103,7 @@ func cmdLock(args []string) error {
 	if len(paths) == 0 || (brk && (len(paths) != 1 || kind == agentlock.KindClaim)) {
 		return usageError("usage: r3v lock <paths…> [--claim] | r3v lock --break <path>")
 	}
-	r, err := project.Open(".")
+	r, err := openAgent(".")
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func cmdUnlock(args []string) error {
 	if len(args) == 0 {
 		return usageError("usage: r3v unlock <paths…>")
 	}
-	r, err := project.Open(".")
+	r, err := openAgent(".")
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func cmdLocks(args []string) error {
 	if len(args) > 0 {
 		return usageError("usage: r3v locks [--json]")
 	}
-	r, err := project.Open(".")
+	r, err := openAgent(".")
 	if err != nil {
 		return err
 	}
@@ -322,7 +322,7 @@ func hookPreTool(in io.Reader, out io.Writer) {
 		r := repos[filepath.Dir(p)]
 		if r == nil {
 			var err error
-			if r, err = project.Open(filepath.Dir(p)); err != nil {
+			if r, err = openAgent(filepath.Dir(p)); err != nil {
 				continue // not a project
 			}
 			repos[filepath.Dir(p)] = r
@@ -427,7 +427,7 @@ func cmdAgent(args []string) error {
 	if tool != "claude-code" {
 		return usageError("r3v agent setup knows claude-code only (for now)")
 	}
-	r, err := project.Open(".")
+	r, err := openAgent(".")
 	if err != nil {
 		return err
 	}
@@ -553,4 +553,15 @@ func setupClaudeCode(root, command string, guide bool) ([]string, error) {
 func isOurHook(c any) bool {
 	s, _ := c.(string)
 	return strings.HasSuffix(strings.TrimSpace(s), "hook pre-tool")
+}
+
+// openAgent opens the project in dir without taking its lock (the hook runs
+// on every tool call), as whoever runs it: an agent by its actor.
+func openAgent(dir string) (*project.Repo, error) {
+	r, err := project.Open(dir)
+	if err != nil {
+		return nil, err
+	}
+	r.Actor = actor.Detect()
+	return r, nil
 }
