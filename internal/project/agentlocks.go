@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nonlabhq/r3v/internal/actor"
 	"github.com/nonlabhq/r3v/internal/agentlock"
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -24,11 +23,12 @@ import (
 // they're new; agentlocks_nightly.go). Off, nothing is checked at commit.
 var AgentLocks = false
 
-// agentTool is the agent tool running this R3V (actor.Detect: R3V_ACTOR,
-// set by `r3v agent setup`, or the tool's own mark), "" for a person.
-func agentTool() string {
-	if a := actor.Detect(); a != nil {
-		return a.Tool
+// agentTool is the agent tool this repo works for (Repo.Actor: the CLI's,
+// from R3V_ACTOR or the tool's own mark), "" for a person. The app never
+// sets it: whoever opened it, the app is a person's.
+func (r *Repo) agentTool() string {
+	if r.Actor != nil {
+		return r.Actor.Tool
 	}
 	return ""
 }
@@ -108,7 +108,7 @@ func (r *Repo) AgentLocked(rel string) bool {
 
 // AgentHolder is this copy as a lock's holder.
 func (r *Repo) AgentHolder(session string) agentlock.Holder {
-	return agentlock.Holder{Workspace: r.workspaceID(), Branch: r.BranchName(), Session: session, Actor: agentTool()}
+	return agentlock.Holder{Workspace: r.workspaceID(), Branch: r.BranchName(), Session: session, Actor: r.agentTool()}
 }
 
 // RelPath turns a path on disk (absolute, or relative to the working
@@ -134,7 +134,7 @@ func (r *Repo) RelPath(p string) string {
 // also refused files the person changed and hasn't committed.
 func (r *Repo) TakeAgentLocks(paths []string, kind, session string) (agentlock.Result, error) {
 	var person []agentlock.Lock
-	if kind == agentlock.KindLock && agentTool() != "" {
+	if kind == agentlock.KindLock && r.agentTool() != "" {
 		if m := r.personCopy(); m != nil {
 			person = r.personHeld(m, paths)
 		}
@@ -160,7 +160,7 @@ func (r *Repo) AllAgentLocks() ([]agentlock.Lock, error) {
 		return nil, err
 	}
 	m := r.personCopy()
-	if m == nil && agentTool() == "" {
+	if m == nil && r.agentTool() == "" {
 		m = r // the person asks, in their own copy
 	}
 	if m == nil {
@@ -195,7 +195,7 @@ var mainCopy = func(r *Repo) string { return filepath.Dir(r.CommonDir()) }
 func (r *Repo) personCopy() *Repo {
 	main := mainCopy(r)
 	if strings.EqualFold(filepath.Clean(main), filepath.Clean(r.Root)) {
-		if agentTool() != "" {
+		if r.agentTool() != "" {
 			return nil
 		}
 		return r
@@ -294,7 +294,7 @@ func (m *Repo) changedHere(rel string, head map[string]FileEntry, ix *index) boo
 // holds; the files it may commit become its own (as a first touch does).
 // A person's commit is never refused: people always win.
 func (r *Repo) checkAgentLocks(m *Manifest) error {
-	if !AgentLocks || agentTool() == "" {
+	if !AgentLocks || r.agentTool() == "" {
 		return nil
 	}
 	var prev map[string]FileEntry
