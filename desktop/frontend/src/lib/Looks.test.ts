@@ -83,6 +83,18 @@ describe("User settings", () => {
     expect(api.SetProfilePicture).not.toHaveBeenCalled();
   });
 
+  it("signs out of R3V Cloud from the account", async () => {
+    api.Profile.mockResolvedValue(profile({ color: "b2" }));
+    api.CloudStatus.mockResolvedValueOnce({ available: true, service: "https://api.r3v.so", signedIn: true, email: "yi@example.com" })
+      .mockResolvedValue({ available: true, service: "https://api.r3v.so", signedIn: false, email: "" });
+    api.CloudSignOut.mockResolvedValue(undefined);
+    render(UserSettings, { team: team(), onchanged: () => {}, onclose: () => {} });
+    expect(await screen.findByText("Signed in as yi@example.com.")).toBeTruthy();
+    await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    await waitFor(() => expect(api.CloudSignOut).toHaveBeenCalled());
+    expect(await screen.findByRole("button", { name: "Sign in with your browser" })).toBeTruthy();
+  });
+
   it("takes one pick at a time, and refuses a huge file before reading it", async () => {
     api.Profile.mockResolvedValue(profile({ color: "b2" }));
     let done!: () => void;

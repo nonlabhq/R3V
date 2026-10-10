@@ -1690,5 +1690,9 @@
 "Keep the workspace": "작업 공간 유지",
 "Added {files}: commit them, so every agent's workspace has them.": "{files}을(를) 추가했습니다. 커밋하면 모든 에이전트의 작업 공간에 들어갑니다.",
 "Agents don't know yet that this project is versioned with R3V, or how to work beside each other. A short guide in the project tells them (AGENTS.md, which Claude Code, Codex and others read).": "에이전트는 아직 이 프로젝트가 R3V로 버전 관리된다는 것도, 서로 나란히 작업하는 방법도 모릅니다. 프로젝트 안의 짧은 안내가 알려 줍니다(Claude Code, Codex 등이 읽는 AGENTS.md).",
-"Add the guide for agents": "에이전트용 안내 추가"
+"Add the guide for agents": "에이전트용 안내 추가",
+"R3V Cloud (test service)": "R3V Cloud(테스트 서비스)",
+"Signed out of R3V Cloud": "R3V Cloud에서 로그아웃했습니다",
+"R3V Cloud": "R3V Cloud",
+"Not signed in.": "로그인하지 않았습니다."
 }

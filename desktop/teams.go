@@ -67,6 +67,9 @@ type TeamSummary struct {
 	// SignedOut: this computer isn't signed in to it.
 	Hosted    bool `json:"hosted"`
 	SignedOut bool `json:"signedOut"`
+	// TestService: a hosted team on another service than this build's (the
+	// test service, api-dev, before R3V Cloud's own): to move from.
+	TestService bool `json:"testService"`
 	// NoAccess: a hosted team the account signed in isn't in (any more): it
 	// stays, with its projects, until removed.
 	NoAccess bool `json:"noAccess"`
@@ -106,7 +109,7 @@ type Overview struct {
 
 func teamSummary(t teams.Team) TeamSummary {
 	svc, hosted := cloud.Hosted(t)
-	return TeamSummary{Hosted: hosted, SignedOut: hosted && !cloud.SignedIn(svc), ID: t.ID, Name: t.Name, Address: t.Remote.Display(), IsStorage: t.Remote.IsStorage(),
+	return TeamSummary{Hosted: hosted, SignedOut: hosted && !cloud.SignedIn(svc), TestService: hosted && svc != cloud.Service(), ID: t.ID, Name: t.Name, Address: t.Remote.Display(), IsStorage: t.Remote.IsStorage(),
 		MemberID: t.MemberID, MemberName: t.MemberName, KeysUnreadable: t.KeysUnreadable,
 		ShareSetup: t.ShareSetup && t.Remote.IsStorage(), CanShareSetup: t.Remote.IsStorage(),
 		Preupload:     !t.NoPreupload && t.Remote.IsStorage(),

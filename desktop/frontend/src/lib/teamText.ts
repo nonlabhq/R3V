@@ -13,6 +13,7 @@ export const newsOf = (incoming: Version[]) => {
 };
 
 // Where a team keeps its files, in a word: "R3V Cloud", "R2", "S3".
-export const storageKind = (team: Pick<TeamSummary, "hosted" | "address">) =>
-  team.hosted ? "R3V Cloud" : /r2\.cloudflarestorage|\.r2\.dev/i.test(team.address) ? "R2"
+// A team on the test service (made there before R3V Cloud's own) says so.
+export const storageKind = (team: Pick<TeamSummary, "hosted" | "address"> & { testService?: boolean }) =>
+  team.hosted ? (team.testService ? t("R3V Cloud (test service)") : "R3V Cloud") : /r2\.cloudflarestorage|\.r2\.dev/i.test(team.address) ? "R2"
     : /amazonaws/i.test(team.address) ? "S3" : t("Own storage");
