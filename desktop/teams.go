@@ -86,6 +86,10 @@ type TeamProject struct {
 	// Icon and Color: how the team shows it (names; "" for the app's pick).
 	Icon  string `json:"icon"`
 	Color string `json:"color"`
+	// Workspace: an agent's workspace of a project, shown as a project
+	// (OpenWorkspace); MainRoot is the project's main copy.
+	Workspace bool   `json:"workspace"`
+	MainRoot  string `json:"mainRoot"`
 }
 
 type Overview struct {
@@ -185,6 +189,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	if !askTeam {
 		addRemote(lastTeamProjects(t.ID), false)
 		sortProjects(ov.Projects)
+		ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 		return ov, nil
 	}
 	ov.TeamChecked = true
@@ -221,6 +226,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		addRemote(ps, true)
 	}
 	sortProjects(ov.Projects)
+	ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 	return ov, nil
 }
 
@@ -745,6 +751,7 @@ func (a *App) ForgetProject(root string) error {
 			}
 		}
 		s.RemoveLocal(root)
+		s.RemoveWorkspace(root)
 		return nil
 	})
 	return err

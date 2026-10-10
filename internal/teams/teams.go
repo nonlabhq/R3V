@@ -127,6 +127,11 @@ type Store struct {
 	Moves map[string]*Move `json:"moves,omitempty"`
 	// Local lists project folders kept on this computer only (no team).
 	Local []string `json:"local,omitempty"`
+	// Workspaces lists the agents' workspaces (another folder with a team
+	// project, docs/design/agent-workspaces.md) the app shows as projects,
+	// each beside its main copy. Not in Roots: nothing runs in the
+	// background in an agent's folder.
+	Workspaces []string `json:"workspaces,omitempty"`
 	// ManualUpdates: R3V doesn't install updates on its own (it still
 	// downloads them and offers them).
 	ManualUpdates bool `json:"manualUpdates,omitempty"`
@@ -467,6 +472,28 @@ func (s *Store) AddLocal(root string) {
 	}
 	s.Local = append(s.Local, root)
 	sort.Strings(s.Local)
+}
+
+// AddWorkspace shows the workspace in folder as a project (once).
+func (s *Store) AddWorkspace(folder string) {
+	for _, r := range s.Workspaces {
+		if strings.EqualFold(r, folder) {
+			return
+		}
+	}
+	s.Workspaces = append(s.Workspaces, folder)
+	sort.Strings(s.Workspaces)
+}
+
+// RemoveWorkspace shows the workspace in folder no more.
+func (s *Store) RemoveWorkspace(folder string) {
+	out := s.Workspaces[:0]
+	for _, r := range s.Workspaces {
+		if !strings.EqualFold(r, folder) {
+			out = append(out, r)
+		}
+	}
+	s.Workspaces = out
 }
 
 func (s *Store) RemoveLocal(root string) {

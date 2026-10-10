@@ -127,6 +127,26 @@ func ClaudeCode(root, command string, guide bool) ([]string, error) {
 	return changed, nil
 }
 
+// ToolOf is the agent tool the copy in root is set up for (its
+// R3V_ACTOR in Claude Code's settings), "" when none.
+func ToolOf(root string) string {
+	data, err := os.ReadFile(filepath.Join(root, ".claude", "settings.local.json"))
+	if err != nil {
+		return ""
+	}
+	var s struct {
+		Env map[string]any `json:"env"`
+	}
+	if json.Unmarshal(data, &s) != nil {
+		return ""
+	}
+	tool, _ := s.Env[actor.EnvTool].(string)
+	if tool == actor.None {
+		return ""
+	}
+	return tool
+}
+
 // IsOurHook: a hook command that runs R3V's PreToolUse hook (whichever r3v
 // it names).
 func IsOurHook(c any) bool {
