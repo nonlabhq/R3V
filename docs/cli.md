@@ -20,6 +20,7 @@ The same as **Create a team** in the app, for scripts: checks that the key can r
 r3v init [--author NAME]          # start tracking this project
 r3v remote <connection code>      # connect it to the team's storage
 r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
+r3v commit -m "title" -m "details" # a title, then details (a blank line between, as git)
 r3v update [--preview]            # get the team's latest versions (or just look)
 r3v status                        # what changed since your last version
 r3v log                           # versions
@@ -48,7 +49,13 @@ r3v branch delete yi-ideas    # an archived branch, for good
 
 On a team that keeps branch names (Nightly), a branch can be called anything
 (`r3v branch new Mia's verse`, `r3v switch "Mia 的主歌"`); commands take its
-name or its key.
+name or its key. `r3v branch new NAME --agent` marks it an AI agent's,
+working for you (`r3v branch` shows it so).
+
+Versions an AI agent commits through the CLI record it (`r3v log` shows
+"yi (claude-code)"): R3V reads `R3V_ACTOR` (the tool; `R3V_ACTOR_MODEL`
+and `R3V_ACTOR_SESSION` too; `none` for a person), else the variables
+tools set themselves (Claude Code's `CLAUDECODE`).
 
 Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and commit from there.
 

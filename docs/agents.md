@@ -49,7 +49,17 @@ words: [glossary.md](glossary.md).
 r3v status --json            # what changed; is the team ahead?
 r3v update --preview --json  # what the team shared: versions, changes, conflicts
 r3v commit -m "Brighter mix on the chorus" --json
+r3v commit -m "Fix the renderer's lights" -m "They were twice too bright on HDR screens." --json
 ```
+
+A version's message is a title (the first `-m`) and details (each further
+`-m`, a blank line between, as Git does): keep the title short, say why in
+the details.
+
+The versions you make record that an agent made them (`actor`), besides
+the member you work for (`author`): R3V reads `R3V_ACTOR` (the tool's
+name; `R3V_ACTOR_MODEL`, `R3V_ACTOR_SESSION` optional; `none`: a person),
+else the variables tools set themselves (Claude Code's `CLAUDECODE`).
 
 `commit` merges what teammates shared in the meantime before sharing. When the
 same track (or file) changed on both sides it stops with `merge_conflict`:
@@ -98,8 +108,14 @@ when a field changes meaning; new fields may appear any time.
 `log` (`-n N` for the newest N): `versions`, newest first: `id`, `time`
 (RFC 3339), `author`, `message`, `parents`, `branches` (team branches at
 that version), `made_on` (the branch it was made on, for good; none on
-versions from before R3V kept it). Merging another branch always makes a
-version.
+versions from before R3V kept it), `actor` (only on a version an agent
+made: `kind` (`agent`), `tool`, `model`, `session`, each when known).
+`message` is the title, then a blank line and the details, if any.
+Merging another branch always makes a version.
+
+`branch new NAME --agent` starts an agent's branch (its kind is `agent`,
+its owner the member you work for; Nightly, on a team that keeps branch
+names): `r3v branch` shows them marked.
 
 `branch archive NAME` puts a branch away (versions stay; not main, not the
 one you're on); `branch archived` lists them; `branch unarchive NAME` brings

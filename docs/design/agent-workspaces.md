@@ -174,7 +174,11 @@ Built in parallel, each lane on its branch in a worktree of its own,
 reviewed and merged by Core:
 
 1. **Records** (`feat/agent-records`): actor and its detection, title and
-   details, branch `kind`/`owner`.
+   details, branch `kind`/`owner`. Built: `manifest.Actor` (package
+   `actor` reads it; the CLI sets `Repo.Actor`, the app never does),
+   `commit -m … -m …`, `log --json` `actor`, `NewBranchWith(name,
+   BranchOptions{Agent: true})` and `branch new NAME --agent` (refused
+   without branch records, so Stable can't make one).
 2. **Workspaces** (`feat/workspaces`): add, list, remove, the shared
    store, block cloning, cleanup over all.
 3. **Hunks** (`feat/hunk-merge`): hunk conflicts, `--resolve`,
