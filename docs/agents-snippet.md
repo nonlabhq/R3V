@@ -14,5 +14,7 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   yours. A change refused by the hook, or `files_locked_by_agent`, means another agent or the user is
   on that file (textures, models, sounds): don't wait or retry, do other work and tell the user. The
   user merges your branch; don't merge into it yourself unless asked.
+- What is tracked: `.r3v.yaml` (syntax: `r3v help rules`). Leave out caches, renders and build
+  outputs (`rules: - ignore: "cache/"`); `r3v profile explain <file>` says why a file is tracked.
 - Never use `--force` without asking, never print connection codes (they hold storage keys), don't
   edit `.r3v/`.

@@ -2,8 +2,11 @@ package project
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/als"
@@ -94,11 +97,32 @@ func (r *Repo) mergeWithHandler(path, baseHash, oursHash, theirsHash string, opt
 	if !clean {
 		return FileEntry{}, nil, false, hunks, nil
 	}
+	if name == "text" && breaksJSON(path, data, merged) {
+		return FileEntry{}, nil, false, nil, errBreaksJSON
+	}
 	h, n, err := r.Store.Put(bytes.NewReader(merged))
 	if err != nil {
 		return FileEntry{}, nil, false, nil, err
 	}
 	return FileEntry{Path: path, Hash: h, Size: n}, log, true, nil, nil
+}
+
+// errBreaksJSON: merging a JSON file line by line made something that
+// isn't JSON (two changes side by side in a list, say), so the whole file
+// is chosen instead.
+var errBreaksJSON = errors.New("merging it line by line would break the JSON")
+
+// breaksJSON: path is a .json file, valid on every side, that merged isn't.
+func breaksJSON(path string, data [3][]byte, merged []byte) bool {
+	if !strings.EqualFold(filepath.Ext(path), ".json") {
+		return false
+	}
+	for _, d := range data {
+		if !json.Valid(d) {
+			return false // already not JSON: lines are all R3V can go by
+		}
+	}
+	return !json.Valid(merged)
 }
 
 // setKeySep joins a set path and a merge key in conflict keys: "Song.als#track:14".

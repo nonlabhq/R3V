@@ -13,7 +13,7 @@ import (
 
 // A preset merging .ts as text, as the code preset (Nightly) does.
 func init() {
-	if err := profile.RegisterPreset([]byte("name: zz-hunks\npriority: -9\nhandlers:\n  - files: [\"*.ts\"]\n    merge: text\n")); err != nil {
+	if err := profile.RegisterPreset([]byte("name: zz-hunks\npriority: -9\nhandlers:\n  - files: [\"*.ts\", \"*.json\"]\n    merge: text\n")); err != nil {
 		panic(err)
 	}
 }
@@ -158,5 +158,54 @@ func TestHunksResolvedContent(t *testing.T) {
 	}
 	if got := readText(t, b, appTS); got != given {
 		t.Errorf("given: %q", got)
+	}
+}
+
+// Two line changes that don't collide can still leave a .json file broken
+// (here both put lines into a new object): the whole file is chosen then.
+func TestJSONNotBrokenByLineMerge(t *testing.T) {
+	a, b := codeTeam(t)
+	const scene = "scene.json"
+	write(t, a.Root, scene, `{
+  "a": 1,
+  "b": 2,
+  "c": 3,
+  "d": 4
+}
+`)
+	if _, _, err := a.Save("scene", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.Update(Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, scene, `{
+  "o": {
+  "b": 2,
+  "c": 3,
+  "d": 4
+}
+}
+`)
+	if _, _, err := a.Save("a", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	theirs := `{
+  "a": 1,
+  "b": 2,
+  "o": {
+  "d": 4
+}
+}
+`
+	write(t, b.Root, scene, theirs)
+	_, _, err := b.Save("b", MergeOptions{})
+	var mc *MergeConflictError
+	if !errors.As(err, &mc) || len(mc.Conflicts) != 1 || mc.Conflicts[0].Key != "file:"+scene ||
+		!strings.Contains(mc.Conflicts[0].Description, "break the JSON") {
+		t.Fatalf("want the whole file to choose: %v", err)
+	}
+	if got := readText(t, b, scene); got != theirs {
+		t.Errorf("b's file changed: %q", got)
 	}
 }

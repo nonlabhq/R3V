@@ -20,6 +20,17 @@ ignore:
   - .vs/
   - .env          # secrets, by convention (.env.example stays)
   - "*.swp"
+  # Build outputs, should the project's .gitignore not leave them out
+  # (gigabytes each, and made again from the sources):
+  - dist/
+  - target/       # Rust (a Tauri app's src-tauri/target), Maven
+  - .next/
+  - .nuxt/
+  - .svelte-kit/
+  - .turbo/
+  - .parcel-cache/
+  - .vite/
+  - coverage/
 handlers:
   - files: ["*.go", "*.js", "*.mjs", "*.cjs", "*.ts", "*.tsx", "*.jsx", "*.svelte", "*.vue", "*.py", "*.rb", "*.php",
             "*.rs", "*.java", "*.kt", "*.kts", "*.swift", "*.c", "*.h", "*.cc", "*.cpp", "*.hpp", "*.cs", "*.fs",

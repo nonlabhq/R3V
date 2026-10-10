@@ -1498,9 +1498,12 @@ func (r *Repo) mergeManifests(base, ours, theirs *Manifest, opts MergeOptions) (
 		}
 		// A file whose preset names a merge handler (e.g. text merged line by
 		// line): merged when the changes don't collide.
+		broken := false
 		if b.Hash != "" && o.Hash != "" && t.Hash != "" {
 			entry, hunkLog, ok, hunks, err := r.mergeWithHandler(p, b.Hash, o.Hash, t.Hash, opts)
-			if err != nil {
+			if errors.Is(err, errBreaksJSON) {
+				broken = true
+			} else if err != nil {
 				return nil, nil, err
 			}
 			if ok {
@@ -1515,6 +1518,9 @@ func (r *Repo) mergeManifests(base, ours, theirs *Manifest, opts MergeOptions) (
 			}
 		}
 		what := "changed on both sides"
+		if broken {
+			what += "; " + errBreaksJSON.Error()
+		}
 		switch {
 		case o.Hash == "":
 			what = "deleted by you, changed by others"

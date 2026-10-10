@@ -30,6 +30,9 @@ func TestCodePreset(t *testing.T) {
 	for rel, ignored := range map[string]bool{
 		"node_modules/react/index.js": true, "dist/app.js": true, ".env": true, ".env.example": false,
 		"src/main.ts": false, "package.json": false, "web/__pycache__/x.pyc": true,
+		// Build outputs the .gitignore doesn't name.
+		"apps/editor/src-tauri/target/debug/app.exe": true, "apps/web/dist/index.js": true, "apps/web/.svelte-kit/x": true,
+		"src/targets.ts": false,
 	} {
 		if got := rules.Ignored(rel, false); got != ignored {
 			t.Errorf("%s: ignored = %v", rel, got)

@@ -18,7 +18,7 @@ import (
 
 const usage = `usage: r3v <command> [args]
 
-everyday (run inside an Ableton project folder):
+everyday (run inside a project folder):
   commit -m TITLE [-m DETAILS]           commit your changes as a version and share it with the team
   update [--preview]                     get the team's latest versions (or just look)
   status                                 what changed since your last version
@@ -82,6 +82,9 @@ for programs and AI agents:
                                          JSON object on stdout; errors with fixed codes
   help agents [--snippet]                how AI agents use R3V (or lines for a project's
                                          AGENTS.md)
+  help rules                             the project's rules (.r3v.yaml): what is tracked,
+                                         presets, patterns
+  <command> --help                       a command's lines from this list
 `
 
 // extraCommands are commands only some builds have (the Nightly channel's),
@@ -108,6 +111,12 @@ func Run(args []string) int {
 	command, rest := args[0], args[1:]
 	if jsonMode && !jsonCommands[command] {
 		return fail(command, usageError("--json is not supported by `r3v %s`", command))
+	}
+	if wantsHelp(rest) && command != "help" {
+		if text, ok := helpFor(command, rest); ok {
+			fmt.Print(text)
+			return 0
+		}
 	}
 	defer releaseHeld()
 	var err error
@@ -318,8 +327,13 @@ func cmdHelp(args []string) error {
 		fmt.Print(docs.Agents)
 	case args[0] == "agents" && len(args) == 2 && args[1] == "--snippet":
 		fmt.Print(docs.AgentsSnippet)
+	case args[0] == "rules" && len(args) == 1:
+		fmt.Print(docs.Rules)
+	case len(args) == 1:
+		text, _ := helpFor(args[0], nil)
+		fmt.Print(text)
 	default:
-		return usageError("usage: r3v help [agents [--snippet]]")
+		return usageError("usage: r3v help [agents [--snippet] | rules | <command>]")
 	}
 	return nil
 }
