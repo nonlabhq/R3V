@@ -45,7 +45,8 @@ committed stay with their place: going to another branch or version
 | Go to a version | Go to this version, Back to latest | 前往這個版本、回到最新版本 | `goto <version>`, `goto latest` | `git checkout <commit>` (detached HEAD) | Not detached: "on an older version" of your branch, with a way back |
 | Keep an older version | Make this the latest version | 把這個版本設為最新 | — | `git checkout <old> -- .` + commit | A new version with the older one's files |
 | Merge | Merge into current branch, Merge back to main | 合併到目前的分支、合併回 main | `merge <branch>`, `merge-sets` | `git merge --no-ff` | Always makes a version. Live sets merge per track; a conflict is a track or a file |
-| Decisions | Keep yours / Keep {who}'s / Keep both | 保留你的／保留 {who} 的／兩者都保留 | `--strategy ours\|theirs\|both` | conflict markers, `-X ours/theirs` | No markers in files: you choose per track or file |
+| Decisions | Keep yours / Keep {who}'s / Keep both | 保留你的／保留 {who} 的／兩者都保留 | `--strategy ours\|theirs\|both`, `--resolve <key>=<choice>`, `--decisions`, `--resolved <path>=<file>` | conflict markers, `-X ours/theirs` | No markers in files: you choose per track, per hunk of a text file, or per file, or give the file as it should be |
+| Hunk | — | — | `text:<path>#<n>` (a conflict's `key`) | a conflict hunk | The lines of a text file both sides changed differently; decided apart (`both`: yours, then theirs) |
 | Undo a commit | Undo this commit | 復原這次提交 | — | `git reset` + force push, or `git revert` | Taken back when no one has it yet, else a new version that undoes it |
 | Restore a file | Restore… | 還原… | — | `git restore --source` | |
 | Recover samples | Recover from R3V | 從 R3V 救回 | — | — | Samples a set uses that are missing here, from R3V's copy |

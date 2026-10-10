@@ -167,7 +167,7 @@ func classify(err error) *cliError {
 	var mc *project.MergeConflictError
 	if errors.As(err, &mc) {
 		return &cliError{Code: "merge_conflict", Exit: exitConflict, Err: err, Conflicts: conflictsJSON(mc.Conflicts),
-			Hint: "choose how to resolve: --strategy ours | theirs | both"}
+			Hint: "choose how to resolve: --strategy ours | theirs | both, or each by its key: --resolve <key>=<choice>"}
 	}
 	for _, c := range codes {
 		if errors.Is(err, c.err) {
@@ -263,13 +263,19 @@ type conflictJSON struct {
 	Unit        string `json:"unit"` // e.g. AudioTrack "Bass", or the file itself
 	Description string `json:"description"`
 	CanKeepBoth bool   `json:"can_keep_both"`
+	// A text file's hunk (key text:<path>#<n>): n, and its lines on each
+	// side ({start, count, text}; start from 1).
+	Hunk   int               `json:"hunk,omitempty"`
+	Base   *project.HunkSide `json:"base,omitempty"`
+	Ours   *project.HunkSide `json:"ours,omitempty"`
+	Theirs *project.HunkSide `json:"theirs,omitempty"`
 }
 
 func conflictsJSON(cs []project.ConflictItem) []conflictJSON {
 	out := []conflictJSON{}
 	for _, c := range cs {
 		out = append(out, conflictJSON{Key: c.Key, File: c.File, Unit: c.Unit, Description: c.Description,
-			CanKeepBoth: c.CanKeepBoth})
+			CanKeepBoth: c.CanKeepBoth, Hunk: c.Hunk, Base: c.Base, Ours: c.Ours, Theirs: c.Theirs})
 	}
 	return out
 }

@@ -4,6 +4,8 @@
 package textmerge
 
 import (
+	"bytes"
+	"fmt"
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/textdiff"
@@ -12,14 +14,57 @@ import (
 // Merge merges ours and theirs, both changed from base. clean is false when
 // the changes touch the same lines differently.
 func Merge(base, ours, theirs []byte) (merged []byte, clean bool, err error) {
+	res := Hunks(base, ours, theirs)
+	if len(res.Hunks()) > 0 {
+		return nil, false, nil
+	}
+	return res.Resolve(nil)
+}
+
+// Side is a hunk's lines on one side: Start is the first line's number
+// (from 1); with no lines (Count 0), where they would be (before Start).
+type Side struct {
+	Start int    `json:"start"`
+	Count int    `json:"count"`
+	Text  string `json:"text"`
+}
+
+// Hunk is one place both sides changed differently.
+type Hunk struct {
+	Base, Ours, Theirs Side
+}
+
+// Result is a merge as parts in file order: the text merged on its own, and
+// the hunks between it that need a choice, so one can be finished hunk by
+// hunk.
+type Result struct {
+	parts []part
+	eol   string // the files' line ending
+}
+
+type part struct {
+	text string
+	hunk *Hunk
+}
+
+// Hunks merges ours and theirs, both changed from base, keeping each place
+// that collides as a hunk.
+func Hunks(base, ours, theirs []byte) *Result {
 	b, o, t := lines(base), lines(ours), lines(theirs)
 	mo, mt := match(b, o), match(b, t)
-	var out []string
+	res := &Result{eol: newline(ours, theirs, base)}
+	var clean strings.Builder
+	flush := func() {
+		if clean.Len() > 0 {
+			res.parts = append(res.parts, part{text: clean.String()})
+			clean.Reset()
+		}
+	}
 	i, j, k := 0, 0, 0
 	for i < len(b) || j < len(o) || k < len(t) {
 		// The same base line on both sides, where both are now: unchanged.
 		if i < len(b) && mo[i] == j && mt[i] == k {
-			out = append(out, b[i])
+			clean.WriteString(b[i])
 			i, j, k = i+1, j+1, k+1
 			continue
 		}
@@ -34,15 +79,83 @@ func Merge(base, ours, theirs []byte) (merged []byte, clean bool, err error) {
 		bc, oc, tc := b[i:i2], o[j:j2], t[k:k2]
 		switch {
 		case equal(oc, bc):
-			out = append(out, tc...)
+			clean.WriteString(strings.Join(tc, ""))
 		case equal(tc, bc), equal(oc, tc):
-			out = append(out, oc...)
+			clean.WriteString(strings.Join(oc, ""))
 		default:
-			return nil, false, nil
+			flush()
+			res.parts = append(res.parts, part{hunk: &Hunk{side(bc, i), side(oc, j), side(tc, k)}})
 		}
 		i, j, k = i2, j2, k2
 	}
-	return []byte(strings.Join(out, "")), true, nil
+	flush()
+	return res
+}
+
+func side(ls []string, at int) Side {
+	n := len(ls)
+	if n > 0 && ls[n-1] == "" { // (what follows a file's last newline)
+		n--
+	}
+	return Side{Start: at + 1, Count: n, Text: strings.Join(ls, "")}
+}
+
+// Hunks lists the places that need a choice, in file order.
+func (r *Result) Hunks() []Hunk {
+	var out []Hunk
+	for _, p := range r.parts {
+		if p.hunk != nil {
+			out = append(out, *p.hunk)
+		}
+	}
+	return out
+}
+
+// Resolve puts the merged text together with a choice for each hunk, in
+// order: ours, theirs or both (ours then theirs).
+func (r *Result) Resolve(choices []string) ([]byte, bool, error) {
+	var out strings.Builder
+	n := 0
+	for _, p := range r.parts {
+		if p.hunk == nil {
+			out.WriteString(p.text)
+			continue
+		}
+		if n >= len(choices) {
+			return nil, false, fmt.Errorf("hunk %d has no choice", n+1)
+		}
+		h := p.hunk
+		switch choices[n] {
+		case "ours":
+			out.WriteString(h.Ours.Text)
+		case "theirs":
+			out.WriteString(h.Theirs.Text)
+		case "both":
+			out.WriteString(h.Ours.Text)
+			// Ours ending the file without a newline would run into theirs.
+			if h.Ours.Text != "" && h.Theirs.Text != "" && !strings.HasSuffix(h.Ours.Text, "\n") {
+				out.WriteString(r.eol)
+			}
+			out.WriteString(h.Theirs.Text)
+		default:
+			return nil, false, fmt.Errorf("hunk %d: unknown choice %q", n+1, choices[n])
+		}
+		n++
+	}
+	return []byte(out.String()), true, nil
+}
+
+// newline is the line ending the files use: their first line's.
+func newline(files ...[]byte) string {
+	for _, f := range files {
+		if i := bytes.IndexByte(f, '\n'); i >= 0 {
+			if i > 0 && f[i-1] == '\r' {
+				return "\r\n"
+			}
+			return "\n"
+		}
+	}
+	return "\n"
 }
 
 func lines(data []byte) []string {

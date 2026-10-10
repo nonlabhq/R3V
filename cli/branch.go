@@ -253,6 +253,7 @@ func cmdMergeBranch(args []string) error {
 	fs := flag.NewFlagSet("merge", flag.ContinueOnError)
 	preview := fs.Bool("preview", false, "show what would come in, change nothing")
 	strategy := strategyFlag(fs)
+	decided := decisionFlags(fs, strategy)
 	force := fs.Bool("force", false, "merge even while Ableton Live is running")
 	message := fs.String("m", "", `describe the merge version (default "Merge branch <branch>")`)
 	pos, err := parseArgs(fs, args)
@@ -260,13 +261,17 @@ func cmdMergeBranch(args []string) error {
 		return err
 	}
 	if len(pos) != 1 {
-		return errors.New("usage: r3v merge <branch> [-m message] [--preview] [--strategy ...]")
+		return errors.New("usage: r3v merge <branch> [-m message] [--preview] [--strategy ...] [--resolve <key>=<choice>]")
 	}
 	r, err := openRepo()
 	if err != nil {
 		return err
 	}
 	key, err := r.ResolveBranch(pos[0])
+	if err != nil {
+		return err
+	}
+	opts, err := decided.options(r)
 	if err != nil {
 		return err
 	}
@@ -282,7 +287,7 @@ func cmdMergeBranch(args []string) error {
 		return err
 	}
 	defer tidy(r)
-	res, err := r.MergeBranch(key, *message, project.Strategy(*strategy))
+	res, err := r.MergeBranch(key, *message, opts)
 	if err != nil {
 		return err
 	}

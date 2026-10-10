@@ -1,6 +1,7 @@
 package project
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -1473,6 +1474,15 @@ func (r *Repo) mergeManifests(base, ours, theirs *Manifest, opts MergeOptions) (
 			continue
 		}
 		// Changed on both sides.
+		if data, ok := opts.Resolved[p]; ok {
+			h, n, err := r.Store.Put(bytes.NewReader(data))
+			if err != nil {
+				return nil, nil, err
+			}
+			files = append(files, FileEntry{Path: p, Hash: h, Size: n})
+			log = append(log, p+": changed on both sides -> as given")
+			continue
+		}
 		if isSet(p) && b.Hash != "" && o.Hash != "" && t.Hash != "" {
 			entry, setLog, setConflicts, err := r.mergeSet(p, b.Hash, o.Hash, t.Hash, opts)
 			if err != nil {
@@ -1486,13 +1496,18 @@ func (r *Repo) mergeManifests(base, ours, theirs *Manifest, opts MergeOptions) (
 		// A file whose preset names a merge handler (e.g. text merged line by
 		// line): merged when the changes don't collide.
 		if b.Hash != "" && o.Hash != "" && t.Hash != "" {
-			entry, ok, err := r.mergeWithHandler(p, b.Hash, o.Hash, t.Hash)
+			entry, hunkLog, ok, hunks, err := r.mergeWithHandler(p, b.Hash, o.Hash, t.Hash, opts)
 			if err != nil {
 				return nil, nil, err
 			}
 			if ok {
 				files = append(files, entry)
 				log = append(log, p+": changed on both sides -> merged")
+				log = append(log, hunkLog...)
+				continue
+			}
+			if len(hunks) > 0 { // decided hunk by hunk: the file stays out until all are
+				conflicts = append(conflicts, hunks...)
 				continue
 			}
 		}
@@ -1503,7 +1518,7 @@ func (r *Repo) mergeManifests(base, ours, theirs *Manifest, opts MergeOptions) (
 		case t.Hash == "":
 			what = "changed by you, deleted by others"
 		}
-		key := "file:" + p
+		key := fileKeyPrefix + p
 		switch opts.choice(key) {
 		case "theirs":
 			if t.Hash != "" {
