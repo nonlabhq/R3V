@@ -46,8 +46,8 @@ func HookCommand(exe string) string {
 // ClaudeCode writes Claude Code's settings for the copy in root
 // (.claude/settings.local.json, which R3V never tracks: the hook's path and
 // R3V_ACTOR are this computer's; merged with what's there) and, with guide,
-// the agents' guide in CLAUDE.md (the project's: committed, so only in the
-// main copy). Running it again changes nothing. It returns the files it
+// the agents' guide (Guide: the project's, committed, so only in the main
+// copy). Running it again changes nothing. It returns the files it
 // wrote, relative to root.
 func ClaudeCode(root, command string, guide bool) ([]string, error) {
 	var changed []string
@@ -105,13 +105,27 @@ func ClaudeCode(root, command string, guide bool) ([]string, error) {
 		return changed, nil
 	}
 
-	guidePath := filepath.Join(root, "CLAUDE.md")
-	old, err := os.ReadFile(guidePath)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return changed, err
-	}
+	more, err := Guide(root)
+	return append(changed, more...), err
+}
+
+// Guide puts the agents' guide in the project (the copy in root): in
+// AGENTS.md, which agent tools read (Codex, Cursor and others), and a line
+// importing it in CLAUDE.md (Claude Code reads that one). Both are the
+// project's: committed, and so in every workspace. Running it again
+// changes nothing. It returns the files it wrote.
+func Guide(root string) ([]string, error) {
+	var changed []string
 	heading, _, _ := strings.Cut(docs.AgentsSnippet, "\n")
-	if !strings.Contains(string(old), heading) {
+	write := func(name, add string, has func(string) bool) error {
+		path := filepath.Join(root, name)
+		old, err := os.ReadFile(path)
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		if has(string(old)) {
+			return nil
+		}
 		text := string(old)
 		if text != "" && !strings.HasSuffix(text, "\n") {
 			text += "\n"
@@ -119,12 +133,26 @@ func ClaudeCode(root, command string, guide bool) ([]string, error) {
 		if text != "" {
 			text += "\n"
 		}
-		if err := store.WriteAtomic(guidePath, strings.NewReader(text+docs.AgentsSnippet)); err != nil {
-			return changed, err
+		if err := store.WriteAtomic(path, strings.NewReader(text+add)); err != nil {
+			return err
 		}
-		changed = append(changed, "CLAUDE.md")
+		changed = append(changed, name)
+		return nil
 	}
-	return changed, nil
+	if err := write("AGENTS.md", docs.AgentsSnippet, func(t string) bool { return strings.Contains(t, heading) }); err != nil {
+		return changed, err
+	}
+	err := write("CLAUDE.md", "@AGENTS.md\n", func(t string) bool {
+		return strings.Contains(t, "@AGENTS.md") || strings.Contains(t, heading)
+	})
+	return changed, err
+}
+
+// HasGuide: the project in root has the agents' guide (AGENTS.md says it).
+func HasGuide(root string) bool {
+	heading, _, _ := strings.Cut(docs.AgentsSnippet, "\n")
+	data, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))
+	return err == nil && strings.Contains(string(data), heading)
 }
 
 // ToolOf is the agent tool the copy in root is set up for (its

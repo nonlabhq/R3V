@@ -220,6 +220,10 @@ preview first and ask the user.
 
 ## Several agents on one project (Nightly)
 
+For the person setting it up: [agents-quickstart.md](agents-quickstart.md).
+The project's `AGENTS.md` (`r3v agent setup` in the main copy, or the
+app's Agents tab) tells every agent the essentials.
+
 Each agent works in a workspace of its own (another folder with the same
 project, on its own branch). Files that can't be merged (textures,
 models, sounds, `.blend`, Unity and Unreal assets) are changed by one

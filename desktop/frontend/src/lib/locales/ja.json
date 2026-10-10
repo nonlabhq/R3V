@@ -1687,5 +1687,8 @@
 "Agents": "エージェント",
 "{n} workspace": "ワークスペース {n} 件",
 "{n} workspaces": "ワークスペース {n} 件",
-"Keep the workspace": "ワークスペースを残す"
+"Keep the workspace": "ワークスペースを残す",
+"Added {files}: commit them, so every agent's workspace has them.": "{files} を追加しました。コミットすると、すべてのエージェントのワークスペースに入ります。",
+"Agents don't know yet that this project is versioned with R3V, or how to work beside each other. A short guide in the project tells them (AGENTS.md, which Claude Code, Codex and others read).": "エージェントはまだ、このプロジェクトが R3V で管理されていることも、並んで作業する方法も知りません。プロジェクト内の短いガイドで伝えます（Claude Code、Codex などが読む AGENTS.md）。",
+"Add the guide for agents": "エージェント用ガイドを追加"
 }

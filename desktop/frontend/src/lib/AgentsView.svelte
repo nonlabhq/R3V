@@ -14,8 +14,9 @@
   // with what each has done; merged into the branch it came from, opened,
   // removed. Read again when the project changes (version), and now and
   // then: agents work without telling the app.
-  let { root, name, branch, branches, version, onmerge, onopen, onchanged }: {
+  let { root, name, branch, branches, version, guide, onmerge, onopen, onchanged }: {
     root: string; name: string;
+    guide: boolean; // the project has the agents' guide (AGENTS.md)
     branch: string; // the branch the project is on
     branches: Branch[];
     version: string; // changes when the project does (read again then)
@@ -31,6 +32,22 @@
   let refused = $state<{ w: AgentWorkspace; unmerged: number; changes: number; parked: number; base: string } | null>(null);
   let busy = $state(""); // the folder of a workspace being opened or removed
   let open = $state<Record<string, boolean>>({}); // locks listed, by folder
+
+  // The agents' guide (AGENTS.md, imported by CLAUDE.md): offered until the
+  // project has it; committed, every workspace then has it.
+  let guiding = $state(false);
+  async function addGuide() {
+    guiding = true;
+    try {
+      const written = await api.AddAgentGuide(root);
+      toast(t("Added {files}: commit them, so every agent's workspace has them.", { files: written.join(", ") }), "ok", 9000);
+      onchanged();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      guiding = false;
+    }
+  }
 
   let reading = false;
   async function load() {
@@ -119,6 +136,13 @@
     <span class="spacer"></span>
     <button class="primary" onclick={() => (creating = true)}>+ {t("New workspace")}</button>
   </div>
+
+  {#if !guide}
+    <div class="guide">
+      <span>{t("Agents don't know yet that this project is versioned with R3V, or how to work beside each other. A short guide in the project tells them (AGENTS.md, which Claude Code, Codex and others read).")}</span>
+      <button onclick={addGuide} disabled={guiding}>{t("Add the guide for agents")}</button>
+    </div>
+  {/if}
 
   {#if error && !list}
     <p class="error">{error}</p>
@@ -238,6 +262,10 @@
   .spacer { flex: 1; }
   .error { color: var(--danger); }
   .warn-text { color: var(--warn); margin: var(--sp-6) 0 0; }
+  .guide { display: flex; align-items: center; gap: var(--sp-12); margin: 0 0 var(--sp-16); padding: var(--sp-10) var(--sp-12);
+    border: var(--border-width) solid var(--line); border-radius: var(--radius); background: var(--panel); font-size: var(--fs-sm); color: var(--muted); }
+  .guide span { flex: 1; line-height: 1.5; }
+  .guide button { flex: none; }
   .empty { max-width: 620px; }
   .empty p { margin: 0 0 var(--sp-10); line-height: 1.5; }
   .cmd { display: flex; gap: var(--sp-8); align-items: center; }

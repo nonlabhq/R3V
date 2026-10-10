@@ -15,6 +15,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/handlers"
 	"github.com/nonlabhq/r3v/internal/project"
@@ -423,6 +424,7 @@ func (a *App) State(root string) (*State, error) {
 		if list, err := r.LocalWorkspaces(); err == nil {
 			st.WorkspaceCount = len(list)
 		}
+		st.AgentGuide = agentsetup.HasGuide(r.Root)
 	}
 	rules, _ := r.Profile()
 	st.Rules = RulesInfo{Applied: rules.Applied(), FromFile: rules.FromFile, Suggestions: suggestions(r)}

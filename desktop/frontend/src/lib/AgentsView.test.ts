@@ -24,7 +24,7 @@ const ws = (over: Record<string, unknown> = {}) => ({ folder: "C:\\Projects\\Son
   stale: false, opened: false, ...over });
 
 function show(props: Record<string, unknown> = {}) {
-  const p = { root: ROOT, name: "Song", branch: "main", branches, version: "h1", onmerge: vi.fn(), onopen: vi.fn(), onchanged: vi.fn(), ...props };
+  const p = { root: ROOT, name: "Song", guide: true, branch: "main", branches, version: "h1", onmerge: vi.fn(), onopen: vi.fn(), onchanged: vi.fn(), ...props };
   render(AgentsView, p);
   return p;
 }
@@ -41,6 +41,19 @@ describe("The Agents view", () => {
     expect(screen.getByText(/another copy of this project on this computer/)).toBeTruthy();
     expect(screen.getByText(/r3v workspace add ".*Song \(renderer\)" --branch renderer --agent claude-code/)).toBeTruthy();
     expect(api.AgentWorkspaces).toHaveBeenCalledWith(ROOT);
+  });
+
+  it("offers the guide for agents until the project has it", async () => {
+    api.AgentWorkspaces.mockResolvedValue([]);
+    api.AddAgentGuide.mockResolvedValue(["AGENTS.md", "CLAUDE.md"]);
+    const p = show({ guide: false });
+    await fireEvent.click(await screen.findByRole("button", { name: "Add the guide for agents" }));
+    await waitFor(() => expect(api.AddAgentGuide).toHaveBeenCalledWith(ROOT));
+    await toasted(/Added AGENTS.md, CLAUDE.md: commit them/);
+    expect(p.onchanged).toHaveBeenCalled();
+    cleanup();
+    show({ guide: true });
+    expect(screen.queryByRole("button", { name: "Add the guide for agents" })).toBeNull();
   });
 
   it("lists each workspace with what it has to merge, its changes, its locks and when it was last active", async () => {

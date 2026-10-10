@@ -286,3 +286,19 @@ func openedWorkspaces(store *teams.Store, mains []TeamProject) []TeamProject {
 	}
 	return out
 }
+
+// AddAgentGuide puts the agents' guide in the project (AGENTS.md, and a
+// line importing it in CLAUDE.md), to be committed: every workspace then
+// has it. It returns the files it wrote.
+func (a *App) AddAgentGuide(root string) ([]string, error) {
+	r, unlock, err := a.open(root)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+	if r.IsWorkspace() {
+		return nil, errors.New("the guide goes in the project's main copy (committed, every workspace has it)")
+	}
+	written, err := agentsetup.Guide(r.Root)
+	return nonNil(written), err
+}
