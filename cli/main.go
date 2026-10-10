@@ -27,7 +27,9 @@ everyday (run inside an Ableton project folder):
   log                                    list versions
 
 setup:
-  init [--author NAME]                   start tracking this project
+  init [--author NAME] [--preset code|none]
+                                         start tracking this project (--preset: a folder R3V
+                                         doesn't recognise, as code and documents, or files as they are)
   remote <connection-code>               connect this project to team storage (S3-compatible bucket)
   clone <code> <project> [folder]       download a team's project
   teams                                  teams this computer is connected to

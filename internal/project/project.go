@@ -101,6 +101,10 @@ type Repo struct {
 // ErrNotRepo is returned when no .r3v directory is found.
 var ErrNotRepo = errors.New("not a r3v project (run `r3v init` in an Ableton project folder)")
 
+// ErrUnknownKind: a folder R3V finds nothing of a kind it knows in (no
+// Live set, no game engine's project, no code project's files, no rules).
+var ErrUnknownKind = errors.New("does not look like a project R3V knows")
+
 // Init creates a repository in root, which must look like an Ableton project.
 func Init(root, author string) (*Repo, error) {
 	root, err := filepath.Abs(root)
@@ -114,8 +118,8 @@ func Init(root, author string) (*Repo, error) {
 		if kind := profile.NightlyKind(root); kind != "" {
 			return nil, &profile.NeedsNightly{Kind: kind}
 		}
-		return nil, fmt.Errorf("%s does not look like a project R3V knows (for Ableton Live: a .als file or "+
-			"\"Ableton Project Info\"; or add a %s)", root, profile.FileName)
+		return nil, fmt.Errorf("%s %w (for Ableton Live: a .als file or "+
+			"\"Ableton Project Info\"; or add a %s)", root, ErrUnknownKind, profile.FileName)
 	}
 	id := make([]byte, 16)
 	rand.Read(id)

@@ -1694,5 +1694,11 @@
 "R3V Cloud (test service)": "R3V Cloud（測試服務）",
 "Signed out of R3V Cloud": "已登出 R3V Cloud",
 "R3V Cloud": "R3V Cloud",
-"Not signed in.": "尚未登入。"
+"Not signed in.": "尚未登入。",
+"How should R3V keep “{name}”?": "R3V 要怎麼管理「{name}」？",
+"R3V doesn't recognise what this folder is (no Live set, game engine project or code project in it). Say how to keep it: you can change it later in the project's rules.": "R3V 認不出這個資料夾是什麼（裡面沒有 Live set、遊戲引擎專案或程式碼專案）。請選擇管理方式，之後可以在專案規則中更改。",
+"Code and documents": "程式碼與文件",
+"Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "文字檔（程式碼、筆記、設定）在兩人都修改時逐行合併；會遵循 .gitignore。",
+"Files as they are": "檔案保持原樣",
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "每個檔案都保持原樣；兩人改了同一個檔案時，由你選擇保留哪一份。"
 }

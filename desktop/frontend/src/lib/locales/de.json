@@ -1694,5 +1694,11 @@
 "R3V Cloud (test service)": "R3V Cloud (Testdienst)",
 "Signed out of R3V Cloud": "Von R3V Cloud abgemeldet",
 "R3V Cloud": "R3V Cloud",
-"Not signed in.": "Nicht angemeldet."
+"Not signed in.": "Nicht angemeldet.",
+"How should R3V keep “{name}”?": "Wie soll R3V „{name}“ führen?",
+"R3V doesn't recognise what this folder is (no Live set, game engine project or code project in it). Say how to keep it: you can change it later in the project's rules.": "R3V erkennt nicht, was dieser Ordner ist (kein Live-Set, kein Spiel-Engine- oder Code-Projekt darin). Sag, wie er geführt werden soll: Du kannst es später in den Regeln des Projekts ändern.",
+"Code and documents": "Code und Dokumente",
+"Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "Textdateien (Code, Notizen, Einstellungen) werden zeilenweise zusammengeführt, wenn zwei Personen sie ändern; eine .gitignore wird beachtet.",
+"Files as they are": "Dateien, wie sie sind",
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Jede Datei wird so geführt, wie sie ist; ändern zwei Personen dieselbe Datei, wählst du, wessen Version bleibt."
 }
