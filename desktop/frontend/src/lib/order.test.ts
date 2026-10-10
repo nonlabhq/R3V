@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moveKey, readOrder, sortByOrder } from "./order";
+import { besideMain, moveKey, readOrder, sortByOrder } from "./order";
 
 describe("project order", () => {
   it("sorts by the order dragged, the rest after as they came", () => {
@@ -21,5 +21,12 @@ describe("project order", () => {
   it("reads only strings back", () => {
     expect(readOrder(["a", 3, null, "b"])).toEqual(["a", "b"]);
     expect(readOrder({})).toEqual([]);
+  });
+
+  it("puts an agent's workspace right after its project", () => {
+    const p = (root: string, mainRoot = "") => ({ root, workspace: !!mainRoot, mainRoot });
+    const song = p("C:\\Song"), beat = p("C:\\Beat"), ws1 = p("C:\\Song (a)", "c:\\song"), ws2 = p("C:\\Other (b)", "C:\\Other");
+    expect(besideMain([ws1, beat, ws2, song])).toEqual([beat, song, ws1, ws2]);
+    expect(besideMain([song, beat])).toEqual([song, beat]);
   });
 });

@@ -8,7 +8,7 @@
   import ProjectView from "./lib/ProjectView.svelte";
   import TeamHome from "./lib/TeamHome.svelte";
   import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
-  import { moveKey, readOrder, sortByOrder } from "./lib/order";
+  import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
   import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
     type TabRef, type TabSnap } from "./lib/tabs";
   import { cssColor, initial, pickFor } from "./lib/palette";
@@ -243,8 +243,10 @@
   let order = $state<string[]>([]);
   $effect.pre(() => { order = readOrder(readJSON(orderKey(overview?.currentTeam ?? ""))); });
   // (by the project's id: it stays when the project is downloaded)
-  const orderOf = (p: TeamProject) => p.id || p.root;
-  let entries = $derived(sortByOrder(overview?.projects ?? [], orderOf, order));
+  // (an agent's workspace, by its folder: it has its project's id; it stays
+  // beside its project, not dragged)
+  const orderOf = (p: TeamProject) => (p.workspace ? p.root : p.id || p.root);
+  let entries = $derived(besideMain(sortByOrder(overview?.projects ?? [], orderOf, order)));
   let selectedEntry = $derived(
     entries.find((p) => (selected.root ? p.root === selected.root : !!selected.id && p.id === selected.id && !p.root)));
 
@@ -597,6 +599,22 @@
     await reload();
   }
 
+  // An agent's workspace off the sidebar (its tab closed too); it stays in
+  // its project's Agents tab.
+  async function hideWorkspace(p: TeamProject) {
+    rowMenu = "";
+    await api.ForgetProject(p.root).catch(() => {});
+    tabs = tabs.filter((x) => !(x.team === teamId && x.key === rowKey(p)));
+    saveTabs();
+    if (selected.root === p.root) selected = p.mainRoot ? { root: p.mainRoot } : {};
+    await reload();
+  }
+  // A workspace just shown in the sidebar (from its project's Agents tab): go to it.
+  async function openWorkspace(p: TeamProject) {
+    await reload();
+    select(entries.find((e) => e.root === p.root) ?? p);
+  }
+
   function leaveThenDelete(p: TeamProject) {
     confirmDelete = null;
     if (p.root) leaving = { roots: [p.root], go: () => deleteFromTeam(p) };
@@ -913,7 +931,7 @@
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
             onsettings={() => (settingsFor = selectedEntry ?? null)}
             entry={selectedEntry} onteamsettings={openTeamSettings}
-            settings={settingsTab}
+            settings={settingsTab} onopenproject={openWorkspace}
             firstShare={firstShare === selectedEntry.root} onfirstshared={() => (firstShare = "")}
             downloaded={justDownloaded === selectedEntry.root} ondownloadseen={() => (justDownloaded = "")} />
         {/key}
@@ -1006,15 +1024,16 @@
 {/snippet}
 
 {#snippet row(p: TeamProject)}
-  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} onpointerdown={(e) => projDown(e, orderOf(p))}>
+  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace}
+    onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }}>
     <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)}
       class:locked={p.status === "remote" && teamLocked}
-      title={p.status === "remote" ? t("On the team, not on this computer yet") : p.root}>
+      title={p.status === "remote" ? t("On the team, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
       <ProjectIcon {p} size={24} />
       <span class="text">
-        <span class="name">{p.name}</span>
+        <span class="name">{p.workspace ? `⑂ ${p.branchLabel || p.branch}` : p.name}</span>
         <span class="meta" class:busy={p.root && activity[p.root]}>
-          {p.root && activity[p.root] ? progressShort(activity[p.root]) : statusText(p.status) ?? `⑂ ${p.branchLabel || p.branch}`}
+          {p.root && activity[p.root] ? progressShort(activity[p.root]) : statusText(p.status) ?? (p.workspace ? t("Workspace") : `⑂ ${p.branchLabel || p.branch}`)}
         </span>
       </span>
     </button>
@@ -1044,7 +1063,12 @@
           <button class="item" onclick={() => { rowMenu = ""; api.ShowFolder(p.root); }}>{t("Open folder")}</button>
         {/if}
         <div class="sep"></div>
-        <button class="item" onclick={() => { rowMenu = ""; settingsFor = p; }}>{t("Settings…")}</button>
+        {#if p.workspace}
+          <!-- (only off the sidebar: the workspace stays, in its project's Agents tab) -->
+          <button class="item" onclick={() => hideWorkspace(p)}>{t("Hide from the sidebar")}</button>
+        {:else}
+          <button class="item" onclick={() => { rowMenu = ""; settingsFor = p; }}>{t("Settings…")}</button>
+        {/if}
       </div>
     {/if}
   </li>
@@ -1220,6 +1244,8 @@
   li { display: flex; align-items: center; position: relative; }
   .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--radius-lg); text-align: left; }
   .proj:hover { background: var(--panel); }
+  /* an agent's workspace: under its project, a step in */
+  li.ws .proj { padding-left: var(--sp-28); }
   .proj.on { background: var(--accent-bg); }
   .icon { width: 16px; text-align: center; color: var(--accent); }
   .text { display: flex; flex-direction: column; min-width: 0; }
