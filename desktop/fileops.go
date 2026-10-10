@@ -221,7 +221,7 @@ func copyInto(r *project.Repo, dir string, sources []string) (*DropResult, error
 	}
 	// Copied aside in R3V's folder first (same drive, tidied when left by a
 	// crash), then moved in whole: a file is there complete or not at all.
-	tmpRoot := filepath.Join(r.Dir, "objects", "tmp")
+	tmpRoot := filepath.Join(r.CommonDir(), "objects", "tmp") // (the store's: shared by every workspace)
 	if err := os.MkdirAll(tmpRoot, 0o755); err != nil {
 		return nil, err
 	}
