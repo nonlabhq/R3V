@@ -54,14 +54,34 @@ func (r *Repo) CreateBranchNamed(name, color string) (string, error) {
 // NewBranch is CreateBranchNamed, the project going on with the branch only
 // when switchTo is set (else it stays where it is).
 func (r *Repo) NewBranch(name, color string, switchTo bool) (string, error) {
+	return r.NewBranchWith(name, BranchOptions{Color: color, Switch: switchTo})
+}
+
+// BranchOptions are how NewBranchWith makes a branch.
+type BranchOptions struct {
+	Color  string // a palette number, "" for the app's pick
+	Switch bool   // the project goes on with the new branch
+	// Agent: the branch is an agent's (kind "agent"), working for this
+	// computer's member (its owner). Needs a team that keeps branch
+	// records: a branch that can't say whose it is isn't made.
+	Agent bool
+}
+
+// NewBranchWith starts a branch called name at the current version and
+// returns its key.
+func (r *Repo) NewBranchWith(name string, o BranchOptions) (string, error) {
 	c, err := r.Client()
 	if err != nil {
 		return "", err
 	}
 	store, ok := remote.BranchRecordsOf(c)
 	if !ok {
-		return name, r.createBranch(name, switchTo)
+		if o.Agent {
+			return "", fmt.Errorf("an agent's branch says whose it is: %w", remote.ErrNoBranchRecords)
+		}
+		return name, r.createBranch(name, o.Switch)
 	}
+	color, switchTo := o.Color, o.Switch
 	if r.Head() == "" {
 		return "", errors.New("save a first version before creating branches")
 	}
@@ -89,7 +109,12 @@ func (r *Repo) NewBranch(name, color string, switchTo bool) (string, error) {
 		return ok || k == r.BranchName() || recs[k].Deleted != nil && !recs[k].Removed
 	})
 	// The record first: stopped before the branch, it is never shown.
-	if err := store.PutBranchRecord(pid, key, remote.BranchRecord{Name: name, Color: color, Parent: r.BranchName(), From: r.Head()}); err != nil {
+	rec := remote.BranchRecord{Name: name, Color: color, Parent: r.BranchName(), From: r.Head()}
+	if o.Agent {
+		rec.Kind = remote.BranchAgent
+		rec.Owner, _ = r.Identity()
+	}
+	if err := store.PutBranchRecord(pid, key, rec); err != nil {
 		return "", err
 	}
 	return key, r.createBranch(key, switchTo)

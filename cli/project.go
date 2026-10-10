@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/actor"
+	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -25,6 +27,7 @@ func openRepo() (*project.Repo, error) {
 		return nil, err
 	}
 	held = append(held, release)
+	r.Actor = actor.Detect() // (the app never sets it: its versions are a person's)
 	ensureRules(r)
 	return r, nil
 }
@@ -264,7 +267,7 @@ func cmdLog(args []string) error {
 			if b := out.Versions[i].Branches; len(b) > 0 {
 				mark = "  [" + strings.Join(b, ", ") + "]"
 			}
-			fmt.Printf("%s  %s  %-12s %s%s\n", short(m.ID), when(m), out.Versions[i].Author, m.Message, mark)
+			fmt.Printf("%s  %s  %-12s %s%s\n", short(m.ID), when(m), byLine(out.Versions[i].Author, m), manifest.Title(m.Message), mark)
 		}
 	})
 	return nil

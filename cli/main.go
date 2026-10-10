@@ -19,7 +19,7 @@ import (
 const usage = `usage: r3v <command> [args]
 
 everyday (run inside an Ableton project folder):
-  commit -m MESSAGE                      commit your changes as a version and share it with the team
+  commit -m TITLE [-m DETAILS]           commit your changes as a version and share it with the team
   update [--preview]                     get the team's latest versions (or just look)
   status                                 what changed since your last version
   watch                                  keep running: tell you about new versions (never changes
@@ -36,7 +36,7 @@ setup:
 
 branches (advanced):
   branch                                 list branches
-  branch new NAME                        start a branch from your current version
+  branch new NAME [--agent]              start a branch from your current version (--agent: an agent's)
   branch archive NAME                    put a branch away (its versions stay)
   branch archived                        list archived branches
   branch unarchive NAME                  bring an archived branch back where it was

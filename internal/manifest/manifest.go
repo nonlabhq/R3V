@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type FileEntry struct {
@@ -109,6 +110,34 @@ func (m *Manifest) actor() *Actor {
 		return nil
 	}
 	return m.Actor
+}
+
+// A version's message is a title, its first line, and details, the rest
+// (Git's way: no field of their own).
+
+// Title is the first line of message.
+func Title(message string) string {
+	title, _, _ := strings.Cut(message, "\n")
+	return strings.TrimRight(title, "\r ")
+}
+
+// Details is message after its title, blank lines around it left out.
+func Details(message string) string {
+	_, rest, _ := strings.Cut(message, "\n")
+	return strings.Trim(rest, "\r\n")
+}
+
+// Message joins a title and details into a version's message, a blank
+// line between each part (as `git commit -m … -m …`); empty parts are left
+// out.
+func Message(parts ...string) string {
+	var keep []string
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			keep = append(keep, p)
+		}
+	}
+	return strings.Join(keep, "\n\n")
 }
 
 // Seal computes and sets the id; call after the manifest is complete.

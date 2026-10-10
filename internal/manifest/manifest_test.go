@@ -122,6 +122,19 @@ func TestNoActorEncodesAsBefore(t *testing.T) {
 	}
 }
 
+func TestTitleAndDetails(t *testing.T) {
+	msg := Message(" Fix the renderer ", "", "Lights were too bright.\n\nSee issue 4.")
+	if msg != "Fix the renderer\n\nLights were too bright.\n\nSee issue 4." {
+		t.Fatalf("%q", msg)
+	}
+	if Title(msg) != "Fix the renderer" || Details(msg) != "Lights were too bright.\n\nSee issue 4." {
+		t.Fatalf("%q %q", Title(msg), Details(msg))
+	}
+	if Title("one line") != "one line" || Details("one line") != "" || Title("a\r\nb") != "a" || Details("a\r\nb") != "b" {
+		t.Fatal("one line, or CRLF")
+	}
+}
+
 func TestActorRoundTrip(t *testing.T) {
 	a := &Actor{Kind: ActorAgent, Tool: "claude-code", Model: "opus", Session: "s1"}
 	m := &Manifest{Version: Format, Parents: []string{}, Author: "yi", Time: "2026-01-01T00:00:00Z", Message: "m",

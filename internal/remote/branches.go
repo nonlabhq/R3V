@@ -41,6 +41,9 @@ var ErrNoBranchRecords = errors.New("this team can't keep branch names and colou
 // MaxBranchName is the most characters (not bytes) of a branch's name.
 const MaxBranchName = 64
 
+// BranchAgent is BranchRecord.Kind for an agent's branch.
+const BranchAgent = "agent"
+
 // BranchRecord is how a branch shows.
 type BranchRecord struct {
 	Name  string `json:"name"`
@@ -49,6 +52,11 @@ type BranchRecord struct {
 	// started at (docs/design/branch-tree.md); "" for main and older branches.
 	Parent string `json:"parent,omitempty"`
 	From   string `json:"from,omitempty"`
+	// Kind is BranchAgent for an agent's branch (its workspace's, folded
+	// away in the graph), "" for a person's. Owner is the member it works
+	// for (docs/design/agent-workspaces.md).
+	Kind  string `json:"kind,omitempty"`
+	Owner string `json:"owner,omitempty"`
 	// Removed: archived, then deleted for good (listed no more).
 	Removed bool `json:"removed,omitempty"`
 	// Deleted: where the branch was when it was deleted, written before
