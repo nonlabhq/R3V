@@ -54,7 +54,7 @@ committed stay with their place: going to another branch or version
 | Export | Export… | 匯出… | `export` | `git archive`, a worktree | A separate project folder that opens on its own (samples copied) |
 | Archive a branch | Archive branch… | 封存分支… | `branch archive`, `branch archived`, `branch unarchive` | `git branch -d` (reflog) | With the branches made from it; comes back whole |
 | Delete a branch | Delete… (archived ones) | 刪除… | `branch delete` | `git branch -D` | Only an archived branch; its versions stay |
-| File lock | Lock, Unlock | 鎖定、解除鎖定 | (R3V Cloud) | `git lfs lock` | Off unless the team turns it on; auto-lock by kind |
+| File lock | Lock, Unlock | 鎖定、解除鎖定 | (R3V Cloud); between agents here: `lock`, `unlock`, `locks` (Nightly) | `git lfs lock` | Off unless the team turns it on; auto-lock by kind. Agents' workspaces on one computer always lock what can't be merged |
 | Rules | Rules… | 規則… | `profile check`, `profile explain` | `.gitignore`, `.gitattributes` | Presets per tool (Live, Unity, Unreal, Godot…) |
 | Backup | Backup | 備份 | `backup run`, `backup status`, `backup restore` | a mirror clone | The whole team, only adding |
 | Health check | Check project… | 檢查專案… | `verify [--repair]` | `git fsck` | |

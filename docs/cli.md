@@ -115,6 +115,18 @@ r3v storage-cleanup --delete   # delete those that are due
 
 Or in the app: the team's settings (⚙) → **Storage cleanup**. Deleted projects and uploads that stopped leave files behind. A file is deleted only once a cleanup has found it unused a day before and it is at least a week old; files a teammate's share in progress relies on are never deleted. Deleted files go to a trash in the storage for two weeks first: should a cleanup ever be wrong, R3V takes a file back from there when it's needed (and `r3v verify --repair` does for a whole project). Works on teams that use S3 or R2 storage.
 
+## AI agents on one computer (Nightly)
+
+```
+r3v agent setup [--tool claude-code]   # in a project or workspace folder: Claude Code's hook, R3V_ACTOR, the guide
+r3v lock <paths…> [--claim]            # lock files or folders for this workspace, all or none
+r3v unlock <paths…>                    # free this workspace's locks
+r3v locks                              # every agent lock here (stale ones marked), and the files the person changed
+r3v lock --break <path>                # take anyone's lock off a path (the person's call)
+```
+
+Agent locks keep two agents (each in a workspace of the project) from changing the same file that can't be merged: textures, models, sounds, `.blend`, Unity and Unreal assets (the team's lock kinds when it has them, `.r3v.yaml`'s `file_locks` narrowing them). Code never locks: it merges hunk by hunk; `--claim` only tells other agents you're on it. `agent setup` writes `.claude/settings.json` (a `PreToolUse` hook running `r3v hook pre-tool`, and `R3V_ACTOR` in `env`, merged with what is there) and adds the agents' lines to `CLAUDE.md`; the hook locks a file when the agent first changes it, or refuses the change saying who holds it. A commit by an agent changing a file another workspace holds, or one the person changed and hasn't committed, is refused (`files_locked_by_agent`); a person's commit never is. A lock is held until its branch is merged; one whose agent hasn't been heard of for 15 minutes is stale, and the next lock asked over it takes it. Kept on this computer only, beside the project's store (`.r3v/agent-locks`). See [design/agent-workspaces.md](design/agent-workspaces.md).
+
 ## Working with Live Sets directly
 
 ```

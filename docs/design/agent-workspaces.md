@@ -120,6 +120,34 @@ Agent locks:
   with none for a while is stale, shown so, and the next lock asked over
   it takes it.
 
+As built (`feat/agent-locks`, Nightly: `internal/agentlock`, the commit
+check in `project.Snapshot`, `cli/agentlocks.go`):
+
+- The list is `CommonDir()/agent-locks`: one JSON file per lock (named by
+  a hash of its path; a claim's also by workspace), written whole then
+  renamed; takers take turns on a file lock of the folder. A heartbeat is
+  a small file per workspace whose time each hook call sets; **stale**
+  after 15 minutes without one.
+- What locks: the team's kinds as last read (`agent-locks/team-locks.json`,
+  refreshed by `agent setup` and `locks`: the hook never asks the team),
+  else every kind but Godot's text scenes (`profile.AgentLockKinds`:
+  textures, models, sounds too, which the team's defaults leave out);
+  `.r3v.yaml`'s `file_locks` narrows them; ignored files and files a
+  preset merges as text never lock.
+- The person's copy is the main copy (the folder of `CommonDir()`): a
+  locking file there that differs from its version (size, then the
+  index's time, then a hash) is theirs. A person in another workspace
+  isn't seen yet.
+- An agent's commit takes the locks of the locking files it changes (as a
+  first touch would), or is refused (`files_locked_by_agent`) with
+  nothing taken. A person's never is.
+- Merging branch X (`r3v merge X`) frees X's locks; not main's (a
+  workspace merging main in is catching up).
+- The hook denies with Claude Code's `permissionDecision: deny`; a note
+  about others' claims goes in `additionalContext`, once per claim and
+  workspace. It never answers `allow` (that would skip the person's
+  permission prompts), and in Stable it says nothing.
+
 **Claims** (optional, for code): "I'm on `src/renderer/`" warns other
 agents (the hook says so once) and blocks nothing: it's about not doing
 the same work twice, not about merging.

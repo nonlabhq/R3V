@@ -14,7 +14,7 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked` and `backup`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked`, `backup`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -197,6 +197,32 @@ the one chosen in the app. The first run can copy many gigabytes.
 copied; `null` with `--preview`). It only adds to the team's storage; still,
 preview first and ask the user.
 
+## Several agents on one project (Nightly)
+
+Each agent works in a workspace of its own (another folder with the same
+project, on its own branch). Files that can't be merged (textures,
+models, sounds, `.blend`, Unity and Unreal assets) are changed by one
+workspace at a time; code is never locked (it merges hunk by hunk).
+
+- `r3v agent setup` (once per workspace) installs Claude Code's hook: the
+  first time you change such a file it is locked for your workspace; if
+  another holds it, the change is refused with who holds it. **Don't
+  wait or retry: go on with other work** and tell the user.
+- Files the user changed in their own copy and hasn't committed are
+  theirs: refused too.
+- Lock ahead, all or none: `r3v lock <paths…> --json` (a folder covers
+  what's under it; too wide is warned about). `r3v unlock <paths…>` frees
+  yours. Locks are freed when your branch is merged.
+- Working on code someone else might take too: `r3v lock src/renderer/
+  --claim` tells the other agents; it blocks nothing.
+- `r3v locks --json`: `locks` (`path`, `kind` `lock`|`claim`,
+  `workspace`, `branch`, `actor`, `since`, `heartbeat`, `stale`, `person`
+  (the user's uncommitted change), `mine`). A lock not heard of for 15
+  minutes is `stale`; the next lock over it takes it.
+- `r3v lock --break <path>` is the user's: never break a lock on your own.
+- `lock --json` result: `taken`, `others` (others' claims over the paths),
+  `taken_over` (stale locks replaced), `warnings`.
+
 ## Errors
 
 | exit | code | what to do |
@@ -215,6 +241,7 @@ preview first and ask the user.
 | 1 | `unshared_versions` | `r3v commit -m ...` shares them |
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |
+| 1 | `files_locked_by_agent` | another workspace on this computer holds files the commit or `lock` needs (`locks`: `path`, `holder` `agent`\|`person`, `workspace`, `branch`, `actor`); nothing was committed or locked: leave those files, or ask the user |
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
