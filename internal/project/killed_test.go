@@ -28,7 +28,8 @@ import (
 // project to clone, R3V_KILL_STAGE a stage to die at (os.Exit, as a crash)
 // once R3V_KILL_DONE items of it are done, R3V_KILL_WRITES the number of
 // files a switch puts in place before dying, R3V_KILL_TO the version to
-// switch to (op "checkout").
+// switch to (op "checkout"), R3V_KILL_WS the workspace to add or remove
+// and R3V_KILL_STEP a step of it to die at.
 func killedChild(op string) int {
 	dir, stage := os.Getenv("R3V_KILL_DIR"), os.Getenv("R3V_KILL_STAGE")
 	done, _ := strconv.Atoi(os.Getenv("R3V_KILL_DONE"))
@@ -68,6 +69,20 @@ func killedChild(op string) int {
 		case "goto-parking":
 			Parking = true
 			_, _, err = r.GoTo(os.Getenv("R3V_KILL_TO"), false)
+		case "workspace-add", "workspace-remove":
+			AgentWorkspaces = true
+			if at := os.Getenv("R3V_KILL_STEP"); at != "" {
+				workspaceStep = func(step string) {
+					if step == at {
+						os.Exit(3)
+					}
+				}
+			}
+			if op == "workspace-add" {
+				_, err = r.AddWorkspace(os.Getenv("R3V_KILL_WS"), WorkspaceOptions{Branch: "agent"})
+			} else {
+				err = r.RemoveWorkspace(os.Getenv("R3V_KILL_WS"), true)
+			}
 		case "preupload":
 			PreuploadMin = 1000 // (as the test that started it)
 			cands, cerr := r.PreuploadCandidates(time.Now().Add(time.Hour))

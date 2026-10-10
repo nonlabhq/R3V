@@ -58,6 +58,9 @@ func (r *Repo) MoveToTeam(t *teams.Team, opts MoveOptions) error {
 	if !MoveProjects {
 		return ErrMoveNotInBuild
 	}
+	if r.IsWorkspace() {
+		return ErrInWorkspace
+	}
 	if r.Config.Remote == nil {
 		return errors.New("the project isn't a team's: add it to the team instead")
 	}

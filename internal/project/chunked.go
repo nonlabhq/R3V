@@ -42,10 +42,10 @@ func chunkStore(c remote.Backend, size int64) (remote.BodyStore, bool) {
 	return bs, ok && size >= chunk.MinFile
 }
 
-func (r *Repo) chunkListPath(h string) string { return filepath.Join(r.Dir, chunksDir, h) }
+func (r *Repo) chunkListPath(h string) string { return filepath.Join(r.CommonDir(), chunksDir, h) }
 
 func (r *Repo) saveChunkList(h string, l *chunk.List) {
-	if os.MkdirAll(filepath.Join(r.Dir, chunksDir), 0o755) == nil {
+	if os.MkdirAll(filepath.Join(r.CommonDir(), chunksDir), 0o755) == nil {
 		store.WriteAtomic(r.chunkListPath(h), bytes.NewReader(l.Encode()))
 	}
 }
@@ -101,10 +101,10 @@ func (l *lister) keep(r *Repo, h string, err error) {
 
 // tidyChunkLists forgets the chunk lists of files no longer on this computer.
 func (r *Repo) tidyChunkLists() {
-	entries, _ := os.ReadDir(filepath.Join(r.Dir, chunksDir))
+	entries, _ := os.ReadDir(filepath.Join(r.CommonDir(), chunksDir))
 	for _, e := range entries {
 		if r.localCopy(e.Name()) == "" {
-			os.Remove(filepath.Join(r.Dir, chunksDir, e.Name()))
+			os.Remove(filepath.Join(r.CommonDir(), chunksDir, e.Name()))
 		}
 	}
 }
@@ -278,7 +278,7 @@ type pieceAt struct {
 // with a chunk list here).
 func (r *Repo) localPieces() map[string]pieceAt {
 	at := map[string]pieceAt{}
-	entries, _ := os.ReadDir(filepath.Join(r.Dir, chunksDir))
+	entries, _ := os.ReadDir(filepath.Join(r.CommonDir(), chunksDir))
 	for _, e := range entries {
 		h := e.Name()
 		if strings.HasPrefix(h, ".") {
@@ -308,7 +308,7 @@ func (r *Repo) localPieces() map[string]pieceAt {
 func (r *Repo) downloadChunked(c remote.Backend, h string, l *chunk.List, t *transfer,
 	local func() map[string]pieceAt) error {
 	here := local()
-	tmpRoot := filepath.Join(r.Dir, "objects", "tmp")
+	tmpRoot := filepath.Join(r.CommonDir(), "objects", "tmp")
 	if err := os.MkdirAll(tmpRoot, 0o755); err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -364,10 +365,15 @@ func (r *Repo) TidyParked() { r.tidyParked() }
 
 // keepWork keeps versions that stand for the uncommitted changes (the
 // working files' contents, relinked sets mapping to them) until other work
-// is kept: only the last kept work stays. Parked sets' versions stay.
+// is kept: only the last kept work stays. Parked sets' versions stay, and
+// what another copy (a workspace) keeps.
 func (r *Repo) keepWork(ids ...string) {
 	keep := strings.Join(ids, "\n") + "\n"
 	parked := r.parkedIDs()
+	for _, o := range r.otherCopies() {
+		maps.Copy(parked, o.parkedIDs())
+		maps.Copy(parked, o.keptWork())
+	}
 	if old, err := os.ReadFile(filepath.Join(r.Dir, keptWorkFile)); err == nil {
 		for _, id := range strings.Fields(string(old)) {
 			if !strings.Contains(keep, id) && !parked[id] {
@@ -376,6 +382,17 @@ func (r *Repo) keepWork(ids ...string) {
 		}
 	}
 	os.WriteFile(filepath.Join(r.Dir, keptWorkFile), []byte(keep), 0o644)
+}
+
+// keptWork lists the versions keepWork keeps for this copy.
+func (r *Repo) keptWork() map[string]bool {
+	ids := map[string]bool{}
+	if data, err := os.ReadFile(filepath.Join(r.Dir, keptWorkFile)); err == nil {
+		for _, id := range strings.Fields(string(data)) {
+			ids[id] = true
+		}
+	}
+	return ids
 }
 
 // BringParked brings a parked set into the project where it is (changes

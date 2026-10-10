@@ -4,7 +4,7 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`.
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`.
 
 ## Team storage (S3-compatible)
 
@@ -68,6 +68,39 @@ and `R3V_ACTOR_SESSION` too; `none` for a person), else the variables
 tools set themselves (Claude Code's `CLAUDECODE`).
 
 Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and commit from there.
+
+## Workspaces: several agents on one project (Nightly)
+
+```
+r3v workspace add ../game.wt/renderer --branch renderer   # another copy, on a branch of its own
+r3v workspace add ../game.wt/tauri --branch tauri --from main
+r3v workspace list [--json]                               # each one: branch, ahead/behind, changes
+r3v workspace remove ../game.wt/renderer [--force]        # once its branch is merged
+```
+
+A workspace is another folder with the same project, on this computer, for
+an agent (or you) to work in while others work in theirs. Every command
+works inside it (`status`, `commit`, `update`, `merge`, `log`, …); its
+commits share on its own team branch, and the main copy merges that branch
+when the work is done (`r3v merge renderer`).
+
+- It is made from what is here: the version's files come from the main
+  copy's store or from a copy's file with the same content (on a ReFS or
+  Dev Drive volume, block-cloned: no space taken until a file changes);
+  nothing is downloaded that is on this computer. What the rules leave out
+  (`node_modules/`, `target/`) isn't copied: build it there.
+- The workspaces share the main copy's store and versions (`.r3v` of the
+  main copy); each keeps its own place, files list and parked changes in
+  its own `.r3v`. Freeing space (`gc`) in any copy keeps what every copy
+  needs, and waits for a time when no copy is at work.
+- `remove` refuses a workspace with versions not merged into the branch
+  it was made from, changes not committed, or parked changes (`--force`
+  loses them). Its branch stays on the team. A folder left by an `add` or
+  `remove` that stopped half-way is finished by `add` again, or cleared by
+  `remove`.
+- A workspace can't be inside the project's folder (or hold it). Its team
+  is the main copy's: connecting, renaming or moving the project is done
+  there.
 
 ## Older versions
 

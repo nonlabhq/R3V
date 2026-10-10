@@ -180,6 +180,27 @@ still parked). `--force` discards instead. `parked` lists them (`parked`);
 files here, `parked discard <branch[@version]>` drops one (ask the user
 first). Tell the user what was parked and brought back.
 
+`workspace` (Nightly; several agents on one project, each in a folder of
+its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on-one-project-nightly)):
+
+- `workspace add <folder> --branch NAME [--from BRANCH|VERSION]`:
+  `workspace` (`folder`, `branch` its key, `branch_name`, `base` the
+  branch it was made from, `created`). Made from the files on this
+  computer; what the rules leave out (`node_modules/`, `target/`) isn't
+  there: install or build it in the workspace. Work there with the usual
+  commands; `status` gives `main_copy` (the main copy's folder) in a
+  workspace.
+- `workspace list`: `main` (the main copy's folder), `workspaces`: each as
+  above with `head`, `ahead` and `behind` (versions of its branch not in
+  `base`, and of `base` not on it; absent when the team can't be reached),
+  `changes` (files changed, not committed), `parked`, `last_activity`,
+  `missing` (the folder is gone: remove it from the list).
+- `workspace remove <folder> [--force]`: `removed`. Refused
+  (`workspace_not_merged`) while its versions aren't all merged into
+  `base` (`r3v merge <branch>` in the main copy), or it has changes not
+  committed or parked; `--force` loses them (ask the user first). Its
+  branch stays on the team.
+
 `backup run [folder]` (back up the whole team's storage into a folder; only
 adds): `team`, `kind` (`folder`, or `s3` for a bucket set up in the app),
 `folder` (where), `run` (its record: `<folder>/runs/<run>.json`),
@@ -245,6 +266,9 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
+| 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |
+| 1 | `in_workspace` | only the project's main copy does this (connecting it to a team, moving it): run it there |
+| 1 | `workspace_orphaned` | the project's main copy was moved or deleted: the workspace can't be used; make it again |
 | 1 | `backup_folder_missing` | the backup folder isn't there: ask the user to connect the drive |
 | 1 | `backup_folder_not_empty` | `backup run` needs an empty folder or this team's backup |
 | 1 | `not_a_backup` | the folder holds no R3V backup |

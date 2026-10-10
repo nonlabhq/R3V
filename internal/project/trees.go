@@ -22,7 +22,7 @@ import (
 const treesDir = "trees"
 
 func (r *Repo) treePath(h string) string {
-	return filepath.Join(r.Dir, treesDir, h[:2], h[2:])
+	return filepath.Join(r.CommonDir(), treesDir, h[:2], h[2:])
 }
 
 // trees keeps parsed trees by hash. Versions share nearly all of them, so

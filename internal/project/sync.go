@@ -68,6 +68,9 @@ func (r *Repo) SetRemote(address string) error {
 
 // JoinTeam makes the project belong to t (already in the team store).
 func (r *Repo) JoinTeam(t *teams.Team) error {
+	if r.IsWorkspace() { // (its team is the main copy's)
+		return ErrInWorkspace
+	}
 	if _, err := teams.Update(func(store *teams.Store) error {
 		store.SetProjectRoot(t.ID, r.Config.ProjectID, r.Root)
 		return nil
@@ -772,7 +775,7 @@ func (r *Repo) encodeForUpload(c remote.Backend, h string) (*blob.Encoded, error
 	if err != nil {
 		return nil, fmt.Errorf("%w (needed to upload this project's versions)", err)
 	}
-	return blob.Encode(src, h, filepath.Join(r.Dir, "objects", "tmp"))
+	return blob.Encode(src, h, filepath.Join(r.CommonDir(), "objects", "tmp"))
 }
 
 func dedupe(xs []string) []string {

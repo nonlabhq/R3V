@@ -52,6 +52,7 @@ committed stay with their place: going to another branch or version
 | Recover samples | Recover from R3V | 從 R3V 救回 | — | — | Samples a set uses that are missing here, from R3V's copy |
 | Milestone | Milestone | 里程碑 | — | annotated tag | Named by the team, renamed or taken away any time |
 | Export | Export… | 匯出… | `export` | `git archive`, a worktree | A separate project folder that opens on its own (samples copied) |
+| Workspace | (the Agents view, to come) | | `workspace add`, `workspace list`, `workspace remove` (Nightly) | `git worktree` | Another folder with the project on this computer, on a branch of its own (for an agent); shares the main copy's store and versions |
 | Archive a branch | Archive branch… | 封存分支… | `branch archive`, `branch archived`, `branch unarchive` | `git branch -d` (reflog) | With the branches made from it; comes back whole |
 | Delete a branch | Delete… (archived ones) | 刪除… | `branch delete` | `git branch -D` | Only an archived branch; its versions stay |
 | File lock | Lock, Unlock | 鎖定、解除鎖定 | (R3V Cloud); between agents here: `lock`, `unlock`, `locks` (Nightly) | `git lfs lock` | Off unless the team turns it on; auto-lock by kind. Agents' workspaces on one computer always lock what can't be merged |

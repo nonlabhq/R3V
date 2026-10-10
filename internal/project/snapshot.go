@@ -23,7 +23,9 @@ type (
 	Actor     = manifest.Actor
 )
 
-func (r *Repo) snapshotPath(id string) string { return filepath.Join(r.Dir, "snapshots", id+".json") }
+func (r *Repo) snapshotPath(id string) string {
+	return filepath.Join(r.CommonDir(), "snapshots", id+".json")
+}
 
 // Head returns the current snapshot id, or "" before the first snapshot.
 func (r *Repo) Head() string {
@@ -65,7 +67,7 @@ func (r *Repo) Resolve(ref string) (string, error) {
 		}
 		return "", errors.New("no snapshots yet")
 	}
-	entries, err := os.ReadDir(filepath.Join(r.Dir, "snapshots"))
+	entries, err := os.ReadDir(filepath.Join(r.CommonDir(), "snapshots"))
 	if err != nil {
 		return "", err
 	}

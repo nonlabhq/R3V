@@ -39,7 +39,7 @@ func (r *Repo) remoteOnly() map[string]bool {
 		return r.remote
 	}
 	r.remote = map[string]bool{}
-	f, err := os.Open(filepath.Join(r.Dir, remoteObjectsFile))
+	f, err := os.Open(filepath.Join(r.CommonDir(), remoteObjectsFile))
 	if err != nil {
 		return r.remote
 	}
@@ -59,14 +59,14 @@ func (r *Repo) saveRemoteOnly() error {
 		hs = append(hs, h)
 	}
 	sort.Strings(hs)
-	return store.WriteAtomic(filepath.Join(r.Dir, remoteObjectsFile), strings.NewReader(strings.Join(hs, "\n")+"\n"))
+	return store.WriteAtomic(filepath.Join(r.CommonDir(), remoteObjectsFile), strings.NewReader(strings.Join(hs, "\n")+"\n"))
 }
 
 // ForgetRemoteObjects drops the list of objects kept only in the team's
 // storage, once every one of them is here again (see DownloadHistory).
 func (r *Repo) ForgetRemoteObjects() error {
 	r.remote = map[string]bool{}
-	err := os.Remove(filepath.Join(r.Dir, remoteObjectsFile))
+	err := os.Remove(filepath.Join(r.CommonDir(), remoteObjectsFile))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
@@ -90,6 +90,18 @@ func (r *Repo) sourcesByHash() map[string]string {
 		}
 		abs := r.Abs(rel)
 		if fi, err := os.Stat(abs); err == nil && fi.Size() == e.Size && fi.ModTime().UnixNano() == e.Mtime {
+			r.sources[e.Hash] = abs
+			r.stamps[abs] = stamp{e.Size, e.Mtime}
+		}
+	}
+	// The other copies' files too (workspaces, the main copy): checked when
+	// one is used, as each may have changed since its copy hashed it.
+	for _, o := range r.otherCopies() {
+		for rel, e := range o.loadIndex().entries {
+			if _, ok := r.sources[e.Hash]; ok || isSet(rel) || (e.ObjSize != 0 && e.ObjSize != e.Size) {
+				continue
+			}
+			abs := o.Abs(rel)
 			r.sources[e.Hash] = abs
 			r.stamps[abs] = stamp{e.Size, e.Mtime}
 		}
@@ -170,27 +182,49 @@ func (r *Repo) openObject(h string) (*os.File, error) {
 }
 
 // exportObject writes the content h to dst (from the store, or a file here
-// with the same content).
+// with the same content), copied by the system where it can (see
+// store.CopyAtomic). A project file that changed while it was copied is
+// not taken: the content comes from elsewhere then.
 func (r *Repo) exportObject(h, dst string) error {
-	if r.Store.Has(h) {
-		return r.Store.Export(h, dst)
+	for try := 0; ; try++ {
+		src := ""
+		if r.Store.Has(h) {
+			src = r.Store.Path(h)
+		} else {
+			var err error
+			if src, err = r.copyHere(h); err != nil {
+				return err
+			}
+			if r.Store.Has(h) { // downloaded just now
+				src = r.Store.Path(h)
+			}
+		}
+		if same, _ := filepath.Abs(dst); strings.EqualFold(same, src) {
+			return nil
+		}
+		if err := store.CopyAtomic(src, dst); err != nil {
+			return err
+		}
+		if try > 0 || r.asHashed(src) {
+			return nil
+		}
+		r.srcMu.Lock()
+		delete(r.sources, h)
+		r.srcMu.Unlock()
 	}
-	src, err := r.copyHere(h)
-	if err != nil {
-		return err
+}
+
+// asHashed: p is not a project file found by its hash (sourcesByHash), or
+// it is still as it was hashed.
+func (r *Repo) asHashed(p string) bool {
+	r.srcMu.Lock()
+	st, ok := r.stamps[p]
+	r.srcMu.Unlock()
+	if !ok {
+		return true
 	}
-	if r.Store.Has(h) { // downloaded just now
-		return r.Store.Export(h, dst)
-	}
-	if same, _ := filepath.Abs(dst); strings.EqualFold(same, src) {
-		return nil
-	}
-	f, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	return store.WriteAtomic(dst, f)
+	fi, err := os.Stat(p)
+	return err == nil && fi.Size() == st.size && fi.ModTime().UnixNano() == st.mtime
 }
 
 // ensureHashes makes contents available here, downloading the missing ones
@@ -232,7 +266,7 @@ func (r *Repo) allManifests() ([]*Manifest, error) {
 
 // storedVersions lists the ids of the versions stored here.
 func (r *Repo) storedVersions() ([]string, error) {
-	entries, err := os.ReadDir(filepath.Join(r.Dir, "snapshots"))
+	entries, err := os.ReadDir(filepath.Join(r.CommonDir(), "snapshots"))
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
@@ -304,13 +338,21 @@ func (r *Repo) PruneObjects() (int64, error) {
 	if r.Config.Remote == nil {
 		return 0, nil
 	}
+	release, err := r.lockOthers()
+	if err != nil {
+		return 0, err
+	}
+	defer release()
 	all, sets, err := r.referenced()
 	if err != nil {
 		return 0, err
 	}
 	// Parked changes stay here whatever the team's storage has: no version
-	// there names them (docs/design/parking.md).
+	// there names them (docs/design/parking.md). Any copy's.
 	parked := r.parkedHashes()
+	for _, o := range r.otherCopies() {
+		maps.Copy(parked, o.parkedHashes())
+	}
 	var candidates []string
 	for h := range all {
 		if !sets[h] && !parked[h] && r.Store.Has(h) {
@@ -392,7 +434,16 @@ func cleanLeftovers(dir string, before time.Time) int64 {
 
 // GC removes objects no version refers to (e.g. left by discarded work) and
 // forgets remote-only objects nothing refers to; it returns the bytes freed.
+// Every copy's versions are in the shared store (parked sets, kept work
+// included), so what any workspace needs stays.
 func (r *Repo) GC() (int64, error) {
+	// The store is every copy's: none may be committing meanwhile (its new
+	// files are in the store before a version names them).
+	release, err := r.lockOthers()
+	if err != nil {
+		return 0, err
+	}
+	defer release()
 	all, _, err := r.referenced()
 	if err != nil {
 		return 0, err
@@ -423,7 +474,10 @@ func (r *Repo) GC() (int64, error) {
 	}
 	remote := r.remoteOnly()
 	changed := false
-	early := r.keptPreuploads(time.Now()) // not committed yet: still listed
+	early := r.keptPreuploads(time.Now()) // not committed yet: still listed (any copy's)
+	for _, o := range r.otherCopies() {
+		maps.Copy(early, o.keptPreuploads(time.Now()))
+	}
 	for h := range remote {
 		if _, ok := all[h]; !ok && !early[h] {
 			delete(remote, h)
