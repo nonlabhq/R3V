@@ -34,6 +34,7 @@
   import Avatar from "./lib/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
   import KindDialog from "./lib/KindDialog.svelte";
+  import ConfirmDialog from "./lib/ConfirmDialog.svelte";
 
 
   let overview = $state<Overview | null>(null);
@@ -644,6 +645,31 @@
     if (folder) share(folder);
   }
 
+  // A project just added (Nightly): the guide for AI agents offered when it
+  // has none (AGENTS.md: committed with its first version).
+  // theirs: the project has an AGENTS.md (or CLAUDE.md) of its own, without
+  // R3V's part: offered at its end.
+  let guideAsk = $state<{ root: string; theirs: boolean } | null>(null);
+  async function offerGuide(root: string) {
+    if (!nightly) return;
+    try {
+      const has = await api.AgentGuide(root);
+      if (has !== "has") guideAsk = { root, theirs: has === "theirs" };
+    } catch {
+      // (offered again in the Agents tab)
+    }
+  }
+  async function addGuide() {
+    const root = guideAsk!.root;
+    guideAsk = null;
+    try {
+      const written = await api.AddAgentGuide(root);
+      toast(t("Added {files}: they go with the project's first version.", { files: written.join(", ") }), "ok", 8000);
+    } catch (e) {
+      toast(errorText(e), "error");
+    }
+  }
+
   // A folder R3V doesn't recognise (only documents, a new project): asked
   // how to keep it, then added as said.
   let kindAsk = $state<string | null>(null);
@@ -656,6 +682,7 @@
       firstShare = got.root;
       await reload();
       select(got);
+      offerGuide(got.root);
     } catch (e) {
       if (!preset && unknownKind(e)) kindAsk = folder;
       else toast(errorText(e), "error", 9000);
@@ -766,7 +793,10 @@
 {:else if onboarding}
   <Onboarding {overview} {reload} onfinish={async (root, share) => {
     onboarding = false;
-    if (root && share) firstShare = root;
+    if (root && share) {
+      firstShare = root;
+      offerGuide(root);
+    }
     else if (root) justDownloaded = root;
     await reload();
     const done = root ? entries.find((p) => p.root === root) : undefined;
@@ -1095,6 +1125,15 @@
   <AppSettings version={appVersion} {edition} {autostart} autoUpdate={updState.auto} {downloadDir} {update}
     checking={checkingNow} onautostart={toggleAutostart} onautoupdate={setAutoUpdate} oncheck={checkUpdateNow}
     ondownloaddir={changeDownloadDir} onupdate={(u) => (update = u)} onclose={() => (appSettings = false)} />
+{/if}
+
+{#if guideAsk}
+  <ConfirmDialog title={guideAsk.theirs ? t("Add R3V's part to the project's guide for AI agents?") : t("Add a guide for AI agents?")}
+    confirm={t("Add the guide")} cancel={t("Not now")}
+    text={guideAsk.theirs
+      ? t("This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).")
+      : t("AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.")}
+    onconfirm={addGuide} onclose={() => (guideAsk = null)} />
 {/if}
 
 {#if kindAsk}

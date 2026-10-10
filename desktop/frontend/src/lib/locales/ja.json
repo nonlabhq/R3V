@@ -1700,5 +1700,11 @@
 "Code and documents": "コードとドキュメント",
 "Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "テキストファイル（コード、メモ、設定）は二人が変更したとき行ごとにマージされます。.gitignore に従います。",
 "Files as they are": "ファイルをそのまま",
-"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "各ファイルはそのまま管理されます。二人が同じファイルを変更したら、どちらを残すか選びます。"
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "各ファイルはそのまま管理されます。二人が同じファイルを変更したら、どちらを残すか選びます。",
+"Added {files}: they go with the project's first version.": "{files} を追加しました。プロジェクトの最初のバージョンに含まれます。",
+"Add a guide for AI agents?": "AI エージェント用のガイドを追加しますか？",
+"Add the guide": "ガイドを追加",
+"AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md（それを読み込む CLAUDE.md の 1 行とともに）は、Claude Code や Codex などの AI エージェントに、このプロジェクトが R3V で管理されていることと、その中での作業方法（コミット、衝突の解決、他のエージェントとの並行作業）を伝えます。プロジェクトと一緒にコミットされます。",
+"Add R3V's part to the project's guide for AI agents?": "プロジェクトの AI エージェント用ガイドに R3V の説明を追加しますか？",
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "このプロジェクトには独自の AGENTS.md（または CLAUDE.md）があります。R3V の説明は末尾に追加され、他はそのままです。内容は、プロジェクトが R3V で管理されていることと作業方法（コミット、衝突の解決、他のエージェントとの並行作業）です。"
 }

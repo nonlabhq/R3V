@@ -1700,5 +1700,11 @@
 "Code and documents": "Code und Dokumente",
 "Text files (code, notes, settings) are merged line by line when two people change them; a .gitignore is followed.": "Textdateien (Code, Notizen, Einstellungen) werden zeilenweise zusammengeführt, wenn zwei Personen sie ändern; eine .gitignore wird beachtet.",
 "Files as they are": "Dateien, wie sie sind",
-"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Jede Datei wird so geführt, wie sie ist; ändern zwei Personen dieselbe Datei, wählst du, wessen Version bleibt."
+"Every file is kept as it is; when two people change the same file, you choose whose to keep.": "Jede Datei wird so geführt, wie sie ist; ändern zwei Personen dieselbe Datei, wählst du, wessen Version bleibt.",
+"Added {files}: they go with the project's first version.": "{files} hinzugefügt: Sie kommen mit der ersten Version des Projekts.",
+"Add a guide for AI agents?": "Eine Anleitung für KI-Agenten hinzufügen?",
+"Add the guide": "Anleitung hinzufügen",
+"AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md (mit einer Zeile in CLAUDE.md, die sie einliest) sagt KI-Agenten wie Claude Code, Codex und anderen, dass dieses Projekt mit R3V versioniert wird und wie man darin arbeitet: committen, Konflikte lösen, neben anderen Agenten arbeiten. Sie wird mit dem Projekt committet.",
+"Add R3V's part to the project's guide for AI agents?": "R3Vs Teil zur Anleitung des Projekts für KI-Agenten hinzufügen?",
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "Dieses Projekt hat eine eigene AGENTS.md (oder CLAUDE.md). R3Vs Teil kommt ans Ende, der Rest bleibt, wie er ist: dass das Projekt mit R3V versioniert wird und wie man darin arbeitet (committen, Konflikte lösen, neben anderen Agenten arbeiten)."
 }
