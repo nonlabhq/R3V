@@ -38,9 +38,10 @@ r3v switch main
 r3v merge yi-ideas --preview  # what would come in and what conflicts
 r3v merge yi-ideas            # merge into your branch and share
 r3v branch log main           # who moved the branch, when, from which version to which
-r3v branch delete yi-ideas    # take it off the team: its versions stay
-r3v branch deleted            # what was deleted, by whom, when
-r3v branch restore yi-ideas   # back where it was
+r3v branch archive yi-ideas   # put it away: its versions stay
+r3v branch archived           # what was archived, by whom, when
+r3v branch unarchive yi-ideas # back where it was
+r3v branch delete yi-ideas    # an archived branch, for good
 ```
 
 On a team that keeps branch names (Nightly), a branch can be called anything

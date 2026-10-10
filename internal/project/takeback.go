@@ -1,8 +1,6 @@
 package project
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,6 +42,11 @@ type workspaceRecord struct {
 	Branch string    `json:"branch"`
 	Has    string    `json:"has"` // the team's latest version of Branch it took in
 	Time   time.Time `json:"time"`
+	// The work it has the team hasn't (workrecord.go): files changed, versions
+	// not shared, branches with changes parked.
+	Changes  int      `json:"changes,omitempty"`
+	Unshared int      `json:"unshared,omitempty"`
+	Parked   []string `json:"parked,omitempty"`
 }
 
 // seenFile maps each branch to the team's latest version this copy took in.
@@ -73,17 +76,11 @@ func (r *Repo) noteTeamHead(c remote.Backend, id string) {
 	if c == nil {
 		return
 	}
-	if r.Config.WorkspaceID == "" {
-		b := make([]byte, 16)
-		rand.Read(b)
-		r.Config.WorkspaceID = hex.EncodeToString(b)
-		if r.SaveConfig() != nil {
-			return
-		}
+	rec := workspaceRecord{Branch: branch, Has: id}
+	if old, ok := r.noted(); ok { // (the work it said it had, until it says again)
+		rec.Changes, rec.Unshared, rec.Parked = old.Changes, old.Unshared, old.Parked
 	}
-	member, _ := r.Identity()
-	c.PutWorkspace(r.Config.ProjectID, r.Config.WorkspaceID, workspaceRecord{
-		ID: r.Config.WorkspaceID, Member: member, Branch: branch, Has: id, Time: time.Now().UTC()})
+	r.putWorkspace(c, rec)
 }
 
 // TakeBackPlan says whether a version can be taken back.

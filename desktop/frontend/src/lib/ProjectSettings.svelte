@@ -14,9 +14,10 @@
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "./emoji";
   import BranchSettings from "./BranchSettings.svelte";
+  import ConfirmDialog from "./ConfirmDialog.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import { branchLabel, branchLane } from "./branches";
-  import { ago, type BranchList, type DeletedBranch } from "./api";
+  import { ago, type BranchList, type ArchivedBranch } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be
   // done with it (check it, unlink or delete it). The actions that
@@ -129,16 +130,29 @@
   let branchList = $state<BranchList | null>(null);
   let branchOpen = $state<string | null>(null);
   let moving = $state(false); // the move dialog open
-  let deleted = $state<DeletedBranch[]>([]);
+  let archived = $state<ArchivedBranch[]>([]);
   const loadBranches = () => {
     api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
-    api.DeletedBranches(p.root).then((d) => (deleted = d ?? [])).catch(() => {});
+    api.ArchivedBranches(p.root).then((d) => (archived = d ?? [])).catch(() => {});
   };
+  // Deleting an archived branch for good (its versions stay).
+  let forgetting = $state<ArchivedBranch | null>(null);
+  async function forget() {
+    const d = forgetting!;
+    forgetting = null;
+    try {
+      await api.DeleteBranch(p.root, d.name);
+      toast(t("Deleted “{branch}” for good.", { branch: d.label || d.name }), "ok");
+      loadBranches();
+    } catch (e) {
+      toast(errorText(e), "error");
+    }
+  }
   let restoring = $state("");
-  async function restore(d: DeletedBranch) {
+  async function restore(d: ArchivedBranch) {
     restoring = d.name;
     try {
-      await api.RestoreBranch(p.root, d.name);
+      await api.UnarchiveBranch(p.root, d.name);
       toast(t("“{branch}” is back, where it was.", { branch: d.label || d.name }), "ok");
       loadBranches();
       onrenamed();
@@ -246,15 +260,16 @@
           </li>
         {/each}
       </ul>
-      {#if deleted.length}
-        <h4>{t("Deleted branches")}</h4>
+      {#if archived.length}
+        <h4>{t("Archived branches")}</h4>
         <ul class="branches">
-          {#each deleted as d (d.name)}
+          {#each archived as d (d.name)}
             <li class="drow">
               <span class="bdot gone" style:--c="var(--lane-{branchLane([d], d.name)})"></span>
               <span class="bname">{d.label || d.name}</span>
-              <span class="faint">{d.by ? t("deleted by {name} {when}", { name: d.by, when: ago(d.time) }) : t("deleted {when}", { when: ago(d.time) })}</span>
-              <button class="small" onclick={() => restore(d)} disabled={!!restoring}>{restoring === d.name ? t("Restoring…") : t("Restore")}</button>
+              <span class="faint">{d.by ? t("archived by {name} {when}", { name: d.by, when: ago(d.time) }) : t("archived {when}", { when: ago(d.time) })}</span>
+              <button class="small" onclick={() => restore(d)} disabled={!!restoring}>{restoring === d.name ? t("Unarchiving…") : t("Unarchive")}</button>
+              <button class="small danger-text" onclick={() => (forgetting = d)} disabled={!!restoring}>{t("Delete…")}</button>
             </li>
           {/each}
         </ul>
@@ -364,7 +379,14 @@
     onchanged={() => { loadBranches(); onrenamed(); }} onclose={() => (branchOpen = null)} />
 {/if}
 
+{#if forgetting}
+  <ConfirmDialog title={t("Delete “{branch}” for good?", { branch: forgetting.label || forgetting.name })} danger confirm={t("Delete")}
+    text={t("It won't be listed any more, and its name is free again. Its versions stay where other branches have them.")}
+    onconfirm={forget} onclose={() => (forgetting = null)} />
+{/if}
+
 <style>
+  .danger-text { color: var(--danger); }
   .inline { padding-top: var(--sp-4); }
   section { padding: var(--sp-12) 0; border-top: var(--border-width) solid var(--line); }
   section:first-child { border-top: none; padding-top: 0; }

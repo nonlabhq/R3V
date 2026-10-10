@@ -198,3 +198,33 @@ func TestVersionsKeepTheirBranch(t *testing.T) {
 		t.Fatalf("merge: %+v, version %+v", res, m)
 	}
 }
+
+// Each copy tells the team the work it has: changes, versions not shared,
+// changes parked; written when it changes, and at once on another branch.
+func TestWorkspaceRecordsWork(t *testing.T) {
+	parking(t, true)
+	a, b := team(t)
+	write(t, a.Root, "notes.txt", "mine")
+	a.Snapshot("not shared")
+	write(t, a.Root, "notes.txt", "more")
+	was := noteEvery
+	noteEvery = 0 // (the share just now wrote it)
+	a.NoteWork(1)
+	noteEvery = was
+	defer func() { noteEvery = was }()
+	ws, err := b.Workspaces()
+	if err != nil || len(ws) != 1 || ws[0].Branch != "main" || ws[0].Changes != 1 || ws[0].Unshared != 1 {
+		t.Fatalf("workspaces: %v %+v", err, ws)
+	}
+	a.NoteWork(2) // (soon after, on the same branch: not yet)
+	if ws, _ := b.Workspaces(); ws[0].Changes != 1 {
+		t.Fatalf("written again at once: %+v", ws)
+	}
+	if err := a.CreateBranch("idea"); err != nil {
+		t.Fatal(err)
+	}
+	a.NoteWork(2)
+	if ws, _ := b.Workspaces(); ws[0].Branch != "idea" || ws[0].Changes != 2 {
+		t.Fatalf("on another branch: %+v", ws)
+	}
+}

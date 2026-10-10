@@ -217,6 +217,7 @@ type versionJSON struct {
 	Message  string   `json:"message"`
 	Parents  []string `json:"parents"`
 	Branches []string `json:"branches,omitempty"` // team branches at this version
+	MadeOn   string   `json:"made_on,omitempty"`  // the branch it was made on (its key; older versions: none)
 }
 
 func versionOf(m *project.Manifest, names map[string]string) versionJSON {
@@ -225,7 +226,7 @@ func versionOf(m *project.Manifest, names map[string]string) versionJSON {
 		parents = []string{}
 	}
 	return versionJSON{ID: m.ID, Time: m.Time, Author: project.AuthorName(m, names), AuthorID: m.AuthorID,
-		Message: m.Message, Parents: parents}
+		Message: m.Message, Parents: parents, MadeOn: m.Branch}
 }
 
 type changeJSON struct {

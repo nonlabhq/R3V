@@ -49,6 +49,8 @@ type BranchRecord struct {
 	// started at (docs/design/branch-tree.md); "" for main and older branches.
 	Parent string `json:"parent,omitempty"`
 	From   string `json:"from,omitempty"`
+	// Removed: archived, then deleted for good (listed no more).
+	Removed bool `json:"removed,omitempty"`
 	// Deleted: where the branch was when it was deleted, written before
 	// the delete (the branch log is written after, as well as it can be),
 	// so a branch deleted can always come back.

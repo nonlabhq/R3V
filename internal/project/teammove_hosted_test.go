@@ -62,9 +62,9 @@ func TestTeamMovePlanIsWhole(t *testing.T) {
 	if ms, _ := b.Milestones(); len(ms) != 1 {
 		t.Errorf("milestones: %+v", ms)
 	}
-	if gone, _ := b.DeletedBranches(); len(gone) != 1 {
+	if gone, _ := b.ArchivedBranches(); len(gone) != 1 {
 		t.Errorf("deleted branches: %+v", gone)
-	} else if err := b.RestoreBranch(gone[0].Key); err != nil {
+	} else if err := b.UnarchiveBranch(gone[0].Key); err != nil {
 		t.Errorf("restoring the deleted branch on the hosted team: %v", err)
 	}
 	log, _ := b.Log()

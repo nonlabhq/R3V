@@ -7,6 +7,7 @@ export {
 };
 
 export {
+    ArchivedBranch,
     BackupInfo,
     BackupOthers,
     Branch,
@@ -19,7 +20,6 @@ export {
     Combined,
     Conflict,
     ConvertFormat,
-    DeletedBranch,
     DownloadSize,
     DropResult,
     FileVersion,
@@ -74,5 +74,6 @@ export {
     UpdateState,
     VerifyProblem,
     VerifyResult,
-    Version
+    Version,
+    Workspace
 } from "./models.js";

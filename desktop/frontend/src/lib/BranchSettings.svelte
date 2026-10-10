@@ -1,20 +1,21 @@
 <script lang="ts">
-  import { t, tn } from "./i18n.svelte";
-  import { api, errorText, type Branch } from "./api";
+  import { t } from "./i18n.svelte";
+  import { api, errorText, type Branch, type Version } from "./api";
   import Modal from "./Modal.svelte";
   import Swatches from "./Swatches.svelte";
   import { toast } from "./notify.svelte";
   import { MAIN, branchColor, branchLabel } from "./branches";
   import { cssColor } from "./palette";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
+  import ArchiveDialog from "./ArchiveDialog.svelte";
 
   // A branch's settings, for the whole team: its name (any words, any
   // language) and its colour. Renaming moves nothing: whoever is on it
   // keeps working.
-  let { root, branch, branches, onchanged, onclose }: {
+  let { root, branch, branches, history = [], onchanged, onclose }: {
     root: string;
     branch: string; // its key
     branches: Branch[];
+    history?: Version[]; // the project's versions (which branch each is on), when at hand
     onchanged: () => void;
     onclose: () => void;
   } = $props();
@@ -42,34 +43,10 @@
       busy = false;
     }
   }
-  // Deleting: the versions stay, and the branch can come back from the
-  // project's settings (Deleted branches).
+  // Archiving: with the branches made from it (ArchiveDialog); the versions
+  // stay, and archived branches come back from the project's settings.
   const isCurrent = $derived(branches.find((b) => b.name === branch)?.current ?? false);
-  let deleting = $state<{ only: number } | null>(null);
-  async function askDelete() {
-    busy = true;
-    try {
-      deleting = { only: await api.VersionsOnlyOnBranch(root, branch) };
-    } catch (e) {
-      toast(errorText(e), "error");
-    } finally {
-      busy = false;
-    }
-  }
-  async function del() {
-    busy = true;
-    try {
-      await api.DeleteBranch(root, branch);
-      toast(t("Deleted “{branch}”. It can come back from the project's settings.", { branch: saved }), "ok", 8000);
-      deleting = null;
-      onchanged();
-      onclose();
-    } catch (e) {
-      toast(errorText(e), "error");
-    } finally {
-      busy = false;
-    }
-  }
+  let archiving = $state(false);
 
   async function rename() {
     if (await save(name, isMain ? "" : color)) toast(t("Renamed for everyone in the team"), "ok");
@@ -99,13 +76,13 @@
 
   {#if !isMain}
     <section>
-      <h3 class="danger">{t("Delete")}</h3>
+      <h3>{t("Archive")}</h3>
       {#if isCurrent}
-        <p class="hint">{t("You're on this branch: switch to another one to delete it.")}</p>
+        <p class="hint">{t("You're on this branch: switch to another one to archive it.")}</p>
       {:else}
         <div class="line">
-          <p class="hint grow">{t("Takes it away for the whole team. Its versions stay, and it can come back from the project's settings.")}</p>
-          <button class="danger-btn" onclick={askDelete} disabled={busy}>{t("Delete branch…")}</button>
+          <p class="hint grow">{t("Puts it away for the whole team, with the branches made from it. Its versions stay, and it can come back from the project's settings.")}</p>
+          <button onclick={() => (archiving = true)} disabled={busy}>{t("Archive branch…")}</button>
         </div>
       {/if}
     </section>
@@ -116,13 +93,9 @@
   {/snippet}
 </Modal>
 
-{#if deleting}
-  <ConfirmDialog title={t("Delete “{branch}”?", { branch: saved })} danger confirm={t("Delete branch")}
-    text={deleting.only
-      ? tn(deleting.only, "{n} version is only on this branch. It stays in the team's storage, and the branch can come back from the project's settings.",
-        "{n} versions are only on this branch. They stay in the team's storage, and the branch can come back from the project's settings.")
-      : t("Every version on it is on another branch too. The branch can come back from the project's settings.")}
-    onconfirm={del} onclose={() => (deleting = null)} />
+{#if archiving}
+  <ArchiveDialog {root} {branch} {branches} {history} current={branches.find((b) => b.current)?.name ?? ""}
+    onarchived={() => { onchanged(); onclose(); }} onclose={() => (archiving = false)} />
 {/if}
 
 <style>
@@ -134,6 +107,5 @@
   .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
   .hint { color: var(--faint); font-size: var(--fs-sm); margin: var(--sp-6) 0 0; }
   .grow { flex: 1; margin: 0; }
-  h3.danger { color: var(--danger); }
-  .danger-btn { color: var(--danger); flex: none; }
+  .line button { flex: none; }
 </style>

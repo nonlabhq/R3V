@@ -109,7 +109,7 @@ func PlanMove(t *teams.Team, p remote.Project, sizes *TeamSizes) (*MovePlan, err
 	for _, h := range heads {
 		tips[h] = true
 	}
-	if gone, err := r.DeletedBranches(); err == nil {
+	if gone, err := r.ArchivedBranches(); err == nil {
 		for _, g := range gone {
 			tips[g.Head] = true
 		}

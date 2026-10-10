@@ -37,9 +37,10 @@ setup:
 branches (advanced):
   branch                                 list branches
   branch new NAME                        start a branch from your current version
-  branch delete NAME                     delete a branch from the team (its versions stay)
-  branch deleted                         list deleted branches
-  branch restore NAME                    bring a deleted branch back where it was
+  branch archive NAME                    put a branch away (its versions stay)
+  branch archived                        list archived branches
+  branch unarchive NAME                  bring an archived branch back where it was
+  branch delete NAME                     delete an archived branch for good
   branch log [NAME]                      who moved the team's branches, when, from which version
   switch NAME                            work on another branch
   merge NAME [--preview]                 merge another branch into yours (or just look)

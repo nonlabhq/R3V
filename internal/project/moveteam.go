@@ -148,7 +148,7 @@ func (r *Repo) copyTo(c, d remote.Backend, heads, before map[string]string) erro
 	for _, h := range heads {
 		tips[h] = true
 	}
-	if gone, err := r.DeletedBranches(); err == nil {
+	if gone, err := r.ArchivedBranches(); err == nil {
 		for _, g := range gone {
 			tips[g.Head] = true
 		}

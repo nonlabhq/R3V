@@ -109,12 +109,13 @@
   {@const g = st.branchGone}
   <div class="banner warn">
     <div>
-      <Tx text={g.by ? t("{branch} was deleted from the team by {name} {when}.") : t("{branch} was deleted from the team {when}.")}
+      <Tx text={g.by ? t("{branch} was archived by {name} {when}.") : t("{branch} was archived {when}.")}
         strong={{ branch: `“${g.label || g.name}”` }} vars={{ name: g.by, when: ago(g.time) }} />
       <span class="muted">{t("Your files and versions here are as they were.")}</span>
     </div>
     {#if onswitchmain}<button onclick={onswitchmain}>{t("Switch to main")}</button>{/if}
-    {#if onrestorebranch}<button class="primary" onclick={onrestorebranch}>{t("Restore it")}</button>{/if}
+    {#if onnewbranch}<button onclick={onnewbranch}>{t("Go on in a new branch")}</button>{/if}
+    {#if onrestorebranch}<button class="primary" onclick={onrestorebranch}>{t("Unarchive it")}</button>{/if}
   </div>
 {/if}
 
