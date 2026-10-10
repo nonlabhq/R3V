@@ -63,6 +63,7 @@ The built-in presets:
 | Preset | For | Detected by | Leaves out |
 | --- | --- | --- | --- |
 | `ableton` | Ableton Live projects | an `Ableton Project Info` folder or a `.als` file | `/Backup/`, `*.asd` |
+| `code` (Nightly) | Software, and folders of documents | `.git/`, `.gitignore`, `package.json`, `go.mod`, `Cargo.toml` and the like | what the `.gitignore` files leave out, and tool folders and build outputs (`node_modules/`, `.venv/`, `dist/`, `target/`, `.next/`, `.svelte-kit/`, `coverage/` …), `.env`; merges text files line by line |
 
 A preset can ask for the project's `.gitignore` files (`gitignore: true`), and has a `priority` for detection (0 by default): when several presets recognize a folder, the highest wins. So a folder with a `.gitignore` can be a code project (a low priority) unless it is also, say, a Unity project.
 
@@ -74,7 +75,22 @@ A preset also tells R3V which built-in code handles which files, what to check b
 | `text` | `merge:` | Merges text files line by line when both sides changed them; if the same lines changed differently, you choose the whole file |
 | `ableton-live` | `running:` | Doesn't rewrite a set while Live has it open |
 
-Files without a merge handler are chosen whole (yours, theirs or both) when both sides changed them.
+Files without a merge handler are chosen whole (yours, theirs or both) when both sides changed them. A `.json` file that merging line by line would leave broken (each side valid, the result not) is chosen whole too.
+
+### The project's own merges (Nightly)
+
+`handlers:` in `.r3v.yaml` says how the project's files merge, over what the presets say. Patterns are as in rules, relative to the project folder; when several match a file, the last decides. `merge:` is `text` (line by line, conflicts hunk by hunk) or `whole` (chosen whole, no merge):
+
+```yaml
+requires: "0.1.39"
+handlers:
+  - files: ["*.scene", "script/**/*.md"]
+    merge: text
+  - files: ["data/generated/"]
+    merge: whole
+```
+
+R3V before 0.1.39 doesn't know `handlers:` and refuses the file, and Stable refuses it for now: set `requires: "0.1.39"` when you add it.
 
 ## File locks
 

@@ -41,6 +41,9 @@ func cmdProfile(args []string) error {
 				fmt.Printf("  rule %d: track %q\n", i+1, ru.Track)
 			}
 		}
+		for i, h := range rules.Handlers {
+			fmt.Printf("  handler %d: %s merge for %s\n", i+1, h.Merge, strings.Join(h.Files, ", "))
+		}
 		if err := r.CheckRules(); err != nil {
 			return err
 		}

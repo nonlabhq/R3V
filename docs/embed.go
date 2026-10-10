@@ -12,3 +12,8 @@ var Agents string
 //
 //go:embed agents-snippet.md
 var AgentsSnippet string
+
+// Rules is profiles.md: the project's rules (.r3v.yaml), for r3v help rules.
+//
+//go:embed profiles.md
+var Rules string

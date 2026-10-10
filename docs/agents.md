@@ -24,8 +24,11 @@ words: [glossary.md](glossary.md).
   remote <code>`, `r3v clone <code>`): they contain the team's storage
   keys. Don't put them in files, logs or messages.
 - **Don't edit `.r3v/`.** It is R3V's own data. `.r3v.yaml` (the
-  project's rules: what is tracked) is fine to read and edit; `r3v profile
-  check` validates it.
+  project's rules: what is tracked) is fine to read and edit; `r3v help
+  rules` has its syntax, `r3v profile check` validates it and `r3v profile
+  explain <file>` says why a file is tracked. Leave out what a build or a
+  tool makes again (caches, renders, build outputs) before the first
+  commit: `rules: - ignore: "renders/"`.
 - Version ids are long hex strings; any unique prefix (10 characters, as
   the text output shows) works where a command takes one.
 
