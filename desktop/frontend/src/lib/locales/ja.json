@@ -1756,5 +1756,20 @@
 "How “{version}” was made": "「{version}」ができるまで",
 "made in {n} step": "{n} ステップで作成",
 "made in {n} steps": "{n} ステップで作成",
-"Show it all": "すべて表示"
+"Show it all": "すべて表示",
+"{a} and {b}": "{a} と {b}",
+"{a}, {b} and others": "{a}、{b} ほか",
+"Don't change files yet": "まだファイルを変更しないで",
+"Keep working": "作業を続けられます",
+"Preparing…": "準備中…",
+"{who} shared a new version — get it when this finishes": "{who} が新しいバージョンを共有しました。これが終わったら取得してください",
+"{who} shared {n} new versions — get them when this finishes": "{who} が新しいバージョンを {n} 件共有しました。これが終わったら取得してください",
+"{n} update": "{n} 件の更新",
+"{n} updates": "{n} 件の更新",
+"{who} shared a new version · “{version}”": "{who} が新しいバージョンを共有 ·「{version}」",
+"{count} from {who}": "{who} から {count}",
+"Get all": "すべて取得",
+"Preview all changes": "すべての変更をプレビュー",
+"{who} merged “{version}”": "{who} が「{version}」をマージ",
+"{who} shared “{version}”": "{who} が「{version}」を共有"
 }

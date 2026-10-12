@@ -6,11 +6,14 @@
   import PreuploadIcon from "./PreuploadIcon.svelte";
   import { preuploads } from "./preupload.svelte";
   import { spinner } from "./spin.svelte";
+  import type { Snippet } from "svelte";
 
   // The top of a project's page: its team (and its settings), its icon and
-  // name, and opening it in its tool. (Branches are above the Overview's
-  // graph; settings are a tab.)
-  let { st, refreshing, team, entry, onteamsettings, oncheck, onrefresh }: {
+  // name; in the middle the notice slot (transfers, the team's new
+  // versions: its size kept, so what comes and goes moves nothing); and
+  // opening it in its tool. (Branches are above the Overview's graph;
+  // settings are a tab.)
+  let { st, refreshing, team, entry, onteamsettings, oncheck, onrefresh, notice }: {
     st: State;
     refreshing: boolean;
     team?: TeamSummary; // none: on this computer only
@@ -18,6 +21,7 @@
     onteamsettings?: (team: TeamSummary) => void;
     oncheck: () => void;
     onrefresh: () => void;
+    notice?: Snippet;
   } = $props();
 
   let setMenu = $state(false);
@@ -61,6 +65,7 @@
       <h1>{st.name}{#if preuploads[st.root]} <PreuploadIcon p={preuploads[st.root]} />{/if}</h1>
     </div>
   </div>
+  {#if notice}{@render notice()}{:else}<div class="spacer"></div>{/if}
   <div class="actions">
     <button class="ghost icon" onclick={oncheck} title={t("Check the project: Live version, samples, plugins")} aria-label={t("Project check")}>
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
@@ -91,8 +96,9 @@
 </header>
 
 <style>
-  header { display: flex; align-items: flex-start; padding: var(--sp-18) var(--sp-24) var(--sp-10); gap: var(--sp-16); }
-  .title { flex: 1; min-width: 0; }
+  header { display: flex; align-items: center; min-height: 62px; padding: var(--sp-12) var(--sp-24) var(--sp-6); gap: var(--sp-8); }
+  .title { flex: 0 1 auto; min-width: 120px; max-width: 34%; }
+  .spacer { flex: 1; }
   .team { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; margin-bottom: var(--sp-2); }
   .team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--muted); }
   .gear { flex: none; padding: var(--sp-2); line-height: 0; color: var(--faint); }

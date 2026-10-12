@@ -17,6 +17,7 @@
   import EditsSummary from "./EditsSummary.svelte";
   import ProjectHeader from "./ProjectHeader.svelte";
   import ProjectBanners from "./ProjectBanners.svelte";
+  import NoticeSlot from "./NoticeSlot.svelte";
   import RuleSuggestion from "./RuleSuggestion.svelte";
   import { takenBackText } from "./teamText";
   import UndoDialog from "./UndoDialog.svelte";
@@ -950,10 +951,15 @@
 {:else}
   <div class="view">
     <ProjectHeader {st} {refreshing} team={teams.find((tm) => tm.id === st!.teamId)} {entry} {onteamsettings}
-      oncheck={() => (checkOpen = "check")} onrefresh={refresh} />
+      oncheck={() => (checkOpen = "check")} onrefresh={refresh}>
+      {#snippet notice()}
+        <NoticeSlot st={st!} {progress} {busy} {looks} cancelling={!!cancelling[root]} oncancel={() => cancelSave(root)}
+          onqueue={() => (queue.open = true)} onupdate={() => run(updateAction)}
+          onpick={(id) => { tab = "overview"; graphPick = id; }} onpreview={openUpdatePreview} />
+      {/snippet}
+    </ProjectHeader>
 
     <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
-      oncancel={() => cancelSave(root)} cancelling={!!cancelling[root]}
       onswitchmain={() => switchTo("main")} onrestorebranch={restoreGoneBranch}
       onrecover={() => run({ name: "goto", message: "",
         call: (_res, force) => api.RecoverSwitch(root, force),
@@ -961,8 +967,7 @@
       onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: titleOf(st!.olderVersion!.message) || st!.olderVersion!.short }))}
-      onupdate={() => run(updateAction)} onpreview={openUpdatePreview} onrestore={() => restoreSamples()} onopenrules={openRules}
-      onqueue={() => (queue.open = true)} {loadError}
+      onupdate={() => run(updateAction)} onrestore={() => restoreSamples()} onopenrules={openRules} {loadError}
       onlockson={turnLocksOn} onlocksnotnow={locksNotNow} />
 
 

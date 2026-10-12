@@ -1756,5 +1756,20 @@
 "How “{version}” was made": "「{version}」是怎麼做出來的",
 "made in {n} step": "由 {n} 個步驟做成",
 "made in {n} steps": "由 {n} 個步驟做成",
-"Show it all": "顯示全部"
+"Show it all": "顯示全部",
+"{a} and {b}": "{a} 和 {b}",
+"{a}, {b} and others": "{a}、{b} 等人",
+"Don't change files yet": "先不要改檔案",
+"Keep working": "可以繼續工作",
+"Preparing…": "準備中…",
+"{who} shared a new version — get it when this finishes": "{who} 上傳了新版本，等這項完成後再取得",
+"{who} shared {n} new versions — get them when this finishes": "{who} 上傳了 {n} 個新版本，等這項完成後再取得",
+"{n} update": "{n} 個更新",
+"{n} updates": "{n} 個更新",
+"{who} shared a new version · “{version}”": "{who} 上傳了新版本 ·「{version}」",
+"{count} from {who}": "{who} 的 {count}",
+"Get all": "全部取得",
+"Preview all changes": "預覽全部變更",
+"{who} merged “{version}”": "{who} 合併了「{version}」",
+"{who} shared “{version}”": "{who} 上傳了「{version}」"
 }

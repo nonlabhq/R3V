@@ -15,7 +15,7 @@ vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wa
 
 import { cancelling, preuploads, transfers, watchPreuploads } from "./preupload.svelte";
 import UploadQueue from "./UploadQueue.svelte";
-import ProjectBanners from "./ProjectBanners.svelte";
+import NoticeSlot, { noticeTiming } from "./NoticeSlot.svelte";
 
 const emit = (name: string, data: unknown) => mocks.handlers[name]({ data });
 const pre = (over: Record<string, unknown> = {}) =>
@@ -71,24 +71,21 @@ describe("transfers", () => {
     cleanup();
   });
 
-  it("opens the queue from a step's banner when it can", async () => {
+  it("opens the queue from a transfer in the notice slot when it can", async () => {
+    noticeTiming.showAfter = 0;
     const onqueue = vi.fn();
-    const st = { root: "C:/Song", name: "Song", teamName: "Band", remoteUrl: "", head: "h", incoming: [], takenBack: [],
-      changes: [], rules: { applied: [], fromFile: false, error: "", suggestions: [] }, cloudFolder: "", unshared: false,
-      olderVersion: null, unfinished: null, inUse: [] };
+    const st = { root: "C:/Song", name: "Song", teamName: "Band", remoteUrl: "", head: "h", incoming: [], takenBack: [] };
     const progress = { root: "C:/Song", stage: "uploading", done: 1, total: 2, bytes: 1, totalBytes: 2 };
-    const noop = () => {};
-    const props = { st, busy: "save", progress, restorable: 0, missingSamples: 0, onshare: noop, onrecover: noop, onpreset: noop,
-      onbranchhere: noop, onlatest: noop, oncombine: noop, onnewbranch: noop, onkeep: noop, onupdate: noop, onpreview: noop,
-      onrestore: noop, onopenrules: noop };
-    render(ProjectBanners, { ...props, onqueue } as never);
-    const banner = screen.getByRole("button", { name: /upload queue|Uploading/i });
-    await fireEvent.keyDown(banner, { key: "Enter" });
-    await fireEvent.click(banner);
+    const props = { st, busy: "save", progress, onupdate: () => {}, onpick: () => {} };
+    render(NoticeSlot, { ...props, onqueue } as never);
+    const transfer = await screen.findByRole("button", { name: /Uploading/i });
+    await fireEvent.keyDown(transfer, { key: "Enter" });
+    await fireEvent.click(transfer);
     expect(onqueue).toHaveBeenCalledTimes(2);
     cleanup();
-    render(ProjectBanners, props as never);
-    expect(screen.queryByRole("button", { name: /upload queue/i })).toBeNull();
+    render(NoticeSlot, props as never);
+    await screen.findByText(/Uploading/);
+    expect(screen.queryByRole("button", { name: /Uploading/i })).toBeNull();
     cleanup();
   });
 });
