@@ -19,8 +19,9 @@
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
   // zoom, double-click the background to put it back. AI agents' branches
-  // are folded away (but the one you're on) until shown from the zoom bar;
-  // an agent's version has a spark on its dot.
+  // whose work is merged are folded away (but the one you're on) until
+  // shown from the zoom bar; one with work to merge always shows. An
+  // agent's version has a spark on its dot.
   let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string; parent?: string; kind?: string }[];
@@ -41,14 +42,27 @@
     onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
   } = $props();
 
-  // Agents' branches: folded away unless shown (the one you're on, and the
-  // version you're on, always show).
+  // Agents' branches: folded away once their work is merged (in the
+  // history of a branch that isn't an agent's), unless shown; the one
+  // you're on, and the version you're on, always show.
   let showAgents = $state(false);
   let agentKeys = $derived(new Set(allBranches.filter((b) => b.kind === "agent").map((b) => b.name)));
-  let folded = $derived(showAgents ? new Set<string>() : new Set([...agentKeys].filter((k) => k !== branch)));
+  let agentsMerged = $derived.by(() => {
+    const byID = new Map(allVersions.map((v) => [v.id, v]));
+    const seen = new Set<string>();
+    const stack = allBranches.filter((b) => !agentKeys.has(b.name)).map((b) => b.latest);
+    while (stack.length) {
+      const id = stack.pop()!;
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      stack.push(...(byID.get(id)?.parents ?? []));
+    }
+    return new Set(allBranches.filter((b) => agentKeys.has(b.name) && (!b.latest || seen.has(b.latest))).map((b) => b.name));
+  });
+  let folded = $derived(showAgents ? new Set<string>() : new Set([...agentsMerged].filter((k) => k !== branch)));
   let versions = $derived(folded.size ? allVersions.filter((v) => v.id === head || !(v.branch && folded.has(v.branch))) : allVersions);
   let branches = $derived(folded.size ? allBranches.filter((b) => !folded.has(b.name)) : allBranches);
-  let foldable = $derived([...agentKeys].filter((k) => k !== branch).length);
+  let foldable = $derived([...agentsMerged].filter((k) => k !== branch).length);
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
   // them out or packs them in; the dots, lines and labels keep their size.

@@ -243,6 +243,14 @@ describe("HistoryGraph with agents", () => {
     expect(screen.getAllByRole("option")).toHaveLength(3);
   });
 
+  it("shows an agent's branch with work not merged yet, folding only the merged ones", () => {
+    const open = [{ ...version("u1", "Menu", ["m3"]), branch: "b-ui" }, ...history];
+    show({ versions: open, branches: [...branches, { name: "b-ui", latest: "u1", label: "ui", kind: "agent" }] });
+    screen.getByText("ui");
+    expect(screen.queryByText("renderer")).toBeNull();
+    expect(screen.getByRole("button", { name: "Show agents' branches" }).textContent).toContain("1");
+  });
+
   it("never folds the agent's branch you are on", () => {
     show({ versions: history, branches, branch: "b-render", head: "r2", selected: "r2" });
     expect(screen.getAllByRole("option")).toHaveLength(5);
