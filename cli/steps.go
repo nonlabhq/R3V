@@ -8,11 +8,14 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/transcript"
 )
 
 // Steps (docs/design/steps.md): the agent tool's hooks make them (`r3v hook
@@ -29,11 +32,12 @@ steps (an agent's moves, on this computer; Nightly):
 
 // hookIn is what Claude Code tells a prompt or post-tool hook.
 type hookIn struct {
-	SessionID      string `json:"session_id"`
-	Cwd            string `json:"cwd"`
-	ToolName       string `json:"tool_name"`
-	Prompt         string `json:"prompt"`
-	TranscriptPath string `json:"transcript_path"`
+	SessionID      string          `json:"session_id"`
+	Cwd            string          `json:"cwd"`
+	ToolName       string          `json:"tool_name"`
+	Prompt         string          `json:"prompt"`
+	TranscriptPath string          `json:"transcript_path"`
+	ToolInput      json.RawMessage `json:"tool_input"`
 }
 
 // readOnlyTools change no files: no scan after them.
@@ -74,7 +78,7 @@ func hookSteps(kind string, in io.Reader, out io.Writer) {
 		return
 	}
 	start := time.Now()
-	r.TakeStep(h.SessionID, h.ToolName, "")
+	r.TakeStepWith(h.SessionID, h.ToolName, transcript.Detail(h.ToolInput), "")
 	if took := time.Since(start); took > stepSlow {
 		noted := filepath.Join(r.Dir, "steps", ".slow")
 		if _, err := os.Stat(noted); err == nil {
@@ -136,12 +140,20 @@ func cmdSteps(args []string) error {
 		for _, t := range s.Turns {
 			switch {
 			case t.Prompt != "":
-				fmt.Printf("\n> %s\n", oneLine(t.Prompt, 100))
+				from, words := promptWords(t.Prompt)
+				if from != "" {
+					words = from + ": " + words
+				}
+				fmt.Printf("\n> %s\n", oneLine(words, 100))
 			case t.Note != "":
 				fmt.Printf("\n# %s\n", oneLine(t.Note, 100))
 			}
 			for _, st := range t.Steps {
-				fmt.Printf("  %3d  %s  %-14s %s\n", st.N, localTime(st.Time), st.Tool, filesLine(st.Files))
+				tool := st.Tool
+				if st.Detail != "" && !slices.Contains(st.Files, st.Detail) {
+					tool += " · " + oneLine(st.Detail, 50)
+				}
+				fmt.Printf("  %3d  %s  %-14s %s\n", st.N, localTime(st.Time), tool, filesLine(st.Files))
 			}
 		}
 	})
@@ -231,6 +243,24 @@ func cmdStepGo(what string, args []string) error {
 		}
 	})
 	return nil
+}
+
+// relayed is a message another session sent this one (Claude Code wraps
+// it so): who from, and its words.
+var relayed = regexp.MustCompile(`(?s)^\s*<cross-session-message\b([^>]*)>(.*?)(?:</cross-session-message>\s*)?$`)
+
+var fromName = regexp.MustCompile(`from-name="([^"]*)"`)
+
+// promptWords is a prompt's words, and who relayed it ("": the person's).
+func promptWords(p string) (from, words string) {
+	m := relayed.FindStringSubmatch(p)
+	if m == nil {
+		return "", p
+	}
+	if n := fromName.FindStringSubmatch(m[1]); n != nil {
+		from = n[1]
+	}
+	return from, strings.TrimSpace(m[2])
 }
 
 func localTime(t string) string {

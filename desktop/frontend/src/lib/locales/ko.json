@@ -1755,5 +1755,6 @@
 "Recording steps": "단계 기록 중",
 "How “{version}” was made": "“{version}”이 만들어진 과정",
 "made in {n} step": "{n}단계로 만듦",
-"made in {n} steps": "{n}단계로 만듦"
+"made in {n} steps": "{n}단계로 만듦",
+"Show it all": "전체 보기"
 }

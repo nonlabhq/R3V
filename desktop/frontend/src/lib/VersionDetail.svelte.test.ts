@@ -90,6 +90,6 @@ it("links to the steps a version was made of, quietly", async () => {
   await fireEvent.click(await screen.findByRole("button", { name: "made in 3 steps" }));
   expect(mocks.api.VersionSteps).toHaveBeenCalledWith("C:/Song", "v3");
   expect(await screen.findByRole("dialog", { name: "How “Mix” was made" })).toBeTruthy();
-  expect(screen.getByText("“Mix the drums”")).toBeTruthy();
+  expect(screen.getByText("Mix the drums")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Go back" })).toBeNull();
 });

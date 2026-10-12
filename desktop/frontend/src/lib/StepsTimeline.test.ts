@@ -40,7 +40,7 @@ describe("The steps pill", () => {
     expect(pill.classList.contains("live")).toBe(true);
     await fireEvent.click(pill);
     expect(screen.getByText(/2 steps · .* · “Warmer arena light”/)).toBeTruthy();
-    expect(screen.getByText("“Warmer arena light”")).toBeTruthy();
+    expect(document.querySelector(".prompt")?.textContent).toBe("Warmer arena light");
     expect(screen.getByText("blender · execute_code")).toBeTruthy();
     expect(screen.getByText("models/lamp.blend, a.png and 1 more")).toBeTruthy();
   });
@@ -59,7 +59,7 @@ describe("The steps pill", () => {
     api.Steps.mockResolvedValue(info());
     const p = show();
     await fireEvent.click(await screen.findByRole("button", { name: /Recording steps/ }));
-    await fireEvent.click(screen.getAllByRole("button", { name: "Go back" })[1]); // step 1 (the latest first)
+    await fireEvent.click(screen.getAllByRole("button", { name: "Go back" })[0]); // step 1 (a turn in order)
     expect(screen.getByText("Go back to step 1?")).toBeTruthy();
     await fireEvent.click(screen.getAllByRole("button", { name: "Go back" }).at(-1)!);
     expect(p.onback).toHaveBeenCalledWith("s1", 1);
@@ -71,7 +71,7 @@ describe("The steps pill", () => {
     show();
     await fireEvent.click(await screen.findByRole("button", { name: /Recording steps/ }));
     await fireEvent.click(screen.getAllByRole("button", { name: "Compare" })[0]);
-    await fireEvent.click(screen.getByRole("button", { name: "Compare with step 2" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Compare with step 1" }));
     await waitFor(() => expect(api.StepDiff).toHaveBeenCalledWith(ROOT, "s1", 1, 2));
     expect(await screen.findByText("From step 1 to step 2")).toBeTruthy();
     expect(screen.getByText("changed")).toBeTruthy();

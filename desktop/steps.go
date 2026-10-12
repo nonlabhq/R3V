@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/transcript"
 )
 
 // Steps (docs/design/steps.md): the project after each of an agent's
@@ -131,4 +132,29 @@ func (a *App) AllSteps(root string) ([]project.Session, error) {
 		return nil, err
 	}
 	return r.Sessions()
+}
+
+// StepsTalk is the conversation a session's steps were made in (its
+// prompts, the agent's replies, its tool calls), read from where the agent
+// tool keeps it; nothing when it's gone or not one R3V reads.
+func (a *App) StepsTalk(root, session string) ([]transcript.Entry, error) {
+	if !project.Steps {
+		return []transcript.Entry{}, nil
+	}
+	r, err := project.Open(root)
+	if err != nil {
+		return nil, err
+	}
+	s, err := r.SessionSteps(session)
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range s.Turns {
+		if t.Transcript != "" {
+			if got, err := transcript.Read(t.Transcript); err == nil {
+				return got, nil
+			}
+		}
+	}
+	return []transcript.Entry{}, nil
 }

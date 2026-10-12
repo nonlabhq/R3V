@@ -1755,5 +1755,6 @@
 "Recording steps": "ステップを記録中",
 "How “{version}” was made": "「{version}」ができるまで",
 "made in {n} step": "{n} ステップで作成",
-"made in {n} steps": "{n} ステップで作成"
+"made in {n} steps": "{n} ステップで作成",
+"Show it all": "すべて表示"
 }
