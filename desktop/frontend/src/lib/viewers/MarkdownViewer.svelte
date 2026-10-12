@@ -3,11 +3,13 @@
   import { api, errorText } from "../api";
   import TextViewer from "./TextViewer.svelte";
   import { renderMarkdown } from "./markdown";
+  import { sideURL } from "./urls";
   import { mdLook, setMdText } from "./settings.svelte";
   import type { ViewerProps } from "./types";
 
-  // Markdown notes (README, mix notes…): as they read, or as text; their
-  // changes line by line, as text.
+  // Markdown notes (README, mix notes, a devlog…): as they read, the
+  // project's pictures and videos they name shown in them (as in the same
+  // version); or as text; their changes line by line, as text.
   let props: ViewerProps = $props();
   let side = $derived(props.a ?? props.b);
   let html = $state("");
@@ -20,7 +22,8 @@
     api.TextFile(props.root, s.path, s.version).then((c) => {
       if (side !== s) return;
       if (!c?.text) { html = ""; error = c?.tooBig ? t("Too big to show here.") : t("Not a text file."); return; }
-      html = renderMarkdown(c.lines.join("\n"));
+      const dir = s.path.includes("/") ? s.path.slice(0, s.path.lastIndexOf("/")) : "";
+      html = renderMarkdown(c.lines.join("\n"), { dir, url: (path) => sideURL(props.root, { ...s, path }, stamp) });
     })
       .catch((e) => { if (side === s) error = errorText(e); });
   });
@@ -77,4 +80,8 @@
   .md :global(th), .md :global(td) { padding: var(--sp-4) var(--sp-10); border: var(--border-width) solid var(--line); text-align: left; }
   .md :global(th) { background: var(--hover); }
   .md :global(a) { color: var(--accent-text); }
+  .md :global(.media) { display: block; margin: var(--sp-6) 0 var(--sp-10); }
+  .md :global(.media img), .md :global(.media video) { display: block; max-width: 100%; max-height: 480px; border-radius: var(--radius);
+    background: var(--bg-sunken); }
+  .md :global(.media img) { color: var(--faint); font-size: var(--fs-sm); } /* (its words, when it can't be read) */
 </style>
