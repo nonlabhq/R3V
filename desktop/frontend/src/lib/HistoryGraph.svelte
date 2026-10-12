@@ -18,10 +18,11 @@
   // Your changes not committed yet are a dashed dot
   // above the version you're on. Picking one shows it on the right; ↑ ↓ move.
   // The view moves: drag to pan, scroll to go up and down, Ctrl+scroll to
-  // zoom, double-click the background to put it back. AI agents' branches
-  // whose work is merged are folded away (but the one you're on) until
-  // shown from the zoom bar; one with work to merge always shows. An
-  // agent's version has a spark on its dot.
+  // zoom, double-click the background to put it back. The filter at the
+  // top right (kept on this computer) hides branches merged into main and
+  // agents' branches (never the one you're on), versions out of a date
+  // range, and dims those not by the authors picked. An agent's version has
+  // a spark on its dot.
   let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings, remember = "" }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string; parent?: string; kind?: string }[];
@@ -40,38 +41,72 @@
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
     milestones?: { version: string; name: string }[]; // versions the team named
     onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
-    remember?: string; // where the agents' branches' toggle is kept on this computer (e.g. the project's folder)
+    remember?: string; // where the graph's filter is kept on this computer (e.g. the project's folder)
   } = $props();
 
-  // Agents' branches: folded away once their work is merged (in the
-  // history of a branch that isn't an agent's), unless shown; the one
-  // you're on, and the version you're on, always show.
-  const shownKey = $derived(`r3v.graph.agents:${remember}`);
-  let showAgents = $state(false);
+  // The filter (kept per project on this computer). Merged: branches whose
+  // newest version is in main's history; agents': an AI agent's. The branch
+  // you're on, main and the version you're on always show.
+  type Range = "all" | "7" | "30" | "90" | "custom";
+  type Filter = { merged: boolean; agents: boolean; range: Range; from: string; to: string; authors: string[] };
+  const DEFAULT: Filter = { merged: false, agents: true, range: "all", from: "", to: "", authors: [] };
+  const filterKey = $derived(`r3v.graph.filter:${remember}`);
+  let filter = $state<Filter>({ ...DEFAULT });
   $effect(() => {
-    try { showAgents = !!remember && localStorage.getItem(shownKey) === "1"; } catch { showAgents = false; }
+    const key = filterKey;
+    try {
+      const got = remember ? JSON.parse(localStorage.getItem(key) ?? "null") : null;
+      // (before the filter: the merged agents' toggle)
+      const old = remember && localStorage.getItem(`r3v.graph.agents:${remember}`) === "1";
+      filter = got ? { ...DEFAULT, ...got } : { ...DEFAULT, merged: !!old };
+    } catch {
+      filter = { ...DEFAULT };
+    }
   });
-  function toggleAgents() {
-    showAgents = !showAgents;
-    try { if (remember) localStorage.setItem(shownKey, showAgents ? "1" : "0"); } catch { /* (not kept) */ }
+  function setFilter(f: Partial<Filter>) {
+    filter = { ...filter, ...f };
+    try { if (remember) localStorage.setItem(filterKey, JSON.stringify(filter)); } catch { /* (not kept) */ }
   }
+  const filtering = $derived(!filter.merged || !filter.agents || filter.range !== "all" || filter.authors.length > 0);
+  let filterOpen = $state(false);
+  let authorsOpen = $state(false);
+  let filterBox = $state<HTMLElement>();
+
   let agentKeys = $derived(new Set(allBranches.filter((b) => b.kind === "agent").map((b) => b.name)));
-  let agentsMerged = $derived.by(() => {
+  let mergedKeys = $derived.by(() => {
     const byID = new Map(allVersions.map((v) => [v.id, v]));
     const seen = new Set<string>();
-    const stack = allBranches.filter((b) => !agentKeys.has(b.name)).map((b) => b.latest);
+    const stack = allBranches.filter((b) => b.name === "main").map((b) => b.latest);
     while (stack.length) {
       const id = stack.pop()!;
       if (!id || seen.has(id)) continue;
       seen.add(id);
       stack.push(...(byID.get(id)?.parents ?? []));
     }
-    return new Set(allBranches.filter((b) => agentKeys.has(b.name) && (!b.latest || seen.has(b.latest))).map((b) => b.name));
+    // (a branch with no versions of its own yet, just made, isn't merged: it's new)
+    const own = new Set(allVersions.map((v) => v.branch));
+    return new Set(allBranches.filter((b) => b.name !== "main" && own.has(b.name) && (!b.latest || seen.has(b.latest))).map((b) => b.name));
   });
-  let folded = $derived(showAgents ? new Set<string>() : new Set([...agentsMerged].filter((k) => k !== branch)));
-  let versions = $derived(folded.size ? allVersions.filter((v) => v.id === head || !(v.branch && folded.has(v.branch))) : allVersions);
+  let folded = $derived(new Set(allBranches.map((b) => b.name).filter((k) => k !== branch && k !== "main"
+    && ((!filter.merged && mergedKeys.has(k)) || (!filter.agents && agentKeys.has(k))))));
+  // The date range: from (inclusive) and to (the whole day), as times.
+  let since = $derived(filter.range === "custom" ? (filter.from ? Date.parse(filter.from + "T00:00:00") : -Infinity)
+    : filter.range === "all" ? -Infinity : Date.now() - Number(filter.range) * 86400_000);
+  let until = $derived(filter.range === "custom" && filter.to ? Date.parse(filter.to + "T23:59:59.999") : Infinity);
+  const inRange = (v: Version) => { const at = Date.parse(v.time); return !(at < since || at > until); };
+  let versions = $derived(allVersions.filter((v) => v.id === head || (!(v.branch && folded.has(v.branch)) && inRange(v))));
   let branches = $derived(folded.size ? allBranches.filter((b) => !folded.has(b.name)) : allBranches);
-  let foldable = $derived([...agentsMerged].filter((k) => k !== branch).length);
+  // The authors (by member, else name), the newest first; those picked stand out.
+  const whoOf = (v: Version) => v.authorId || v.author;
+  let authors = $derived([...new Map(allVersions.map((v) => [whoOf(v), v.author] as const)).entries()]);
+  let picked = $derived(new Set(filter.authors));
+  const dimmed = (v: Version) => picked.size > 0 && !picked.has(whoOf(v));
+  function toggleAuthor(id: string) {
+    const next = new Set(filter.authors);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setFilter({ authors: [...next] });
+  }
+  let hiddenCount = $derived(folded.size);
 
   // A row per version, a column per line of work (at 100%). Zoom spreads
   // them out or packs them in; the dots, lines and labels keep their size.
@@ -125,6 +160,7 @@
   let fullWidth = $state(0); // of the column
   // What can be seen: the column less the part under the details.
   let width = $derived(Math.max(120, fullWidth - reserve));
+  const NARROW = 360; // px of graph under which the zoom bar drops − 100% +
   let boxHeight = $state(0);
 
   // Milestones: a capsule at the graph's left edge (⚑, the version number
@@ -344,8 +380,19 @@
   // version you are on (the toolbar offers it when something else is picked).
   let backTo = $derived(pending ? (selected !== "pending" ? "pending" : "") : head && selected !== head ? head : "");
   function goBack() {
-    onselect(backTo);
-    reveal(backTo);
+    const id = backTo; // (picked, it isn't where to go back to any more)
+    onselect(id);
+    focusOn(id);
+  }
+  // The view moved to put a dot in sight (across, and a third down), the
+  // zoom kept.
+  function focusOn(id: string) {
+    const c = id === "pending" ? pendAt : g.chainOf.get(id);
+    if (!c) return;
+    panX = width / 2 - x(c.col);
+    panY = boxHeight / 3 - (id === "pending" ? yRow(0) : y(id));
+    moved = true;
+    clamp();
   }
 
   function clamp() {
@@ -447,6 +494,9 @@
   }
 </script>
 
+<svelte:window onpointerdown={(e) => { if (filterOpen && filterBox && !filterBox.contains(e.target as Node)) filterOpen = false; }}
+  onkeydown={(e) => { if (filterOpen && e.key === "Escape") { filterOpen = false; authorsOpen = false; } }} />
+
 {#snippet spark()}
   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 9.4 6.6 14.5 8 9.4 9.4 8 14.5 6.6 9.4 1.5 8 6.6 6.6z" fill="currentColor" /></svg>
 {/snippet}
@@ -527,7 +577,7 @@
       {#each versions as v (v.id)}
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
-        <button class="node" class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v?.id === v.id)} class:incoming={incoming.has(v.id)}
+        <button class="node" class:dim={dimmed(v)} class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v?.id === v.id)} class:incoming={incoming.has(v.id)}
           class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
@@ -539,14 +589,12 @@
 
     </div>
     <div class="zoombar" style:left="{width - 14}px">
-      {#if foldable}
-        {@const label = showAgents ? t("Hide agents' branches") : t("Show agents' branches")}
-        <button class="ghost agents" class:on={showAgents} aria-pressed={showAgents} onclick={toggleAgents}
-          aria-label={label} title={label}>{@render spark()}<span>{t("{n} merged", { n: foldable })}</span></button>
+      <!-- (narrow: no room for − 100% +; Ctrl+scroll zooms, the crosshair and the filter stay) -->
+      {#if !fullWidth || width >= NARROW}
+        <button class="ghost" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out") + " (Ctrl+scroll)"}>−</button>
+        <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>
+        <button class="ghost" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in") + " (Ctrl+scroll)"}>+</button>
       {/if}
-      <button class="ghost" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out") + " (Ctrl+scroll)"}>−</button>
-      <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>
-      <button class="ghost" onclick={() => zoomBy(1.2)} aria-label={t("Zoom in")} title={t("Zoom in") + " (Ctrl+scroll)"}>+</button>
       <button class="ghost locate" onclick={locate} aria-label={t("Back to 100% and to where you are")}
         title={t("Back to 100% and to where you are")}>
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
@@ -554,6 +602,68 @@
           <path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15" />
         </svg>
       </button>
+      <div class="filter" bind:this={filterBox}>
+        <button class="ghost" class:on={filtering} aria-expanded={filterOpen} aria-label={t("Graph filters")}
+          title={hiddenCount ? tn(hiddenCount, "Graph filters: {n} branch hidden", "Graph filters: {n} branches hidden") : t("Graph filters")}
+          onclick={() => { filterOpen = !filterOpen; authorsOpen = false; }}>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 3h12l-4.5 5.5V13l-3 1.5V8.5z" />
+          </svg>
+          {#if filtering}<span class="fdot" aria-hidden="true"></span>{/if}
+        </button>
+        {#if filterOpen}
+          <div class="fpanel surface-menu" role="dialog" aria-label={t("Graph filters")}>
+            <label class="frow">
+              <span><strong>{t("Merged branches")}</strong><span class="fhint">{t("Branches that have been merged into the main branch")}</span></span>
+              <input type="checkbox" class="switch" role="switch" checked={filter.merged} onchange={(e) => setFilter({ merged: e.currentTarget.checked })} />
+            </label>
+            <label class="frow">
+              <span><strong>{t("Agents' branches")}</strong><span class="fhint">{t("Branches AI agents work on")}</span></span>
+              <input type="checkbox" class="switch" role="switch" checked={filter.agents} onchange={(e) => setFilter({ agents: e.currentTarget.checked })} />
+            </label>
+            <div class="fsep"></div>
+            <label class="frow">
+              <strong>{t("Date range")}</strong>
+              <select value={filter.range} onchange={(e) => setFilter({ range: e.currentTarget.value as Range })}>
+                <option value="all">{t("All time")}</option>
+                <option value="7">{t("Last 7 days")}</option>
+                <option value="30">{t("Last 30 days")}</option>
+                <option value="90">{t("Last 90 days")}</option>
+                <option value="custom">{t("Custom")}</option>
+              </select>
+            </label>
+            {#if filter.range === "custom"}
+              <div class="fdates">
+                <label>{t("From")} <input type="date" value={filter.from} onchange={(e) => setFilter({ from: e.currentTarget.value })} /></label>
+                <label>{t("To")} <input type="date" value={filter.to} onchange={(e) => setFilter({ to: e.currentTarget.value })} /></label>
+              </div>
+            {/if}
+            <div class="fsub">
+              <button class="frow fbtn" aria-expanded={authorsOpen} onclick={() => (authorsOpen = !authorsOpen)}>
+                <strong>{t("Author")}</strong>
+                <span class="fhint">{picked.size ? authors.filter(([id]) => picked.has(id)).map(([, n]) => n).join(", ") : t("Everyone")} {authorsOpen ? "▾" : "▸"}</span>
+              </button>
+              {#if authorsOpen}
+                <div class="fauthors" role="menu">
+                  <button class="fitem" role="menuitemcheckbox" aria-checked={!picked.size} onclick={() => setFilter({ authors: [] })}>
+                    <span class="check">{picked.size ? "" : "✓"}</span>{t("Everyone")}</button>
+                  <div class="fsep"></div>
+                  {#each authors as [id, name] (id)}
+                    {@const lk = looks?.[id]}
+                    <button class="fitem" role="menuitemcheckbox" aria-checked={picked.has(id)} onclick={() => toggleAuthor(id)}>
+                      <span class="check">{picked.has(id) ? "✓" : ""}</span>
+                      <Avatar {name} seed={id} color={lk?.color} picture={lk?.picture} size={18} />{name}</button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+            {#if filtering}
+              <div class="fsep"></div>
+              <button class="fitem freset" onclick={() => { setFilter({ ...DEFAULT, merged: true }); authorsOpen = false; }}>{t("Show everything")}</button>
+            {/if}
+          </div>
+        {/if}
+      </div>
     </div>
     {#if backTo}
       <div class="toolbar surface-menu" style:left="{Math.max(toolbarWidth / 2 + 12, width / 2)}px" bind:offsetWidth={toolbarWidth}>
@@ -630,6 +740,41 @@
   .zoombar button:hover:not(:disabled) { color: var(--text); background: var(--hover); }
   .zoombar .pct { min-width: 40px; font-family: var(--font-mono); font-size: var(--fs-xs); }
   .zoombar .locate { margin-left: var(--sp-2); }
+  .zoombar button.on { color: var(--accent); }
+  .filter { position: relative; margin-left: var(--sp-4); }
+  .filter > button { position: relative; }
+  .fdot { position: absolute; top: 2px; right: 2px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .fpanel { position: absolute; top: calc(100% + var(--sp-6)); right: 0; z-index: var(--z-menu); width: 280px; padding: var(--sp-8);
+    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
+    font-size: var(--fs-sm); color: var(--text); text-align: left; cursor: default; }
+  .zoombar .fpanel button { justify-content: flex-start; height: auto; min-width: 0; }
+  .frow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-10); padding: var(--sp-6); border-radius: var(--radius); }
+  .frow > span:first-child { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .frow strong { font-weight: var(--fw-medium); }
+  .fhint { color: var(--faint); font-size: var(--fs-xs); }
+  .fbtn { width: 100%; background: none; color: inherit; }
+  .zoombar .fpanel .fbtn { justify-content: space-between; padding: var(--sp-6); font-size: var(--fs-sm); color: var(--text); }
+  .fbtn .fhint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+  .fsep { height: 1px; background: var(--line); margin: var(--sp-6) var(--sp-2); }
+  .fdates { display: flex; flex-direction: column; gap: var(--sp-4); padding: 0 var(--sp-6) var(--sp-6); }
+  .fdates label { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); color: var(--muted); }
+  .fsub { position: relative; }
+  /* (opened in the panel: beside it, it would leave a narrow window) */
+  .fauthors { max-height: 220px; overflow: auto; margin: 0 0 var(--sp-4) var(--sp-8); padding: var(--sp-2) 0 var(--sp-2) var(--sp-6);
+    border-left: var(--border-width) solid var(--line); background: none; }
+  .fitem { display: flex; align-items: center; gap: var(--sp-8); width: 100%; padding: var(--sp-6); border: none; border-radius: var(--radius);
+    background: none; color: var(--text); font-size: var(--fs-sm); text-align: left; }
+  .zoombar .fpanel .fitem { color: var(--text); padding: var(--sp-6); font-size: var(--fs-sm); }
+  .fitem:hover { background: var(--hover); }
+  .check { width: 12px; color: var(--accent); }
+  .freset { color: var(--accent-text); }
+  .switch { appearance: none; flex: none; width: 26px; height: 15px; border-radius: var(--radius-pill); background: var(--line);
+    position: relative; cursor: pointer; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
+    background: var(--switch-knob); transition: transform .15s; }
+  .switch:checked { background: var(--accent); }
+  .switch:checked::after { transform: translateX(11px); }
+  .node.dim { opacity: .25; }
   .zoombar svg { position: static; }
   .toolbar .back { font-weight: var(--fw-semibold); }
   .toolbar .light { background: var(--text); color: var(--bg); border-color: var(--text); }
@@ -680,9 +825,6 @@
   .amark svg { position: static; width: 8px; height: 8px; }
   .lagent { flex: none; display: inline-flex; margin-right: var(--sp-4); color: var(--c); opacity: .8; }
   .lagent svg { position: static; width: 9px; height: 9px; }
-  .zoombar .agents { gap: var(--sp-2); margin-right: var(--sp-4); }
-  .zoombar .agents svg { width: 10px; height: 10px; }
-  .zoombar .agents.on { color: var(--info-text); background: var(--info-chip); }
   .card-flag { font-size: var(--fs-xs); color: var(--accent); margin-top: var(--sp-2); font-weight: var(--fw-semibold); }
   /* A milestone: a capsule at the left edge, a dashed line to its dot, a ring round the dot. */
   .mtag { position: absolute; height: 22px; transform: translateY(-50%); display: inline-flex; align-items: center;
