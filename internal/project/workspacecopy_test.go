@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/nonlabhq/r3v/internal/remote"
 )
 
 // A workspace gets copies of the build folders .r3v.yaml names (any of a
@@ -108,5 +110,31 @@ func TestWorkspaceCopyKilled(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(dir, ".r3v", copyingDir)); err == nil {
 			t.Fatalf("%s: the copying folder left behind", what)
 		}
+	}
+}
+
+// A person's workspace has an ordinary branch; an agent's, a branch marked
+// an agent's (folded away in the graph once merged).
+func TestWorkspaceBranchKind(t *testing.T) {
+	withWorkspaces(t)
+	withBranchRecords(t)
+	_, code := cutTeam(t)
+	r := codeProject(t, code)
+	if _, err := r.AddWorkspace(filepath.Join(t.TempDir(), "mine"), WorkspaceOptions{Branch: "idea"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.AddWorkspace(filepath.Join(t.TempDir(), "agent"), WorkspaceOptions{Branch: "lane", Agent: true}); err != nil {
+		t.Fatal(err)
+	}
+	recs, err := r.BranchRecords()
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := map[string]string{}
+	for _, rec := range recs {
+		kinds[rec.Name] = rec.Kind
+	}
+	if kinds["idea"] != "" || kinds["lane"] != remote.BranchAgent {
+		t.Fatalf("kinds: %v", kinds)
 	}
 }

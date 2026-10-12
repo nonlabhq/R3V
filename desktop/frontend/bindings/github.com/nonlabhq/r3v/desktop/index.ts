@@ -84,5 +84,6 @@ export {
     Workspace,
     WorkspaceAdded,
     WorkspaceLeft,
-    WorkspaceRemoval
+    WorkspaceRemoval,
+    WorkspaceRoom
 } from "./models.js";

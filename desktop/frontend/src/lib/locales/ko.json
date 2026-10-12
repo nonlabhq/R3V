@@ -1738,5 +1738,14 @@
 "{check} failed {when}": "{check} 실패 ({when})",
 "{check} running since {when}": "{check} 실행 중 ({when}부터)",
 "with {n} change not committed": "커밋하지 않은 변경 {n}개 포함",
-"with {n} changes not committed": "커밋하지 않은 변경 {n}개 포함"
+"with {n} changes not committed": "커밋하지 않은 변경 {n}개 포함",
+"Work side by side": "나란히 작업하기",
+"A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.": "워크스페이스는 이 컴퓨터에 있는 이 프로젝트의 또 다른 사본으로, 자체 브랜치를 가집니다. 메인 사본 옆에서 무언가를 시도하거나, AI 에이전트마다 하나씩 주어 서로 방해 없이 동시에 작업하게 할 수 있습니다. 각자 한 작업은 준비되면 병합합니다.",
+"{n} merged": "{n}개 병합됨",
+"Another copy of the project on this computer, on a branch of its own: to try something beside your main copy, or for an AI agent to work in. You merge its work when it's ready.": "이 컴퓨터에 있는 프로젝트의 또 다른 사본으로, 자체 브랜치를 가집니다. 메인 사본 옆에서 무언가를 시도하거나 AI 에이전트가 작업하는 데 씁니다. 준비되면 작업을 병합합니다.",
+"Takes about {size}, {copies} of it build folders.": "약 {size}를 차지합니다(그중 빌드 폴더 {copies}).",
+"Takes about {size}.": "약 {size}를 차지합니다.",
+"This drive clones files: no room is taken until they change.": "이 드라이브는 파일을 복제하므로, 바뀌기 전까지는 공간을 차지하지 않습니다.",
+"For an AI agent (Claude Code)": "AI 에이전트용 (Claude Code)",
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "브랜치가 에이전트 것으로 표시됩니다. Claude Code는 병합할 수 없는 파일을 바꾸기 전에 잠그고, 그 버전에는 Claude Code가 만들었다고 기록됩니다."
 }

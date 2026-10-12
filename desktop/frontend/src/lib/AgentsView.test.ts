@@ -37,7 +37,7 @@ describe("The Agents view", () => {
   it("says what workspaces are for when there are none, with the command for agents", async () => {
     api.AgentWorkspaces.mockResolvedValue([]);
     show();
-    expect(await screen.findByRole("heading", { name: "Agents working side by side" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Work side by side" })).toBeTruthy();
     expect(screen.getByText(/another copy of this project on this computer/)).toBeTruthy();
     expect(screen.getByText(/r3v workspace add ".*Song \(renderer\)" --branch renderer --agent claude-code/)).toBeTruthy();
     expect(api.AgentWorkspaces).toHaveBeenCalledWith(ROOT);
@@ -115,7 +115,8 @@ describe("The Agents view", () => {
     expect(api.OpenWorkspace).toHaveBeenCalledWith(ROOT, "C:\\Projects\\Song (renderer)");
   });
 
-  it("makes a new workspace beside the project, set up for Claude Code", async () => {
+  it("makes a new workspace beside the project, for an agent when ticked, saying the room it takes", async () => {
+    api.WorkspaceRoom.mockResolvedValue({ files: 3 << 20, copies: 0, clones: true });
     api.AgentWorkspaces.mockResolvedValue([]);
     api.AddWorkspace.mockResolvedValue({ folder: "C:\\Projects\\Song (shell)", branch: "b-s", label: "shell", agent: "claude-code", setupError: "" });
     const props = show();
@@ -125,7 +126,10 @@ describe("The Agents view", () => {
     expect(d.getByRole("button", { name: "Create" }).hasAttribute("disabled")).toBe(true);
     await fireEvent.input(d.getByLabelText("Branch name"), { target: { value: "shell" } });
     expect((d.getByLabelText("Folder") as HTMLInputElement).value).toBe("C:\\Projects\\Song (shell)");
-    expect((d.getByLabelText("Set it up for Claude Code") as HTMLInputElement).checked).toBe(true);
+    const forAgent = d.getByLabelText("For an AI agent (Claude Code)") as HTMLInputElement;
+    expect(forAgent.checked).toBe(false); // (a person's, unless ticked)
+    await fireEvent.click(forAgent);
+    expect(await d.findByText(/Takes about 3(\.0)? MB\. This drive clones files/)).toBeTruthy();
     expect((d.getByLabelText("Start from") as HTMLSelectElement).value).toBe("main");
     expect(d.getAllByRole("option").map((o) => o.textContent)).toEqual(["main (you are here)", "idea"]); // (not agents' branches)
     await fireEvent.click(d.getByRole("button", { name: "Create" }));
@@ -135,7 +139,7 @@ describe("The Agents view", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("makes one from another branch, in a folder typed in, without an agent set up; says what went wrong", async () => {
+  it("makes one from another branch, in a folder typed in, a person's; says what went wrong", async () => {
     api.AgentWorkspaces.mockResolvedValue([]);
     api.AddWorkspace.mockRejectedValue(new Error("D:\\ws is not empty"));
     show();
@@ -145,7 +149,6 @@ describe("The Agents view", () => {
     await fireEvent.input(d.getByLabelText("Branch name"), { target: { value: "textures" } });
     expect((d.getByLabelText("Folder") as HTMLInputElement).value).toBe("D:\\ws"); // (typed: kept)
     await fireEvent.change(d.getByLabelText("Start from"), { target: { value: "idea" } });
-    await fireEvent.click(d.getByLabelText("Set it up for Claude Code"));
     await fireEvent.click(d.getByRole("button", { name: "Create" }));
     await waitFor(() => expect(api.AddWorkspace).toHaveBeenCalledWith(ROOT, "D:\\ws", "textures", "idea", ""));
     expect((await d.findByRole("alert")).textContent).toMatch(/not empty/);

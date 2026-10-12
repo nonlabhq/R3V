@@ -224,6 +224,10 @@ func stepDone(step string) {
 type WorkspaceOptions struct {
 	Branch string // the name of its branch, made for it
 	From   string // a branch or version to start from; "": where this copy is
+	// Agent: the workspace is an AI agent's: its branch is marked an
+	// agent's (kind, owner: folded away in the graph once merged). A
+	// person's workspace has an ordinary branch.
+	Agent bool
 }
 
 // AddWorkspace makes folder a workspace of the project: a branch of its
@@ -319,9 +323,9 @@ func (r *Repo) AddWorkspace(folder string, opts WorkspaceOptions) (*WorkspaceEnt
 	// Its branch, at that version.
 	key := ws.BranchName()
 	if key == link.Base {
-		// An agent's branch (kind, owner: folded away in the graph); a team
-		// that keeps no branch records gets an ordinary one.
-		key, err = ws.NewBranchWith(name, BranchOptions{Switch: true, Agent: true})
+		// An agent's branch (kind, owner) when it is an agent's; a team that
+		// keeps no branch records gets an ordinary one.
+		key, err = ws.NewBranchWith(name, BranchOptions{Switch: true, Agent: opts.Agent})
 		if errors.Is(err, remote.ErrNoBranchRecords) {
 			key, err = ws.NewBranch(name, "", true)
 		}

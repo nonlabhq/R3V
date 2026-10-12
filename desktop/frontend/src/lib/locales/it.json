@@ -1738,5 +1738,14 @@
 "{check} failed {when}": "{check} fallito {when}",
 "{check} running since {when}": "{check} in corso da {when}",
 "with {n} change not committed": "con {n} modifica non salvata",
-"with {n} changes not committed": "con {n} modifiche non salvate"
+"with {n} changes not committed": "con {n} modifiche non salvate",
+"Work side by side": "Lavorare fianco a fianco",
+"A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.": "Un workspace è un'altra copia di questo progetto su questo computer, su un branch tutto suo: prova qualcosa accanto alla tua copia principale, o danne uno a ogni agente IA, così lavorano insieme senza intralciarsi. Unisci quello che ognuno ha fatto quando è pronto.",
+"{n} merged": "{n} unite",
+"Another copy of the project on this computer, on a branch of its own: to try something beside your main copy, or for an AI agent to work in. You merge its work when it's ready.": "Un'altra copia del progetto su questo computer, su un branch tutto suo: per provare qualcosa accanto alla tua copia principale, o perché ci lavori un agente IA. Unisci il suo lavoro quando è pronto.",
+"Takes about {size}, {copies} of it build folders.": "Occupa circa {size}, di cui {copies} di cartelle di build.",
+"Takes about {size}.": "Occupa circa {size}.",
+"This drive clones files: no room is taken until they change.": "Questa unità clona i file: non occupano spazio finché non cambiano.",
+"For an AI agent (Claude Code)": "Per un agente IA (Claude Code)",
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "Il suo branch viene segnato come di un agente. Claude Code blocca poi i file che non si possono unire prima di cambiarli, e le sue versioni dicono che le ha fatte lui."
 }

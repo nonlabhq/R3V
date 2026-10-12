@@ -81,7 +81,10 @@ r3v workspace remove ../game.wt/renderer [--force]        # once its branch is m
 ```
 
 A workspace is another folder with the same project, on this computer, for
-an agent (or you) to work in while others work in theirs. Every command
+you or an agent to work in while others work in theirs. With `--agent
+claude-code` it is an agent's: its branch is marked an agent's (folded away
+in the app's graph once merged) and Claude Code is set up in it; without,
+its branch is an ordinary one. Every command
 works inside it (`status`, `commit`, `update`, `merge`, `log`, …); its
 commits share on its own team branch, and the main copy merges that branch
 when the work is done (`r3v merge renderer`).

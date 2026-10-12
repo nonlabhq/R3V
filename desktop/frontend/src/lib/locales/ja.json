@@ -1738,5 +1738,14 @@
 "{check} failed {when}": "{check} 失敗（{when}）",
 "{check} running since {when}": "{check} 実行中（{when} から）",
 "with {n} change not committed": "未コミットの変更 {n} 件あり",
-"with {n} changes not committed": "未コミットの変更 {n} 件あり"
+"with {n} changes not committed": "未コミットの変更 {n} 件あり",
+"Work side by side": "並行して作業する",
+"A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.": "ワークスペースは、このコンピュータ上にあるこのプロジェクトの別コピーで、専用のブランチを持ちます。メインのコピーの横で何かを試したり、AI エージェントごとに 1 つずつ渡して、互いに邪魔せず同時に作業させたりできます。それぞれの作業は、準備ができたらマージします。",
+"{n} merged": "{n} 件マージ済み",
+"Another copy of the project on this computer, on a branch of its own: to try something beside your main copy, or for an AI agent to work in. You merge its work when it's ready.": "このコンピュータ上のプロジェクトの別コピーで、専用のブランチを持ちます。メインのコピーの横で何かを試すためにも、AI エージェントの作業用にも使えます。準備ができたら作業をマージします。",
+"Takes about {size}, {copies} of it build folders.": "約 {size} 使います（うちビルドフォルダ {copies}）。",
+"Takes about {size}.": "約 {size} 使います。",
+"This drive clones files: no room is taken until they change.": "このドライブはファイルをクローンするため、変更されるまで容量を使いません。",
+"For an AI agent (Claude Code)": "AI エージェント用（Claude Code）",
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "ブランチはエージェント用として記録されます。Claude Code はマージできないファイルを変更前にロックし、そのバージョンには Claude Code が作ったことが記録されます。"
 }

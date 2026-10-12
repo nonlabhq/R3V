@@ -168,8 +168,8 @@
     <p class="muted">{t("Reading the workspaces…")}</p>
   {:else if !list.length}
     <div class="empty">
-      <h3>{t("Agents working side by side")}</h3>
-      <p>{t("A workspace is another copy of this project on this computer, on a branch of its own. Give each AI agent one: they work at the same time without getting in each other's way, and you merge what each has done when it's ready.")}</p>
+      <h3>{t("Work side by side")}</h3>
+      <p>{t("A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.")}</p>
       <p class="muted">{t("Files that can't be merged (textures, models, sounds) are locked by the agent changing them, so no two agents change the same one.")}</p>
       <p class="muted">{t("An agent can make its own from the command line:")}</p>
       <div class="cmd">

@@ -1738,5 +1738,14 @@
 "{check} failed {when}": "{check} 失败（{when}）",
 "{check} running since {when}": "{check} 进行中（自 {when}）",
 "with {n} change not committed": "含 {n} 个未提交的变更",
-"with {n} changes not committed": "含 {n} 个未提交的变更"
+"with {n} changes not committed": "含 {n} 个未提交的变更",
+"Work side by side": "并行工作",
+"A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.": "工作区是这个项目在这台电脑上的另一份副本，有自己的分支：可以在主副本旁边试点别的，或给每个 AI 代理各一个，让它们同时工作互不干扰。各自的成果准备好后再合并。",
+"{n} merged": "{n} 个已合并",
+"Another copy of the project on this computer, on a branch of its own: to try something beside your main copy, or for an AI agent to work in. You merge its work when it's ready.": "项目在这台电脑上的另一份副本，有自己的分支：用来在主副本旁边试点别的，或给 AI 代理工作。准备好后再合并它的成果。",
+"Takes about {size}, {copies} of it build folders.": "约占 {size}，其中 {copies} 是构建文件夹。",
+"Takes about {size}.": "约占 {size}。",
+"This drive clones files: no room is taken until they change.": "这个磁盘用克隆方式复制文件：文件改动前不占空间。",
+"For an AI agent (Claude Code)": "给 AI 代理用（Claude Code）",
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "它的分支会标记为代理的。Claude Code 会在改动无法合并的文件前先锁定它们，它做的版本也会注明是它做的。"
 }

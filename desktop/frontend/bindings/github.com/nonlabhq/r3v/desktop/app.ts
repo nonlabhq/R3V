@@ -1647,12 +1647,22 @@ export function WatchFiles(root: string): $CancellablePromise<boolean> {
 }
 
 /**
+ * WorkspaceRoom estimates the room a new workspace of the project in root
+ * takes in folder (the folder needn't exist yet).
+ */
+export function WorkspaceRoom(root: string, folder: string): $CancellablePromise<$models.WorkspaceRoom | null> {
+    return $Call.ByID(4206103649, root, folder).then(($result: any) => {
+        return $$createType108($result);
+    });
+}
+
+/**
  * Workspaces lists the other copies of a project (who is working where,
  * with what), as they last told the team.
  */
 export function Workspaces(root: string): $CancellablePromise<$models.Workspace[]> {
     return $Call.ByID(3970422323, root).then(($result: any) => {
-        return $$createType108($result);
+        return $$createType110($result);
     });
 }
 
@@ -1764,5 +1774,7 @@ const $$createType103 = $models.VerifyResult.createFrom;
 const $$createType104 = $Create.Nullable($$createType103);
 const $$createType105 = $models.Change.createFrom;
 const $$createType106 = $Create.Array($$createType105);
-const $$createType107 = $models.Workspace.createFrom;
-const $$createType108 = $Create.Array($$createType107);
+const $$createType107 = $models.WorkspaceRoom.createFrom;
+const $$createType108 = $Create.Nullable($$createType107);
+const $$createType109 = $models.Workspace.createFrom;
+const $$createType110 = $Create.Array($$createType109);

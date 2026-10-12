@@ -4837,6 +4837,50 @@ export class WorkspaceRemoval {
     }
 }
 
+/**
+ * WorkspaceRoom is the room a new workspace takes.
+ */
+export class WorkspaceRoom {
+    /**
+     * the version's files
+     */
+    "files": number;
+
+    /**
+     * the build folders .r3v.yaml names (workspaces: copy)
+     */
+    "copies": number;
+
+    /**
+     * Clones: the folder's drive copies by block cloning (ReFS, Dev Drive):
+     * no room taken until a file changes.
+     */
+    "clones": boolean;
+
+    /** Creates a new WorkspaceRoom instance. */
+    constructor($$source: Partial<WorkspaceRoom> = {}) {
+        if (!("files" in $$source)) {
+            this["files"] = 0;
+        }
+        if (!("copies" in $$source)) {
+            this["copies"] = 0;
+        }
+        if (!("clones" in $$source)) {
+            this["clones"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WorkspaceRoom instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WorkspaceRoom {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WorkspaceRoom($$parsedSource as Partial<WorkspaceRoom>);
+    }
+}
+
 // Private type creation functions
 const $$createType0 = LockItem.createFrom;
 const $$createType1 = $Create.Array($$createType0);

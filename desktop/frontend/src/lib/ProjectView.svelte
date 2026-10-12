@@ -963,7 +963,7 @@
       <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
       {#if st.agentWorkspaces}
         <button class:on={tab === "agents"} onclick={() => (tab = "agents")}>
-          {t("Agents")}{#if st.workspaceCount}<span class="count" title={tn(st.workspaceCount, "{n} workspace", "{n} workspaces")}>{st.workspaceCount}</span>{/if}
+          {t("Workspaces")}{#if st.workspaceCount}<span class="count" title={tn(st.workspaceCount, "{n} workspace", "{n} workspaces")}>{st.workspaceCount}</span>{/if}
         </button>
       {/if}
       {#if settings}
@@ -1051,7 +1051,7 @@
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since, where: placeOf(p) }))}
-              {parkedActions}
+              {parkedActions} remember={root}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
           {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
