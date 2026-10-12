@@ -1,20 +1,22 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, type Session, type Step, type StepChange, type TalkEntry } from "./api";
   import { toast } from "./notify.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import Modal from "./Modal.svelte";
 
-  // A session as it went: each prompt (the latest first), then what the
-  // agent said and the steps it made, in order. The agent's words and what
+  // A session as it went: each prompt (the latest first), folded to its
+  // time and words, its toggle opening what the agent said and the steps it
+  // made, in order. The agent's words and what
   // each call did come from the conversation the agent tool keeps (read
   // when shown, never copied). Compare two steps; go back to one when
   // onback is given (the work you're on, not a version's steps or another
   // copy's).
-  let { root, session, busy = false, onback }: {
+  let { root, session, busy = false, openLatest = false, onback }: {
     root: string; // the copy whose steps they are
     session: Session;
     busy?: boolean;
+    openLatest?: boolean; // the latest prompt open at first (the work going on)
     onback?: (session: string, n: number) => void;
   } = $props();
 
@@ -22,6 +24,9 @@
   let from = $state<number | null>(null);
   let diff = $state<{ a: number; b: number; changes: StepChange[] } | null>(null);
   let open = $state<Record<string, boolean>>({}); // words shown whole
+  let unfolded = $state<Record<number, boolean>>({}); // prompts open, by number
+  const isOpen = (n: number, i: number) => unfolded[n] ?? (openLatest && i === session.turns.length - 1);
+  const when = (s: string) => new Date(s).toLocaleString([], { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   // The conversation, read once per session.
   let talk = $state<TalkEntry[]>([]);
@@ -89,13 +94,20 @@
 <div class="turns">
   {#each [...session.turns.keys()].reverse() as i (session.turns[i].n)}
     {@const turn = session.turns[i]}
-    <div class="turn">
+    {@const shown = isOpen(turn.n, i)}
+    {@const p = promptOf(turn.prompt || "")}
+    <div class="turn" class:shown>
+      <button class="turn-h" aria-expanded={shown} onclick={() => (unfolded[turn.n] = !shown)}>
+        <span class="chev" aria-hidden="true">{shown ? "▾" : "▸"}</span>
+        <span class="when">{when(turn.time)}</span>
+        <span class="gist" class:note={!turn.prompt}>{#if p.from}<span class="from">{`${p.from} · `}</span>{/if}{turn.prompt ? p.text : turn.note || t("(no prompt)")}</span>
+        <span class="count">{tn(turn.steps.length, "{n} step", "{n} steps")}</span>
+      </button>
+      {#if shown}
+      <div class="body">
       {#if turn.prompt}
-        {@const p = promptOf(turn.prompt)}
-        <button class="words prompt" class:whole={open[`p${turn.n}`]} onclick={() => toggle(`p${turn.n}`)} title={t("Show it all")}>
-          {#if p.from}<span class="from">{p.from}</span>{/if}<span class="text">{p.text}</span>
-        </button>
-      {:else if turn.note}<p class="note">{turn.note}</p>{/if}
+        <p class="whole-prompt">{p.text}</p>
+      {/if}
       {#each itemsOf(i) as it (it.key)}
         {#if it.kind === "reply"}
           <button class="words reply" class:whole={open[it.key]} onclick={() => toggle(it.key)} title={t("Show it all")}>
@@ -121,6 +133,8 @@
           </div>
         {/if}
       {/each}
+      </div>
+      {/if}
     </div>
   {/each}
 </div>
@@ -147,15 +161,24 @@
 {/if}
 
 <style>
-  .turn { margin: var(--sp-10) 0; }
+  .turn { margin: var(--sp-2) 0; }
+  .turn-h { display: grid; grid-template-columns: 14px auto minmax(0, 1fr) auto; align-items: baseline; gap: var(--sp-8); width: 100%;
+    padding: var(--sp-6) var(--sp-4); border: none; border-radius: var(--radius); background: none; color: inherit; font: inherit;
+    font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+  .turn-h:hover { background: var(--hover); }
+  .chev { color: var(--faint); font-size: var(--fs-xs); }
+  .when { color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gist.note { font-style: italic; color: var(--muted); }
+  .gist .from { color: var(--faint); }
+  .count { color: var(--faint); white-space: nowrap; }
+  .body { padding: var(--sp-4) 0 var(--sp-8) calc(14px + var(--sp-12)); }
+  .whole-prompt { margin: 0 0 var(--sp-6); font-size: var(--fs-sm); font-weight: var(--fw-semibold); white-space: pre-wrap; }
   .words { display: block; width: 100%; text-align: left; background: none; border: none; padding: var(--sp-2) 0; color: inherit;
     font: inherit; font-size: var(--fs-sm); cursor: pointer; }
   .words .text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: pre-wrap; }
   .words.whole .text { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
-  .prompt { font-weight: var(--fw-semibold); }
-  .prompt .from { display: block; font-weight: normal; font-size: var(--fs-xs); color: var(--faint); }
   .reply { color: var(--muted); padding-left: var(--sp-12); border-left: 2px solid var(--line); margin: var(--sp-4) 0; }
-  .note { margin: 0 0 var(--sp-4); font-size: var(--fs-sm); font-style: italic; }
   .step { display: grid; grid-template-columns: 28px minmax(80px, 2fr) minmax(0, 2fr) auto auto; align-items: center; gap: var(--sp-8);
     padding: var(--sp-2) 0; font-size: var(--fs-sm); }
   .n { color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; }

@@ -40,7 +40,7 @@ describe("The steps pill", () => {
     expect(pill.classList.contains("live")).toBe(true);
     await fireEvent.click(pill);
     expect(screen.getByText(/2 steps · .* · “Warmer arena light”/)).toBeTruthy();
-    expect(document.querySelector(".prompt")?.textContent).toBe("Warmer arena light");
+    expect(document.querySelector(".gist")?.textContent).toBe("Warmer arena light"); // the latest open at first
     expect(screen.getByText("blender · execute_code")).toBeTruthy();
     expect(screen.getByText("models/lamp.blend, a.png and 1 more")).toBeTruthy();
   });

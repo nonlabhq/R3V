@@ -30,8 +30,11 @@ describe("A session's steps", () => {
     render(StepsList, { root: "C:/Game-ws/scene", session: { id: "s1", last: "", steps: 2, turns: [
       { n: 1, time: "2026-10-12T05:00:00Z", prompt: relayed, steps: [
         step(1, "2026-10-12T05:00:10Z", "Bash", ["Cargo.lock"]), step(2, "2026-10-12T05:00:40Z", "Bash", ["target/x"])] }] } });
-    expect(screen.getByText("Lane integrator")).toBeTruthy();
-    expect(document.querySelector(".prompt .text")?.textContent).toBe("Integrator: run r3v merge main, then rebuild.");
+    // Folded: its time, who sent it and its words on one line; the toggle opens it.
+    expect(document.querySelector(".gist")?.textContent).toBe("Lane integrator · Integrator: run r3v merge main, then rebuild.");
+    expect(document.querySelector(".step")).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(document.querySelector(".whole-prompt")?.textContent).toBe("Integrator: run r3v merge main, then rebuild.");
     await waitFor(() => expect(mocks.api.StepsTalk).toHaveBeenCalledWith("C:/Game-ws/scene", "s1"));
     const reply = await screen.findByText("Merged main; rebuilding now.");
     const rows = [...document.querySelectorAll(".step .tool, .reply .text")].map((e) => e.textContent);
@@ -46,7 +49,7 @@ describe("A session's steps", () => {
   it("keeps a step's own detail, recorded by the hook, over the conversation's", async () => {
     mocks.api.StepsTalk.mockResolvedValue([]);
     render(StepsList, { root: "C:/p", session: { id: "s2", last: "", steps: 1, turns: [
-      { n: 1, time: "2026-10-12T05:00:00Z", prompt: "Go", steps: [step(1, "2026-10-12T05:00:10Z", "Bash", ["a.ts"], "Run the tests")] }] } });
+      { n: 1, time: "2026-10-12T05:00:00Z", prompt: "Go", steps: [step(1, "2026-10-12T05:00:10Z", "Bash", ["a.ts"], "Run the tests")] }] }, openLatest: true });
     expect(await screen.findByText(/Run the tests/)).toBeTruthy();
   });
 });
