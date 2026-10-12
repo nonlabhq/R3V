@@ -2,17 +2,16 @@
   import { t, tn } from "./i18n.svelte";
   import { ago, titleOf, type State, type Progress, type RuleSuggestion as Suggestion } from "./api";
   import Tx from "./Tx.svelte";
-  import ProgressBar from "./ProgressBar.svelte";
   import RuleSuggestion from "./RuleSuggestion.svelte";
-  import { newsOf, takenBackText } from "./teamText";
 
-  // What a project's page says above its tabs, most urgent first: a step
-  // under way, not shared yet, a sync service's folder, a switch that didn't
-  // finish, other tools' projects found, an older version, the team's new
-  // versions, missing samples, broken rules. Each says what to do; the page
-  // does it.
+  // What a project's page says above its tabs that needs doing, most
+  // urgent first: not shared yet, a sync service's folder, a switch that
+  // didn't finish, other tools' projects found, an older version, missing
+  // samples, broken rules. Each says what to do; the page does it.
+  // (Transfers and the team's new versions are in the title bar's notice
+  // slot: NoticeSlot.)
   let { st, busy, progress, restorable, missingSamples, onshare, onrecover, onpreset, onbranchhere, onlatest,
-    oncombine, onnewbranch, onkeep, onupdate, onpreview, onrestore, onopenrules, onqueue, oncancel, cancelling = false, loadError = "",
+    oncombine, onnewbranch, onkeep, onupdate, onrestore, onopenrules, loadError = "",
     onrestorebranch, onswitchmain, onlockson, onlocksnotnow }: {
     st: State;
     busy: string;
@@ -28,12 +27,8 @@
     onnewbranch: () => void;
     onkeep: () => void; // make the older version the latest (no team)
     onupdate: () => void;
-    onpreview: () => void; // what an update brings
     onrestore: () => void; // the missing samples
     onopenrules: () => void;
-    onqueue?: () => void; // the upload queue (a click on a step under way)
-    oncancel?: () => void; // cancel the commit under way (progress.cancellable)
-    cancelling?: boolean;
     loadError?: string; // the project couldn't be read again just now (what is shown is from before)
     onrestorebranch?: () => void; // the branch you are on was deleted: bring it back
     onswitchmain?: () => void;
@@ -52,34 +47,11 @@
     try { localStorage.setItem(`r3v.cloudOk:${r}`, "1"); } catch { /* shown again next time */ }
   }
   let spotsDismissed = $state(-1); // the count "Later" was said to
-  let news = $derived(newsOf(st.incoming));
   // A download that didn't finish (the connection lost, R3V closed): no
   // version here yet, the team has some.
   let notDownloaded = $derived(!!st.remoteUrl && !st.head && st.incoming.length > 0);
 </script>
 
-{#if progress}
-  <!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
-  <div class="banner info" class:clickable={!!onqueue} role={onqueue ? "button" : undefined} tabindex={onqueue ? 0 : undefined}
-    title={onqueue ? t("Click to see the upload queue") : undefined} onclick={onqueue}
-    onkeydown={(e) => { if (onqueue && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onqueue(); } }}>
-    <div class="col">
-      <ProgressBar p={progress} team={st.teamName || undefined} />
-      {#if progress.stage === "scanning" || progress.stage === "storing"}
-        <span class="hold">{t("Don't change the project's files until this step is done.")}</span>
-      {:else if progress.stage === "checking" || progress.stage === "uploading"}
-        <span class="go">✓ {t("It's in the history: you can keep working while it uploads.")}</span>
-      {/if}
-    </div>
-    {#if progress.cancellable && oncancel}
-      <button class="ghost" disabled={cancelling} title={t("Stop before the team gets it: your changes stay as they are")}
-        onclick={(e) => { e.stopPropagation(); oncancel(); }} onkeydown={(e) => e.stopPropagation()}>
-        {cancelling ? t("Cancelling…") : t("Cancel")}</button>
-    {/if}
-  </div>
-{:else if busy === "first-share"}
-  <div class="banner info"><div>{t("Sharing “{name}” with the team…", { name: st.name })}</div></div>
-{/if}
 
 {#if notDownloaded && !busy && !progress}
   <div class="banner warn">
@@ -184,35 +156,6 @@
     {/if}
   </div>
 {/if}
-{#if st.takenBack?.length && !st.incoming.length}
-  <div class="banner info">
-    <div>
-      {takenBackText(st.takenBack)}
-      <span class="muted">{t("Get updates to take it out of your files too.")}</span>
-      {#if st.changes.length && !st.olderVersion}<span class="keep">{t("Your uncommitted changes stay as they are.")}</span>{/if}
-    </div>
-    {#if !st.olderVersion}
-      <button class="primary" onclick={onupdate} disabled={!!busy}>{t("Get updates")}</button>
-    {/if}
-  </div>
-{/if}
-{#if st.incoming.length && !notDownloaded}
-  <div class="banner info">
-    <div>
-      <Tx text={tn(news.length, "{who} shared {n} new version:", "{who} shared {n} new versions:")}
-        strong={{ who: [...new Set(news.map((v) => v.author))].join(", ") }} />
-      <span class="muted">{news.slice(0, 3).map((v) => `“${titleOf(v.message)}”`).join(", ")}{news.length > 3 ? "…" : ""}</span>
-      {#if st.changes.length && !st.olderVersion}<span class="keep">{t("Your uncommitted changes stay as they are.")}</span>{/if}
-    </div>
-    {#if st.olderVersion}
-      <!-- back to the latest version first -->
-    {:else}
-      <button onclick={onpreview} disabled={!!busy}>{t("Preview")}</button>
-      <button class="primary" onclick={onupdate} disabled={!!busy}>{t("Get updates")}</button>
-    {/if}
-  </div>
-{/if}
-
 {#if restorable && spotsDismissed !== restorable}
   <div class="banner warn">
     <div>⚠ {tn(missingSamples, "{n} sample of this project is missing.", "{n} samples of this project are missing.")}
@@ -231,15 +174,9 @@
 {/if}
 
 <style>
-  .banner.clickable { cursor: pointer; }
-  .banner.clickable:hover { border-color: var(--line-strong); }
   .banner { display: flex; align-items: center; gap: var(--sp-10); margin: var(--sp-6) var(--sp-24); padding: var(--sp-10) var(--sp-14); border-radius: var(--radius-lg); }
   .banner > div, .rule > :global(div) { flex: 1; }
   .banner.info { background: var(--info-bg); border: var(--border-width) solid var(--info-line); }
   .banner.older { background: var(--past-bg); border: var(--border-width) solid var(--past-line); }
   .banner.warn { background: var(--warn-bg); border: var(--border-width) solid var(--warn-line); color: var(--warn-text); }
-  .col { display: flex; flex-direction: column; gap: var(--sp-6); }
-  .go { font-size: var(--fs-md); color: var(--accent); }
-  .hold { font-size: var(--fs-md); color: var(--faint); }
-  .keep { display: block; font-size: var(--fs-sm); color: var(--faint); margin-top: var(--sp-2); }
 </style>

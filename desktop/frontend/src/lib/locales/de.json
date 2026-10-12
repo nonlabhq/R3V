@@ -1756,5 +1756,20 @@
 "How “{version}” was made": "Wie „{version}“ entstand",
 "made in {n} step": "in {n} Schritt entstanden",
 "made in {n} steps": "in {n} Schritten entstanden",
-"Show it all": "Alles zeigen"
+"Show it all": "Alles zeigen",
+"{a} and {b}": "{a} und {b}",
+"{a}, {b} and others": "{a}, {b} und andere",
+"Don't change files yet": "Dateien noch nicht ändern",
+"Keep working": "Weiterarbeiten",
+"Preparing…": "Wird vorbereitet…",
+"{who} shared a new version — get it when this finishes": "{who} hat eine neue Version geteilt – hol sie, wenn das hier fertig ist",
+"{who} shared {n} new versions — get them when this finishes": "{who} hat {n} neue Versionen geteilt – hol sie, wenn das hier fertig ist",
+"{n} update": "{n} Aktualisierung",
+"{n} updates": "{n} Aktualisierungen",
+"{who} shared a new version · “{version}”": "{who} hat eine neue Version geteilt · „{version}“",
+"{count} from {who}": "{count} von {who}",
+"Get all": "Alle holen",
+"Preview all changes": "Alle Änderungen ansehen",
+"{who} merged “{version}”": "{who} hat „{version}“ zusammengeführt",
+"{who} shared “{version}”": "{who} hat „{version}“ geteilt"
 }

@@ -23,6 +23,9 @@ vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wa
 const emit = (name: string, data: unknown) => (mocks.handlers[name] ?? []).forEach((fn) => fn({ data }));
 
 import ProjectView from "./ProjectView.svelte";
+import { noticeTiming } from "./NoticeSlot.svelte";
+noticeTiming.showAfter = 0; // (transfers shown at once in tests)
+noticeTiming.stay = 0;
 import type { TeamSummary } from "./api";
 import { preuploads, queue } from "./preupload.svelte";
 
@@ -238,7 +241,7 @@ describe("ProjectView: committing", () => {
 describe("ProjectView: the team", () => {
   it("tells about teammates' new versions and gets them", async () => {
     await show({ incoming: [version("t1", "Drums")] });
-    expect(screen.getByText(/shared 1 new version/)).toBeTruthy();
+    expect(screen.getByText(/shared a new version/)).toBeTruthy();
     api.Update.mockResolvedValue(result("fast-forward"));
     await fireEvent.click(screen.getByRole("button", { name: "Get updates" }));
     await waitFor(() => expect(api.Update).toHaveBeenCalledWith(ROOT, {}, false));
@@ -250,7 +253,7 @@ describe("ProjectView: the team", () => {
     api.Update.mockResolvedValue(result("fast-forward"));
     await screen.findByText(/The download didn't finish/);
     expect(screen.queryByText(/Not shared with/)).toBeNull();
-    expect(screen.queryByText(/shared 1 new version/)).toBeNull();
+    expect(screen.queryByText(/shared a new version/)).toBeNull();
     await fireEvent.click(screen.getByRole("button", { name: "Finish downloading" }));
     await waitFor(() => expect(api.Update).toHaveBeenCalledWith(ROOT, {}, false));
   });
@@ -605,21 +608,21 @@ describe("ProjectView: while a version is made", () => {
   it("offers no cancel once the team has it (or for an update)", async () => {
     await show({ changes: [change("Song.als")] });
     emit("progress", { root: ROOT, stage: "uploading", done: 0, total: 1, bytes: 10, totalBytes: 100 });
-    await screen.findByText(/you can keep working while it uploads/);
+    await screen.findByText(/Keep working/);
     expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
   });
 
   it("dims the changes while it reads the files, then says to go on working", async () => {
     await show({ changes: [change("Song.als")] });
     emit("progress", { root: ROOT, stage: "storing", done: 1, total: 3 });
-    await screen.findByText("Don't change the project's files until this step is done.");
+    await screen.findByText("Don't change files yet");
     expect(document.querySelector("main")!.classList.contains("reading")).toBe(true);
     emit("progress", { root: ROOT, stage: "uploading", done: 1, total: 3, bytes: 10, totalBytes: 100 });
-    await screen.findByText(/you can keep working while it uploads/);
-    expect(screen.queryByText(/Don't change the project's files/)).toBeNull();
+    await screen.findByText(/Keep working/);
+    expect(screen.queryByText(/Don't change files yet/)).toBeNull();
     expect(document.querySelector("main")!.classList.contains("reading")).toBe(false);
     emit("progress", { root: ROOT, stage: "done", done: 0, total: 0 });
-    await waitFor(() => expect(screen.queryByText(/keep working while it uploads/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/Keep working/)).toBeNull());
   });
 });
 

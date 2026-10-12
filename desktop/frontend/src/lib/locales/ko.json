@@ -1756,5 +1756,20 @@
 "How “{version}” was made": "“{version}”이 만들어진 과정",
 "made in {n} step": "{n}단계로 만듦",
 "made in {n} steps": "{n}단계로 만듦",
-"Show it all": "전체 보기"
+"Show it all": "전체 보기",
+"{a} and {b}": "{a}, {b}",
+"{a}, {b} and others": "{a}, {b} 외",
+"Don't change files yet": "아직 파일을 바꾸지 마세요",
+"Keep working": "계속 작업하세요",
+"Preparing…": "준비 중…",
+"{who} shared a new version — get it when this finishes": "{who}님이 새 버전을 공유했습니다. 이 작업이 끝나면 받으세요",
+"{who} shared {n} new versions — get them when this finishes": "{who}님이 새 버전 {n}개를 공유했습니다. 이 작업이 끝나면 받으세요",
+"{n} update": "업데이트 {n}개",
+"{n} updates": "업데이트 {n}개",
+"{who} shared a new version · “{version}”": "{who}님이 새 버전을 공유함 · “{version}”",
+"{count} from {who}": "{who}님의 {count}",
+"Get all": "모두 받기",
+"Preview all changes": "모든 변경 미리 보기",
+"{who} merged “{version}”": "{who}님이 “{version}” 병합",
+"{who} shared “{version}”": "{who}님이 “{version}” 공유"
 }
