@@ -54,6 +54,17 @@ describe("The Agents view", () => {
     cleanup();
     show({ guide: true });
     expect(screen.queryByRole("button", { name: "Add the guide for agents" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Update the guide" })).toBeNull();
+  });
+
+  it("offers to update R3V's part of an older guide", async () => {
+    api.AgentWorkspaces.mockResolvedValue([]);
+    api.AddAgentGuide.mockResolvedValue(["AGENTS.md"]);
+    show({ guide: true, guideOld: true });
+    expect(screen.getByText(/has changed since it was added/)).toBeTruthy();
+    await fireEvent.click(await screen.findByRole("button", { name: "Update the guide" }));
+    await waitFor(() => expect(api.AddAgentGuide).toHaveBeenCalledWith(ROOT));
+    await toasted(/Updated AGENTS.md: commit it/);
   });
 
   it("lists each workspace with what it has to merge, its changes, its locks and when it was last active", async () => {

@@ -1089,7 +1089,7 @@
           onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
       {:else if tab === "agents" && st.agentWorkspaces}
         <div class="pane scroll">
-          <AgentsView {root} name={st.name} guide={st.agentGuide} branch={st.branch} branches={st.branches} version={`${st.head} ${st.branch} ${refreshKey}`}
+          <AgentsView {root} name={st.name} guide={st.agentGuide} guideOld={st.agentGuideOld} branch={st.branch} branches={st.branches} version={`${st.head} ${st.branch} ${refreshKey}`}
             onmerge={mergeWorkspace} onopen={(p) => onopenproject?.(p)} onchanged={() => { load(); onchanged(); }} />
         </div>
       {:else if tab === "settings" && settings}

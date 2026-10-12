@@ -1705,5 +1705,8 @@
 "Add the guide": "加入指引",
 "AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md（再加上 CLAUDE.md 中读取它的一行）告诉 Claude Code、Codex 等 AI 代理：这个项目用 R3V 做版本管理，以及如何在其中工作（提交、解决冲突、与其他代理并行）。它会随项目一起提交。",
 "Add R3V's part to the project's guide for AI agents?": "把 R3V 的说明加进项目给 AI 代理的指引？",
-"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "这个项目已有自己的 AGENTS.md（或 CLAUDE.md）。R3V 的说明会加在最后，其余保持不变：说明项目用 R3V 做版本管理，以及如何在其中工作（提交、解决冲突、与其他代理并行）。"
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "这个项目已有自己的 AGENTS.md（或 CLAUDE.md）。R3V 的说明会加在最后，其余保持不变：说明项目用 R3V 做版本管理，以及如何在其中工作（提交、解决冲突、与其他代理并行）。",
+"R3V's guide for agents has changed since it was added to this project. Update R3V's part of AGENTS.md (the rest stays as it is), then commit it.": "R3V 给代理的指引在加入这个项目后有了更新。更新 AGENTS.md 中 R3V 的部分（其余保持不变），然后提交。",
+"Update the guide": "更新指引",
+"Updated {files}: commit it, so every agent's workspace has it.": "已更新 {files}：请提交，让每个代理的工作区都有它。"
 }
