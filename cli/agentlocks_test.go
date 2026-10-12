@@ -253,7 +253,8 @@ func TestAgentSetup(t *testing.T) {
 	if string(guide) != "# My project\nBe nice.\n\n@AGENTS.md\n" {
 		t.Fatalf("CLAUDE.md: %q", guide)
 	}
-	if agents, _ := os.ReadFile(filepath.Join(dir, "AGENTS.md")); string(agents) != docs.AgentsSnippet {
+	if agents, _ := os.ReadFile(filepath.Join(dir, "AGENTS.md")); !strings.Contains(string(agents), strings.TrimRight(strings.ReplaceAll(docs.AgentsSnippet, "\r\n", "\n"), "\n")) ||
+		!strings.HasPrefix(string(agents), "<!-- R3V: ") || !strings.HasSuffix(string(agents), "<!-- R3V: end -->\n") {
 		t.Fatalf("AGENTS.md: %q", agents)
 	}
 
