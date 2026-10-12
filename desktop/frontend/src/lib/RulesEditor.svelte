@@ -183,7 +183,6 @@
   .chip { font-size: var(--fs-xs); padding: 1px var(--sp-6); border-radius: var(--radius-pill); background: var(--line); color: var(--muted); margin-left: var(--sp-6);
     white-space: nowrap; }
   .chip.found { background: var(--accent-bg); color: var(--accent); }
-  select { background: var(--panel); color: var(--text); border: var(--border-width) solid var(--line); border-radius: var(--radius); padding: var(--sp-4) var(--sp-8); }
   .tree { border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); max-height: 340px; overflow: auto; padding: var(--sp-4) 0; }
   .node { display: flex; align-items: center; gap: var(--sp-6); padding: var(--sp-4) var(--sp-10) var(--sp-4) var(--sp-8); font-size: var(--fs-md); }
   .node:hover { background: var(--panel-2); }

@@ -748,7 +748,8 @@
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
     font-size: var(--fs-sm); color: var(--text); text-align: left; cursor: default; }
   .zoombar .fpanel button { justify-content: flex-start; height: auto; min-width: 0; }
-  .frow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-10); padding: var(--sp-6); border-radius: var(--radius); }
+  .frow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-10); margin: 0; padding: var(--sp-6);
+    border-radius: var(--radius); color: var(--text); font-size: var(--fs-sm); }
   .frow > span:first-child { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
   .frow strong { font-weight: var(--fw-medium); }
   .fhint { color: var(--faint); font-size: var(--fs-xs); }
@@ -757,7 +758,7 @@
   .fbtn .fhint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
   .fsep { height: 1px; background: var(--line); margin: var(--sp-6) var(--sp-2); }
   .fdates { display: flex; flex-direction: column; gap: var(--sp-4); padding: 0 var(--sp-6) var(--sp-6); }
-  .fdates label { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); color: var(--muted); }
+  .fdates label { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); color: var(--muted); }
   .fsub { position: relative; }
   /* (opened in the panel: beside it, it would leave a narrow window) */
   .fauthors { max-height: 220px; overflow: auto; margin: 0 0 var(--sp-4) var(--sp-8); padding: var(--sp-2) 0 var(--sp-2) var(--sp-6);

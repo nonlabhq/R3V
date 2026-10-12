@@ -104,8 +104,7 @@
 
 <style>
   label { display: block; margin: var(--sp-12) 0 var(--sp-4); }
-  select { width: 100%; background: var(--bg); color: var(--text); border: var(--border-width) solid var(--line);
-    border-radius: var(--radius); padding: var(--sp-6) var(--sp-8); font: inherit; }
+  select { width: 100%; } /* (its look: style.css) */
   label.check input { width: auto; flex: none; margin: 0; }
   .row { display: flex; gap: var(--sp-8); }
   .row input { flex: 1; min-width: 0; font-size: var(--fs-sm); }

@@ -155,7 +155,7 @@
   .src { gap: var(--sp-10); align-items: center; margin: var(--sp-10) 0; }
   .label { flex: none; width: 70px; font-size: var(--fs-md); color: var(--muted); margin: 0; }
   .where { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: text; }
-  select { flex: 1; background: var(--panel); color: var(--text); border: var(--border-width) solid var(--line); border-radius: var(--radius); padding: var(--sp-4) var(--sp-8); font: inherit; font-size: var(--fs-md); }
+  select { flex: 1; font-size: var(--fs-md); } /* (its look: style.css) */
   .plan { margin: var(--sp-12) 0; padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); }
   .plan p { margin: 0 0 var(--sp-6); }
   .plan ul { margin: 0 0 var(--sp-8); padding-left: var(--sp-18); font-size: var(--fs-md); }
