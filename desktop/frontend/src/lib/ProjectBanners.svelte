@@ -177,7 +177,7 @@
 {/if}
 
 <style>
-  .lead { display: flex; justify-content: center; min-width: 0; max-width: 560px; flex: 0 1 auto; }
+  .lead { display: flex; justify-content: center; min-width: 0; max-width: 760px; flex: 0 1 auto; }
   .capsule { display: flex; align-items: center; gap: var(--sp-8); min-width: 0; height: 42px; padding: 0 var(--sp-6) 0 var(--sp-4);
     border-radius: 12px; animation: fade .15s ease-out; }
   @keyframes fade { from { opacity: 0; } }
