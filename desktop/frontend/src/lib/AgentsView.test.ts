@@ -67,6 +67,16 @@ describe("The Agents view", () => {
     await toasted(/Updated AGENTS.md: commit it/);
   });
 
+  it("shows what each workspace's checks said (r3v result)", async () => {
+    api.AgentWorkspaces.mockResolvedValue([ws({ results: {
+      tests: { state: "pass", note: "cargo test: 214 passed", time: new Date().toISOString(), changes: 2 },
+      build: { state: "fail", time: new Date().toISOString() } } })]);
+    show();
+    const tests = await screen.findByText("✓ tests");
+    expect(tests.getAttribute("title")).toMatch(/tests passed .*with 2 changes not committed\ncargo test: 214 passed/s);
+    expect(screen.getByText("✗ build").classList.contains("fail")).toBe(true);
+  });
+
   it("lists each workspace with what it has to merge, its changes, its locks and when it was last active", async () => {
     api.AgentWorkspaces.mockResolvedValue([ws({ locks: [{ path: "tex/rock.png", prefix: false, memberId: "", name: "", since: "",
       mine: false, agent: true, tool: "claude-code", branch: "b-r1", person: false, stale: false }] })]);

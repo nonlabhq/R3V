@@ -48,6 +48,9 @@ type AgentWorkspace struct {
 	Stale bool `json:"stale"`
 	// Opened: shown in the app as a project (OpenWorkspace).
 	Opened bool `json:"opened"`
+	// Results: what its builds and tests said about the version it is on
+	// (r3v result), by check.
+	Results map[string]project.Result `json:"results"`
 }
 
 // AgentWorkspaces lists project root's workspaces on this computer, with
@@ -83,7 +86,10 @@ func (a *App) AgentWorkspaces(root string) ([]AgentWorkspace, error) {
 		w := AgentWorkspace{Folder: s.Folder, Branch: s.Branch, Label: s.BranchName, Base: s.Base,
 			BaseLabel: r.BranchLabel(s.Base), Created: s.Created.UTC().Format(time.RFC3339),
 			Ahead: s.Ahead, Behind: s.Behind, Changes: s.Changes, Parked: s.Parked, Missing: s.Missing,
-			Locks: []LockItem{}, Opened: opened[strings.ToLower(filepath.Clean(s.Folder))]}
+			Locks: []LockItem{}, Opened: opened[strings.ToLower(filepath.Clean(s.Folder))], Results: s.Results}
+		if w.Results == nil {
+			w.Results = map[string]project.Result{}
+		}
 		if rec, ok := recs[s.Branch]; ok && rec.Owner != "" {
 			w.Owner = names[rec.Owner]
 			if w.Owner == "" {

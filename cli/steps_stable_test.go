@@ -18,3 +18,10 @@ func TestNoStepsInStable(t *testing.T) {
 		t.Fatalf("said %q", out.String())
 	}
 }
+
+// Stable has no results commands either.
+func TestNoResultsInStable(t *testing.T) {
+	if _, ok := extraCommands["result"]; ok {
+		t.Fatal("r3v result in Stable")
+	}
+}

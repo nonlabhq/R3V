@@ -6,6 +6,45 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
+ * Result is one check's latest result for a version.
+ */
+export class Result {
+    /**
+     * pass, fail, running
+     */
+    "state": string;
+    "note"?: string;
+    "time": string;
+    "actor"?: string;
+
+    /**
+     * Changes: files that were changed, not committed, when it was recorded
+     * (the result is about those files, not exactly the version).
+     */
+    "changes"?: number;
+
+    /** Creates a new Result instance. */
+    constructor($$source: Partial<Result> = {}) {
+        if (!("state" in $$source)) {
+            this["state"] = "";
+        }
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Result instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Result {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Result($$parsedSource as Partial<Result>);
+    }
+}
+
+/**
  * Session is an agent's conversation, as its steps tell it.
  */
 export class Session {

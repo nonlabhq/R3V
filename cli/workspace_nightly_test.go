@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/project"
@@ -57,6 +58,13 @@ func TestWorkspaceCommands(t *testing.T) {
 		if exit, rep := run(t, ws, "commit", "-m", "run"); exit != 0 {
 			t.Fatalf("commit: %+v", rep.Error)
 		}
+		// The agent says what its tests said (r3v result), seen from the main copy below.
+		if exit, rep := run(t, ws, "result", "tests", "pass", "-m", "cargo test: 3 passed"); exit != 0 {
+			t.Fatalf("result: %+v", rep.Error)
+		}
+		if exit, rep := run(t, ws, "results"); exit != 0 || !strings.Contains(string(rep.Result), "cargo test: 3 passed") {
+			t.Fatalf("results: %s %+v", rep.Result, rep.Error)
+		}
 		if exit, rep := run(t, ws, "update"); exit != 0 {
 			t.Fatalf("update: %+v", rep.Error)
 		}
@@ -76,7 +84,7 @@ func TestWorkspaceCommands(t *testing.T) {
 	}
 	json.Unmarshal(rep.Result, &ls)
 	if exit != 0 || len(ls.Workspaces) != 1 || ls.Workspaces[0].Ahead == nil || *ls.Workspaces[0].Ahead != 1 ||
-		ls.Workspaces[0].Changes != 0 {
+		ls.Workspaces[0].Changes != 0 || ls.Workspaces[0].Results["tests"].State != "pass" {
 		t.Fatalf("list: %s", rep.Result)
 	}
 	if exit, rep := run(t, a, "workspace", "remove", ws); exit != 1 || rep.Error.Code != "workspace_not_merged" {

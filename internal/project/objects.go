@@ -448,6 +448,7 @@ func (r *Repo) GC() (int64, error) {
 	}
 	defer release()
 	r.PruneSteps() // their versions first: what only they used is freed below
+	r.pruneResults()
 	all, _, err := r.referenced()
 	if err != nil {
 		return 0, err

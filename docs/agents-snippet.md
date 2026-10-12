@@ -4,7 +4,9 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
 
 - `r3v status --json`: what changed; `r3v update --preview --json`: what teammates shared.
 - `r3v commit -m "Title" -m "Details" --json` commits a version and shares it with the team
-  (no separate push). One commit per piece of work; the title says what, the details why.
+  (no separate push). One commit per piece of work; the title says what, the details why. Other
+  changes in the folder that aren't this work: list the work's files and folders after the flags
+  (`r3v commit -m "…" src/menu`), the rest stays uncommitted.
 - Commands never prompt: on `merge_conflict` (exit 3) read `error.conflicts`; code conflicts come
   hunk by hunk (`text:<path>#<n>`): decide each with `--resolve <key>=ours|theirs|both`, or give the
   file as it should be with `--resolved <path>=<file>`; ask the user when unsure. A lockfile that
@@ -13,7 +15,8 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
 - Working beside other agents, each in a workspace of its own (`r3v workspace list --json`): stay in
   yours. A change refused by the hook, or `files_locked_by_agent`, means another agent or the user is
   on that file (textures, models, sounds): don't wait or retry, do other work and tell the user. The
-  user merges your branch; don't merge into it yourself unless asked.
+  user merges your branch; don't merge into it yourself unless asked. After running the tests or a
+  build, record what they said: `r3v result tests pass -m "cargo test: 214 passed"` (or `fail`).
 - What is tracked: `.r3v.yaml` (syntax: `r3v help rules`). Leave out caches, renders and build
   outputs (`rules: - ignore: "cache/"`); `r3v rules explain <file>` says why a file is tracked.
   `target/` matches at any depth; a pattern with a `/` inside starts at the project folder

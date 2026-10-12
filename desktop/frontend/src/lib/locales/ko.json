@@ -1733,5 +1733,10 @@
 "Go back to step {n}?": "{n}단계로 되돌아갈까요?",
 "The project's files go back to how they were at step {n}. The files as they are now are kept as a step first, so you can come back to them.": "프로젝트 파일이 {n}단계 상태로 돌아갑니다. 지금 파일은 먼저 단계로 남겨 두므로 다시 돌아올 수 있습니다.",
 "From step {a} to step {b}": "{a}단계에서 {b}단계까지",
-"No files changed.": "바뀐 파일이 없습니다."
+"No files changed.": "바뀐 파일이 없습니다.",
+"{check} passed {when}": "{check} 통과 ({when})",
+"{check} failed {when}": "{check} 실패 ({when})",
+"{check} running since {when}": "{check} 실행 중 ({when}부터)",
+"with {n} change not committed": "커밋하지 않은 변경 {n}개 포함",
+"with {n} changes not committed": "커밋하지 않은 변경 {n}개 포함"
 }
