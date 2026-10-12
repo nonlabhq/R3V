@@ -6,6 +6,177 @@
 import { Create as $Create } from "@wailsio/runtime";
 
 /**
+ * Session is an agent's conversation, as its steps tell it.
+ */
+export class Session {
+    "id": string;
+
+    /**
+     * the time of its latest line
+     */
+    "last": string;
+    "steps": number;
+    "turns": Turn[];
+
+    /** Creates a new Session instance. */
+    constructor($$source: Partial<Session> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("last" in $$source)) {
+            this["last"] = "";
+        }
+        if (!("steps" in $$source)) {
+            this["steps"] = 0;
+        }
+        if (!("turns" in $$source)) {
+            this["turns"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Session instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Session {
+        const $$createField3_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("turns" in $$parsedSource) {
+            $$parsedSource["turns"] = $$createField3_0($$parsedSource["turns"]);
+        }
+        return new Session($$parsedSource as Partial<Session>);
+    }
+}
+
+/**
+ * Step is one step of a session.
+ */
+export class Step {
+    "n": number;
+    "turn": number;
+
+    /**
+     * the files as they were (a version never shared)
+     */
+    "version": string;
+
+    /**
+     * the version the project was on
+     */
+    "on": string;
+    "time": string;
+    "tool": string;
+    "actor"?: string;
+
+    /**
+     * changed since the step before
+     */
+    "files": string[];
+
+    /** Creates a new Step instance. */
+    constructor($$source: Partial<Step> = {}) {
+        if (!("n" in $$source)) {
+            this["n"] = 0;
+        }
+        if (!("turn" in $$source)) {
+            this["turn"] = 0;
+        }
+        if (!("version" in $$source)) {
+            this["version"] = "";
+        }
+        if (!("on" in $$source)) {
+            this["on"] = "";
+        }
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+        if (!("tool" in $$source)) {
+            this["tool"] = "";
+        }
+        if (!("files" in $$source)) {
+            this["files"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Step instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Step {
+        const $$createField7_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("files" in $$parsedSource) {
+            $$parsedSource["files"] = $$createField7_0($$parsedSource["files"]);
+        }
+        return new Step($$parsedSource as Partial<Step>);
+    }
+}
+
+/**
+ * StepChange is a file that differs between two steps.
+ */
+export class StepChange {
+    "path": string;
+
+    /**
+     * added, modified, deleted
+     */
+    "status": string;
+
+    /** Creates a new StepChange instance. */
+    constructor($$source: Partial<StepChange> = {}) {
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("status" in $$source)) {
+            this["status"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new StepChange instance from a string or object.
+     */
+    static createFrom($$source: any = {}): StepChange {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new StepChange($$parsedSource as Partial<StepChange>);
+    }
+}
+
+/**
+ * StepSettings are this copy's choices about steps (the app's project
+ * settings): never shared.
+ */
+export class StepSettings {
+    /**
+     * no steps at all
+     */
+    "off"?: boolean;
+
+    /**
+     * steps, but prompts not kept
+     */
+    "no_prompts"?: boolean;
+
+    /** Creates a new StepSettings instance. */
+    constructor($$source: Partial<StepSettings> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new StepSettings instance from a string or object.
+     */
+    static createFrom($$source: any = {}): StepSettings {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new StepSettings($$parsedSource as Partial<StepSettings>);
+    }
+}
+
+/**
  * TrackEdit is one piece of unsaved work: a track (or a set-wide setting)
  * changed since the version the workspace is on.
  */
@@ -46,3 +217,49 @@ export class TrackEdit {
         return new TrackEdit($$parsedSource as Partial<TrackEdit>);
     }
 }
+
+/**
+ * Turn is a prompt (or a note given with a step) and the steps after it.
+ */
+export class Turn {
+    "n": number;
+    "time": string;
+    "prompt"?: string;
+    "note"?: string;
+    "transcript"?: string;
+    "steps": Step[];
+
+    /** Creates a new Turn instance. */
+    constructor($$source: Partial<Turn> = {}) {
+        if (!("n" in $$source)) {
+            this["n"] = 0;
+        }
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+        if (!("steps" in $$source)) {
+            this["steps"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Turn instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Turn {
+        const $$createField5_0 = $$createType4;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("steps" in $$parsedSource) {
+            $$parsedSource["steps"] = $$createField5_0($$parsedSource["steps"]);
+        }
+        return new Turn($$parsedSource as Partial<Turn>);
+    }
+}
+
+// Private type creation functions
+const $$createType0 = Turn.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $Create.Array($Create.Any);
+const $$createType3 = Step.createFrom;
+const $$createType4 = $Create.Array($$createType3);

@@ -1,7 +1,8 @@
 # Steps
 
-Status: design (not built yet). First version on this computer only; the
-second shares the steps' records with their version.
+Status: first version built, Nightly (`project.Steps`): on this computer
+only. The second (the steps' records shared with their version) is to
+come.
 
 An agent works in many small moves: one task can be fifty tool calls. When
 the twenty-third breaks a scene, today the only way back is the last

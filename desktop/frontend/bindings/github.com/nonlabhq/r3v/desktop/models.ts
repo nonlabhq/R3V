@@ -2828,6 +2828,46 @@ export class SampleSpot {
     }
 }
 
+/**
+ * SessionSummary is a session in the app's list of them.
+ */
+export class SessionSummary {
+    "id": string;
+    "last": string;
+    "steps": number;
+
+    /**
+     * its first prompt (what it was about)
+     */
+    "prompt": string;
+
+    /** Creates a new SessionSummary instance. */
+    constructor($$source: Partial<SessionSummary> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("last" in $$source)) {
+            this["last"] = "";
+        }
+        if (!("steps" in $$source)) {
+            this["steps"] = 0;
+        }
+        if (!("prompt" in $$source)) {
+            this["prompt"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SessionSummary instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SessionSummary {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SessionSummary($$parsedSource as Partial<SessionSummary>);
+    }
+}
+
 export class SetTrackChange {
     "id": string;
 
@@ -3302,6 +3342,65 @@ export class State {
 }
 
 /**
+ * StepsInfo is a copy's steps for the app.
+ */
+export class StepsInfo {
+    /**
+     * Available: this build makes steps (Nightly); On: and this copy does.
+     */
+    "available": boolean;
+    "on": boolean;
+    "settings": project$0.StepSettings;
+
+    /**
+     * Session is the one asked for, or the latest (nil: none yet).
+     */
+    "session": project$0.Session | null;
+    "sessions": SessionSummary[];
+
+    /** Creates a new StepsInfo instance. */
+    constructor($$source: Partial<StepsInfo> = {}) {
+        if (!("available" in $$source)) {
+            this["available"] = false;
+        }
+        if (!("on" in $$source)) {
+            this["on"] = false;
+        }
+        if (!("settings" in $$source)) {
+            this["settings"] = (new project$0.StepSettings());
+        }
+        if (!("session" in $$source)) {
+            this["session"] = null;
+        }
+        if (!("sessions" in $$source)) {
+            this["sessions"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new StepsInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): StepsInfo {
+        const $$createField2_0 = $$createType71;
+        const $$createField3_0 = $$createType73;
+        const $$createField4_0 = $$createType75;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("settings" in $$parsedSource) {
+            $$parsedSource["settings"] = $$createField2_0($$parsedSource["settings"]);
+        }
+        if ("session" in $$parsedSource) {
+            $$parsedSource["session"] = $$createField3_0($$parsedSource["session"]);
+        }
+        if ("sessions" in $$parsedSource) {
+            $$parsedSource["sessions"] = $$createField4_0($$parsedSource["sessions"]);
+        }
+        return new StepsInfo($$parsedSource as Partial<StepsInfo>);
+    }
+}
+
+/**
  * StorageCleanup is what cleaning up a team's storage found (and did).
  */
 export class StorageCleanup {
@@ -3557,7 +3656,7 @@ export class TeamLocks {
      */
     static createFrom($$source: any = {}): TeamLocks {
         const $$createField2_0 = $$createType8;
-        const $$createField4_0 = $$createType72;
+        const $$createField4_0 = $$createType77;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kinds" in $$parsedSource) {
             $$parsedSource["kinds"] = $$createField2_0($$parsedSource["kinds"]);
@@ -3698,7 +3797,7 @@ export class TeamPart {
         const $$createField4_0 = $$createType33;
         const $$createField5_0 = $$createType33;
         const $$createField6_0 = $$createType3;
-        const $$createField8_0 = $$createType73;
+        const $$createField8_0 = $$createType78;
         const $$createField10_0 = $$createType68;
         const $$createField11_0 = $$createType70;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
@@ -4053,7 +4152,7 @@ export class TextChanges {
      * Creates a new TextChanges instance from a string or object.
      */
     static createFrom($$source: any = {}): TextChanges {
-        const $$createField4_0 = $$createType75;
+        const $$createField4_0 = $$createType80;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hunks" in $$parsedSource) {
             $$parsedSource["hunks"] = $$createField4_0($$parsedSource["hunks"]);
@@ -4193,7 +4292,7 @@ export class UndoPlan {
         const $$createField0_0 = $$createType8;
         const $$createField1_0 = $$createType8;
         const $$createField2_0 = $$createType37;
-        const $$createField4_0 = $$createType76;
+        const $$createField4_0 = $$createType81;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changed" in $$parsedSource) {
             $$parsedSource["changed"] = $$createField0_0($$parsedSource["changed"]);
@@ -4404,7 +4503,7 @@ export class VerifyResult {
      * Creates a new VerifyResult instance from a string or object.
      */
     static createFrom($$source: any = {}): VerifyResult {
-        const $$createField3_0 = $$createType78;
+        const $$createField3_0 = $$createType83;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("problems" in $$parsedSource) {
             $$parsedSource["problems"] = $$createField3_0($$parsedSource["problems"]);
@@ -4506,7 +4605,7 @@ export class Version {
     static createFrom($$source: any = {}): Version {
         const $$createField5_0 = $$createType8;
         const $$createField6_0 = $$createType8;
-        const $$createField11_0 = $$createType80;
+        const $$createField11_0 = $$createType85;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("parents" in $$parsedSource) {
             $$parsedSource["parents"] = $$createField5_0($$parsedSource["parents"]);
@@ -4716,7 +4815,7 @@ export class WorkspaceRemoval {
      * Creates a new WorkspaceRemoval instance from a string or object.
      */
     static createFrom($$source: any = {}): WorkspaceRemoval {
-        const $$createField1_0 = $$createType82;
+        const $$createField1_0 = $$createType87;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("left" in $$parsedSource) {
             $$parsedSource["left"] = $$createField1_0($$parsedSource["left"]);
@@ -4797,15 +4896,20 @@ const $$createType67 = ArchivedBranch.createFrom;
 const $$createType68 = $Create.Nullable($$createType67);
 const $$createType69 = Milestone.createFrom;
 const $$createType70 = $Create.Array($$createType69);
-const $$createType71 = profile$0.LockKind.createFrom;
-const $$createType72 = $Create.Array($$createType71);
-const $$createType73 = remote$0.Capabilities.createFrom;
-const $$createType74 = textdiff$0.Hunk.createFrom;
+const $$createType71 = project$0.StepSettings.createFrom;
+const $$createType72 = project$0.Session.createFrom;
+const $$createType73 = $Create.Nullable($$createType72);
+const $$createType74 = SessionSummary.createFrom;
 const $$createType75 = $Create.Array($$createType74);
-const $$createType76 = TakeBack.createFrom;
-const $$createType77 = VerifyProblem.createFrom;
-const $$createType78 = $Create.Array($$createType77);
-const $$createType79 = Actor.createFrom;
-const $$createType80 = $Create.Nullable($$createType79);
-const $$createType81 = WorkspaceLeft.createFrom;
-const $$createType82 = $Create.Nullable($$createType81);
+const $$createType76 = profile$0.LockKind.createFrom;
+const $$createType77 = $Create.Array($$createType76);
+const $$createType78 = remote$0.Capabilities.createFrom;
+const $$createType79 = textdiff$0.Hunk.createFrom;
+const $$createType80 = $Create.Array($$createType79);
+const $$createType81 = TakeBack.createFrom;
+const $$createType82 = VerifyProblem.createFrom;
+const $$createType83 = $Create.Array($$createType82);
+const $$createType84 = Actor.createFrom;
+const $$createType85 = $Create.Nullable($$createType84);
+const $$createType86 = WorkspaceLeft.createFrom;
+const $$createType87 = $Create.Nullable($$createType86);

@@ -83,6 +83,13 @@ func killedChild(op string) int {
 			} else {
 				err = r.RemoveWorkspace(os.Getenv("R3V_KILL_WS"), true)
 			}
+		case "step":
+			Steps = true
+			_, err = r.TakeStep("s1", "Write", "")
+		case "step-back":
+			Steps = true
+			n, _ := strconv.Atoi(os.Getenv("R3V_KILL_STEPN"))
+			_, _, err = r.StepBack("s1", n)
 		case "preupload":
 			PreuploadMin = 1000 // (as the test that started it)
 			cands, cerr := r.PreuploadCandidates(time.Now().Add(time.Hour))

@@ -4,7 +4,7 @@ export type {
   State, Version, Change, Conflict, Preview, Result, Branch,
   Overview, TeamSummary, TeamProject, ProjectFile, FileVersion, ProjectInfo, RuleSuggestion, SampleSpot,
   CloudStatus, CloudPeople, MemberLook, Profile, BranchList, ArchivedBranch, Milestone, Workspace,
-  TeamMoveEstimate, TeamMoveState, CloudInvitation as InvitationInfo, TeamProjects, ParkedSet, AgentWorkspace,
+  TeamMoveEstimate, TeamMoveState, CloudInvitation as InvitationInfo, TeamProjects, ParkedSet, AgentWorkspace, StepsInfo, SessionSummary,
 } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
 export type { Member as CloudMember, Invitation as CloudInvitation, Project as CloudProject, Claimable }
   from "../../bindings/github.com/nonlabhq/r3v/internal/cloud/models";
@@ -21,7 +21,7 @@ export function previewURL(root: string, path: string, version = "", max = 2048)
   const q = new URLSearchParams({ root, path, version, max: String(max) });
   return `/r3v-preview?${q}`;
 }
-export type { TrackEdit } from "../../bindings/github.com/nonlabhq/r3v/internal/project/models";
+export type { TrackEdit, Session, Turn, Step, StepChange, StepSettings } from "../../bindings/github.com/nonlabhq/r3v/internal/project/models";
 export type { Member } from "../../bindings/github.com/nonlabhq/r3v/internal/remote/models";
 
 export const api = App;

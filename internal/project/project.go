@@ -35,6 +35,8 @@ type Config struct {
 	// Tip is the latest version of the branch while the project is on an
 	// older one (see GoTo); empty otherwise.
 	Tip string `json:"tip,omitempty"`
+	// Steps: this copy's choices about steps (steps.go); nil: as by default.
+	Steps *StepSettings `json:"steps,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
 }
