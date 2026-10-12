@@ -149,30 +149,76 @@ func (r *Repo) isAncestor(a, b string) (bool, error) {
 	return anc[a], err
 }
 
-// mergeBase finds the nearest common ancestor of a and b.
+// mergeBase finds the nearest common ancestor of a and b: one no other
+// common ancestor descends from (after branches merged each other both
+// ways, the first met walking back from one side can be an older one, and
+// a merge from it sees changes both sides have as made twice). Of two such
+// (a criss-cross), the newer.
 func (r *Repo) mergeBase(a, b string) (string, error) {
 	anc, err := r.ancestors(a)
 	if err != nil {
 		return "", err
 	}
+	// The common ancestors first met walking back from b (not beyond them).
+	var cands []string
 	queue, seen := []string{b}, map[string]bool{}
 	for len(queue) > 0 {
 		cur := queue[0]
 		queue = queue[1:]
-		if seen[cur] {
+		if cur == "" || seen[cur] {
 			continue
 		}
 		seen[cur] = true
 		if anc[cur] {
-			return cur, nil
+			cands = append(cands, cur)
+			continue
 		}
-		m, err := r.Load(cur)
+		m, err := r.Header(cur)
 		if err != nil {
 			return "", err
 		}
 		queue = append(queue, m.Parents...)
 	}
-	return "", nil
+	if len(cands) <= 1 {
+		if len(cands) == 0 {
+			return "", nil
+		}
+		return cands[0], nil
+	}
+	// Those another descends from aren't the nearest.
+	var best []string
+	for _, c := range cands {
+		nearest := true
+		for _, d := range cands {
+			if d == c {
+				continue
+			}
+			if above, err := r.isAncestor(c, d); err != nil {
+				return "", err
+			} else if above {
+				nearest = false
+				break
+			}
+		}
+		if nearest {
+			best = append(best, c)
+		}
+	}
+	pick := best[0]
+	for _, c := range best[1:] {
+		hc, err := r.Header(c)
+		if err != nil {
+			return "", err
+		}
+		hp, err := r.Header(pick)
+		if err != nil {
+			return "", err
+		}
+		if hc.Time > hp.Time || (hc.Time == hp.Time && c > pick) {
+			pick = c
+		}
+	}
+	return pick, nil
 }
 
 // --- transfer ---

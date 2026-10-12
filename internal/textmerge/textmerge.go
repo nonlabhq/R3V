@@ -48,23 +48,24 @@ type part struct {
 }
 
 // Hunks merges ours and theirs, both changed from base, keeping each place
-// that collides as a hunk.
+// that collides as a hunk. A change one side made that adds what the other
+// side added somewhere else (a function both wrote, in two places) is a
+// hunk too: merged, it would be there twice.
 func Hunks(base, ours, theirs []byte) *Result {
 	b, o, t := lines(base), lines(ours), lines(theirs)
 	mo, mt := match(b, o), match(b, t)
 	res := &Result{eol: newline(ours, theirs, base)}
-	var clean strings.Builder
-	flush := func() {
-		if clean.Len() > 0 {
-			res.parts = append(res.parts, part{text: clean.String()})
-			clean.Reset()
-		}
+	type chunk struct {
+		i, j, k    int
+		bc, oc, tc []string
+		same       bool // unchanged on both sides
 	}
+	var chunks []chunk
 	i, j, k := 0, 0, 0
 	for i < len(b) || j < len(o) || k < len(t) {
 		// The same base line on both sides, where both are now: unchanged.
 		if i < len(b) && mo[i] == j && mt[i] == k {
-			clean.WriteString(b[i])
+			chunks = append(chunks, chunk{i: i, j: j, k: k, bc: b[i : i+1], same: true})
 			i, j, k = i+1, j+1, k+1
 			continue
 		}
@@ -76,20 +77,69 @@ func Hunks(base, ours, theirs []byte) *Result {
 				break
 			}
 		}
-		bc, oc, tc := b[i:i2], o[j:j2], t[k:k2]
+		chunks = append(chunks, chunk{i: i, j: j, k: k, bc: b[i:i2], oc: o[j:j2], tc: t[k:k2]})
+		i, j, k = i2, j2, k2
+	}
+	// What each side added where only it changed things.
+	var oursAdded, theirsAdded []string
+	for _, c := range chunks {
 		switch {
-		case equal(oc, bc):
-			clean.WriteString(strings.Join(tc, ""))
-		case equal(tc, bc), equal(oc, tc):
-			clean.WriteString(strings.Join(oc, ""))
+		case c.same:
+		case equal(c.tc, c.bc) && !equal(c.oc, c.bc):
+			oursAdded = append(oursAdded, added(c.oc))
+		case equal(c.oc, c.bc) && !equal(c.tc, c.bc):
+			theirsAdded = append(theirsAdded, added(c.tc))
+		}
+	}
+	twice := func(mine string, others []string) bool {
+		if strings.Count(mine, "\n") < minTwice {
+			return false
+		}
+		for _, o := range others {
+			if strings.Contains(o, mine) || (strings.Count(o, "\n") >= minTwice && strings.Contains(mine, o)) {
+				return true
+			}
+		}
+		return false
+	}
+	var clean strings.Builder
+	flush := func() {
+		if clean.Len() > 0 {
+			res.parts = append(res.parts, part{text: clean.String()})
+			clean.Reset()
+		}
+	}
+	for _, c := range chunks {
+		switch {
+		case c.same:
+			clean.WriteString(c.bc[0])
+		case equal(c.oc, c.bc) && !twice(added(c.tc), oursAdded):
+			clean.WriteString(strings.Join(c.tc, ""))
+		case equal(c.oc, c.tc), equal(c.tc, c.bc) && !twice(added(c.oc), theirsAdded):
+			clean.WriteString(strings.Join(c.oc, ""))
 		default:
 			flush()
-			res.parts = append(res.parts, part{hunk: &Hunk{side(bc, i), side(oc, j), side(tc, k)}})
+			res.parts = append(res.parts, part{hunk: &Hunk{side(c.bc, c.i), side(c.oc, c.j), side(c.tc, c.k)}})
 		}
-		i, j, k = i2, j2, k2
 	}
 	flush()
 	return res
+}
+
+// minTwice: an addition found on both sides counts from this many lines
+// that aren't blank (a closing brace on both isn't one).
+const minTwice = 3
+
+// added is a side's lines, blank ones and indentation left out: what it
+// adds, to find on the other side.
+func added(ls []string) string {
+	var b strings.Builder
+	for _, l := range ls {
+		if t := strings.TrimSpace(l); t != "" {
+			b.WriteString(t + "\n")
+		}
+	}
+	return b.String()
 }
 
 func side(ls []string, at int) Side {
