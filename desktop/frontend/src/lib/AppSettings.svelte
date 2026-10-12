@@ -156,8 +156,7 @@
   .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spacer { flex: 1; }
   .new { color: var(--accent); font-size: var(--fs-md); }
-  select { background: var(--panel); color: var(--text); border: var(--border-width) solid var(--line); border-radius: var(--radius);
-    padding: var(--sp-4) var(--sp-8); min-width: 200px; }
+  select { min-width: 200px; } /* (its look: style.css) */
   label.check { display: flex; align-items: flex-start; gap: var(--sp-10); margin: var(--sp-10) 0; color: var(--text); font-size: var(--fs-base);
     cursor: pointer; }
   label.check input { margin-top: var(--sp-4); width: auto; flex: none; }

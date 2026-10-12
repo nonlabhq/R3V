@@ -20,6 +20,19 @@ describe("markdown", () => {
     expect(md("snake_case_name")).toBe("<p>snake_case_name</p>"); // (not emphasis)
   });
 
+  it("shows the project's pictures and videos, from the note's folder; the web's are never loaded", () => {
+    const files = { dir: "docs/devlog", url: (p: string) => `/f?path=${p}` };
+    expect(md("![first](media/01_first.png)", files)).toBe(
+      '<p><span class="media"><img src="/f?path=docs/devlog/media/01_first.png" alt="first" title="docs/devlog/media/01_first.png" loading="lazy"></span></p>');
+    expect(md("3 s: [embers.mp4](media/embers%20loop.mp4)", files)).toContain(
+      'embers.mp4<span class="media"><video src="/f?path=docs/devlog/media/embers loop.mp4" controls');
+    expect(md("![up](../cover.jpg)", files)).toContain('src="/f?path=docs/cover.jpg"');
+    expect(md("![out](../../../x.png)", files)).toBe("<p>![out](../../../x.png)</p>"); // (outside the project)
+    expect(md("![web](https://example.com/a.png)", files)).not.toContain("<img");
+    expect(md("![x](a.png)")).not.toContain("<img"); // (no project to read from)
+    expect(md("[notes](notes.txt)", files)).toBe("<p>[notes](notes.txt)</p>");
+  });
+
   it("draws lists, checklists and tables", () => {
     expect(md("- kick\n- snare\n  wrapped")).toBe("<ul><li>kick</li><li>snare wrapped</li></ul>");
     expect(md("1. intro\n2. drop")).toBe("<ol><li>intro</li><li>drop</li></ol>");
