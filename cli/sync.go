@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/cloud"
@@ -241,8 +243,9 @@ func syncOf(res *project.SyncResult) syncJSON {
 }
 
 // cmdCommit commits the changes as a version and shares it (merging the
-// team's versions first); --local, on this computer only. ("save" is its
-// name before 0.1.33, still taken.)
+// team's versions first); --local, on this computer only. Paths after the
+// flags: only the changes in those files and folders, the others left
+// uncommitted. ("save" is its name before 0.1.33, still taken.)
 func cmdCommit(args []string) error {
 	fs := flag.NewFlagSet("commit", flag.ContinueOnError)
 	var parts stringList
@@ -251,7 +254,8 @@ func cmdCommit(args []string) error {
 	force := fs.Bool("force", false, "merge even while Ableton Live is running")
 	local := fs.Bool("local", false, "on this computer only: shared with the next commit")
 	decided := decisionFlags(fs, strategy)
-	if _, err := parseArgs(fs, args); err != nil {
+	paths, err := parseArgs(fs, args)
+	if err != nil {
 		return err
 	}
 	msg := manifest.Message(parts...)
@@ -265,6 +269,11 @@ func cmdCommit(args []string) error {
 	opts, err := decided.options(r)
 	if err != nil {
 		return err
+	}
+	if len(paths) > 0 {
+		if r.Only, err = changesIn(r, paths); err != nil {
+			return err
+		}
 	}
 	if r.Config.Remote != nil && !*local {
 		if err := guardLive(r, *force); err != nil {
@@ -424,4 +433,48 @@ func cmdConnectionCode(args []string) error {
 	fmt.Println()
 	fmt.Println(remote.EncodeConnectionCode(cfg))
 	return nil
+}
+
+// changesIn are the changed files (as the project names them) in the files
+// and folders given (relative to the current folder): a rename counts in
+// either place, both its paths then.
+func changesIn(r *project.Repo, args []string) ([]string, error) {
+	cwd, _ := os.Getwd()
+	var under []string
+	for _, a := range args {
+		abs := a
+		if !filepath.IsAbs(abs) {
+			abs = filepath.Join(cwd, a)
+		}
+		rel, err := filepath.Rel(r.Root, abs)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return nil, usageError("%s is not in this project", a)
+		}
+		under = append(under, filepath.ToSlash(rel))
+	}
+	in := func(p string) bool {
+		for _, u := range under {
+			if u == "." || strings.EqualFold(p, u) || strings.HasPrefix(strings.ToLower(p), strings.ToLower(u)+"/") {
+				return true
+			}
+		}
+		return false
+	}
+	changes, err := r.Status()
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, c := range changes {
+		if in(c.Path) || (c.From != "" && in(c.From)) {
+			out = append(out, c.Path)
+			if c.From != "" {
+				out = append(out, c.From)
+			}
+		}
+	}
+	if len(out) == 0 {
+		return nil, &cliError{Code: "nothing_to_commit", Exit: exitUsage, Err: fmt.Errorf("nothing changed in %s", strings.Join(args, ", "))}
+	}
+	return out, nil
 }

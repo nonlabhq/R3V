@@ -279,3 +279,32 @@ func TestDiscard(t *testing.T) {
 		t.Errorf("parked instead: %s", rep.Result)
 	}
 }
+
+// commit with paths commits only the changes in those files and folders;
+// the others stay uncommitted.
+func TestCommitPaths(t *testing.T) {
+	a := newFolder(t, map[string]string{"notes.txt": "one", "src/a.txt": "a", "src/b.txt": "b"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("two"), 0o644)
+	os.WriteFile(filepath.Join(a, "src", "a.txt"), []byte("a2"), 0o644)
+	os.Rename(filepath.Join(a, "src", "b.txt"), filepath.Join(a, "src", "c.txt"))
+	exit, rep := run(t, a, "commit", "-m", "src only", "src")
+	if exit != 0 {
+		t.Fatalf("commit src: %+v", rep.Error)
+	}
+	_, rep = run(t, a, "status")
+	if s := string(rep.Result); !strings.Contains(s, "notes.txt") || strings.Contains(s, "a.txt") || strings.Contains(s, "c.txt") {
+		t.Fatalf("left: %s", s)
+	}
+	exit, rep = run(t, filepath.Join(a, "src"), "commit", "-m", "nothing here", ".")
+	if exit == 0 || rep.Error == nil || rep.Error.Code != "nothing_to_commit" {
+		t.Fatalf("nothing in src: %d %+v", exit, rep.Error)
+	}
+	exit, rep = run(t, a, "commit", "-m", "notes", "notes.txt")
+	if _, rep2 := run(t, a, "status"); exit != 0 || strings.Contains(string(rep2.Result), "notes.txt") {
+		t.Fatalf("notes: %+v %s", rep.Error, rep2.Result)
+	}
+}
