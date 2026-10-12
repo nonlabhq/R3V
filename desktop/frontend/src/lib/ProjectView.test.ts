@@ -450,17 +450,17 @@ describe("ProjectView: agents (Nightly)", () => {
     { name: "b-r1", label: "renderer", color: "", parent: "main", current: false, latest: null, kind: "agent" },
     { name: "idea", label: "", color: "", parent: "main", current: false, latest: null, kind: "" }];
 
-  it("shows the Agents tab with how many workspaces, only where offered", async () => {
+  it("shows the Workspaces tab with how many workspaces, only where offered", async () => {
     await show({ agentWorkspaces: true, workspaceCount: 2 });
-    const tab = screen.getByRole("button", { name: /^Agents/ });
+    const tab = screen.getByRole("button", { name: /^Workspaces/ });
     expect(tab.querySelector(".count")?.textContent).toBe("2");
   });
 
-  it("merges a workspace's branch from the Agents tab: the merge preview of it", async () => {
+  it("merges a workspace's branch from the Workspaces tab: the merge preview of it", async () => {
     await show({ agentWorkspaces: true, workspaceCount: 1, branches });
     api.AgentWorkspaces.mockResolvedValue([ws()]);
     api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge renderer", versions: [], changes: [], conflicts: [] });
-    await fireEvent.click(screen.getByRole("button", { name: /^Agents/ }));
+    await fireEvent.click(screen.getByRole("button", { name: /^Workspaces/ }));
     await fireEvent.click(await screen.findByRole("button", { name: "Merge into main" }));
     await waitFor(() => expect(api.PreviewMerge).toHaveBeenCalledWith(ROOT, "b-r1"));
     expect(await screen.findByRole("dialog", { name: "Merge “renderer” into “main”" })).toBeTruthy();
@@ -475,7 +475,7 @@ describe("ProjectView: agents (Nightly)", () => {
       return result("switched");
     });
     api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge renderer", versions: [], changes: [], conflicts: [] });
-    await fireEvent.click(screen.getByRole("button", { name: /^Agents/ }));
+    await fireEvent.click(screen.getByRole("button", { name: /^Workspaces/ }));
     await fireEvent.click(await screen.findByRole("button", { name: "Merge into main" }));
     await waitFor(() => expect(api.PreviewMerge).toHaveBeenCalledWith(ROOT, "b-r1"));
     expect(api.SwitchBranch).toHaveBeenCalledWith(ROOT, "main", false);

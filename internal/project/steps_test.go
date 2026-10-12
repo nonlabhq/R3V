@@ -285,3 +285,26 @@ func TestTakeStepKilled(t *testing.T) {
 		t.Fatalf("again: %+v %v", st, err)
 	}
 }
+
+// A version's steps: those made on its parent before it, under their
+// prompts; the steps after it belong to the next.
+func TestVersionSteps(t *testing.T) {
+	r := stepsProject(t)
+	r.StepTurn("s1", "Warmer light", "")
+	write(t, r.Root, "notes.txt", "two")
+	r.TakeStep("s1", "Write", "")
+	write(t, r.Root, "notes.txt", "three")
+	r.TakeStep("s1", "Edit", "")
+	time.Sleep(1100 * time.Millisecond) // (times are to the second)
+	v := mustSnapshot(t, r, "second")
+	write(t, r.Root, "notes.txt", "four")
+	r.TakeStep("s1", "Edit", "")
+	got, err := r.VersionSteps(v.ID)
+	if err != nil || len(got) != 1 || got[0].Steps != 2 || got[0].Turns[0].Prompt != "Warmer light" {
+		t.Fatalf("version's steps: %+v %v", got, err)
+	}
+	first, _ := r.Log()
+	if s, _ := r.VersionSteps(first[len(first)-1].ID); len(s) != 0 {
+		t.Fatalf("the first version's: %+v", s)
+	}
+}

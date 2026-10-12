@@ -138,6 +138,11 @@ export class AgentWorkspace {
      */
     "results": { [_ in string]?: project$0.Result };
 
+    /**
+     * Steps: how many steps its sessions kept (an agent's moves).
+     */
+    "steps": number;
+
     /** Creates a new AgentWorkspace instance. */
     constructor($$source: Partial<AgentWorkspace> = {}) {
         if (!("folder" in $$source)) {
@@ -193,6 +198,9 @@ export class AgentWorkspace {
         }
         if (!("results" in $$source)) {
             this["results"] = {};
+        }
+        if (!("steps" in $$source)) {
+            this["steps"] = 0;
         }
 
         Object.assign(this, $$source);

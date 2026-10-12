@@ -1747,5 +1747,13 @@
 "Takes about {size}.": "約 {size} 使います。",
 "This drive clones files: no room is taken until they change.": "このドライブはファイルをクローンするため、変更されるまで容量を使いません。",
 "For an AI agent (Claude Code)": "AI エージェント用（Claude Code）",
-"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "ブランチはエージェント用として記録されます。Claude Code はマージできないファイルを変更前にロックし、そのバージョンには Claude Code が作ったことが記録されます。"
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "ブランチはエージェント用として記録されます。Claude Code はマージできないファイルを変更前にロックし、そのバージョンには Claude Code が作ったことが記録されます。",
+"Steps in “{name}”": "「{name}」のステップ",
+"No steps kept for this on this computer.": "このコンピュータにはこのステップが残っていません。",
+"R3V is keeping a step after each of the agent's moves": "R3V はエージェントの操作ごとにステップを残しています",
+"Steps of the work here": "ここでの作業のステップ",
+"Recording steps": "ステップを記録中",
+"How “{version}” was made": "「{version}」ができるまで",
+"made in {n} step": "{n} ステップで作成",
+"made in {n} steps": "{n} ステップで作成"
 }

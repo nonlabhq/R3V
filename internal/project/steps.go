@@ -75,6 +75,9 @@ type Session struct {
 	Last  string `json:"last"` // the time of its latest line
 	Steps int    `json:"steps"`
 	Turns []Turn `json:"turns"`
+	// Copy: the folder of the copy that kept it, when another than the one
+	// asked (VersionSteps: an agent's workspace).
+	Copy string `json:"copy,omitempty"`
 }
 
 // stepLine is a line of a session's list: a turn, or a step.
@@ -635,4 +638,50 @@ func (r *Repo) dropSession(s Session) {
 			os.Remove(r.snapshotPath(l.Version))
 		}
 	}
+}
+
+// VersionSteps are the steps a version was made of, from any copy of the
+// project here (a workspace's agent made them there): those made on its
+// parent up to its time, under their turns, by session. None for a
+// version without a parent, or whose steps aren't on this computer.
+func (r *Repo) VersionSteps(id string) ([]Session, error) {
+	m, err := r.Header(id)
+	if err != nil {
+		return nil, err
+	}
+	out := []Session{}
+	if len(m.Parents) == 0 {
+		return out, nil
+	}
+	parent := m.Parents[0]
+	for _, c := range append([]*Repo{r}, r.otherCopies()...) {
+		all, err := c.Sessions()
+		if err != nil {
+			continue
+		}
+		for _, s := range all {
+			kept := Session{ID: s.ID, Turns: []Turn{}}
+			if c != r {
+				kept.Copy = c.Root
+			}
+			for _, t := range s.Turns {
+				var steps []Step
+				for _, st := range t.Steps {
+					if st.On == parent && st.Time <= m.Time {
+						steps = append(steps, st)
+					}
+				}
+				if len(steps) > 0 {
+					t.Steps = steps
+					kept.Turns = append(kept.Turns, t)
+					kept.Steps += len(steps)
+					kept.Last = steps[len(steps)-1].Time
+				}
+			}
+			if kept.Steps > 0 {
+				out = append(out, kept)
+			}
+		}
+	}
+	return out, nil
 }

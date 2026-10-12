@@ -1747,5 +1747,13 @@
 "Takes about {size}.": "约占 {size}。",
 "This drive clones files: no room is taken until they change.": "这个磁盘用克隆方式复制文件：文件改动前不占空间。",
 "For an AI agent (Claude Code)": "给 AI 代理用（Claude Code）",
-"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "它的分支会标记为代理的。Claude Code 会在改动无法合并的文件前先锁定它们，它做的版本也会注明是它做的。"
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "它的分支会标记为代理的。Claude Code 会在改动无法合并的文件前先锁定它们，它做的版本也会注明是它做的。",
+"Steps in “{name}”": "“{name}”中的步骤",
+"No steps kept for this on this computer.": "这台电脑上没有保留它的步骤。",
+"R3V is keeping a step after each of the agent's moves": "R3V 正在代理每次操作后保留一个步骤",
+"Steps of the work here": "这里的工作步骤",
+"Recording steps": "正在记录步骤",
+"How “{version}” was made": "“{version}”是怎么做出来的",
+"made in {n} step": "由 {n} 个步骤做成",
+"made in {n} steps": "由 {n} 个步骤做成"
 }

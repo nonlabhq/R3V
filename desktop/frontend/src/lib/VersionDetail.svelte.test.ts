@@ -78,3 +78,18 @@ it("heads a version with its title, its details below and the agent that made it
   expect(screen.getByRole("heading").textContent).toBe("Mix");
   expect(screen.queryByLabelText(/Made by/)).toBeNull();
 });
+
+// The steps a version was made of: a quiet link in its line, opening them
+// to look at (another copy's compared there; no going back).
+it("links to the steps a version was made of, quietly", async () => {
+  mocks.api.VersionFiles.mockResolvedValue([file("a.txt")]);
+  mocks.api.VersionSteps.mockResolvedValue([{ id: "s1", last: "2026-10-06T09:59:00Z", steps: 3, copy: "C:/Song (agent)",
+    turns: [{ n: 1, time: "", prompt: "Mix the drums", steps: [{ n: 1, turn: 1, version: "x1", on: "p", time: "2026-10-06T09:58:00Z",
+      tool: "Write", files: ["a.txt"] }] }] }]);
+  render(VersionDetail, { root: "C:/Song", v: version("v3"), branch: "main" });
+  await fireEvent.click(await screen.findByRole("button", { name: "made in 3 steps" }));
+  expect(mocks.api.VersionSteps).toHaveBeenCalledWith("C:/Song", "v3");
+  expect(await screen.findByRole("dialog", { name: "How “Mix” was made" })).toBeTruthy();
+  expect(screen.getByText("“Mix the drums”")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Go back" })).toBeNull();
+});

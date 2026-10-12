@@ -1747,5 +1747,13 @@
 "Takes about {size}.": "Prend environ {size}.",
 "This drive clones files: no room is taken until they change.": "Ce disque clone les fichiers : aucune place n'est prise tant qu'ils ne changent pas.",
 "For an AI agent (Claude Code)": "Pour un agent IA (Claude Code)",
-"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "Sa branche est marquée comme celle d'un agent. Claude Code verrouille alors les fichiers qui ne peuvent pas être fusionnés avant de les changer, et ses versions disent qu'il les a faites."
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "Sa branche est marquée comme celle d'un agent. Claude Code verrouille alors les fichiers qui ne peuvent pas être fusionnés avant de les changer, et ses versions disent qu'il les a faites.",
+"Steps in “{name}”": "Étapes dans « {name} »",
+"No steps kept for this on this computer.": "Aucune étape gardée pour cela sur cet ordinateur.",
+"R3V is keeping a step after each of the agent's moves": "R3V garde une étape après chaque action de l'agent",
+"Steps of the work here": "Étapes du travail ici",
+"Recording steps": "Étapes en cours",
+"How “{version}” was made": "Comment « {version} » a été fait",
+"made in {n} step": "fait en {n} étape",
+"made in {n} steps": "fait en {n} étapes"
 }

@@ -67,6 +67,18 @@ describe("The Agents view", () => {
     await toasted(/Updated AGENTS.md: commit it/);
   });
 
+  it("opens a workspace's steps to look at", async () => {
+    api.AgentWorkspaces.mockResolvedValue([ws({ steps: 12 })]);
+    api.AllSteps.mockResolvedValue([{ id: "s1", last: new Date().toISOString(), steps: 12, turns: [{ n: 1, time: "", prompt: "Brighter",
+      steps: [{ n: 1, turn: 1, version: "v1", on: "h1", time: new Date().toISOString(), tool: "Write", files: ["a.ts"] }] }] }]);
+    show();
+    await fireEvent.click(await screen.findByRole("button", { name: "12 steps" }));
+    await waitFor(() => expect(api.AllSteps).toHaveBeenCalledWith("C:\\Projects\\Song (renderer)"));
+    expect(await screen.findByRole("dialog", { name: "Steps in “renderer”" })).toBeTruthy();
+    expect(screen.getByText("“Brighter”")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Go back" })).toBeNull(); // (done in the workspace)
+  });
+
   it("shows what each workspace's checks said (r3v result)", async () => {
     api.AgentWorkspaces.mockResolvedValue([ws({ results: {
       tests: { state: "pass", note: "cargo test: 214 passed", time: new Date().toISOString(), changes: 2 },

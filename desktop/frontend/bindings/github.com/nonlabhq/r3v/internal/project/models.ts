@@ -57,6 +57,12 @@ export class Session {
     "steps": number;
     "turns": Turn[];
 
+    /**
+     * Copy: the folder of the copy that kept it, when another than the one
+     * asked (VersionSteps: an agent's workspace).
+     */
+    "copy"?: string;
+
     /** Creates a new Session instance. */
     constructor($$source: Partial<Session> = {}) {
         if (!("id" in $$source)) {

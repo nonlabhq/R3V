@@ -1016,6 +1016,7 @@
             <div class="graph-bar">
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
                 onsettings={(key) => (branchSettings = key)} onmilestone={(id) => (graphPick = id)} />
+              <StepsTimeline {root} version={`${st.head} ${refreshKey} ${st.changes.length}`} busy={!!busy} onback={stepBack} />
             </div>
             {#snippet cardActions(v: Version)}
               <!-- only what can be done with this version, from here -->
@@ -1061,7 +1062,6 @@
                 <strong>{t("Your changes")}</strong>
                 <span class="faint">{t("not committed yet · on {branch}", { branch: bl(st.branch) })}</span>
               </div>
-              <StepsTimeline {root} version={`${st.head} ${refreshKey} ${st.changes.length}`} busy={!!busy} onback={stepBack} />
               <div class="pending-body">{@render changesPanel("changes", true)}</div>
               <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
             {:else if shownParked}
@@ -1295,7 +1295,7 @@
     border-radius: var(--radius-card); background-color: var(--panel); box-shadow: var(--shadow-card);
     background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.4px); background-size: 18px 18px; }
   .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
-  .graph-bar { position: absolute; top: var(--sp-14); left: var(--sp-16); z-index: 2; }
+  .graph-bar { position: absolute; top: var(--sp-14); left: var(--sp-16); z-index: var(--z-sticky); display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-6); }
   nav .bad { color: var(--warn); }
   /* how many workspaces, by Agents */
   nav .count { display: inline-block; min-width: 18px; margin-left: var(--sp-6); padding: 0 var(--sp-6); border-radius: var(--radius-pill);

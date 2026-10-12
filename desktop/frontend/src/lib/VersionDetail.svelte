@@ -3,6 +3,8 @@
   import { api, detailsOf, errorText, titleOf, type ProjectFile, type Version } from "./api";
   import FileIcon from "./FileIcon.svelte";
   import AgentBadge from "./AgentBadge.svelte";
+  import StepsDialog from "./StepsDialog.svelte";
+  import type { Session } from "./api";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import { viewerFor, type Side } from "./viewers";
@@ -30,6 +32,16 @@
   let vid = $derived(v.id);
   let at = $derived(root);
   let parent = $derived(v.parents[0] ?? "");
+  // The steps it was made of (an agent's moves, kept on this computer):
+  // there to look back at, not in the way.
+  let steps = $state<Session[]>([]);
+  let showSteps = $state(false);
+  const stepCount = $derived(steps.reduce((n, s) => n + s.steps, 0));
+  $effect(() => {
+    const id = vid;
+    steps = [];
+    api.VersionSteps(at, id).then((s) => { if (id === vid) steps = s ?? []; }).catch(() => {});
+  });
   $effect(() => {
     const id = vid;
     files = null;
@@ -107,6 +119,11 @@
   }
 </script>
 
+{#if showSteps}
+  <StepsDialog root={at} title={t("How “{version}” was made", { version: titleOf(v.message) || v.short })} sessions={steps}
+    onclose={() => (showSteps = false)} />
+{/if}
+
 <div class="version">
   <header>
     <div class="title">
@@ -115,6 +132,7 @@
         {#if v.actor}<AgentBadge tool={v.actor.tool} model={v.actor.model} />{/if}
         {v.author} · {new Date(v.time).toLocaleString()}{#if branch} · {branch}{/if} · <span class="mono">{v.short}</span>
         {#if v.parents.length > 1} · {t("merge")}{/if}
+        {#if stepCount} · <button class="link steps-link" onclick={() => (showSteps = true)}>{tn(stepCount, "made in {n} step", "made in {n} steps")}</button>{/if}
       </div>
       {#if detailsOf(v.message)}<p class="details">{detailsOf(v.message)}</p>{/if}
       {#if marks}{@render marks()}{/if}
@@ -191,6 +209,7 @@
   .title { flex: 1 1 280px; min-width: 0; }
   h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); user-select: text; }
   .meta { font-size: var(--fs-sm); color: var(--faint); margin-top: var(--sp-2); }
+  .steps-link { color: var(--faint); font-size: inherit; padding: 0; text-decoration: underline dotted; }
   .meta :global(.agent) { margin-right: var(--sp-4); }
   .details { margin: var(--sp-8) 0 0; font-size: var(--fs-md); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere;
     max-height: 9em; overflow: auto; user-select: text; }
