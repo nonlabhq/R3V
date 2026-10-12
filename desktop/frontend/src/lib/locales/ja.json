@@ -1772,6 +1772,14 @@
 "Preview all changes": "すべての変更をプレビュー",
 "More to see": "ほかにもあります",
 "Refreshing…": "更新中…",
+"Show its workspaces": "ワークスペースを表示",
+"Hide its workspaces": "ワークスペースを隠す",
+"Main copy": "メインコピー",
+"You're here": "現在ここ",
+"Nothing to commit": "コミットするものはありません",
+"The project's own folder: the workspaces are made from it, and it stays": "プロジェクト本体のフォルダー：ワークスペースはここから作られ、削除できません",
+"The agent's prompts and steps that made it": "これを作ったエージェントのプロンプトとステップ",
+"(no prompt)": "（プロンプトなし）",
 "{who} merged “{version}”": "{who} が「{version}」をマージ",
 "{who} shared “{version}”": "{who} が「{version}」を共有"
 }

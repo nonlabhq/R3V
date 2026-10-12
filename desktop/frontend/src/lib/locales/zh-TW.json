@@ -1772,6 +1772,14 @@
 "Preview all changes": "預覽全部變更",
 "More to see": "查看更多",
 "Refreshing…": "正在重新整理…",
+"Show its workspaces": "顯示它的工作區",
+"Hide its workspaces": "隱藏它的工作區",
+"Main copy": "主副本",
+"You're here": "你在這裡",
+"Nothing to commit": "沒有要提交的",
+"The project's own folder: the workspaces are made from it, and it stays": "專案本身的資料夾：工作區由它建立，它不能刪除",
+"The agent's prompts and steps that made it": "做出它的 agent 提示與步驟",
+"(no prompt)": "（無提示）",
 "{who} merged “{version}”": "{who} 合併了「{version}」",
 "{who} shared “{version}”": "{who} 上傳了「{version}」"
 }

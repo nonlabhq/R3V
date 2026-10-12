@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -287,8 +288,38 @@ func workspaceProject(folder string) TeamProject {
 }
 
 // openedWorkspaces are the workspaces shown as projects whose main copy is
-// one of mains (a team's projects here), each after its main copy's.
+// one of mains (a team's projects here), each after its main copy's: every
+// workspace of a project here (one an agent made from the command line too:
+// the app then knows its folder), the sidebar folding them under it.
 func openedWorkspaces(store *teams.Store, mains []TeamProject) []TeamProject {
+	var found []string
+	for _, m := range mains {
+		if m.Status != "downloaded" || m.Root == "" || m.Workspace {
+			continue
+		}
+		r, err := project.Open(m.Root)
+		if err != nil {
+			continue
+		}
+		list, _ := r.LocalWorkspaces()
+		for _, e := range list {
+			if !slices.ContainsFunc(store.Workspaces, func(f string) bool { return strings.EqualFold(filepath.Clean(f), filepath.Clean(e.Folder)) }) {
+				if fi, err := os.Stat(e.Folder); err == nil && fi.IsDir() {
+					found = append(found, e.Folder)
+				}
+			}
+		}
+	}
+	if len(found) > 0 {
+		if s, err := teams.Update(func(s *teams.Store) error {
+			for _, f := range found {
+				s.AddWorkspace(f)
+			}
+			return nil
+		}); err == nil {
+			store = s
+		}
+	}
 	var out []TeamProject
 	for _, folder := range store.Workspaces {
 		p := workspaceProject(folder)

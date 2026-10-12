@@ -1772,6 +1772,14 @@
 "Preview all changes": "Vedi tutte le modifiche",
 "More to see": "Vedi altro",
 "Refreshing…": "Aggiornamento…",
+"Show its workspaces": "Mostra i suoi spazi di lavoro",
+"Hide its workspaces": "Nascondi i suoi spazi di lavoro",
+"Main copy": "Copia principale",
+"You're here": "Sei qui",
+"Nothing to commit": "Niente da fare commit",
+"The project's own folder: the workspaces are made from it, and it stays": "La cartella del progetto: gli spazi di lavoro nascono da essa, e resta",
+"The agent's prompts and steps that made it": "I prompt e i passi dell'agente che l'hanno fatta",
+"(no prompt)": "(nessun prompt)",
 "{who} merged “{version}”": "{who} ha unito “{version}”",
 "{who} shared “{version}”": "{who} ha condiviso “{version}”"
 }
