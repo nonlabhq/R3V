@@ -8,7 +8,7 @@ Requirements: Go 1.27+, Node.js, the Wails v3 CLI (`wails3`) and, for the instal
 
 ```
 go build -o r3v.exe ./cmd/r3v                       # command line tool
-go test ./...                                             # all Go tests
+go test -timeout 30m ./...                                # all Go tests (internal/project takes ~10 min)
 powershell -ExecutionPolicy Bypass -File scripts\build-windows.ps1   # -> dist\R3V-<version>-setup.exe
 ```
 

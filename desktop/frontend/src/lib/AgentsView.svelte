@@ -2,6 +2,8 @@
   import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, toolName, type AgentWorkspace, type Branch, type TeamProject } from "./api";
   import { toast } from "./notify.svelte";
+  import StepsDialog from "./StepsDialog.svelte";
+  import type { Session } from "./api";
   import { branchLabel } from "./branches";
   import AgentBadge from "./AgentBadge.svelte";
   import LockBadge from "./LockBadge.svelte";
@@ -60,6 +62,16 @@
       : t("{check} running since {when}", { check, when });
     if (res.changes) s += " · " + tn(res.changes, "with {n} change not committed", "with {n} changes not committed");
     return res.note ? `${s}\n${res.note}` : s;
+  }
+
+  // A workspace's steps, to look at from here (going back is done in it).
+  let stepsOf = $state<{ w: AgentWorkspace; sessions: Session[] } | null>(null);
+  async function openSteps(w: AgentWorkspace) {
+    try {
+      stepsOf = { w, sessions: (await api.AllSteps(w.folder)) ?? [] };
+    } catch (e) {
+      toast(errorText(e), "error");
+    }
   }
 
   let reading = false;
@@ -168,8 +180,8 @@
     <p class="muted">{t("Reading the workspaces…")}</p>
   {:else if !list.length}
     <div class="empty">
-      <h3>{t("Agents working side by side")}</h3>
-      <p>{t("A workspace is another copy of this project on this computer, on a branch of its own. Give each AI agent one: they work at the same time without getting in each other's way, and you merge what each has done when it's ready.")}</p>
+      <h3>{t("Work side by side")}</h3>
+      <p>{t("A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.")}</p>
       <p class="muted">{t("Files that can't be merged (textures, models, sounds) are locked by the agent changing them, so no two agents change the same one.")}</p>
       <p class="muted">{t("An agent can make its own from the command line:")}</p>
       <div class="cmd">
@@ -217,6 +229,7 @@
                 <span class="fact result {res.state}" title={resultTitle(check, res)}>{({ pass: "✓", fail: "✗", running: "…" } as Record<string, string>)[res.state] ?? ""} {check}</span>
                 {/if}
               {/each}
+              {#if w.steps}<button class="link fact steps-link" onclick={() => openSteps(w)}>{tn(w.steps, "{n} step", "{n} steps")}</button>{/if}
               {#if w.parked}<span class="fact">{tn(w.parked, "{n} set of parked changes", "{n} sets of parked changes")}</span>{/if}
               {#if w.locks.length}
                 <button class="ghost fact locks" aria-expanded={!!open[w.folder]} onclick={() => (open[w.folder] = !open[w.folder])}>
@@ -277,6 +290,11 @@
   </Modal>
 {/if}
 
+{#if stepsOf}
+  <StepsDialog root={stepsOf.w.folder} title={t("Steps in “{name}”", { name: stepsOf.w.label || stepsOf.w.branch })}
+    sessions={stepsOf.sessions} onclose={() => (stepsOf = null)} />
+{/if}
+
 <style>
   .agents { max-width: 860px; }
   .head { display: flex; align-items: center; gap: var(--sp-8); margin-bottom: var(--sp-16); }
@@ -308,6 +326,7 @@
   .folder:hover:not(:disabled) { color: var(--text); background: none; text-decoration: underline; }
   .facts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-6) var(--sp-12); margin-top: var(--sp-10); font-size: var(--fs-sm); }
   .fact { color: var(--muted); }
+  .steps-link { padding: 0; font-size: inherit; text-decoration: underline dotted; }
   .fact.result.pass { color: var(--ok); }
   .fact.result.fail { color: var(--danger); }
   .fact.to-merge { color: var(--accent-text); font-weight: var(--fw-semibold); }

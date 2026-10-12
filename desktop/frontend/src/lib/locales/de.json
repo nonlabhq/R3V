@@ -1738,5 +1738,22 @@
 "{check} failed {when}": "{check} fehlgeschlagen {when}",
 "{check} running since {when}": "{check} läuft seit {when}",
 "with {n} change not committed": "mit {n} nicht committeter Änderung",
-"with {n} changes not committed": "mit {n} nicht committeten Änderungen"
+"with {n} changes not committed": "mit {n} nicht committeten Änderungen",
+"Work side by side": "Nebeneinander arbeiten",
+"A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.": "Ein Workspace ist eine weitere Kopie dieses Projekts auf diesem Computer, auf einem eigenen Branch: Probiere etwas neben deiner Hauptkopie aus, oder gib jedem KI-Agenten einen, damit sie gleichzeitig arbeiten, ohne sich in die Quere zu kommen. Was jeder gemacht hat, führst du zusammen, wenn es fertig ist.",
+"{n} merged": "{n} zusammengeführt",
+"Another copy of the project on this computer, on a branch of its own: to try something beside your main copy, or for an AI agent to work in. You merge its work when it's ready.": "Eine weitere Kopie des Projekts auf diesem Computer, auf einem eigenen Branch: um etwas neben deiner Hauptkopie auszuprobieren, oder für einen KI-Agenten zum Arbeiten. Du führst ihre Arbeit zusammen, wenn sie fertig ist.",
+"Takes about {size}, {copies} of it build folders.": "Braucht etwa {size}, davon {copies} Build-Ordner.",
+"Takes about {size}.": "Braucht etwa {size}.",
+"This drive clones files: no room is taken until they change.": "Dieses Laufwerk klont Dateien: Platz wird erst belegt, wenn sie sich ändern.",
+"For an AI agent (Claude Code)": "Für einen KI-Agenten (Claude Code)",
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "Sein Branch wird als der eines Agenten markiert. Claude Code sperrt dann Dateien, die sich nicht zusammenführen lassen, bevor es sie ändert, und seine Versionen sagen, dass es sie gemacht hat.",
+"Steps in “{name}”": "Schritte in „{name}“",
+"No steps kept for this on this computer.": "Auf diesem Computer sind dafür keine Schritte festgehalten.",
+"R3V is keeping a step after each of the agent's moves": "R3V hält nach jedem Schritt des Agenten einen Schritt fest",
+"Steps of the work here": "Schritte der Arbeit hier",
+"Recording steps": "Schritte werden festgehalten",
+"How “{version}” was made": "Wie „{version}“ entstand",
+"made in {n} step": "in {n} Schritt entstanden",
+"made in {n} steps": "in {n} Schritten entstanden"
 }

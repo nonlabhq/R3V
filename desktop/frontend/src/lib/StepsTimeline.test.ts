@@ -32,22 +32,33 @@ function show(props: Record<string, unknown> = {}) {
 beforeEach(() => { for (const k of Object.keys(mocks.fns)) delete mocks.fns[k]; });
 afterEach(() => cleanup());
 
-describe("The steps timeline", () => {
-  it("says how many steps and the latest prompt, and opens to each step under its prompt", async () => {
+describe("The steps pill", () => {
+  it("is lit while an agent makes steps, and opens to each step under its prompt", async () => {
     api.Steps.mockResolvedValue(info());
     show();
-    const head = await screen.findByRole("button", { name: /Steps/ });
-    expect(head.textContent).toMatch(/2 steps · “Warmer arena light”/);
-    await fireEvent.click(head);
+    const pill = await screen.findByRole("button", { name: /Recording steps · 2/ });
+    expect(pill.classList.contains("live")).toBe(true);
+    await fireEvent.click(pill);
+    expect(screen.getByText(/2 steps · .* · “Warmer arena light”/)).toBeTruthy();
     expect(screen.getByText("“Warmer arena light”")).toBeTruthy();
     expect(screen.getByText("blender · execute_code")).toBeTruthy();
     expect(screen.getByText("models/lamp.blend, a.png and 1 more")).toBeTruthy();
   });
 
+  it("says Steps, not lit, when the last step is a while ago", async () => {
+    const old = new Date(Date.now() - 3600_000).toISOString();
+    const i = info();
+    i.session.last = old;
+    api.Steps.mockResolvedValue(i);
+    show();
+    const pill = await screen.findByRole("button", { name: /^Steps · 2/ });
+    expect(pill.classList.contains("live")).toBe(false);
+  });
+
   it("goes back to a step after asking, through the view", async () => {
     api.Steps.mockResolvedValue(info());
     const p = show();
-    await fireEvent.click(await screen.findByRole("button", { name: /Steps/ }));
+    await fireEvent.click(await screen.findByRole("button", { name: /Recording steps/ }));
     await fireEvent.click(screen.getAllByRole("button", { name: "Go back" })[1]); // step 1 (the latest first)
     expect(screen.getByText("Go back to step 1?")).toBeTruthy();
     await fireEvent.click(screen.getAllByRole("button", { name: "Go back" }).at(-1)!);
@@ -58,7 +69,7 @@ describe("The steps timeline", () => {
     api.Steps.mockResolvedValue(info());
     api.StepDiff.mockResolvedValue([{ path: "a.png", status: "added" }, { path: "scenes/arena.json", status: "modified" }]);
     show();
-    await fireEvent.click(await screen.findByRole("button", { name: /Steps/ }));
+    await fireEvent.click(await screen.findByRole("button", { name: /Recording steps/ }));
     await fireEvent.click(screen.getAllByRole("button", { name: "Compare" })[0]);
     await fireEvent.click(screen.getByRole("button", { name: "Compare with step 2" }));
     await waitFor(() => expect(api.StepDiff).toHaveBeenCalledWith(ROOT, "s1", 1, 2));
@@ -66,7 +77,7 @@ describe("The steps timeline", () => {
     expect(screen.getByText("changed")).toBeTruthy();
   });
 
-  it("shows nothing without steps, or with them off, or in a build without them", async () => {
+  it("isn't there without steps, or with them off, or in a build without them", async () => {
     for (const i of [info({ session: null }), info({ on: false }), { available: false, on: false, settings: {}, session: null, sessions: [] }]) {
       api.Steps.mockResolvedValue(i);
       show();

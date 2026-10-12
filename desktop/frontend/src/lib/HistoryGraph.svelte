@@ -22,7 +22,7 @@
   // whose work is merged are folded away (but the one you're on) until
   // shown from the zoom bar; one with work to merge always shows. An
   // agent's version has a spark on its dot.
-  let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings }: {
+  let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings, remember = "" }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string; parent?: string; kind?: string }[];
     branch: string;    // the branch you are on
@@ -40,12 +40,21 @@
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
     milestones?: { version: string; name: string }[]; // versions the team named
     onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
+    remember?: string; // where the agents' branches' toggle is kept on this computer (e.g. the project's folder)
   } = $props();
 
   // Agents' branches: folded away once their work is merged (in the
   // history of a branch that isn't an agent's), unless shown; the one
   // you're on, and the version you're on, always show.
+  const shownKey = $derived(`r3v.graph.agents:${remember}`);
   let showAgents = $state(false);
+  $effect(() => {
+    try { showAgents = !!remember && localStorage.getItem(shownKey) === "1"; } catch { showAgents = false; }
+  });
+  function toggleAgents() {
+    showAgents = !showAgents;
+    try { if (remember) localStorage.setItem(shownKey, showAgents ? "1" : "0"); } catch { /* (not kept) */ }
+  }
   let agentKeys = $derived(new Set(allBranches.filter((b) => b.kind === "agent").map((b) => b.name)));
   let agentsMerged = $derived.by(() => {
     const byID = new Map(allVersions.map((v) => [v.id, v]));
@@ -532,8 +541,8 @@
     <div class="zoombar" style:left="{width - 14}px">
       {#if foldable}
         {@const label = showAgents ? t("Hide agents' branches") : t("Show agents' branches")}
-        <button class="ghost agents" class:on={showAgents} aria-pressed={showAgents} onclick={() => (showAgents = !showAgents)}
-          aria-label={label} title={label}>{@render spark()}<span>{foldable}</span></button>
+        <button class="ghost agents" class:on={showAgents} aria-pressed={showAgents} onclick={toggleAgents}
+          aria-label={label} title={label}>{@render spark()}<span>{t("{n} merged", { n: foldable })}</span></button>
       {/if}
       <button class="ghost" onclick={() => zoomBy(1 / 1.2)} aria-label={t("Zoom out")} title={t("Zoom out") + " (Ctrl+scroll)"}>−</button>
       <button class="ghost pct" onclick={zoomReset} title={t("Back to 100%")}>{Math.round(zoom * 100)}%</button>

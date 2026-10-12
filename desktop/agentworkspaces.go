@@ -10,6 +10,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/agentlock"
 	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/store"
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
@@ -51,6 +52,8 @@ type AgentWorkspace struct {
 	// Results: what its builds and tests said about the version it is on
 	// (r3v result), by check.
 	Results map[string]project.Result `json:"results"`
+	// Steps: how many steps its sessions kept (an agent's moves).
+	Steps int `json:"steps"`
 }
 
 // AgentWorkspaces lists project root's workspaces on this computer, with
@@ -89,6 +92,13 @@ func (a *App) AgentWorkspaces(root string) ([]AgentWorkspace, error) {
 			Locks: []LockItem{}, Opened: opened[strings.ToLower(filepath.Clean(s.Folder))], Results: s.Results}
 		if w.Results == nil {
 			w.Results = map[string]project.Result{}
+		}
+		if ws, err := project.Open(s.Folder); err == nil && !s.Missing {
+			if all, err := ws.Sessions(); err == nil {
+				for _, x := range all {
+					w.Steps += x.Steps
+				}
+			}
 		}
 		if rec, ok := recs[s.Branch]; ok && rec.Owner != "" {
 			w.Owner = names[rec.Owner]
@@ -157,7 +167,7 @@ func (a *App) AddWorkspace(root, folder, branch, from, agent string) (*Workspace
 	if err != nil {
 		return nil, err
 	}
-	e, err := r.AddWorkspace(folder, project.WorkspaceOptions{Branch: branch, From: from})
+	e, err := r.AddWorkspace(folder, project.WorkspaceOptions{Branch: branch, From: from, Agent: agent != ""})
 	unlock()
 	if err != nil {
 		return nil, err
@@ -322,4 +332,24 @@ func (a *App) AgentGuide(root string) string {
 		}
 	}
 	return ""
+}
+
+// WorkspaceRoom is the room a new workspace takes.
+type WorkspaceRoom struct {
+	Files  int64 `json:"files"`  // the version's files
+	Copies int64 `json:"copies"` // the build folders .r3v.yaml names (workspaces: copy)
+	// Clones: the folder's drive copies by block cloning (ReFS, Dev Drive):
+	// no room taken until a file changes.
+	Clones bool `json:"clones"`
+}
+
+// WorkspaceRoom estimates the room a new workspace of the project in root
+// takes in folder (the folder needn't exist yet).
+func (a *App) WorkspaceRoom(root, folder string) (*WorkspaceRoom, error) {
+	r, err := project.Open(root)
+	if err != nil {
+		return nil, err
+	}
+	files, copies := r.WorkspaceEstimate()
+	return &WorkspaceRoom{Files: files, Copies: copies, Clones: folder != "" && store.Clones(folder)}, nil
 }

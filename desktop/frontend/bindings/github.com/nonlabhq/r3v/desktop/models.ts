@@ -138,6 +138,11 @@ export class AgentWorkspace {
      */
     "results": { [_ in string]?: project$0.Result };
 
+    /**
+     * Steps: how many steps its sessions kept (an agent's moves).
+     */
+    "steps": number;
+
     /** Creates a new AgentWorkspace instance. */
     constructor($$source: Partial<AgentWorkspace> = {}) {
         if (!("folder" in $$source)) {
@@ -193,6 +198,9 @@ export class AgentWorkspace {
         }
         if (!("results" in $$source)) {
             this["results"] = {};
+        }
+        if (!("steps" in $$source)) {
+            this["steps"] = 0;
         }
 
         Object.assign(this, $$source);
@@ -4834,6 +4842,50 @@ export class WorkspaceRemoval {
             $$parsedSource["left"] = $$createField1_0($$parsedSource["left"]);
         }
         return new WorkspaceRemoval($$parsedSource as Partial<WorkspaceRemoval>);
+    }
+}
+
+/**
+ * WorkspaceRoom is the room a new workspace takes.
+ */
+export class WorkspaceRoom {
+    /**
+     * the version's files
+     */
+    "files": number;
+
+    /**
+     * the build folders .r3v.yaml names (workspaces: copy)
+     */
+    "copies": number;
+
+    /**
+     * Clones: the folder's drive copies by block cloning (ReFS, Dev Drive):
+     * no room taken until a file changes.
+     */
+    "clones": boolean;
+
+    /** Creates a new WorkspaceRoom instance. */
+    constructor($$source: Partial<WorkspaceRoom> = {}) {
+        if (!("files" in $$source)) {
+            this["files"] = 0;
+        }
+        if (!("copies" in $$source)) {
+            this["copies"] = 0;
+        }
+        if (!("clones" in $$source)) {
+            this["clones"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WorkspaceRoom instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WorkspaceRoom {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WorkspaceRoom($$parsedSource as Partial<WorkspaceRoom>);
     }
 }
 

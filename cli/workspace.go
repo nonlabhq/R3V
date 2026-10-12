@@ -62,7 +62,7 @@ func cmdWorkspace(args []string) error {
 		if *agent != "" && *agent != "claude-code" {
 			return usageError("agent tools set up for now: claude-code")
 		}
-		e, err := r.AddWorkspace(pos[0], project.WorkspaceOptions{Branch: *branch, From: *from})
+		e, err := r.AddWorkspace(pos[0], project.WorkspaceOptions{Branch: *branch, From: *from, Agent: *agent != ""})
 		if err != nil {
 			return err
 		}

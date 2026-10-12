@@ -82,12 +82,12 @@ test("merges a branch, asking about what both sides changed", async () => {
 });
 
 // Nightly: a workspace for an agent, made beside the project, then removed.
-test("makes a workspace for an agent in the Agents tab, and removes it", async () => {
+test("makes a workspace in the Workspaces tab, and removes it", async () => {
   // (the merge before offers archiving its branch: not now)
   const archive = page.getByRole("dialog", { name: /now that it's merged/ });
   if (await archive.count()) await archive.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: /^Agents/ }).click();
-  await expect(page.getByRole("heading", { name: "Agents working side by side" })).toBeVisible();
+  await page.getByRole("button", { name: /^Workspaces/ }).click();
+  await expect(page.getByRole("heading", { name: "Work side by side" })).toBeVisible();
   await page.getByRole("button", { name: /New workspace/ }).click();
   const dialog = page.getByRole("dialog", { name: "New workspace" });
   await dialog.getByLabel("Branch name").fill("smoke-agent");
@@ -96,11 +96,11 @@ test("makes a workspace for an agent in the Agents tab, and removes it", async (
   await expect(page.getByText(/The workspace “smoke-agent” is ready/).first()).toBeVisible({ timeout: 30_000 });
   const item = page.locator(".agents li").filter({ hasText: "smoke-agent" });
   await expect(item.getByText("Nothing to merge")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("button", { name: /^Agents/ }).locator(".count")).toHaveText("1");
+  await expect(page.getByRole("button", { name: /^Workspaces/ }).locator(".count")).toHaveText("1");
   await item.getByRole("button", { name: "Remove…" }).click();
   await page.getByRole("dialog", { name: /Remove the workspace/ }).getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByText(/Removed the workspace “smoke-agent”/).first()).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("heading", { name: "Agents working side by side" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Work side by side" })).toBeVisible();
   await page.getByRole("button", { name: /^Versions/ }).click();
 });
 

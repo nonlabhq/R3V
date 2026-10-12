@@ -123,3 +123,27 @@ func copyFolderFiles(src, dst string) (int, error) {
 	})
 	return n, err
 }
+
+// WorkspaceEstimate is the room a new workspace of this copy takes, before
+// any block cloning: the files of the version it is on, and the build
+// folders the rules name (workspaces: copy).
+func (r *Repo) WorkspaceEstimate() (files, copies int64) {
+	if m, err := r.Header(r.Head()); err == nil {
+		files = m.TotalSize
+	}
+	rules, _ := r.Profile()
+	if rules == nil {
+		return files, 0
+	}
+	for _, rel := range r.foldersToCopy(rules.WorkspaceCopy) {
+		filepath.WalkDir(r.Abs(rel), func(_ string, d fs.DirEntry, err error) error {
+			if err == nil && d.Type().IsRegular() {
+				if fi, err := d.Info(); err == nil {
+					copies += fi.Size()
+				}
+			}
+			return nil
+		})
+	}
+	return files, copies
+}

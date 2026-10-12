@@ -106,3 +106,29 @@ func (a *App) SetStepSettings(root string, s project.StepSettings) error {
 	defer unlock()
 	return r.SetStepSettings(s)
 }
+
+// VersionSteps are the steps a version was made of (any copy of the
+// project here), to look at and compare: going back is the work's own.
+func (a *App) VersionSteps(root, id string) ([]project.Session, error) {
+	if !project.Steps {
+		return []project.Session{}, nil
+	}
+	r, err := project.Open(root)
+	if err != nil {
+		return nil, err
+	}
+	return r.VersionSteps(id)
+}
+
+// AllSteps are every session's steps of the copy in root, the latest first
+// (a workspace's, looked at from the Workspaces tab).
+func (a *App) AllSteps(root string) ([]project.Session, error) {
+	if !project.Steps {
+		return []project.Session{}, nil
+	}
+	r, err := project.Open(root)
+	if err != nil {
+		return nil, err
+	}
+	return r.Sessions()
+}

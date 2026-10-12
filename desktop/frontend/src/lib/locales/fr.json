@@ -1738,5 +1738,22 @@
 "{check} failed {when}": "{check} échoué {when}",
 "{check} running since {when}": "{check} en cours depuis {when}",
 "with {n} change not committed": "avec {n} changement non validé",
-"with {n} changes not committed": "avec {n} changements non validés"
+"with {n} changes not committed": "avec {n} changements non validés",
+"Work side by side": "Travailler côte à côte",
+"A workspace is another copy of this project on this computer, on a branch of its own: try something beside your main copy, or give each AI agent one, so they work at the same time without getting in each other's way. You merge what each has done when it's ready.": "Un espace de travail est une autre copie de ce projet sur cet ordinateur, sur une branche à elle : essaie quelque chose à côté de ta copie principale, ou donne-en un à chaque agent IA, pour qu'ils travaillent en même temps sans se gêner. Tu fusionnes ce que chacun a fait quand c'est prêt.",
+"{n} merged": "{n} fusionnées",
+"Another copy of the project on this computer, on a branch of its own: to try something beside your main copy, or for an AI agent to work in. You merge its work when it's ready.": "Une autre copie du projet sur cet ordinateur, sur une branche à elle : pour essayer quelque chose à côté de ta copie principale, ou pour qu'un agent IA y travaille. Tu fusionnes son travail quand il est prêt.",
+"Takes about {size}, {copies} of it build folders.": "Prend environ {size}, dont {copies} de dossiers de build.",
+"Takes about {size}.": "Prend environ {size}.",
+"This drive clones files: no room is taken until they change.": "Ce disque clone les fichiers : aucune place n'est prise tant qu'ils ne changent pas.",
+"For an AI agent (Claude Code)": "Pour un agent IA (Claude Code)",
+"Its branch is marked an agent's. Claude Code then locks the files that can't be merged before changing them, and its versions say it made them.": "Sa branche est marquée comme celle d'un agent. Claude Code verrouille alors les fichiers qui ne peuvent pas être fusionnés avant de les changer, et ses versions disent qu'il les a faites.",
+"Steps in “{name}”": "Étapes dans « {name} »",
+"No steps kept for this on this computer.": "Aucune étape gardée pour cela sur cet ordinateur.",
+"R3V is keeping a step after each of the agent's moves": "R3V garde une étape après chaque action de l'agent",
+"Steps of the work here": "Étapes du travail ici",
+"Recording steps": "Étapes en cours",
+"How “{version}” was made": "Comment « {version} » a été fait",
+"made in {n} step": "fait en {n} étape",
+"made in {n} steps": "fait en {n} étapes"
 }
