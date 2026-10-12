@@ -3,6 +3,7 @@ package desktop
 import (
 	"errors"
 
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/transcript"
 )
@@ -16,6 +17,8 @@ type StepsInfo struct {
 	Available bool                 `json:"available"`
 	On        bool                 `json:"on"`
 	Settings  project.StepSettings `json:"settings"`
+	// Hooked: Claude Code in this copy makes them (its hooks are set up).
+	Hooked bool `json:"hooked"`
 	// Session is the one asked for, or the latest (nil: none yet).
 	Session  *project.Session `json:"session"`
 	Sessions []SessionSummary `json:"sessions"`
@@ -43,6 +46,7 @@ func (a *App) Steps(root, session string) (*StepsInfo, error) {
 		return nil, err
 	}
 	info.On, info.Settings = r.StepsOn(), r.StepSettingsNow()
+	info.Hooked = agentsetup.StepHooks(r.Root)
 	all, err := r.Sessions()
 	if err != nil {
 		return nil, err
@@ -106,6 +110,21 @@ func (a *App) SetStepSettings(root string, s project.StepSettings) error {
 	}
 	defer unlock()
 	return r.SetStepSettings(s)
+}
+
+// SetUpSteps sets Claude Code up in the copy in root to make steps (its
+// hooks, in .claude/settings.local.json, which R3V never tracks): a copy no
+// workspace was made for, the main one say, where an agent works too.
+func (a *App) SetUpSteps(root string) error {
+	if !project.Steps {
+		return errors.New("steps aren't in this build")
+	}
+	r, err := project.Open(root)
+	if err != nil {
+		return err
+	}
+	_, err = agentsetup.ClaudeCode(r.Root, agentsetup.HookCommand(cliPath()), false, r.StepsOn())
+	return err
 }
 
 // VersionSteps are the steps a version was made of (any copy of the

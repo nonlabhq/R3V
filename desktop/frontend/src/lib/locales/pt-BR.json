@@ -1780,6 +1780,10 @@
 "The project's own folder: the workspaces are made from it, and it stays": "A pasta do próprio projeto: os espaços de trabalho saem dela, e ela fica",
 "The agent's prompts and steps that made it": "Os prompts e passos do agente que a fizeram",
 "(no prompt)": "(sem prompt)",
+"Set up": "Configurar",
+"Claude Code here doesn't make steps yet": "O Claude Code ainda não faz passos aqui",
+"An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "Um agente trabalhando nesta própria pasta (não em um espaço de trabalho) faz passos quando os hooks do R3V estão nas configurações dele (.claude/settings.local.json, nunca versionado).",
+"Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "Pronto: o Claude Code faz passos aqui a partir do próximo prompt (reinicie-o se estiver aberto).",
 "{who} merged “{version}”": "{who} mesclou “{version}”",
 "{who} shared “{version}”": "{who} compartilhou “{version}”"
 }

@@ -651,8 +651,10 @@ func (r *Repo) dropSession(s Session) {
 
 // VersionSteps are the steps a version was made of, from any copy of the
 // project here (a workspace's agent made them there): those made on its
-// parent up to its time, under their turns, by session. None for a
-// version without a parent, or whose steps aren't on this computer.
+// parent up to its time, under their turns, by session. A merge was made of
+// what it brought in too: the steps of each version on its other side not
+// already on its first (the newest maxMergeSteps versions of it). None for
+// a version without a parent, or whose steps aren't on this computer.
 func (r *Repo) VersionSteps(id string) ([]Session, error) {
 	m, err := r.Header(id)
 	if err != nil {
@@ -662,7 +664,55 @@ func (r *Repo) VersionSteps(id string) ([]Session, error) {
 	if len(m.Parents) == 0 {
 		return out, nil
 	}
-	parent := m.Parents[0]
+	made := []*Manifest{m}
+	if len(m.Parents) > 1 {
+		mine, err := r.ancestors(m.Parents[0])
+		if err != nil {
+			return nil, err
+		}
+		seen := map[string]bool{}
+		queue := append([]string{}, m.Parents[1:]...)
+		for len(queue) > 0 && len(made) <= maxMergeSteps {
+			cur := queue[0]
+			queue = queue[1:]
+			if cur == "" || seen[cur] || mine[cur] {
+				continue
+			}
+			seen[cur] = true
+			h, err := r.Header(cur)
+			if err != nil {
+				continue
+			}
+			if len(h.Parents) > 0 {
+				made = append(made, h)
+			}
+			queue = append(queue, h.Parents...)
+		}
+	}
+	// A step made on a version's parent before it, on its branch (a lane
+	// and main can go on from the same version: the step's files say which
+	// branch it was on).
+	branchOf := map[string]string{}
+	stepBranch := func(c *Repo, st Step) string {
+		b, ok := branchOf[st.ID]
+		if !ok {
+			if h, err := c.Header(st.ID); err == nil {
+				b = h.Branch
+			}
+			branchOf[st.ID] = b
+		}
+		return b
+	}
+	ofVersion := func(c *Repo, st Step) bool {
+		for _, v := range made {
+			if st.On == v.Parents[0] && st.Time <= v.Time {
+				if b := stepBranch(c, st); b == "" || v.Branch == "" || b == v.Branch {
+					return true
+				}
+			}
+		}
+		return false
+	}
 	for _, c := range append([]*Repo{r}, r.otherCopies()...) {
 		all, err := c.Sessions()
 		if err != nil {
@@ -676,7 +726,7 @@ func (r *Repo) VersionSteps(id string) ([]Session, error) {
 			for _, t := range s.Turns {
 				var steps []Step
 				for _, st := range t.Steps {
-					if st.On == parent && st.Time <= m.Time {
+					if ofVersion(c, st) {
 						steps = append(steps, st)
 					}
 				}
@@ -694,3 +744,8 @@ func (r *Repo) VersionSteps(id string) ([]Session, error) {
 	}
 	return out, nil
 }
+
+// maxMergeSteps is how many of the versions a merge brought in its steps
+// are looked for in (the newest first): enough for a lane's work between
+// merges, without reading a long history.
+const maxMergeSteps = 200

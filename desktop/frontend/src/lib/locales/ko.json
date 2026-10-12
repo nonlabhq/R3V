@@ -1780,6 +1780,10 @@
 "The project's own folder: the workspaces are made from it, and it stays": "프로젝트 자체 폴더: 작업 공간은 여기서 만들어지며, 지울 수 없습니다",
 "The agent's prompts and steps that made it": "이것을 만든 에이전트의 프롬프트와 단계",
 "(no prompt)": "(프롬프트 없음)",
+"Set up": "설정",
+"Claude Code here doesn't make steps yet": "여기의 Claude Code는 아직 단계를 기록하지 않습니다",
+"An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "이 폴더 자체(작업 공간이 아닌)에서 일하는 에이전트는 R3V의 hook이 설정(.claude/settings.local.json, 버전 관리 안 됨)에 들어가면 단계를 기록합니다.",
+"Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "설정됨: 다음 프롬프트부터 Claude Code가 여기서 단계를 기록합니다(실행 중이면 다시 시작하세요).",
 "{who} merged “{version}”": "{who}님이 “{version}” 병합",
 "{who} shared “{version}”": "{who}님이 “{version}” 공유"
 }

@@ -60,6 +60,9 @@ func TestClaudeCodeStepHooks(t *testing.T) {
 	path := filepath.Join(dir, ".claude", "settings.local.json")
 	os.MkdirAll(filepath.Dir(path), 0o755)
 	os.WriteFile(path, []byte(`{"hooks": {"PostToolUse": [{"matcher": "Write", "hooks": [{"type": "command", "command": "prettier --write"}]}]}}`), 0o644)
+	if StepHooks(dir) {
+		t.Fatal("hooked before")
+	}
 	if _, err := ClaudeCode(dir, HookCommand(""), false, true); err != nil {
 		t.Fatal(err)
 	}
@@ -69,6 +72,9 @@ func TestClaudeCodeStepHooks(t *testing.T) {
 		if !strings.Contains(text, want) {
 			t.Fatalf("no %q: %s", want, text)
 		}
+	}
+	if !StepHooks(dir) {
+		t.Fatal("not hooked")
 	}
 	if changed, _ := ClaudeCode(dir, HookCommand(""), false, true); len(changed) != 0 {
 		t.Fatalf("again: %v", changed)
@@ -81,5 +87,8 @@ func TestClaudeCodeStepHooks(t *testing.T) {
 	if strings.Contains(text, "hook post-tool") || strings.Contains(text, "hook prompt") || strings.Contains(text, "UserPromptSubmit") ||
 		!strings.Contains(text, "prettier --write") || !strings.Contains(text, "hook pre-tool") {
 		t.Fatalf("steps off: %s", text)
+	}
+	if StepHooks(dir) {
+		t.Fatal("hooked with steps off")
 	}
 }

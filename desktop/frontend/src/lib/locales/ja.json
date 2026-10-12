@@ -1780,6 +1780,10 @@
 "The project's own folder: the workspaces are made from it, and it stays": "プロジェクト本体のフォルダー：ワークスペースはここから作られ、削除できません",
 "The agent's prompts and steps that made it": "これを作ったエージェントのプロンプトとステップ",
 "(no prompt)": "（プロンプトなし）",
+"Set up": "設定する",
+"Claude Code here doesn't make steps yet": "ここの Claude Code はまだステップを記録していません",
+"An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "このフォルダー自体（ワークスペースではなく）で作業するエージェントは、R3V の hook が設定（.claude/settings.local.json、バージョン管理されない）に入るとステップを記録します。",
+"Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "設定しました：次のプロンプトから Claude Code がここでステップを記録します（起動中なら再起動してください）。",
 "{who} merged “{version}”": "{who} が「{version}」をマージ",
 "{who} shared “{version}”": "{who} が「{version}」を共有"
 }
