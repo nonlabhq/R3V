@@ -25,9 +25,10 @@
   // Every team's projects as this computer knows them (no network).
   let all = $state<{ team: string; projects: TeamProject[] }[]>([]);
   let input = $state<HTMLInputElement>();
+  let loaded = $state(false);
   onMount(() => {
     input?.focus();
-    api.AllProjects().then((x) => (all = x ?? [])).catch(() => {});
+    api.AllProjects().then((x) => (all = x ?? [])).catch(() => {}).finally(() => (loaded = true));
   });
   const teamName = (id: string) => teams.find((x) => x.id === id)?.name ?? "";
   const keyOf = (p: TeamProject) => p.root || p.id;
@@ -57,11 +58,16 @@
     if (!i) return;
     onpick(i.kind === "team" ? { team: i.team } : { team: i.team, project: i.p });
   }
+  // Enter typed before the projects are read: opens what is marked once they are.
+  let entered = $state(false);
+  $effect(() => {
+    if (entered && loaded) { entered = false; pick(flat[at]); }
+  });
   function keydown(e: KeyboardEvent) {
     if (e.key === "Escape") { e.preventDefault(); onclose(); }
     else if (e.key === "ArrowDown") { e.preventDefault(); if (flat.length) at = (at + 1) % flat.length; }
     else if (e.key === "ArrowUp") { e.preventDefault(); if (flat.length) at = (at - 1 + flat.length) % flat.length; }
-    else if (e.key === "Enter") { e.preventDefault(); pick(flat[at]); }
+    else if (e.key === "Enter") { e.preventDefault(); if (loaded) pick(flat[at]); else entered = true; }
   }
   let list = $state<HTMLElement>();
   $effect(() => { list?.querySelector<HTMLElement>(`[data-i="${at}"]`)?.scrollIntoView?.({ block: "nearest" }); });
