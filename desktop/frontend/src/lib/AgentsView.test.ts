@@ -11,6 +11,7 @@ vi.mock("./api", async (orig) => ({ ...(await orig<typeof import("./api")>()), a
 vi.mock("./notify.svelte", () => ({ toast: mocks.toast }));
 
 import AgentsView from "./AgentsView.svelte";
+import { forgetWorkspaces, refreshWorkspaces } from "./workspaces.svelte";
 
 const ROOT = "C:\\Projects\\Song Project";
 const branches = [
@@ -30,7 +31,7 @@ function show(props: Record<string, unknown> = {}) {
 }
 const toasted = (text: RegExp) => waitFor(() => expect(toast.mock.calls.some(([t]) => text.test(t))).toBe(true));
 
-beforeEach(() => { for (const k of Object.keys(mocks.fns)) delete mocks.fns[k]; toast.mockClear(); });
+beforeEach(() => { for (const k of Object.keys(mocks.fns)) delete mocks.fns[k]; toast.mockClear(); forgetWorkspaces(); });
 afterEach(() => cleanup());
 
 describe("The Agents view", () => {
@@ -75,7 +76,7 @@ describe("The Agents view", () => {
     await fireEvent.click(await screen.findByRole("button", { name: "12 steps" }));
     await waitFor(() => expect(api.AllSteps).toHaveBeenCalledWith("C:\\Projects\\Song (renderer)"));
     expect(await screen.findByRole("dialog", { name: "Steps in “renderer”" })).toBeTruthy();
-    expect(screen.getByText("“Brighter”")).toBeTruthy();
+    expect(screen.getByText("Brighter")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Go back" })).toBeNull(); // (done in the workspace)
   });
 
@@ -198,5 +199,18 @@ describe("The Agents view", () => {
     await fireEvent.click(left.getByRole("button", { name: "Keep the workspace" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(api.RemoveWorkspace).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("The Workspaces tab, read in the background", () => {
+  it("shows the workspaces as last read at once, then reads them again", async () => {
+    let done: (x: unknown) => void = () => {};
+    api.AgentWorkspaces.mockResolvedValueOnce([ws()]);
+    await refreshWorkspaces(ROOT); // (the project view read them before the tab opened)
+    api.AgentWorkspaces.mockReturnValueOnce(new Promise((r) => (done = r)));
+    show();
+    expect(screen.getByText("renderer")).toBeTruthy(); // at once, as last read
+    done([ws({ label: "renderer 2" })]);
+    expect(await screen.findByText("renderer 2")).toBeTruthy();
   });
 });

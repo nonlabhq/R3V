@@ -3,6 +3,7 @@
   import { api, ago, errorText, toolName, type AgentWorkspace, type Branch, type TeamProject } from "./api";
   import { toast } from "./notify.svelte";
   import StepsDialog from "./StepsDialog.svelte";
+  import { cachedWorkspaces, refreshWorkspaces } from "./workspaces.svelte";
   import type { Session } from "./api";
   import { branchLabel } from "./branches";
   import AgentBadge from "./AgentBadge.svelte";
@@ -28,7 +29,8 @@
     onchanged: () => void; // made or removed one (the tab's count)
   } = $props();
 
-  let list = $state<AgentWorkspace[] | null>(null);
+  // As last read (kept in the background: shown at once), then read again.
+  let list = $derived(cachedWorkspaces(root));
   let error = $state("");
   let creating = $state(false);
   let removing = $state<AgentWorkspace | null>(null);
@@ -74,18 +76,13 @@
     }
   }
 
-  let reading = false;
   async function load() {
-    if (reading) return;
-    reading = true;
     const r = root;
     try {
-      const l = await api.AgentWorkspaces(r);
-      if (r === root) { list = l ?? []; error = ""; }
+      await refreshWorkspaces(r);
+      if (r === root) error = "";
     } catch (e) {
       if (r === root) error = errorText(e);
-    } finally {
-      reading = false;
     }
   }
   $effect(() => {
