@@ -27,6 +27,8 @@ type workspaceJSON struct {
 	Parked       int    `json:"parked"`  // sets of parked changes
 	LastActivity string `json:"last_activity,omitempty"`
 	Missing      bool   `json:"missing,omitempty"` // the folder is gone
+	// Results: what the checks said about the version it is on.
+	Results map[string]project.Result `json:"results,omitempty"`
 }
 
 func workspaceOf(e project.WorkspaceEntry) workspaceJSON {
@@ -90,7 +92,7 @@ func cmdWorkspace(args []string) error {
 		for _, s := range list {
 			w := workspaceOf(s.WorkspaceEntry)
 			w.BranchName, w.Head, w.Ahead, w.Behind = s.BranchName, s.Head, s.Ahead, s.Behind
-			w.Changes, w.Parked, w.Missing = s.Changes, s.Parked, s.Missing
+			w.Changes, w.Parked, w.Missing, w.Results = s.Changes, s.Parked, s.Missing, s.Results
 			w.LastActivity = s.LastActivity.UTC().Format(time.RFC3339)
 			out = append(out, w)
 		}
@@ -109,6 +111,9 @@ func cmdWorkspace(args []string) error {
 				}
 				fmt.Printf("%s  %s  %s, %d change(s) not committed  (last %s)\n", w.Folder, w.BranchName, where,
 					w.Changes, w.LastActivity)
+				if line := resultsLine(w.Results); line != "" {
+					fmt.Println("  " + line)
+				}
 			}
 		})
 	case "remove":

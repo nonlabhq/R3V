@@ -309,6 +309,13 @@ func (r *Repo) AddWorkspace(folder string, opts WorkspaceOptions) (*WorkspaceEnt
 	}
 	stepDone("files")
 
+	// Build outputs the rules name (workspaces: copy), so it needn't build
+	// from nothing.
+	if _, err := ws.copyFolders(r); err != nil {
+		return nil, fmt.Errorf("copying the build folders: %w", err)
+	}
+	stepDone("copied")
+
 	// Its branch, at that version.
 	key := ws.BranchName()
 	if key == link.Base {
@@ -441,6 +448,8 @@ type WorkspaceStatus struct {
 	// Missing: the folder is gone, or no longer this project's workspace
 	// (remove takes it off the list).
 	Missing bool
+	// Results: what the checks said about the version it is on (Results).
+	Results map[string]Result
 }
 
 // WorkspaceStatuses lists the workspaces with where each is (see
@@ -471,6 +480,7 @@ func (r *Repo) WorkspaceStatuses() ([]WorkspaceStatus, error) {
 			continue
 		}
 		s.Head = ws.Head()
+		s.Results = r.Results(s.Head)
 		if fi, err := os.Stat(filepath.Join(ws.Dir, "HEAD")); err == nil && fi.ModTime().After(s.LastActivity) {
 			s.LastActivity = fi.ModTime()
 		}

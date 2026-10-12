@@ -1733,5 +1733,10 @@
 "Go back to step {n}?": "Zu Schritt {n} zurückgehen?",
 "The project's files go back to how they were at step {n}. The files as they are now are kept as a step first, so you can come back to them.": "Die Dateien des Projekts werden so, wie sie bei Schritt {n} waren. Die jetzigen Dateien werden vorher als Schritt festgehalten, du kannst also zu ihnen zurück.",
 "From step {a} to step {b}": "Von Schritt {a} zu Schritt {b}",
-"No files changed.": "Keine Dateien geändert."
+"No files changed.": "Keine Dateien geändert.",
+"{check} passed {when}": "{check} bestanden {when}",
+"{check} failed {when}": "{check} fehlgeschlagen {when}",
+"{check} running since {when}": "{check} läuft seit {when}",
+"with {n} change not committed": "mit {n} nicht committeter Änderung",
+"with {n} changes not committed": "mit {n} nicht committeten Änderungen"
 }

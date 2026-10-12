@@ -1733,5 +1733,10 @@
 "Go back to step {n}?": "ステップ {n} に戻りますか？",
 "The project's files go back to how they were at step {n}. The files as they are now are kept as a step first, so you can come back to them.": "プロジェクトのファイルがステップ {n} の状態に戻ります。今のファイルは先にステップとして残すので、あとで戻れます。",
 "From step {a} to step {b}": "ステップ {a} から {b} まで",
-"No files changed.": "変更されたファイルはありません。"
+"No files changed.": "変更されたファイルはありません。",
+"{check} passed {when}": "{check} 成功（{when}）",
+"{check} failed {when}": "{check} 失敗（{when}）",
+"{check} running since {when}": "{check} 実行中（{when} から）",
+"with {n} change not committed": "未コミットの変更 {n} 件あり",
+"with {n} changes not committed": "未コミットの変更 {n} 件あり"
 }

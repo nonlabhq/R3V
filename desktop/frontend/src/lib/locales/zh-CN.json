@@ -1733,5 +1733,10 @@
 "Go back to step {n}?": "回到第 {n} 步？",
 "The project's files go back to how they were at step {n}. The files as they are now are kept as a step first, so you can come back to them.": "项目文件会回到第 {n} 步时的样子。现在的文件会先保留为一个步骤，之后还能回来。",
 "From step {a} to step {b}": "从第 {a} 步到第 {b} 步",
-"No files changed.": "没有文件改动。"
+"No files changed.": "没有文件改动。",
+"{check} passed {when}": "{check} 通过（{when}）",
+"{check} failed {when}": "{check} 失败（{when}）",
+"{check} running since {when}": "{check} 进行中（自 {when}）",
+"with {n} change not committed": "含 {n} 个未提交的变更",
+"with {n} changes not committed": "含 {n} 个未提交的变更"
 }

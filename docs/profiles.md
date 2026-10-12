@@ -96,6 +96,18 @@ handlers:
 
 R3V before 0.1.39 doesn't know `handlers:` and refuses the file, and Stable refuses it for now: set `requires: "0.1.39"` when you add it.
 
+## Workspaces (Nightly)
+
+An agent's workspace (`r3v workspace add`) gets the project's tracked files. To spare it building from nothing, `.r3v.yaml` can name build folders the rules leave out that a new workspace gets a copy of:
+
+```yaml
+requires: "0.1.45"
+workspaces:
+  copy: ["target/", "**/node_modules/"]   # that folder; any folder of that name
+```
+
+They are copied file by file with the system's copy, a block clone on ReFS and Dev Drive volumes (no room taken until a file changes). Links aren't copied (one would point into the main copy): a `node_modules` made by pnpm is mostly links, so install there instead (`pnpm install --offline` is quick from its store). R3V before 0.1.45 doesn't know `workspaces:` and refuses the file: set `requires: "0.1.45"` when you add it.
+
 ## File locks
 
 On an R3V Cloud team that turned file locking on (Nightly; see [design/locks.md](design/locks.md)), files that can't be merged are locked while someone works on them: by hand (right-click › Lock), and by themselves for the kinds of file the team picked (auto-lock). A project can narrow the team's settings in `.r3v.yaml`, never widen them:

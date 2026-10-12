@@ -132,6 +132,12 @@ export class AgentWorkspace {
      */
     "opened": boolean;
 
+    /**
+     * Results: what its builds and tests said about the version it is on
+     * (r3v result), by check.
+     */
+    "results": { [_ in string]?: project$0.Result };
+
     /** Creates a new AgentWorkspace instance. */
     constructor($$source: Partial<AgentWorkspace> = {}) {
         if (!("folder" in $$source)) {
@@ -185,6 +191,9 @@ export class AgentWorkspace {
         if (!("opened" in $$source)) {
             this["opened"] = false;
         }
+        if (!("results" in $$source)) {
+            this["results"] = {};
+        }
 
         Object.assign(this, $$source);
     }
@@ -194,9 +203,13 @@ export class AgentWorkspace {
      */
     static createFrom($$source: any = {}): AgentWorkspace {
         const $$createField12_0 = $$createType1;
+        const $$createField17_0 = $$createType3;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("locks" in $$parsedSource) {
             $$parsedSource["locks"] = $$createField12_0($$parsedSource["locks"]);
+        }
+        if ("results" in $$parsedSource) {
+            $$parsedSource["results"] = $$createField17_0($$parsedSource["results"]);
         }
         return new AgentWorkspace($$parsedSource as Partial<AgentWorkspace>);
     }
@@ -252,7 +265,7 @@ export class ArchivedBranch {
      * Creates a new ArchivedBranch instance from a string or object.
      */
     static createFrom($$source: any = {}): ArchivedBranch {
-        const $$createField5_0 = $$createType3;
+        const $$createField5_0 = $$createType5;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("latest" in $$parsedSource) {
             $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
@@ -383,7 +396,7 @@ export class BackupOthers {
      * Creates a new BackupOthers instance from a string or object.
      */
     static createFrom($$source: any = {}): BackupOthers {
-        const $$createField0_0 = $$createType5;
+        const $$createField0_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("others" in $$parsedSource) {
             $$parsedSource["others"] = $$createField0_0($$parsedSource["others"]);
@@ -453,7 +466,7 @@ export class Branch {
      * Creates a new Branch instance from a string or object.
      */
     static createFrom($$source: any = {}): Branch {
-        const $$createField5_0 = $$createType3;
+        const $$createField5_0 = $$createType5;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("latest" in $$parsedSource) {
             $$parsedSource["latest"] = $$createField5_0($$parsedSource["latest"]);
@@ -489,7 +502,7 @@ export class BranchList {
      * Creates a new BranchList instance from a string or object.
      */
     static createFrom($$source: any = {}): BranchList {
-        const $$createField0_0 = $$createType7;
+        const $$createField0_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("branches" in $$parsedSource) {
             $$parsedSource["branches"] = $$createField0_0($$parsedSource["branches"]);
@@ -563,8 +576,8 @@ export class Change {
      * Creates a new Change instance from a string or object.
      */
     static createFrom($$source: any = {}): Change {
-        const $$createField4_0 = $$createType8;
-        const $$createField6_0 = $$createType10;
+        const $$createField4_0 = $$createType10;
+        const $$createField6_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("details" in $$parsedSource) {
             $$parsedSource["details"] = $$createField4_0($$parsedSource["details"]);
@@ -635,7 +648,7 @@ export class CloudInvitation {
      * Creates a new CloudInvitation instance from a string or object.
      */
     static createFrom($$source: any = {}): CloudInvitation {
-        const $$createField1_0 = $$createType12;
+        const $$createField1_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("people" in $$parsedSource) {
             $$parsedSource["people"] = $$createField1_0($$parsedSource["people"]);
@@ -683,9 +696,9 @@ export class CloudPeople {
      * Creates a new CloudPeople instance from a string or object.
      */
     static createFrom($$source: any = {}): CloudPeople {
-        const $$createField2_0 = $$createType14;
-        const $$createField3_0 = $$createType16;
-        const $$createField4_0 = $$createType18;
+        const $$createField2_0 = $$createType16;
+        const $$createField3_0 = $$createType18;
+        const $$createField4_0 = $$createType20;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("members" in $$parsedSource) {
             $$parsedSource["members"] = $$createField2_0($$parsedSource["members"]);
@@ -845,7 +858,7 @@ export class Conflict {
      * Creates a new Conflict instance from a string or object.
      */
     static createFrom($$source: any = {}): Conflict {
-        const $$createField11_0 = $$createType20;
+        const $$createField11_0 = $$createType22;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("text" in $$parsedSource) {
             $$parsedSource["text"] = $$createField11_0($$parsedSource["text"]);
@@ -905,9 +918,9 @@ export class ConvertFormat {
      * Creates a new ConvertFormat instance from a string or object.
      */
     static createFrom($$source: any = {}): ConvertFormat {
-        const $$createField3_0 = $$createType21;
-        const $$createField4_0 = $$createType21;
-        const $$createField5_0 = $$createType21;
+        const $$createField3_0 = $$createType23;
+        const $$createField4_0 = $$createType23;
+        const $$createField5_0 = $$createType23;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("bitrates" in $$parsedSource) {
             $$parsedSource["bitrates"] = $$createField3_0($$parsedSource["bitrates"]);
@@ -981,8 +994,8 @@ export class DropResult {
      * Creates a new DropResult instance from a string or object.
      */
     static createFrom($$source: any = {}): DropResult {
-        const $$createField0_0 = $$createType8;
-        const $$createField1_0 = $$createType8;
+        const $$createField0_0 = $$createType10;
+        const $$createField1_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("copied" in $$parsedSource) {
             $$parsedSource["copied"] = $$createField0_0($$parsedSource["copied"]);
@@ -1037,7 +1050,7 @@ export class FileVersion {
      * Creates a new FileVersion instance from a string or object.
      */
     static createFrom($$source: any = {}): FileVersion {
-        const $$createField0_0 = $$createType2;
+        const $$createField0_0 = $$createType4;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("version" in $$parsedSource) {
             $$parsedSource["version"] = $$createField0_0($$parsedSource["version"]);
@@ -1196,9 +1209,9 @@ export class HunkText {
      * Creates a new HunkText instance from a string or object.
      */
     static createFrom($$source: any = {}): HunkText {
-        const $$createField0_0 = $$createType22;
-        const $$createField1_0 = $$createType22;
-        const $$createField2_0 = $$createType22;
+        const $$createField0_0 = $$createType24;
+        const $$createField1_0 = $$createType24;
+        const $$createField2_0 = $$createType24;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("base" in $$parsedSource) {
             $$parsedSource["base"] = $$createField0_0($$parsedSource["base"]);
@@ -1349,8 +1362,8 @@ export class LockOutcome {
      * Creates a new LockOutcome instance from a string or object.
      */
     static createFrom($$source: any = {}): LockOutcome {
-        const $$createField0_0 = $$createType8;
-        const $$createField1_0 = $$createType24;
+        const $$createField0_0 = $$createType10;
+        const $$createField1_0 = $$createType26;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("locked" in $$parsedSource) {
             $$parsedSource["locked"] = $$createField0_0($$parsedSource["locked"]);
@@ -1445,7 +1458,7 @@ export class LocksView {
      */
     static createFrom($$source: any = {}): LocksView {
         const $$createField6_0 = $$createType1;
-        const $$createField7_0 = $$createType8;
+        const $$createField7_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("items" in $$parsedSource) {
             $$parsedSource["items"] = $$createField6_0($$parsedSource["items"]);
@@ -1608,8 +1621,8 @@ export class Overview {
      * Creates a new Overview instance from a string or object.
      */
     static createFrom($$source: any = {}): Overview {
-        const $$createField1_0 = $$createType26;
-        const $$createField3_0 = $$createType28;
+        const $$createField1_0 = $$createType28;
+        const $$createField3_0 = $$createType30;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("teams" in $$parsedSource) {
             $$parsedSource["teams"] = $$createField1_0($$parsedSource["teams"]);
@@ -1724,9 +1737,9 @@ export class Parking {
      * Creates a new Parking instance from a string or object.
      */
     static createFrom($$source: any = {}): Parking {
-        const $$createField0_0 = $$createType30;
-        const $$createField1_0 = $$createType30;
-        const $$createField3_0 = $$createType30;
+        const $$createField0_0 = $$createType32;
+        const $$createField1_0 = $$createType32;
+        const $$createField3_0 = $$createType32;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("parked" in $$parsedSource) {
             $$parsedSource["parked"] = $$createField0_0($$parsedSource["parked"]);
@@ -1768,7 +1781,7 @@ export class PresetOption {
      * Creates a new PresetOption instance from a string or object.
      */
     static createFrom($$source: any = {}): PresetOption {
-        const $$createField1_0 = $$createType8;
+        const $$createField1_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("leftOut" in $$parsedSource) {
             $$parsedSource["leftOut"] = $$createField1_0($$parsedSource["leftOut"]);
@@ -1818,7 +1831,7 @@ export class Preupload {
      * Creates a new Preupload instance from a string or object.
      */
     static createFrom($$source: any = {}): Preupload {
-        const $$createField5_0 = $$createType32;
+        const $$createField5_0 = $$createType34;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("waiting" in $$parsedSource) {
             $$parsedSource["waiting"] = $$createField5_0($$parsedSource["waiting"]);
@@ -1907,9 +1920,9 @@ export class Preview {
      * Creates a new Preview instance from a string or object.
      */
     static createFrom($$source: any = {}): Preview {
-        const $$createField1_0 = $$createType33;
-        const $$createField2_0 = $$createType35;
-        const $$createField3_0 = $$createType37;
+        const $$createField1_0 = $$createType35;
+        const $$createField2_0 = $$createType37;
+        const $$createField3_0 = $$createType39;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("versions" in $$parsedSource) {
             $$parsedSource["versions"] = $$createField1_0($$parsedSource["versions"]);
@@ -1979,7 +1992,7 @@ export class Profile {
      * Creates a new Profile instance from a string or object.
      */
     static createFrom($$source: any = {}): Profile {
-        const $$createField5_0 = $$createType8;
+        const $$createField5_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("notShared" in $$parsedSource) {
             $$parsedSource["notShared"] = $$createField5_0($$parsedSource["notShared"]);
@@ -2130,8 +2143,8 @@ export class ProjectInfo {
      * Creates a new ProjectInfo instance from a string or object.
      */
     static createFrom($$source: any = {}): ProjectInfo {
-        const $$createField5_0 = $$createType8;
-        const $$createField6_0 = $$createType38;
+        const $$createField5_0 = $$createType10;
+        const $$createField6_0 = $$createType40;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("openable" in $$parsedSource) {
             $$parsedSource["openable"] = $$createField5_0($$parsedSource["openable"]);
@@ -2206,8 +2219,8 @@ export class RestorePlan {
      * Creates a new RestorePlan instance from a string or object.
      */
     static createFrom($$source: any = {}): RestorePlan {
-        const $$createField3_0 = $$createType8;
-        const $$createField4_0 = $$createType40;
+        const $$createField3_0 = $$createType10;
+        const $$createField4_0 = $$createType42;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("runs" in $$parsedSource) {
             $$parsedSource["runs"] = $$createField3_0($$parsedSource["runs"]);
@@ -2245,7 +2258,7 @@ export class RestoreSource {
      * Creates a new RestoreSource instance from a string or object.
      */
     static createFrom($$source: any = {}): RestoreSource {
-        const $$createField1_0 = $$createType42;
+        const $$createField1_0 = $$createType44;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("storage" in $$parsedSource) {
             $$parsedSource["storage"] = $$createField1_0($$parsedSource["storage"]);
@@ -2357,15 +2370,15 @@ export class Result {
      * Creates a new Result instance from a string or object.
      */
     static createFrom($$source: any = {}): Result {
-        const $$createField1_0 = $$createType8;
-        const $$createField2_0 = $$createType8;
-        const $$createField3_0 = $$createType37;
-        const $$createField7_0 = $$createType33;
-        const $$createField8_0 = $$createType3;
-        const $$createField9_0 = $$createType3;
-        const $$createField10_0 = $$createType44;
-        const $$createField11_0 = $$createType24;
-        const $$createField12_0 = $$createType46;
+        const $$createField1_0 = $$createType10;
+        const $$createField2_0 = $$createType10;
+        const $$createField3_0 = $$createType39;
+        const $$createField7_0 = $$createType35;
+        const $$createField8_0 = $$createType5;
+        const $$createField9_0 = $$createType5;
+        const $$createField10_0 = $$createType46;
+        const $$createField11_0 = $$createType26;
+        const $$createField12_0 = $$createType48;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("log" in $$parsedSource) {
             $$parsedSource["log"] = $$createField1_0($$parsedSource["log"]);
@@ -2536,7 +2549,7 @@ export class RuleSuggestion {
      * Creates a new RuleSuggestion instance from a string or object.
      */
     static createFrom($$source: any = {}): RuleSuggestion {
-        const $$createField2_0 = $$createType8;
+        const $$createField2_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("leftOut" in $$parsedSource) {
             $$parsedSource["leftOut"] = $$createField2_0($$parsedSource["leftOut"]);
@@ -2584,10 +2597,10 @@ export class RulesDetail {
      * Creates a new RulesDetail instance from a string or object.
      */
     static createFrom($$source: any = {}): RulesDetail {
-        const $$createField0_0 = $$createType48;
-        const $$createField1_0 = $$createType50;
-        const $$createField2_0 = $$createType52;
-        const $$createField3_0 = $$createType54;
+        const $$createField0_0 = $$createType50;
+        const $$createField1_0 = $$createType52;
+        const $$createField2_0 = $$createType54;
+        const $$createField3_0 = $$createType56;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("presets" in $$parsedSource) {
             $$parsedSource["presets"] = $$createField0_0($$parsedSource["presets"]);
@@ -2652,8 +2665,8 @@ export class RulesInfo {
      * Creates a new RulesInfo instance from a string or object.
      */
     static createFrom($$source: any = {}): RulesInfo {
-        const $$createField0_0 = $$createType56;
-        const $$createField3_0 = $$createType52;
+        const $$createField0_0 = $$createType58;
+        const $$createField3_0 = $$createType54;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("applied" in $$parsedSource) {
             $$parsedSource["applied"] = $$createField0_0($$parsedSource["applied"]);
@@ -2742,11 +2755,11 @@ export class RulesState {
      * Creates a new RulesState instance from a string or object.
      */
     static createFrom($$source: any = {}): RulesState {
-        const $$createField4_0 = $$createType48;
-        const $$createField5_0 = $$createType50;
-        const $$createField6_0 = $$createType54;
-        const $$createField7_0 = $$createType57;
-        const $$createField8_0 = $$createType59;
+        const $$createField4_0 = $$createType50;
+        const $$createField5_0 = $$createType52;
+        const $$createField6_0 = $$createType56;
+        const $$createField7_0 = $$createType59;
+        const $$createField8_0 = $$createType61;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("presets" in $$parsedSource) {
             $$parsedSource["presets"] = $$createField4_0($$parsedSource["presets"]);
@@ -2819,7 +2832,7 @@ export class SampleSpot {
      * Creates a new SampleSpot instance from a string or object.
      */
     static createFrom($$source: any = {}): SampleSpot {
-        const $$createField6_0 = $$createType8;
+        const $$createField6_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("sets" in $$parsedSource) {
             $$parsedSource["sets"] = $$createField6_0($$parsedSource["sets"]);
@@ -2912,8 +2925,8 @@ export class SetTrackChange {
      * Creates a new SetTrackChange instance from a string or object.
      */
     static createFrom($$source: any = {}): SetTrackChange {
-        const $$createField2_0 = $$createType8;
-        const $$createField4_0 = $$createType8;
+        const $$createField2_0 = $$createType10;
+        const $$createField4_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("details" in $$parsedSource) {
             $$parsedSource["details"] = $$createField2_0($$parsedSource["details"]);
@@ -2997,12 +3010,12 @@ export class SetView {
      * Creates a new SetView instance from a string or object.
      */
     static createFrom($$source: any = {}): SetView {
-        const $$createField0_0 = $$createType61;
-        const $$createField1_0 = $$createType61;
-        const $$createField2_0 = $$createType8;
-        const $$createField3_0 = $$createType8;
-        const $$createField6_0 = $$createType63;
-        const $$createField7_0 = $$createType8;
+        const $$createField0_0 = $$createType63;
+        const $$createField1_0 = $$createType63;
+        const $$createField2_0 = $$createType10;
+        const $$createField3_0 = $$createType10;
+        const $$createField6_0 = $$createType65;
+        const $$createField7_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("now" in $$parsedSource) {
             $$parsedSource["now"] = $$createField0_0($$parsedSource["now"]);
@@ -3280,20 +3293,20 @@ export class State {
      * Creates a new State instance from a string or object.
      */
     static createFrom($$source: any = {}): State {
-        const $$createField0_0 = $$createType38;
-        const $$createField15_0 = $$createType8;
-        const $$createField16_0 = $$createType3;
-        const $$createField18_0 = $$createType3;
-        const $$createField20_0 = $$createType64;
-        const $$createField22_0 = $$createType35;
-        const $$createField23_0 = $$createType8;
-        const $$createField24_0 = $$createType66;
-        const $$createField25_0 = $$createType33;
-        const $$createField26_0 = $$createType33;
-        const $$createField27_0 = $$createType33;
-        const $$createField28_0 = $$createType7;
-        const $$createField30_0 = $$createType68;
-        const $$createField31_0 = $$createType70;
+        const $$createField0_0 = $$createType40;
+        const $$createField15_0 = $$createType10;
+        const $$createField16_0 = $$createType5;
+        const $$createField18_0 = $$createType5;
+        const $$createField20_0 = $$createType66;
+        const $$createField22_0 = $$createType37;
+        const $$createField23_0 = $$createType10;
+        const $$createField24_0 = $$createType68;
+        const $$createField25_0 = $$createType35;
+        const $$createField26_0 = $$createType35;
+        const $$createField27_0 = $$createType35;
+        const $$createField28_0 = $$createType9;
+        const $$createField30_0 = $$createType70;
+        const $$createField31_0 = $$createType72;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rules" in $$parsedSource) {
             $$parsedSource["rules"] = $$createField0_0($$parsedSource["rules"]);
@@ -3383,9 +3396,9 @@ export class StepsInfo {
      * Creates a new StepsInfo instance from a string or object.
      */
     static createFrom($$source: any = {}): StepsInfo {
-        const $$createField2_0 = $$createType71;
-        const $$createField3_0 = $$createType73;
-        const $$createField4_0 = $$createType75;
+        const $$createField2_0 = $$createType73;
+        const $$createField3_0 = $$createType75;
+        const $$createField4_0 = $$createType77;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("settings" in $$parsedSource) {
             $$parsedSource["settings"] = $$createField2_0($$parsedSource["settings"]);
@@ -3531,8 +3544,8 @@ export class TakeBack {
      * Creates a new TakeBack instance from a string or object.
      */
     static createFrom($$source: any = {}): TakeBack {
-        const $$createField2_0 = $$createType8;
-        const $$createField3_0 = $$createType8;
+        const $$createField2_0 = $$createType10;
+        const $$createField3_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("haveIt" in $$parsedSource) {
             $$parsedSource["haveIt"] = $$createField2_0($$parsedSource["haveIt"]);
@@ -3572,7 +3585,7 @@ export class TeamConnection {
      * Creates a new TeamConnection instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamConnection {
-        const $$createField1_0 = $$createType41;
+        const $$createField1_0 = $$createType43;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("settings" in $$parsedSource) {
             $$parsedSource["settings"] = $$createField1_0($$parsedSource["settings"]);
@@ -3604,7 +3617,7 @@ export class TeamLockSide {
      * Creates a new TeamLockSide instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamLockSide {
-        const $$createField1_0 = $$createType8;
+        const $$createField1_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kinds" in $$parsedSource) {
             $$parsedSource["kinds"] = $$createField1_0($$parsedSource["kinds"]);
@@ -3655,8 +3668,8 @@ export class TeamLocks {
      * Creates a new TeamLocks instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamLocks {
-        const $$createField2_0 = $$createType8;
-        const $$createField4_0 = $$createType77;
+        const $$createField2_0 = $$createType10;
+        const $$createField4_0 = $$createType79;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kinds" in $$parsedSource) {
             $$parsedSource["kinds"] = $$createField2_0($$parsedSource["kinds"]);
@@ -3792,14 +3805,14 @@ export class TeamPart {
      * Creates a new TeamPart instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamPart {
-        const $$createField2_0 = $$createType7;
-        const $$createField3_0 = $$createType33;
-        const $$createField4_0 = $$createType33;
-        const $$createField5_0 = $$createType33;
-        const $$createField6_0 = $$createType3;
-        const $$createField8_0 = $$createType78;
-        const $$createField10_0 = $$createType68;
-        const $$createField11_0 = $$createType70;
+        const $$createField2_0 = $$createType9;
+        const $$createField3_0 = $$createType35;
+        const $$createField4_0 = $$createType35;
+        const $$createField5_0 = $$createType35;
+        const $$createField6_0 = $$createType5;
+        const $$createField8_0 = $$createType80;
+        const $$createField10_0 = $$createType70;
+        const $$createField11_0 = $$createType72;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("branches" in $$parsedSource) {
             $$parsedSource["branches"] = $$createField2_0($$parsedSource["branches"]);
@@ -3930,7 +3943,7 @@ export class TeamProjects {
      * Creates a new TeamProjects instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamProjects {
-        const $$createField1_0 = $$createType28;
+        const $$createField1_0 = $$createType30;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("projects" in $$parsedSource) {
             $$parsedSource["projects"] = $$createField1_0($$parsedSource["projects"]);
@@ -4152,7 +4165,7 @@ export class TextChanges {
      * Creates a new TextChanges instance from a string or object.
      */
     static createFrom($$source: any = {}): TextChanges {
-        const $$createField4_0 = $$createType80;
+        const $$createField4_0 = $$createType82;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hunks" in $$parsedSource) {
             $$parsedSource["hunks"] = $$createField4_0($$parsedSource["hunks"]);
@@ -4203,7 +4216,7 @@ export class TextContent {
      * Creates a new TextContent instance from a string or object.
      */
     static createFrom($$source: any = {}): TextContent {
-        const $$createField2_0 = $$createType8;
+        const $$createField2_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("lines" in $$parsedSource) {
             $$parsedSource["lines"] = $$createField2_0($$parsedSource["lines"]);
@@ -4289,10 +4302,10 @@ export class UndoPlan {
      * Creates a new UndoPlan instance from a string or object.
      */
     static createFrom($$source: any = {}): UndoPlan {
-        const $$createField0_0 = $$createType8;
-        const $$createField1_0 = $$createType8;
-        const $$createField2_0 = $$createType37;
-        const $$createField4_0 = $$createType81;
+        const $$createField0_0 = $$createType10;
+        const $$createField1_0 = $$createType10;
+        const $$createField2_0 = $$createType39;
+        const $$createField4_0 = $$createType83;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changed" in $$parsedSource) {
             $$parsedSource["changed"] = $$createField0_0($$parsedSource["changed"]);
@@ -4503,7 +4516,7 @@ export class VerifyResult {
      * Creates a new VerifyResult instance from a string or object.
      */
     static createFrom($$source: any = {}): VerifyResult {
-        const $$createField3_0 = $$createType83;
+        const $$createField3_0 = $$createType85;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("problems" in $$parsedSource) {
             $$parsedSource["problems"] = $$createField3_0($$parsedSource["problems"]);
@@ -4603,9 +4616,9 @@ export class Version {
      * Creates a new Version instance from a string or object.
      */
     static createFrom($$source: any = {}): Version {
-        const $$createField5_0 = $$createType8;
-        const $$createField6_0 = $$createType8;
-        const $$createField11_0 = $$createType85;
+        const $$createField5_0 = $$createType10;
+        const $$createField6_0 = $$createType10;
+        const $$createField11_0 = $$createType87;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("parents" in $$parsedSource) {
             $$parsedSource["parents"] = $$createField5_0($$parsedSource["parents"]);
@@ -4682,7 +4695,7 @@ export class Workspace {
      * Creates a new Workspace instance from a string or object.
      */
     static createFrom($$source: any = {}): Workspace {
-        const $$createField5_0 = $$createType8;
+        const $$createField5_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("parked" in $$parsedSource) {
             $$parsedSource["parked"] = $$createField5_0($$parsedSource["parked"]);
@@ -4815,7 +4828,7 @@ export class WorkspaceRemoval {
      * Creates a new WorkspaceRemoval instance from a string or object.
      */
     static createFrom($$source: any = {}): WorkspaceRemoval {
-        const $$createField1_0 = $$createType87;
+        const $$createField1_0 = $$createType89;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("left" in $$parsedSource) {
             $$parsedSource["left"] = $$createField1_0($$parsedSource["left"]);
@@ -4827,89 +4840,91 @@ export class WorkspaceRemoval {
 // Private type creation functions
 const $$createType0 = LockItem.createFrom;
 const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = Version.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
-const $$createType4 = MemberBackup.createFrom;
-const $$createType5 = $Create.Array($$createType4);
-const $$createType6 = Branch.createFrom;
+const $$createType2 = project$0.Result.createFrom;
+const $$createType3 = $Create.Map($Create.Any, $$createType2);
+const $$createType4 = Version.createFrom;
+const $$createType5 = $Create.Nullable($$createType4);
+const $$createType6 = MemberBackup.createFrom;
 const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = $Create.Array($Create.Any);
-const $$createType9 = TrackWeight.createFrom;
-const $$createType10 = $Create.Array($$createType9);
-const $$createType11 = cloud$0.Claimable.createFrom;
+const $$createType8 = Branch.createFrom;
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = $Create.Array($Create.Any);
+const $$createType11 = TrackWeight.createFrom;
 const $$createType12 = $Create.Array($$createType11);
-const $$createType13 = cloud$0.Member.createFrom;
+const $$createType13 = cloud$0.Claimable.createFrom;
 const $$createType14 = $Create.Array($$createType13);
-const $$createType15 = cloud$0.Invitation.createFrom;
+const $$createType15 = cloud$0.Member.createFrom;
 const $$createType16 = $Create.Array($$createType15);
-const $$createType17 = cloud$0.Project.createFrom;
+const $$createType17 = cloud$0.Invitation.createFrom;
 const $$createType18 = $Create.Array($$createType17);
-const $$createType19 = HunkText.createFrom;
-const $$createType20 = $Create.Nullable($$createType19);
-const $$createType21 = $Create.Array($Create.Any);
-const $$createType22 = HunkSide.createFrom;
-const $$createType23 = HeldLock.createFrom;
-const $$createType24 = $Create.Array($$createType23);
-const $$createType25 = TeamSummary.createFrom;
+const $$createType19 = cloud$0.Project.createFrom;
+const $$createType20 = $Create.Array($$createType19);
+const $$createType21 = HunkText.createFrom;
+const $$createType22 = $Create.Nullable($$createType21);
+const $$createType23 = $Create.Array($Create.Any);
+const $$createType24 = HunkSide.createFrom;
+const $$createType25 = HeldLock.createFrom;
 const $$createType26 = $Create.Array($$createType25);
-const $$createType27 = TeamProject.createFrom;
+const $$createType27 = TeamSummary.createFrom;
 const $$createType28 = $Create.Array($$createType27);
-const $$createType29 = ParkedSet.createFrom;
-const $$createType30 = $Create.Nullable($$createType29);
-const $$createType31 = PreuploadFile.createFrom;
-const $$createType32 = $Create.Array($$createType31);
-const $$createType33 = $Create.Array($$createType2);
-const $$createType34 = Change.createFrom;
-const $$createType35 = $Create.Array($$createType34);
-const $$createType36 = Conflict.createFrom;
+const $$createType29 = TeamProject.createFrom;
+const $$createType30 = $Create.Array($$createType29);
+const $$createType31 = ParkedSet.createFrom;
+const $$createType32 = $Create.Nullable($$createType31);
+const $$createType33 = PreuploadFile.createFrom;
+const $$createType34 = $Create.Array($$createType33);
+const $$createType35 = $Create.Array($$createType4);
+const $$createType36 = Change.createFrom;
 const $$createType37 = $Create.Array($$createType36);
-const $$createType38 = RulesInfo.createFrom;
-const $$createType39 = backup$0.PlanProject.createFrom;
-const $$createType40 = $Create.Array($$createType39);
-const $$createType41 = remote$0.Storage.createFrom;
-const $$createType42 = $Create.Nullable($$createType41);
-const $$createType43 = Combined.createFrom;
-const $$createType44 = $Create.Array($$createType43);
-const $$createType45 = Parking.createFrom;
-const $$createType46 = $Create.Nullable($$createType45);
-const $$createType47 = profile$0.PresetEntry.createFrom;
-const $$createType48 = $Create.Array($$createType47);
-const $$createType49 = RuleItem.createFrom;
+const $$createType38 = Conflict.createFrom;
+const $$createType39 = $Create.Array($$createType38);
+const $$createType40 = RulesInfo.createFrom;
+const $$createType41 = backup$0.PlanProject.createFrom;
+const $$createType42 = $Create.Array($$createType41);
+const $$createType43 = remote$0.Storage.createFrom;
+const $$createType44 = $Create.Nullable($$createType43);
+const $$createType45 = Combined.createFrom;
+const $$createType46 = $Create.Array($$createType45);
+const $$createType47 = Parking.createFrom;
+const $$createType48 = $Create.Nullable($$createType47);
+const $$createType49 = profile$0.PresetEntry.createFrom;
 const $$createType50 = $Create.Array($$createType49);
-const $$createType51 = RuleSuggestion.createFrom;
+const $$createType51 = RuleItem.createFrom;
 const $$createType52 = $Create.Array($$createType51);
-const $$createType53 = PresetOption.createFrom;
+const $$createType53 = RuleSuggestion.createFrom;
 const $$createType54 = $Create.Array($$createType53);
-const $$createType55 = profile$0.Applied.createFrom;
+const $$createType55 = PresetOption.createFrom;
 const $$createType56 = $Create.Array($$createType55);
-const $$createType57 = profile$0.FileLocks.createFrom;
-const $$createType58 = TeamLockSide.createFrom;
-const $$createType59 = $Create.Nullable($$createType58);
-const $$createType60 = als$0.Overview.createFrom;
+const $$createType57 = profile$0.Applied.createFrom;
+const $$createType58 = $Create.Array($$createType57);
+const $$createType59 = profile$0.FileLocks.createFrom;
+const $$createType60 = TeamLockSide.createFrom;
 const $$createType61 = $Create.Nullable($$createType60);
-const $$createType62 = SetTrackChange.createFrom;
-const $$createType63 = $Create.Array($$createType62);
-const $$createType64 = $Create.Array($$createType29);
-const $$createType65 = project$0.TrackEdit.createFrom;
-const $$createType66 = $Create.Array($$createType65);
-const $$createType67 = ArchivedBranch.createFrom;
-const $$createType68 = $Create.Nullable($$createType67);
-const $$createType69 = Milestone.createFrom;
-const $$createType70 = $Create.Array($$createType69);
-const $$createType71 = project$0.StepSettings.createFrom;
-const $$createType72 = project$0.Session.createFrom;
-const $$createType73 = $Create.Nullable($$createType72);
-const $$createType74 = SessionSummary.createFrom;
-const $$createType75 = $Create.Array($$createType74);
-const $$createType76 = profile$0.LockKind.createFrom;
+const $$createType62 = als$0.Overview.createFrom;
+const $$createType63 = $Create.Nullable($$createType62);
+const $$createType64 = SetTrackChange.createFrom;
+const $$createType65 = $Create.Array($$createType64);
+const $$createType66 = $Create.Array($$createType31);
+const $$createType67 = project$0.TrackEdit.createFrom;
+const $$createType68 = $Create.Array($$createType67);
+const $$createType69 = ArchivedBranch.createFrom;
+const $$createType70 = $Create.Nullable($$createType69);
+const $$createType71 = Milestone.createFrom;
+const $$createType72 = $Create.Array($$createType71);
+const $$createType73 = project$0.StepSettings.createFrom;
+const $$createType74 = project$0.Session.createFrom;
+const $$createType75 = $Create.Nullable($$createType74);
+const $$createType76 = SessionSummary.createFrom;
 const $$createType77 = $Create.Array($$createType76);
-const $$createType78 = remote$0.Capabilities.createFrom;
-const $$createType79 = textdiff$0.Hunk.createFrom;
-const $$createType80 = $Create.Array($$createType79);
-const $$createType81 = TakeBack.createFrom;
-const $$createType82 = VerifyProblem.createFrom;
-const $$createType83 = $Create.Array($$createType82);
-const $$createType84 = Actor.createFrom;
-const $$createType85 = $Create.Nullable($$createType84);
-const $$createType86 = WorkspaceLeft.createFrom;
+const $$createType78 = profile$0.LockKind.createFrom;
+const $$createType79 = $Create.Array($$createType78);
+const $$createType80 = remote$0.Capabilities.createFrom;
+const $$createType81 = textdiff$0.Hunk.createFrom;
+const $$createType82 = $Create.Array($$createType81);
+const $$createType83 = TakeBack.createFrom;
+const $$createType84 = VerifyProblem.createFrom;
+const $$createType85 = $Create.Array($$createType84);
+const $$createType86 = Actor.createFrom;
 const $$createType87 = $Create.Nullable($$createType86);
+const $$createType88 = WorkspaceLeft.createFrom;
+const $$createType89 = $Create.Nullable($$createType88);

@@ -22,6 +22,7 @@ r3v init --preset code            # a folder R3V doesn't recognise: as code and 
 r3v remote <connection code>      # connect it to the team's storage
 r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
 r3v commit -m "title" -m "details" # a title, then details (a blank line between, as git)
+r3v commit -m "fix the menu" src/menu   # only the changes in those files and folders (the others stay)
 r3v update [--preview]            # get the team's latest versions (or just look)
 r3v status                        # what changed since your last version
 r3v log                           # versions
@@ -89,7 +90,12 @@ when the work is done (`r3v merge renderer`).
   copy's store or from a copy's file with the same content (on a ReFS or
   Dev Drive volume, block-cloned: no space taken until a file changes);
   nothing is downloaded that is on this computer. What the rules leave out
-  (`node_modules/`, `target/`) isn't copied: build it there.
+  (`node_modules/`, `target/`) isn't copied, unless `.r3v.yaml` names it
+  under `workspaces: copy` (see [profiles.md](profiles.md)): those build
+  folders are copied (block-cloned on ReFS and Dev Drive), links left out.
+- `r3v result tests pass -m "…"` in a workspace records what its tests (or
+  a build) said about the version it is on; `workspace list` and the app's
+  Agents tab show it (`r3v results [VERSION]` lists a version's).
 - The workspaces share the main copy's store and versions (`.r3v` of the
   main copy); each keeps its own place, files list and parked changes in
   its own `.r3v`. Freeing space (`gc`) in any copy keeps what every copy
@@ -102,6 +108,15 @@ when the work is done (`r3v merge renderer`).
 - A workspace can't be inside the project's folder (or hold it). Its team
   is the main copy's: connecting, renaming or moving the project is done
   there.
+
+## Results (Nightly)
+
+```
+r3v result <check> pass|fail|running [-m NOTE] [--version V]   # record what a check said about a version
+r3v results [VERSION]                                         # the checks' latest results
+```
+
+What a build, the tests or any check said about a version, recorded by whoever ran it, as a Git host's commit status: the latest per check, with the changes not committed then counted (the result is about those files). Kept on this computer beside the version (never in it: its id stays), for every copy of the project; gone with the version. `workspace list` shows each workspace's.
 
 ## Older versions
 

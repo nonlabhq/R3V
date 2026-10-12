@@ -52,6 +52,16 @@
     }
   }
 
+  // What a check said (r3v result), in words, for its tooltip.
+  function resultTitle(check: string, res: { state: string; note?: string; time: string; changes?: number }): string {
+    const when = ago(res.time);
+    let s = res.state === "pass" ? t("{check} passed {when}", { check, when })
+      : res.state === "fail" ? t("{check} failed {when}", { check, when })
+      : t("{check} running since {when}", { check, when });
+    if (res.changes) s += " · " + tn(res.changes, "with {n} change not committed", "with {n} changes not committed");
+    return res.note ? `${s}\n${res.note}` : s;
+  }
+
   let reading = false;
   async function load() {
     if (reading) return;
@@ -202,6 +212,11 @@
               {/if}
               {#if w.behind}<span class="fact">{tn(w.behind, "{n} version behind “{branch}”", "{n} versions behind “{branch}”", { branch: base })}</span>{/if}
               {#if w.changes}<span class="fact">{tn(w.changes, "{n} change not committed", "{n} changes not committed")}</span>{/if}
+              {#each Object.entries(w.results ?? {}).sort(([a], [b]) => a.localeCompare(b)) as [check, res] (check)}
+                {#if res}
+                <span class="fact result {res.state}" title={resultTitle(check, res)}>{({ pass: "✓", fail: "✗", running: "…" } as Record<string, string>)[res.state] ?? ""} {check}</span>
+                {/if}
+              {/each}
               {#if w.parked}<span class="fact">{tn(w.parked, "{n} set of parked changes", "{n} sets of parked changes")}</span>{/if}
               {#if w.locks.length}
                 <button class="ghost fact locks" aria-expanded={!!open[w.folder]} onclick={() => (open[w.folder] = !open[w.folder])}>
@@ -293,6 +308,8 @@
   .folder:hover:not(:disabled) { color: var(--text); background: none; text-decoration: underline; }
   .facts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-6) var(--sp-12); margin-top: var(--sp-10); font-size: var(--fs-sm); }
   .fact { color: var(--muted); }
+  .fact.result.pass { color: var(--ok); }
+  .fact.result.fail { color: var(--danger); }
   .fact.to-merge { color: var(--accent-text); font-weight: var(--fw-semibold); }
   .fact.quiet { color: var(--faint); }
   button.locks { display: inline-flex; align-items: center; gap: var(--sp-4); padding: 0 var(--sp-4); font-size: var(--fs-sm); }
