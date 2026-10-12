@@ -136,8 +136,8 @@ type Profile struct {
 	// a copy of (build outputs, so it needn't build from nothing):
 	// "target/" (that folder) or "**/target/" (any of that name).
 	WorkspaceCopy []string
-	root     string
-	gi       gitignores
+	root          string
+	gi            gitignores
 }
 
 type applied struct {
