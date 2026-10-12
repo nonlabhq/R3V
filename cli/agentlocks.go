@@ -272,14 +272,20 @@ type hookDecision struct {
 	AdditionalContext        string `json:"additionalContext,omitempty"`
 }
 
-// cmdHook: r3v hook pre-tool, Claude Code's PreToolUse hook. Always exits
+// cmdHook: r3v hook pre-tool, Claude Code's PreToolUse hook (and prompt,
+// post-tool: steps). Always exits
 // 0: a hook that fails (exit 2) would stop the agent's every change.
 func cmdHook(args []string) error {
-	if len(args) != 1 || args[0] != "pre-tool" {
-		return nil // a hook from a newer R3V: nothing to say
+	if len(args) != 1 {
+		return nil
 	}
-	hookPreTool(os.Stdin, os.Stdout)
-	return nil
+	switch args[0] {
+	case "pre-tool":
+		hookPreTool(os.Stdin, os.Stdout)
+	case "prompt", "post-tool": // steps (steps.go)
+		hookSteps(args[0], os.Stdin, os.Stdout)
+	}
+	return nil // a hook from a newer R3V: nothing to say
 }
 
 // hookPreTool reads a tool call and answers: a deny (with who holds the
@@ -428,7 +434,7 @@ func cmdAgent(args []string) error {
 		return err
 	}
 	r.RefreshAgentTeamLocks()
-	changed, err := agentsetup.ClaudeCode(r.Root, hookCommand(), !r.IsWorkspace()) // (the guide: in the main copy, committed once)
+	changed, err := agentsetup.ClaudeCode(r.Root, hookCommand(), !r.IsWorkspace(), r.StepsOn()) // (the guide: in the main copy, committed once)
 	if err != nil {
 		return err
 	}

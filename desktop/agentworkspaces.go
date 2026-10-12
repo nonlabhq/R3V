@@ -160,7 +160,7 @@ func (a *App) AddWorkspace(root, folder, branch, from, agent string) (*Workspace
 	out := &WorkspaceAdded{Folder: e.Folder, Branch: e.Branch, Label: r.BranchLabel(e.Branch)}
 	if agent != "" {
 		out.Agent = agent
-		if _, err := agentsetup.ClaudeCode(e.Folder, agentsetup.HookCommand(cliPath()), false); err != nil {
+		if _, err := agentsetup.ClaudeCode(e.Folder, agentsetup.HookCommand(cliPath()), false, project.Steps); err != nil {
 			out.SetupError = err.Error()
 		}
 	}

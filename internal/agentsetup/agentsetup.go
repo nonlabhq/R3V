@@ -47,9 +47,10 @@ func HookCommand(exe string) string {
 // (.claude/settings.local.json, which R3V never tracks: the hook's path and
 // R3V_ACTOR are this computer's; merged with what's there) and, with guide,
 // the agents' guide (Guide: the project's, committed, so only in the main
-// copy). Running it again changes nothing. It returns the files it
-// wrote, relative to root.
-func ClaudeCode(root, command string, guide bool) ([]string, error) {
+// copy). With steps, the hooks that make steps too (a turn per prompt, a
+// step after each tool call); without, they are taken out. Running it
+// again changes nothing. It returns the files it wrote, relative to root.
+func ClaudeCode(root, command string, guide, steps bool) ([]string, error) {
 	var changed []string
 	path := filepath.Join(root, ".claude", "settings.local.json")
 	settings := map[string]any{}
@@ -73,23 +74,15 @@ func ClaudeCode(root, command string, guide bool) ([]string, error) {
 	if hooks == nil {
 		hooks = map[string]any{}
 	}
-	pre, _ := hooks["PreToolUse"].([]any)
-	ours := map[string]any{"type": "command", "command": command}
-	found := false
-	for _, e := range pre {
-		entry, _ := e.(map[string]any)
-		list, _ := entry["hooks"].([]any)
-		for i, hk := range list {
-			if m, _ := hk.(map[string]any); m != nil && IsOurHook(m["command"]) {
-				list[i], found = ours, true
-				entry["matcher"] = HookMatcher
-			}
-		}
+	setHook(hooks, "PreToolUse", HookMatcher, command)
+	base := strings.TrimSuffix(command, "pre-tool")
+	if steps {
+		setHook(hooks, "PostToolUse", "*", base+"post-tool")
+		setHook(hooks, "UserPromptSubmit", "", base+"prompt")
+	} else {
+		setHook(hooks, "PostToolUse", "", "")
+		setHook(hooks, "UserPromptSubmit", "", "")
 	}
-	if !found {
-		pre = append(pre, map[string]any{"matcher": HookMatcher, "hooks": []any{ours}})
-	}
-	hooks["PreToolUse"] = pre
 	settings["hooks"] = hooks
 	if after, _ := json.Marshal(settings); string(after) != string(before) {
 		out, err := json.MarshalIndent(settings, "", "  ")
@@ -271,9 +264,53 @@ func ToolOf(root string) string {
 	return tool
 }
 
-// IsOurHook: a hook command that runs R3V's PreToolUse hook (whichever r3v
+// setHook puts our hook for event (command "": takes it out), beside the
+// project's own hooks for it.
+func setHook(hooks map[string]any, event, matcher, command string) {
+	list, _ := hooks[event].([]any)
+	ours := map[string]any{"type": "command", "command": command}
+	found := false
+	var kept []any
+	for _, e := range list {
+		entry, _ := e.(map[string]any)
+		inner, _ := entry["hooks"].([]any)
+		var keep []any
+		for _, hk := range inner {
+			if m, _ := hk.(map[string]any); m != nil && IsOurHook(m["command"]) {
+				if command == "" || found {
+					continue
+				}
+				hk, found = ours, true
+				if matcher != "" {
+					entry["matcher"] = matcher
+				}
+			}
+			keep = append(keep, hk)
+		}
+		if len(keep) == 0 && len(inner) > 0 {
+			continue // only ours was there
+		}
+		entry["hooks"] = keep
+		kept = append(kept, entry)
+	}
+	if !found && command != "" {
+		entry := map[string]any{"hooks": []any{ours}}
+		if matcher != "" {
+			entry["matcher"] = matcher
+		}
+		kept = append(kept, entry)
+	}
+	if len(kept) == 0 {
+		delete(hooks, event)
+		return
+	}
+	hooks[event] = kept
+}
+
+// IsOurHook: a hook command that runs one of R3V's hooks (whichever r3v
 // it names).
 func IsOurHook(c any) bool {
 	s, _ := c.(string)
-	return strings.HasSuffix(strings.TrimSpace(s), "hook pre-tool")
+	s = strings.TrimSpace(s)
+	return strings.HasSuffix(s, "hook pre-tool") || strings.HasSuffix(s, "hook post-tool") || strings.HasSuffix(s, "hook prompt")
 }

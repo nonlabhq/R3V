@@ -347,11 +347,14 @@ func (r *Repo) PruneObjects() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	// Parked changes stay here whatever the team's storage has: no version
-	// there names them (docs/design/parking.md). Any copy's.
+	// Parked changes and steps stay here whatever the team's storage has:
+	// no version there names them (docs/design/parking.md, steps.md). Any
+	// copy's.
 	parked := r.parkedHashes()
+	maps.Copy(parked, r.stepHashes())
 	for _, o := range r.otherCopies() {
 		maps.Copy(parked, o.parkedHashes())
+		maps.Copy(parked, o.stepHashes())
 	}
 	var candidates []string
 	for h := range all {
@@ -444,6 +447,7 @@ func (r *Repo) GC() (int64, error) {
 		return 0, err
 	}
 	defer release()
+	r.PruneSteps() // their versions first: what only they used is freed below
 	all, _, err := r.referenced()
 	if err != nil {
 		return 0, err
