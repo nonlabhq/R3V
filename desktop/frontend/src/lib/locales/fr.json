@@ -1770,6 +1770,7 @@
 "{count} from {who}": "{count} de {who}",
 "Get all": "Tout récupérer",
 "Preview all changes": "Voir tous les changements",
+"More to see": "Voir plus",
 "{who} merged “{version}”": "{who} a fusionné « {version} »",
 "{who} shared “{version}”": "{who} a partagé « {version} »"
 }

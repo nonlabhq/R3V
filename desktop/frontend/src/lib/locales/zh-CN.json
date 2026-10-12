@@ -1770,6 +1770,7 @@
 "{count} from {who}": "{who} 的 {count}",
 "Get all": "全部取得",
 "Preview all changes": "预览全部变更",
+"More to see": "查看更多",
 "{who} merged “{version}”": "{who} 合并了“{version}”",
 "{who} shared “{version}”": "{who} 上传了“{version}”"
 }

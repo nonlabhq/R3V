@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/svelte";
 
+import { createRawSnippet } from "svelte";
 import NoticeSlot, { noticeTiming } from "./NoticeSlot.svelte";
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
@@ -81,5 +82,25 @@ describe("The notice slot", () => {
     expect(screen.getByText(/Mo took back “oops”/)).toBeTruthy();
     await fireEvent.click(screen.getByRole("button", { name: "Get updates" }));
     await waitFor(() => expect(p.onupdate).toHaveBeenCalled());
+  });
+
+  // What the page has to say until it's dealt with: here as plain words.
+  const issue = createRawSnippet((mode: () => string, keys: () => string[]) => ({
+    render: () => `<span class="issue-${mode()}">${keys().join(",")}</span>` }));
+
+  it("puts what stops the work before the team's news, the rest in the +N list", async () => {
+    show({ st: st({ incoming: [v("a1", "Kai", "Hull UVs")] }), issues: ["older", "samples"], issue });
+    expect(document.querySelector(".issue-lead")?.textContent).toBe("older,samples");
+    expect(screen.queryByText(/shared a new version/)).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "+2" }));
+    expect(screen.getByText(/1 update/)).toBeTruthy(); // the news, in the list
+    expect(document.querySelector(".issue-panel")?.textContent).toBe("samples");
+  });
+
+  it("puts the team's news before what can wait", async () => {
+    show({ st: st({ incoming: [v("a1", "Kai", "Hull UVs")] }), issues: ["cloud"], issue });
+    expect(screen.getByText(/shared a new version/)).toBeTruthy();
+    await fireEvent.click(screen.getByRole("button", { name: "+1" }));
+    expect(document.querySelector(".issue-panel")?.textContent).toBe("cloud");
   });
 });

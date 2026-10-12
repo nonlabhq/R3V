@@ -120,6 +120,7 @@ describe("ProjectView: committing", () => {
 
   it("says no to turning file locking on, remembered", async () => {
     await show({ locksOffer: true });
+    await fireEvent.click(screen.getByRole("button", { name: /Files like these can't be merged/ })); // the whole of it
     await fireEvent.click(screen.getByRole("button", { name: "Not now" }));
     await waitFor(() => expect(api.DismissLocksOffer).toHaveBeenCalledWith("t"));
     await waitFor(() => expect(screen.queryByRole("button", { name: "Turn on file locking" })).toBeNull());
@@ -574,6 +575,7 @@ describe("ProjectView: an icon for a project just added", () => {
 describe("ProjectView: an older version without a team", () => {
   it("makes it the latest version, described", async () => {
     await show({ remoteUrl: "", teamName: "", olderVersion: version("h0", "old one") });
+    await fireEvent.click(screen.getByRole("button", { name: /You're on an older version/ }));
     await fireEvent.click(screen.getByRole("button", { name: "Make this the latest…" }));
     const box = screen.getByLabelText("Describe it") as HTMLInputElement;
     expect(box.value).toBe("Back to “old one”");

@@ -18,6 +18,7 @@
   import ProjectHeader from "./ProjectHeader.svelte";
   import ProjectBanners from "./ProjectBanners.svelte";
   import NoticeSlot from "./NoticeSlot.svelte";
+  import { issuesOf } from "./notices.svelte";
   import RuleSuggestion from "./RuleSuggestion.svelte";
   import { takenBackText } from "./teamText";
   import UndoDialog from "./UndoDialog.svelte";
@@ -239,6 +240,8 @@
   });
   let restorable = $derived(spots.filter((s) => s.restorable).length);
   let missingSamples = $derived(spots.filter((s) => s.missing).length);
+  // What the page has to say until it's dealt with, in the title bar's notice slot.
+  let issueKeys = $derived(st ? issuesOf(st, { working: !!busy || !!progress, restorable, loadError, locks: true }) : []);
   let restored = false;
   const restoreAction: Action = {
     name: "restore",
@@ -955,11 +958,11 @@
       {#snippet notice()}
         <NoticeSlot st={st!} {progress} {busy} {looks} cancelling={!!cancelling[root]} oncancel={() => cancelSave(root)}
           onqueue={() => (queue.open = true)} onupdate={() => run(updateAction)}
-          onpick={(id) => { tab = "overview"; graphPick = id; }} onpreview={openUpdatePreview} />
+          onpick={(id) => { tab = "overview"; graphPick = id; }} onpreview={openUpdatePreview} issues={issueKeys} {issue} />
       {/snippet}
     </ProjectHeader>
-
-    <ProjectBanners {st} {busy} {progress} {restorable} {missingSamples} onshare={shareVersions}
+    {#snippet issue(mode: "lead" | "panel", keys: string[])}
+    <ProjectBanners {mode} {keys} st={st!} {busy} {restorable} {missingSamples} onshare={shareVersions}
       onswitchmain={() => switchTo("main")} onrestorebranch={restoreGoneBranch}
       onrecover={() => run({ name: "goto", message: "",
         call: (_res, force) => api.RecoverSwitch(root, force),
@@ -969,6 +972,7 @@
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: titleOf(st!.olderVersion!.message) || st!.olderVersion!.short }))}
       onupdate={() => run(updateAction)} onrestore={() => restoreSamples()} onopenrules={openRules} {loadError}
       onlockson={turnLocksOn} onlocksnotnow={locksNotNow} />
+    {/snippet}
 
 
     <nav>
