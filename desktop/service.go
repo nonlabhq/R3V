@@ -425,6 +425,7 @@ func (a *App) State(root string) (*State, error) {
 			st.WorkspaceCount = len(list)
 		}
 		st.AgentGuide = agentsetup.HasGuide(r.Root)
+		st.AgentGuideOld = st.AgentGuide && agentsetup.GuideOld(r.Root)
 	}
 	rules, _ := r.Profile()
 	st.Rules = RulesInfo{Applied: rules.Applied(), FromFile: rules.FromFile, Suggestions: suggestions(r)}

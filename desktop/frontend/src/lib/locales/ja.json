@@ -1705,5 +1705,8 @@
 "Add the guide": "ガイドを追加",
 "AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.": "AGENTS.md（それを読み込む CLAUDE.md の 1 行とともに）は、Claude Code や Codex などの AI エージェントに、このプロジェクトが R3V で管理されていることと、その中での作業方法（コミット、衝突の解決、他のエージェントとの並行作業）を伝えます。プロジェクトと一緒にコミットされます。",
 "Add R3V's part to the project's guide for AI agents?": "プロジェクトの AI エージェント用ガイドに R3V の説明を追加しますか？",
-"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "このプロジェクトには独自の AGENTS.md（または CLAUDE.md）があります。R3V の説明は末尾に追加され、他はそのままです。内容は、プロジェクトが R3V で管理されていることと作業方法（コミット、衝突の解決、他のエージェントとの並行作業）です。"
+"This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).": "このプロジェクトには独自の AGENTS.md（または CLAUDE.md）があります。R3V の説明は末尾に追加され、他はそのままです。内容は、プロジェクトが R3V で管理されていることと作業方法（コミット、衝突の解決、他のエージェントとの並行作業）です。",
+"R3V's guide for agents has changed since it was added to this project. Update R3V's part of AGENTS.md (the rest stays as it is), then commit it.": "このプロジェクトに追加してから、R3V のエージェント用ガイドが更新されました。AGENTS.md の R3V の部分を更新して（他はそのまま）、コミットしてください。",
+"Update the guide": "ガイドを更新",
+"Updated {files}: commit it, so every agent's workspace has it.": "{files} を更新しました。各エージェントのワークスペースに届くよう、コミットしてください。"
 }

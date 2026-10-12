@@ -14,9 +14,10 @@
   // with what each has done; merged into the branch it came from, opened,
   // removed. Read again when the project changes (version), and now and
   // then: agents work without telling the app.
-  let { root, name, branch, branches, version, guide, onmerge, onopen, onchanged }: {
+  let { root, name, branch, branches, version, guide, guideOld = false, onmerge, onopen, onchanged }: {
     root: string; name: string;
     guide: boolean; // the project has the agents' guide (AGENTS.md)
+    guideOld?: boolean; // R3V's part of it is an older R3V's
     branch: string; // the branch the project is on
     branches: Branch[];
     version: string; // changes when the project does (read again then)
@@ -40,7 +41,9 @@
     guiding = true;
     try {
       const written = await api.AddAgentGuide(root);
-      toast(t("Added {files}: commit them, so every agent's workspace has them.", { files: written.join(", ") }), "ok", 9000);
+      const files = written.join(", ");
+      toast(guideOld ? t("Updated {files}: commit it, so every agent's workspace has it.", { files })
+        : t("Added {files}: commit them, so every agent's workspace has them.", { files }), "ok", 9000);
       onchanged();
     } catch (e) {
       toast(errorText(e), "error");
@@ -141,6 +144,11 @@
     <div class="guide">
       <span>{t("Agents don't know yet that this project is versioned with R3V, or how to work beside each other. A short guide in the project tells them (AGENTS.md, which Claude Code, Codex and others read).")}</span>
       <button onclick={addGuide} disabled={guiding}>{t("Add the guide for agents")}</button>
+    </div>
+  {:else if guideOld}
+    <div class="guide">
+      <span>{t("R3V's guide for agents has changed since it was added to this project. Update R3V's part of AGENTS.md (the rest stays as it is), then commit it.")}</span>
+      <button onclick={addGuide} disabled={guiding}>{t("Update the guide")}</button>
     </div>
   {/if}
 

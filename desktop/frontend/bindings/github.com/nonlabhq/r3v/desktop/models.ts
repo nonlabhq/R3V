@@ -3108,6 +3108,12 @@ export class State {
      * know it's versioned with R3V and how to work beside each other.
      */
     "agentGuide": boolean;
+
+    /**
+     * AgentGuideOld: R3V's part of it is an older R3V's (AddAgentGuide
+     * brings it up to date).
+     */
+    "agentGuideOld": boolean;
     "workspaceOf": string;
 
     /** Creates a new State instance. */
@@ -3219,6 +3225,9 @@ export class State {
         }
         if (!("agentGuide" in $$source)) {
             this["agentGuide"] = false;
+        }
+        if (!("agentGuideOld" in $$source)) {
+            this["agentGuideOld"] = false;
         }
         if (!("workspaceOf" in $$source)) {
             this["workspaceOf"] = "";

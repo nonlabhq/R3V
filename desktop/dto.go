@@ -229,8 +229,11 @@ type State struct {
 	WorkspaceCount  int  `json:"workspaceCount"`
 	// AgentGuide: the project has the agents' guide (AGENTS.md): agents
 	// know it's versioned with R3V and how to work beside each other.
-	AgentGuide  bool   `json:"agentGuide"`
-	WorkspaceOf string `json:"workspaceOf"`
+	AgentGuide bool `json:"agentGuide"`
+	// AgentGuideOld: R3V's part of it is an older R3V's (AddAgentGuide
+	// brings it up to date).
+	AgentGuideOld bool   `json:"agentGuideOld"`
+	WorkspaceOf   string `json:"workspaceOf"`
 }
 
 // Result of save / update / merge / switch.
