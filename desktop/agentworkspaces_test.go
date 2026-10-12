@@ -83,6 +83,15 @@ func TestAppAgentWorkspaces(t *testing.T) {
 		t.Errorf("its agent: tool %q locks %+v last %q", w.Tool, w.Locks, w.LastActivity)
 	}
 
+	// Listed beside its project in the sidebar without being opened (one an
+	// agent made from the command line too): the app then knows its folder.
+	if ov, err := a.LocalOverview(); err != nil || len(ov.Projects) != 2 || !ov.Projects[1].Workspace || ov.Projects[1].Root != folder {
+		t.Errorf("overview before opening: %+v %v", ov.Projects, err)
+	}
+	if !knownProject(folder) {
+		t.Error("the app doesn't know the workspace listed")
+	}
+
 	// Opened: listed beside its project; the app knows the folder.
 	p, err := a.OpenWorkspace(root, folder)
 	if err != nil || !p.Workspace || p.MainRoot != root || p.Root != folder || p.Branch != w.Branch {

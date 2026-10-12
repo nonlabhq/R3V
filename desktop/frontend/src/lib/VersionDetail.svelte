@@ -132,7 +132,8 @@
         {#if v.actor}<AgentBadge tool={v.actor.tool} model={v.actor.model} />{/if}
         {v.author} · {new Date(v.time).toLocaleString()}{#if branch} · {branch}{/if} · <span class="mono">{v.short}</span>
         {#if v.parents.length > 1} · {t("merge")}{/if}
-        {#if stepCount} · <button class="link steps-link" onclick={() => (showSteps = true)}>{tn(stepCount, "made in {n} step", "made in {n} steps")}</button>{/if}
+        {#if stepCount}<button class="steps-btn" onclick={() => (showSteps = true)} title={t("The agent's prompts and steps that made it")}>
+          <span class="dot" aria-hidden="true"></span>{tn(stepCount, "made in {n} step", "made in {n} steps")}</button>{/if}
       </div>
       {#if detailsOf(v.message)}<p class="details">{detailsOf(v.message)}</p>{/if}
       {#if marks}{@render marks()}{/if}
@@ -209,7 +210,11 @@
   .title { flex: 1 1 280px; min-width: 0; }
   h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); user-select: text; }
   .meta { font-size: var(--fs-sm); color: var(--faint); margin-top: var(--sp-2); }
-  .steps-link { color: var(--faint); font-size: inherit; padding: 0; text-decoration: underline dotted; }
+  .steps-btn { display: inline-flex; align-items: center; gap: var(--sp-6); margin-left: var(--sp-8); padding: 0 var(--sp-8); line-height: 20px;
+    border-radius: var(--radius-pill); border: var(--border-width) solid var(--line); background: var(--panel-2); color: var(--muted);
+    font-size: var(--fs-sm); vertical-align: middle; cursor: pointer; }
+  .steps-btn:hover { color: var(--text); border-color: var(--faint); }
+  .steps-btn .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
   .meta :global(.agent) { margin-right: var(--sp-4); }
   .details { margin: var(--sp-8) 0 0; font-size: var(--fs-md); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere;
     max-height: 9em; overflow: auto; user-select: text; }

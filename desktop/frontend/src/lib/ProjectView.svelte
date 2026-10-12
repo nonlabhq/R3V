@@ -1089,6 +1089,7 @@
               <div class="pending-h">
                 <strong>{t("Your changes")}</strong>
                 <span class="faint">{t("not committed yet · on {branch}", { branch: bl(st.branch) })}</span>
+                <span class="pending-steps"><StepsTimeline {root} version={`${st.head} ${refreshKey} ${st.changes.length}`} busy={!!busy} right onback={stepBack} /></span>
               </div>
               <div class="pending-body">{@render changesPanel("changes", true)}</div>
               <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
@@ -1126,7 +1127,7 @@
           onrestore={(path, version, label, source) => (restoreFile = { path, version, label, source })} />
       {:else if tab === "agents" && st.agentWorkspaces}
         <div class="pane scroll">
-          <AgentsView {root} name={st.name} guide={st.agentGuide} guideOld={st.agentGuideOld} branch={st.branch} branches={st.branches} version={`${st.head} ${st.branch} ${refreshKey}`}
+          <AgentsView {root} name={st.name} guide={st.agentGuide} guideOld={st.agentGuideOld} branch={st.branch} branches={st.branches} version={`${st.head} ${st.branch} ${refreshKey}`} changes={st.changes.length}
             onmerge={mergeWorkspace} onopen={(p) => onopenproject?.(p)} onchanged={() => { load(); onchanged(); }} />
         </div>
       {:else if tab === "settings" && settings}
@@ -1347,6 +1348,7 @@
   .pending-h strong { color: var(--accent); font-style: italic; font-size: var(--fs-lg); }
   .panel-foot { flex: none; padding: var(--sp-12) var(--sp-14); border-top: var(--border-width) solid var(--line-strong); }
   .pending-h .faint { font-size: var(--fs-sm); }
+  .pending-steps { margin-left: auto; align-self: center; }
   .pending-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .pending-body > :global(*) { flex: 1; min-height: 0; }
   .settings { max-width: 680px; }

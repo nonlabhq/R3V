@@ -8,8 +8,9 @@
   // agent is making them; it opens the session's prompts and steps, to go
   // back to one or compare. Read again when the project changes (version),
   // and now and then: agents work without telling the app.
-  let { root, version, busy = false, onback }: {
+  let { root, version, busy = false, right = false, onback }: {
     root: string;
+    right?: boolean; // its list opens to the left (at the right of a panel)
     version: string;
     busy?: boolean;
     onback: (session: string, n: number) => void; // go back to step n (the view runs it: Live's check, the result)
@@ -67,7 +68,7 @@
       {live ? t("Recording steps") : t("Steps")} · {s.steps}
     </button>
     {#if open}
-      <div class="panel" role="dialog" aria-label={t("Steps")}>
+      <div class="panel" class:right role="dialog" aria-label={t("Steps")}>
         <div class="head">
           <strong>{t("Steps")}</strong>
           <span class="faint">{tn(s.steps, "{n} step", "{n} steps")} · {ago(s.last)}{latestPrompt ? ` · “${latestPrompt}”` : ""}</span>
@@ -83,7 +84,7 @@
             </select>
           </label>
         {/if}
-        <div class="list"><StepsList {root} session={s} {busy} onback={(id, n) => { open = false; onback(id, n); }} /></div>
+        <div class="list"><StepsList {root} session={s} {busy} openLatest onback={(id, n) => { open = false; onback(id, n); }} /></div>
       </div>
     {/if}
   </div>
@@ -102,6 +103,7 @@
     max-height: 60vh; display: flex; flex-direction: column; padding: var(--sp-10) var(--sp-12); border-radius: var(--radius-lg);
     background: var(--surface-menu); backdrop-filter: var(--surface-filter); box-shadow: var(--shadow-pop);
     border: var(--border-width) solid var(--line); }
+  .panel.right { left: auto; right: 0; }
   .head { display: flex; align-items: baseline; gap: var(--sp-8); overflow: hidden; white-space: nowrap; }
   .head .faint { overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-sm); }
   .session { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-6) 0 0; }

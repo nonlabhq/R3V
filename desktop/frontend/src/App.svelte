@@ -44,7 +44,8 @@
   let refreshKey = $state(0);
   let busy = $state("");
   let autostart = $state(false);
-  let rowMenu = $state(""); // key of the project whose ⋯ menu is open
+  let rowMenu = $state(""); // key of the project whose menu (right-click) is open
+  let menuAt = $state({ left: 0, top: 0 }); // where it was asked for
   let confirmDelete = $state<TeamProject | null>(null);
   // A project about to leave R3V: teammates' samples are offered into it first.
   let leaving = $state<{ roots: string[]; go: () => void } | null>(null);
@@ -61,7 +62,7 @@
     settingsFor = null;
     return p;
   }
-  // The ⋯ menu's "Open in" (read when the menu opens).
+  // The menu's "Open in" (read when the menu opens).
   let menuInfo = $state<ProjectInfo | null>(null);
   let openSub = $state(false);
   // The list of sets beside the menu: placed on the window (the sidebar's
@@ -79,9 +80,11 @@
     clearTimeout(subTimer);
     subTimer = setTimeout(() => (openSub = false), 180);
   }
-  function toggleMenu(p: TeamProject) {
+  function openMenu(p: TeamProject, e: MouseEvent) {
+    e.preventDefault();
     const key = rowKey(p);
-    rowMenu = rowMenu === key ? "" : key;
+    rowMenu = key;
+    menuAt = { left: Math.min(e.clientX, window.innerWidth - 240), top: Math.min(e.clientY, window.innerHeight - 160) };
     menuInfo = null;
     openSub = false;
     if (rowMenu && p.root && p.status === "downloaded") {
@@ -249,6 +252,18 @@
   // beside its project, not dragged)
   const orderOf = (p: TeamProject) => (p.workspace ? p.root : p.id || p.root);
   let entries = $derived(besideMain(sortByOrder(overview?.projects ?? [], orderOf, order)));
+  // A project's workspaces, under it in the sidebar, folded away with its
+  // toggle (remembered, by the project's folder).
+  const sameRoot = (a = "", b = "") => !!a && !!b && a.replace(/[\\/]+$/, "").toLowerCase() === b.replace(/[\\/]+$/, "").toLowerCase();
+  let wsFolded = $state<Record<string, boolean>>((() => { try { return JSON.parse(localStorage.getItem("r3v.wsFolded") ?? "{}") ?? {}; } catch { return {}; } })());
+  function foldWorkspaces(p: TeamProject) {
+    wsFolded[p.root] = !wsFolded[p.root];
+    remember("r3v.wsFolded", JSON.stringify(wsFolded));
+  }
+  const workspacesOf = (p: TeamProject) => (p.workspace || !p.root ? [] : entries.filter((w) => w.workspace && sameRoot(w.mainRoot, p.root)));
+  const wsHidden = (p: TeamProject) => !!p.workspace && !!wsFolded[entries.find((m) => !m.workspace && sameRoot(m.root, p.mainRoot))?.root ?? ""];
+  // (the one shown stays, folded or not)
+  let rows = $derived(entries.filter((p) => !wsHidden(p) || p === selectedEntry));
   let selectedEntry = $derived(
     entries.find((p) => (selected.root ? p.root === selected.root : !!selected.id && p.id === selected.id && !p.root)));
 
@@ -456,7 +471,7 @@
   let projDragged = false;
   let dragging = $state(""); // the project being dragged (drawn lifted)
   function projDown(e: PointerEvent, key: string) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".more, .row-menu")) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
     const list = (e.currentTarget as HTMLElement).closest("[data-projects]");
     projDrag = { key, y: e.clientY, moved: false };
     const move = (m: PointerEvent) => {
@@ -601,16 +616,6 @@
     await reload();
   }
 
-  // An agent's workspace off the sidebar (its tab closed too); it stays in
-  // its project's Agents tab.
-  async function hideWorkspace(p: TeamProject) {
-    rowMenu = "";
-    await api.ForgetProject(p.root).catch(() => {});
-    tabs = tabs.filter((x) => !(x.team === teamId && x.key === rowKey(p)));
-    saveTabs();
-    if (selected.root === p.root) selected = p.mainRoot ? { root: p.mainRoot } : {};
-    await reload();
-  }
   // A workspace just shown in the sidebar (from its project's Agents tab): go to it.
   async function openWorkspace(p: TeamProject) {
     await reload();
@@ -779,7 +784,7 @@
     }
   }}
   onclick={(e) => {
-    if (rowMenu && !(e.target as HTMLElement).closest(".row-menu, .more")) rowMenu = "";
+    if (rowMenu && !(e.target as HTMLElement).closest(".row-menu")) rowMenu = "";
   }} />
 
 {#if !overview || onboarding}
@@ -828,7 +833,7 @@
       <!-- folded: the projects as their icons -->
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
-        {#each entries as p (p.root || p.id)}
+        {#each rows as p (p.root || p.id)}
           <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} onpointerdown={(e) => projDown(e, orderOf(p))}>
             <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)} title={p.name} aria-label={p.name}>
               <ProjectIcon {p} size={30} />
@@ -880,7 +885,7 @@
         {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
-          {#each entries as p (p.root || p.id)}
+          {#each rows as p (p.root || p.id)}
             {@render row(p)}
           {:else}
             <li class="empty faint">{t("No projects in this team yet.")}</li>
@@ -1061,8 +1066,9 @@
 {/snippet}
 
 {#snippet row(p: TeamProject)}
-  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace}
-    onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }}>
+  {@const spaces = workspacesOf(p)}
+  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={spaces.length > 0}
+    onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
     <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)}
       class:locked={p.status === "remote" && teamLocked}
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
@@ -1075,10 +1081,13 @@
       </span>
     </button>
     {#if p.root && preuploads[p.root]}<span class="pre-slot"><PreuploadIcon p={preuploads[p.root]} /></span>{/if}
-    <button class="ghost more" class:open={rowMenu === rowKey(p)} title={t("More")}
-      onclick={() => toggleMenu(p)}>⋯</button>
+    {#if spaces.length}
+      <button class="ghost fold-ws" aria-expanded={!wsFolded[p.root]} onclick={() => foldWorkspaces(p)}
+        title={wsFolded[p.root] ? t("Show its workspaces") : t("Hide its workspaces")}>
+        <span class="caret" aria-hidden="true">{wsFolded[p.root] ? "▸" : "▾"}</span>{spaces.length}</button>
+    {/if}
     {#if rowMenu === rowKey(p)}
-      <div class="row-menu surface-menu" role="menu">
+      <div class="row-menu surface-menu" role="menu" style:left="{menuAt.left}px" style:top="{menuAt.top}px">
         {#if menuInfo && menuInfo.openable.length === 1}
           <button class="item" onclick={() => openIn(p, menuInfo!.openable[0])}>{t("Open in {tool}", { tool: toolName(menuInfo.tool) })}</button>
         {:else if menuInfo && menuInfo.openable.length > 1}
@@ -1099,11 +1108,8 @@
         {#if p.root && p.status !== "missing"}
           <button class="item" onclick={() => { rowMenu = ""; api.ShowFolder(p.root); }}>{t("Open folder")}</button>
         {/if}
-        <div class="sep"></div>
-        {#if p.workspace}
-          <!-- (only off the sidebar: the workspace stays, in its project's Agents tab) -->
-          <button class="item" onclick={() => hideWorkspace(p)}>{t("Hide from the sidebar")}</button>
-        {:else}
+        {#if !p.workspace}
+          <div class="sep"></div>
           <button class="item" onclick={() => { rowMenu = ""; settingsFor = p; }}>{t("Settings…")}</button>
         {/if}
       </div>
@@ -1297,6 +1303,7 @@
   .proj:hover { background: var(--panel); }
   /* an agent's workspace: under its project, a step in */
   li.ws .proj { padding-left: var(--sp-28); }
+  li.has-ws .proj { padding-right: calc(var(--sp-28) + var(--sp-16)); }
   .proj.on { background: var(--accent-bg); }
   .icon { width: 16px; text-align: center; color: var(--accent); }
   .text { display: flex; flex-direction: column; min-width: 0; }
@@ -1307,17 +1314,16 @@
   .proj.remote .icon { color: var(--faint); }
   .proj.locked { opacity: .6; }
   .proj.missing .icon, .proj.missing .meta { color: var(--warn); }
-  .more {
-    position: absolute; top: 4px; right: 4px; visibility: hidden; padding: 0 var(--sp-6); line-height: 18px;
-    font-size: var(--fs-lg); color: var(--muted); border-radius: var(--radius);
-  }
-  li:hover .more, .more.open { visibility: visible; }
+  /* a project's workspaces, folded or not (the count) */
+  .fold-ws { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); display: inline-flex; align-items: center; gap: var(--sp-2);
+    padding: 0 var(--sp-6); line-height: 20px; font-size: var(--fs-sm); color: var(--faint); border-radius: var(--radius);
+    font-variant-numeric: tabular-nums; }
+  .fold-ws .caret { font-size: var(--fs-xs); }
+  .fold-ws:hover { background: var(--hover); color: var(--text); }
   /* (beside the project's button, not in it: a button of its own) */
   .pre-slot { position: absolute; top: 9px; right: 28px; }
-  li:hover .pre-slot { right: 30px; }
-  .more:hover, .more.open { background: var(--hover); color: var(--text); }
   .row-menu {
-    position: absolute; top: 26px; right: 4px; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);
+    position: fixed; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
   .row-menu .item {

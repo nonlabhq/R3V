@@ -1772,6 +1772,14 @@
 "Preview all changes": "모든 변경 미리 보기",
 "More to see": "더 보기",
 "Refreshing…": "새로 고치는 중…",
+"Show its workspaces": "작업 공간 보기",
+"Hide its workspaces": "작업 공간 숨기기",
+"Main copy": "기본 사본",
+"You're here": "현재 위치",
+"Nothing to commit": "커밋할 내용 없음",
+"The project's own folder: the workspaces are made from it, and it stays": "프로젝트 자체 폴더: 작업 공간은 여기서 만들어지며, 지울 수 없습니다",
+"The agent's prompts and steps that made it": "이것을 만든 에이전트의 프롬프트와 단계",
+"(no prompt)": "(프롬프트 없음)",
 "{who} merged “{version}”": "{who}님이 “{version}” 병합",
 "{who} shared “{version}”": "{who}님이 “{version}” 공유"
 }

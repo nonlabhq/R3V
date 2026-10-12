@@ -17,8 +17,9 @@
   // with what each has done; merged into the branch it came from, opened,
   // removed. Read again when the project changes (version), and now and
   // then: agents work without telling the app.
-  let { root, name, branch, branches, version, guide, guideOld = false, onmerge, onopen, onchanged }: {
+  let { root, name, branch, branches, version, changes = 0, guide, guideOld = false, onmerge, onopen, onchanged }: {
     root: string; name: string;
+    changes?: number; // the main copy's changes not committed
     guide: boolean; // the project has the agents' guide (AGENTS.md)
     guideOld?: boolean; // R3V's part of it is an older R3V's
     branch: string; // the branch the project is on
@@ -171,6 +172,24 @@
     </div>
   {/if}
 
+  <!-- the project's own folder, where the others come from: always there -->
+  {#if list}
+    <ul>
+      <li class="main-copy" title={t("The project's own folder: the workspaces are made from it, and it stays")}>
+        <div class="top">
+          <strong class="branch">{bl(branch)}</strong>
+          <span class="tag">{t("Main copy")}</span>
+          <span class="spacer"></span>
+          <span class="faint">{t("You're here")}</span>
+        </div>
+        <button class="link folder mono" onclick={() => api.ShowFolder(root)} title={t("Show in Explorer")}>{root}</button>
+        <div class="facts">
+          <span class="fact">{changes ? tn(changes, "{n} change not committed", "{n} changes not committed") : t("Nothing to commit")}</span>
+        </div>
+      </li>
+    </ul>
+  {/if}
+
   {#if error && !list}
     <p class="error">{error}</p>
   {:else if !list}
@@ -314,6 +333,10 @@
   li { padding: var(--sp-14) var(--sp-16); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg);
     background: var(--panel-2); margin-bottom: var(--sp-10); }
   li.missing { border-color: var(--warn-line); }
+  li.main-copy { background: var(--panel); }
+  .tag { flex: none; padding: 0 var(--sp-6); border-radius: var(--radius-pill); border: var(--border-width) solid var(--line);
+    font-size: var(--fs-xs); color: var(--muted); }
+  .top > .faint:last-child { font-size: var(--fs-sm); }
   .top { display: flex; align-items: center; gap: var(--sp-8); min-width: 0; }
   .branch { font-size: var(--fs-lg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .top .faint { font-size: var(--fs-sm); white-space: nowrap; }
