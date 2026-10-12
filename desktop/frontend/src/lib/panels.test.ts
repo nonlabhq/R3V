@@ -76,12 +76,21 @@ describe("ProjectSettings in its tab", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Unlink" }));
     expect(onunlink).toHaveBeenCalled();
   });
+
+  it("opens the project check (Live version, samples, plugins)", async () => {
+    api.ProjectCheck.mockReturnValue(new Promise(() => {}));
+    api.ProjectInfo.mockResolvedValue({ branch: "main", rules: { applied: [], error: "" } });
+    render(ProjectSettings, { p: project("Song") as never, inline: true, onclose: vi.fn(), onrenamed: vi.fn(), oncheck: vi.fn(), ondelete: vi.fn(), onunlink: vi.fn(), onlocate: vi.fn() });
+    await fireEvent.click((await screen.findAllByRole("button", { name: "Check…" }))[0]);
+    expect(await screen.findByRole("dialog", { name: "Project check" })).toBeTruthy();
+    await waitFor(() => expect(api.ProjectCheck).toHaveBeenCalledWith("C:/Song"));
+  });
 });
 
 describe("ProjectHeader", () => {
   const st = (openable: string[]) => ({ root: "C:/Song", name: "Song", tool: "Ableton Live", openable }) as never;
   it("opens the project in its program with F12, at the far right", async () => {
-    render(ProjectHeader, { st: st(["."]), refreshing: false, oncheck: vi.fn(), onrefresh: vi.fn() });
+    render(ProjectHeader, { st: st(["."]) });
     const buttons = [...document.querySelectorAll(".actions > button, .actions > .open-wrap")];
     expect(buttons.at(-1)?.textContent).toContain("Open in Live");
     await fireEvent.keyDown(window, { key: "F12" });
@@ -89,7 +98,7 @@ describe("ProjectHeader", () => {
   });
 
   it("lists the sets with F12 when there are several", async () => {
-    render(ProjectHeader, { st: st(["A.als", "B.als"]), refreshing: false, oncheck: vi.fn(), onrefresh: vi.fn() });
+    render(ProjectHeader, { st: st(["A.als", "B.als"]) });
     await fireEvent.keyDown(window, { key: "F12" });
     expect(screen.getByRole("menu").textContent).toContain("B.als");
     expect(api.OpenInTool).not.toHaveBeenCalled();

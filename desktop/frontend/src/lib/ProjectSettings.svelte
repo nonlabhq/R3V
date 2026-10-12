@@ -15,6 +15,7 @@
   import { emojiName, emojiOf } from "./emoji";
   import BranchSettings from "./BranchSettings.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
+  import ProjectCheck from "./ProjectCheck.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import { branchLabel, branchLane } from "./branches";
   import { ago, type BranchList, type ArchivedBranch, type StepsInfo } from "./api";
@@ -38,6 +39,7 @@
   } = $props();
 
   const here = $derived(p.status === "downloaded");
+  let healthOpen = $state(false); // the project check: Live version, samples, plugins
   let info = $state<ProjectInfo | null>(null);
   $effect(() => {
     if (!here) return;
@@ -355,6 +357,10 @@
     <section>
       <h3>{t("Health")}</h3>
       <div class="action">
+        <div><strong>{t("Project check")}</strong><p class="hint">{t("Check the project: Live version, samples, plugins")}</p></div>
+        <button onclick={() => (healthOpen = true)}>{t("Check…")}</button>
+      </div>
+      <div class="action">
         <div><strong>{t("Check project…")}</strong><p class="hint">{t("Reads its whole history again, looking for damage.")}</p></div>
         <button onclick={oncheck}>{t("Check…")}</button>
       </div>
@@ -402,6 +408,15 @@
   {/snippet}
 </Modal>
 {/if}
+{/if}
+
+{#if healthOpen}
+  <Modal title={t("Project check")} onclose={() => (healthOpen = false)}>
+    <ProjectCheck root={p.root} mode="check" />
+    {#snippet footer()}
+      <button class="primary" onclick={() => (healthOpen = false)}>{t("OK")}</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if moving && team && onmoved}

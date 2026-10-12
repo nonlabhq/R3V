@@ -5,27 +5,22 @@
   import { toast } from "./notify.svelte";
   import PreuploadIcon from "./PreuploadIcon.svelte";
   import { preuploads } from "./preupload.svelte";
-  import { spinner } from "./spin.svelte";
   import type { Snippet } from "svelte";
 
   // The top of a project's page: its team (and its settings), its icon and
   // name; in the middle the notice slot (transfers, the team's new
   // versions: its size kept, so what comes and goes moves nothing); and
   // opening it in its tool. (Branches are above the Overview's graph;
-  // settings are a tab.)
-  let { st, refreshing, team, entry, onteamsettings, oncheck, onrefresh, notice }: {
+  // settings, and the project check, are a tab; refreshing is F5.)
+  let { st, team, entry, onteamsettings, notice }: {
     st: State;
-    refreshing: boolean;
     team?: TeamSummary; // none: on this computer only
     entry?: Pick<TeamProject, "id" | "icon" | "color">; // the team's look for it
     onteamsettings?: (team: TeamSummary) => void;
-    oncheck: () => void;
-    onrefresh: () => void;
     notice?: Snippet;
   } = $props();
 
   let setMenu = $state(false);
-  const turning = spinner(() => refreshing);
   let isLive = $derived(st.tool === "Ableton Live");
   const label = (rel: string) => (rel === "." ? st.name ?? t("the project") : rel);
   const open = (rel: string) => api.OpenInTool(st.root, rel).catch((e) => toast(errorText(e), "error"));
@@ -67,12 +62,6 @@
   </div>
   {#if notice}{@render notice()}{:else}<div class="spacer"></div>{/if}
   <div class="actions">
-    <button class="ghost icon" onclick={oncheck} title={t("Check the project: Live version, samples, plugins")} aria-label={t("Project check")}>
-      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-    </button>
-    <button class="ghost icon" class:spin={turning.on} onclick={onrefresh} title={t("Refresh") + " (F5)"} aria-label={t("Refresh")}>
-      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg>
-    </button>
     <button class="ghost icon" onclick={() => api.ShowFolder(st.root)} title={t("Show folder")} aria-label={t("Show folder")}>
       <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
     </button>
@@ -97,7 +86,7 @@
 
 <style>
   header { display: flex; align-items: center; min-height: 62px; padding: var(--sp-12) var(--sp-24) var(--sp-6); gap: var(--sp-8); }
-  .title { flex: 0 1 auto; min-width: 120px; max-width: 34%; }
+  .title { flex: 0 1 auto; min-width: 120px; max-width: 28%; }
   .spacer { flex: 1; }
   .team { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; margin-bottom: var(--sp-2); }
   .team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--muted); }
@@ -111,8 +100,6 @@
   .icon { display: inline-flex; align-items: center; justify-content: center; padding: var(--sp-6) var(--sp-8); color: var(--muted); }
   .icon:hover:not(:disabled) { color: var(--text); }
   .ico { width: 16px; height: 16px; display: block; }
-  .spin .ico { animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
   .open-wrap { position: relative; }
   .menu.right { left: auto; right: 0; min-width: 220px; max-height: 50vh; overflow: auto; }
   .menu {

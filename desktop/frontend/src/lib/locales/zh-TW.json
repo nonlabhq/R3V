@@ -1771,6 +1771,7 @@
 "Get all": "全部取得",
 "Preview all changes": "預覽全部變更",
 "More to see": "查看更多",
+"Refreshing…": "正在重新整理…",
 "{who} merged “{version}”": "{who} 合併了「{version}」",
 "{who} shared “{version}”": "{who} 上傳了「{version}」"
 }

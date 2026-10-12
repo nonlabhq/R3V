@@ -1771,6 +1771,7 @@
 "Get all": "Prendi tutto",
 "Preview all changes": "Vedi tutte le modifiche",
 "More to see": "Vedi altro",
+"Refreshing…": "Aggiornamento…",
 "{who} merged “{version}”": "{who} ha unito “{version}”",
 "{who} shared “{version}”": "{who} ha condiviso “{version}”"
 }

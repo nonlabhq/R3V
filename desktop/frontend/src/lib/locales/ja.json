@@ -1771,6 +1771,7 @@
 "Get all": "すべて取得",
 "Preview all changes": "すべての変更をプレビュー",
 "More to see": "ほかにもあります",
+"Refreshing…": "更新中…",
 "{who} merged “{version}”": "{who} が「{version}」をマージ",
 "{who} shared “{version}”": "{who} が「{version}」を共有"
 }

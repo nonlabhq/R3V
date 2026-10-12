@@ -105,6 +105,7 @@
   let busy = $state("");
   let progress = $state<Progress | null>(null);
   let refreshing = $state(false);
+  const refreshShow = 450; // ms the dimmed page stays at least
 
   // dialogs
   let preview = $state<{ title: string; label: string; data: Preview; run: Action; blocked: string; archive?: string } | null>(null);
@@ -297,10 +298,14 @@
     if (st) st = { ...st, locksOffer: false } as State;
   }
 
+  // F5: read the project again, the whole page dimmed meanwhile (at least
+  // a moment, so it's seen to happen: there's no button for it).
   async function refresh() {
     if (refreshing) return;
     refreshing = true;
+    const since = Date.now();
     await load();
+    await new Promise((r) => setTimeout(r, Math.max(0, refreshShow - (Date.now() - since))));
     refreshing = false;
   }
 
@@ -938,6 +943,10 @@
 <svelte:window onfocus={() => { if (!busy && Date.now() - loadedAt > 3000) load(); }}
   onkeydown={(e) => { if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) refresh(); }} />
 
+{#if refreshing}
+  <div class="refreshing" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span>{t("Refreshing…")}</div>
+{/if}
+
 {#if loadError && !st && !busy}
   <div class="pad"><p class="error">{loadError}</p></div>
 {:else if !st}
@@ -953,8 +962,7 @@
   </div>
 {:else}
   <div class="view">
-    <ProjectHeader {st} {refreshing} team={teams.find((tm) => tm.id === st!.teamId)} {entry} {onteamsettings}
-      oncheck={() => (checkOpen = "check")} onrefresh={refresh}>
+    <ProjectHeader {st} team={teams.find((tm) => tm.id === st!.teamId)} {entry} {onteamsettings}>
       {#snippet notice()}
         <NoticeSlot st={st!} {progress} {busy} {looks} cancelling={!!cancelling[root]} oncancel={() => cancelSave(root)}
           onqueue={() => (queue.open = true)} onupdate={() => run(updateAction)}
@@ -1288,6 +1296,13 @@
 <style>
   label.check { display: flex; align-items: center; gap: var(--sp-8); margin-top: var(--sp-12); color: var(--text); font-size: var(--fs-base); }
   .view { display: flex; flex-direction: column; height: 100%; }
+  .refreshing { position: fixed; inset: 0; z-index: var(--z-dialog); display: flex; align-items: center; justify-content: center; gap: var(--sp-10);
+    background: var(--scrim); backdrop-filter: var(--scrim-blur); color: var(--text); font-size: var(--fs-md); animation: dim .12s ease-out; }
+  @keyframes dim { from { opacity: 0; } }
+  .refreshing .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent);
+    animation: turn .8s linear infinite; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .refreshing, .refreshing .spinner { animation: none; } }
   .pad { padding: var(--sp-24); }
   /* Same place as the loaded header's title, so nothing jumps. */
   .preparing { padding: var(--sp-18) var(--sp-24); max-width: 600px; }

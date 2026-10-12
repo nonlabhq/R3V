@@ -187,7 +187,7 @@
   /* Always there, its size kept: what comes and goes moves nothing else. */
   .slot { position: relative; flex: 1; min-width: 0; height: 46px; display: flex; align-items: center; justify-content: center;
     gap: var(--sp-8); padding: 0 var(--sp-16); }
-  .transfer, .capsule { display: flex; align-items: center; gap: var(--sp-10); min-width: 0; max-width: 560px; height: 42px;
+  .transfer, .capsule { display: flex; align-items: center; gap: var(--sp-10); min-width: 0; max-width: 760px; height: 42px;
     padding: 0 var(--sp-6) 0 var(--sp-12); border-radius: 12px; background: var(--hover); box-shadow: inset 0 0 0 var(--border-width) var(--line);
     animation: fade .15s ease-out; }
   .transfer { flex: 1; }

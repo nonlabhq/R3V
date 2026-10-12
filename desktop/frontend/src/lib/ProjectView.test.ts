@@ -83,6 +83,17 @@ const commitButton = () => screen.getByRole("button", { name: /^Commit/ });
 const toasted = (text: string | RegExp) =>
   waitFor(() => expect(toast.mock.calls.some(([t]) => (typeof text === "string" ? t === text : text.test(t)))).toBe(true));
 
+describe("ProjectView: refreshing", () => {
+  it("reads the project again on F5, the page dimmed meanwhile", async () => {
+    await show();
+    const reads = api.State.mock.calls.length;
+    await fireEvent.keyDown(window, { key: "F5" });
+    expect(await screen.findByText("Refreshing…")).toBeTruthy();
+    await waitFor(() => expect(api.State.mock.calls.length).toBeGreaterThan(reads));
+    await waitFor(() => expect(screen.queryByText("Refreshing…")).toBeNull());
+  });
+});
+
 describe("ProjectView: committing", () => {
   it("commits all the changes and shares them", async () => {
     await show({ changes: [change("Song.als"), change("Samples/kick.wav", "added")] });
