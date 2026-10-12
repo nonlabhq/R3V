@@ -770,3 +770,41 @@ func within(p, dir string) bool {
 	return err == nil && rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) &&
 		!filepath.IsAbs(rel)
 }
+
+// BaseNews tells a workspace what the branch it was made from has that its
+// own branch hasn't: that branch's key and how many versions (merging it,
+// r3v merge, brings them in; an update only gets the workspace's own
+// branch). "" and 0 outside a workspace, or when the team can't be reached.
+func (r *Repo) BaseNews() (base string, behind int) {
+	if !r.IsWorkspace() {
+		return "", 0
+	}
+	main, err := openAt(r.MainRoot())
+	if err != nil {
+		return "", 0
+	}
+	list, err := main.LocalWorkspaces()
+	if err != nil {
+		return "", 0
+	}
+	for _, e := range list {
+		if samePath(e.Folder, r.Root) {
+			base = e.Base
+		}
+	}
+	if base == "" || base == r.BranchName() {
+		return "", 0
+	}
+	c, err := r.Client()
+	if err != nil {
+		return "", 0
+	}
+	heads, err := c.Branches(r.Config.ProjectID)
+	if err != nil || heads[base] == "" || r.fetchSnapshots(c, heads[base]) != nil {
+		return "", 0
+	}
+	if _, behind, err = r.aheadBehind(r.tip(), heads[base]); err != nil {
+		return "", 0
+	}
+	return base, behind
+}

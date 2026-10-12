@@ -129,6 +129,32 @@ type statusJSON struct {
 	Suggestions []suggestionJSON `json:"suggestions"`
 	// MainCopy: in a workspace, the folder of the project's main copy.
 	MainCopy string `json:"main_copy,omitempty"`
+	// Base: in a workspace, the branch it was made from when that has
+	// versions this branch hasn't (r3v merge brings them in).
+	Base *baseJSON `json:"base,omitempty"`
+}
+
+type baseJSON struct {
+	Branch string `json:"branch"` // its name, as r3v merge takes it
+	Behind int    `json:"behind"` // its versions this branch hasn't
+}
+
+// baseNews is a workspace's base branch when it has versions this branch
+// hasn't (nil otherwise).
+func baseNews(r *project.Repo) *baseJSON {
+	key, n := r.BaseNews()
+	if n == 0 {
+		return nil
+	}
+	return &baseJSON{Branch: r.BranchLabel(key), Behind: n}
+}
+
+// printBaseNews says what the base branch has, and how to bring it in.
+func printBaseNews(b *baseJSON) {
+	if b != nil {
+		fmt.Printf("%s has %d version(s) this branch hasn't: `r3v merge %s` brings them in (r3v update only gets this branch's)\n",
+			b.Branch, b.Behind, b.Branch)
+	}
 }
 
 type teamJSON struct {
@@ -158,6 +184,7 @@ func cmdStatus(args []string) error {
 	}
 	if r.IsWorkspace() {
 		out.MainCopy = r.MainRoot()
+		out.Base = baseNews(r)
 	}
 	if r.Config.Remote != nil {
 		incoming, err := r.Incoming()
@@ -188,7 +215,7 @@ func cmdStatus(args []string) error {
 		out.Changes = append(out.Changes, ch)
 	}
 	out.InUse = nonNil(r.InUse())
-	result("status", out, func() { printStatus(r, out) })
+	result("status", out, func() { printStatus(r, out); printBaseNews(out.Base) })
 	return nil
 }
 

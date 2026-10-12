@@ -23,7 +23,7 @@ r3v remote <connection code>      # connect it to the team's storage
 r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
 r3v commit -m "title" -m "details" # a title, then details (a blank line between, as git)
 r3v commit -m "fix the menu" src/menu   # only the changes in those files and folders (the others stay)
-r3v update [--preview]            # get the team's latest versions (or just look)
+r3v update [--preview]            # get the team's latest versions of your branch (or just look)
 r3v status                        # what changed since your last version
 r3v log                           # versions
 r3v clone <connection code> "Song" [folder]   # download a team project
