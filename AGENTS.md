@@ -27,8 +27,8 @@ chunked big files).
 ```sh
 go build ./...
 go vet ./...
-go test ./...                          # no network needed
-go test -tags nightly ./...            # the Nightly build too
+go test -timeout 30m ./...             # no network needed (internal/project takes ~10 min)
+go test -tags nightly -timeout 30m ./...  # the Nightly build too
 cd desktop/frontend && npx svelte-check && npm test   # after any UI change
 cd desktop/frontend && npm run smoke   # the app's main paths in Edge, after changes to screens or flows
 ```
