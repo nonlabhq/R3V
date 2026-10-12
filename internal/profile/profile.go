@@ -98,6 +98,8 @@ type file struct {
 	Rules     []Rule            `yaml:"rules"`
 	Gitignore bool              `yaml:"gitignore"`
 	FileLocks *fileLocks        `yaml:"file_locks"`
+	// Workspaces: what an agent's workspace gets beside the tracked files.
+	Workspaces *workspacesConf `yaml:"workspaces"`
 	// Handlers: the project's own choice of built-in merges for some
 	// files, over the presets' (see ProjectHandlers).
 	Handlers []Handler `yaml:"handlers"`
@@ -130,6 +132,10 @@ type Profile struct {
 	// Handlers: .r3v.yaml's handlers:, patterns relative to the project
 	// folder; the last that matches a file wins over the presets.
 	Handlers []Handler
+	// WorkspaceCopy: folders the rules leave out that a new workspace gets
+	// a copy of (build outputs, so it needn't build from nothing):
+	// "target/" (that folder) or "**/target/" (any of that name).
+	WorkspaceCopy []string
 	root     string
 	gi       gitignores
 }
@@ -226,6 +232,14 @@ func Parse(data []byte, root string) (*Profile, error) {
 		return Detect(root), fmt.Errorf("%s: handlers: are still in testing: they need R3V's Nightly channel (Settings → Updates)", FileName)
 	}
 	p.Handlers = f.Handlers
+	if f.Workspaces != nil {
+		for i, c := range f.Workspaces.Copy {
+			if err := checkCopyFolder(c); err != nil {
+				return Detect(root), fmt.Errorf("%s: workspaces: copy %d: %w", FileName, i+1, err)
+			}
+		}
+		p.WorkspaceCopy = f.Workspaces.Copy
+	}
 	if f.FileLocks != nil {
 		fl, err := f.FileLocks.resolve()
 		if err != nil {
@@ -747,4 +761,22 @@ func globSegs(pat, segs []string) bool {
 		return false
 	}
 	return globSegs(pat[1:], segs[1:])
+}
+
+// workspacesConf is .r3v.yaml's workspaces:.
+type workspacesConf struct {
+	Copy []string `yaml:"copy"`
+}
+
+// checkCopyFolder: a folder in the project ("a/b/", or "**/name/").
+func checkCopyFolder(c string) error {
+	c = strings.TrimSpace(c)
+	rest := strings.TrimPrefix(c, "**/")
+	switch {
+	case c == "" || rest == "" || rest == "/":
+		return errors.New("empty")
+	case strings.ContainsAny(rest, "*?[") || strings.HasPrefix(c, "/") || strings.Contains(c, "..") || strings.Contains(c, ":"):
+		return fmt.Errorf("%q: name a folder of the project (\"target/\", or \"**/target/\" for any of that name)", c)
+	}
+	return nil
 }
