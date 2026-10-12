@@ -118,6 +118,22 @@ func TestWorkspaceForAnAgent(t *testing.T) {
 	if recs["renderer"].Kind != remote.BranchAgent {
 		t.Fatalf("branch record: %+v", recs["renderer"])
 	}
+	// main moves on: the workspace hears that main has a version its
+	// branch hasn't, and that merging it brings it in (update doesn't).
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("main moved on"), 0o644)
+	if exit, rep := run(t, a, "commit", "-m", "main moved on"); exit != 0 {
+		t.Fatalf("commit on main: %+v", rep.Error)
+	}
+	t.Run("in the workspace", func(t *testing.T) {
+		for _, cmd := range []string{"status", "update"} {
+			exit, rep := run(t, ws, cmd)
+			var got struct{ Base *baseJSON }
+			json.Unmarshal(rep.Result, &got)
+			if exit != 0 || got.Base == nil || got.Base.Branch != "main" || got.Base.Behind != 1 {
+				t.Fatalf("%s: %s %+v", cmd, rep.Result, rep.Error)
+			}
+		}
+	})
 	if exit, rep := run(t, a, "workspace", "remove", ws); exit != 0 {
 		t.Fatalf("remove: %+v", rep.Error)
 	}

@@ -21,7 +21,8 @@ const usage = `usage: r3v <command> [args]
 everyday (run inside a project folder):
   commit -m TITLE [-m DETAILS] [PATHS]   commit your changes as a version and share it with the team
                                          (PATHS: only the changes in those files and folders)
-  update [--preview]                     get the team's latest versions (or just look)
+  update [--preview]                     get the team's latest versions of your branch (or just look);
+                                         another branch's come in with merge
   status                                 what changed since your last version
   watch                                  keep running: tell you about new versions (never changes
                                          your files)

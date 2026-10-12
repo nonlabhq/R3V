@@ -226,10 +226,13 @@ type syncJSON struct {
 	// merged.
 	Action string       `json:"action"`
 	Saved  *versionJSON `json:"saved"` // the version saved, if any
-	From   string       `json:"from,omitempty"`
-	To     string       `json:"to,omitempty"`
-	Merged []string     `json:"merged"`   // what a merge took from each side
-	Relink []string     `json:"relinked"` // sample paths rewritten for this computer
+	// Base: in a workspace, the branch it was made from when that has
+	// versions this branch hasn't (an update doesn't bring them in).
+	Base   *baseJSON `json:"base,omitempty"`
+	From   string    `json:"from,omitempty"`
+	To     string    `json:"to,omitempty"`
+	Merged []string  `json:"merged"`   // what a merge took from each side
+	Relink []string  `json:"relinked"` // sample paths rewritten for this computer
 	// ReopenSets: sets changed under Live: they must be reopened there.
 	ReopenSets bool `json:"reopen_sets"`
 	// KeptWork: uncommitted changes were kept through an update (merged
@@ -376,7 +379,10 @@ func cmdUpdate(args []string) error {
 	if err != nil {
 		return err
 	}
-	result("update", syncOf(res), func() {
+	out := syncOf(res)
+	out.Base = baseNews(r)
+	result("update", out, func() {
+		defer printBaseNews(out.Base)
 		switch res.Action {
 		case "up-to-date":
 			fmt.Println("already up to date")

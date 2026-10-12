@@ -2,7 +2,9 @@
 
 This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help agents`.
 
-- `r3v status --json`: what changed; `r3v update --preview --json`: what teammates shared.
+- `r3v status --json`: what changed; `r3v update --preview --json`: what teammates shared on your
+  branch. `r3v update` only gets your branch's versions: in a workspace, `base` in `status --json`
+  says the branch you came from has new ones; `r3v merge <that branch>` brings them in.
 - `r3v commit -m "Title" -m "Details" --json` commits a version and shares it with the team
   (no separate push). One commit per piece of work; the title says what, the details why. Other
   changes in the folder that aren't this work: list the work's files and folders after the flags
