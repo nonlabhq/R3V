@@ -10,14 +10,18 @@
   import { newsOf, takenBackText } from "./teamText";
   import Avatar from "./Avatar.svelte";
   import Tx from "./Tx.svelte";
+  import { pressing } from "./notices.svelte";
+  import type { Snippet } from "svelte";
 
   // The notice slot in the middle of a project's title bar (handoff
   // notices/spec.md): a place that is always there, so what comes and goes
   // in it moves nothing else. One thing at a time, most pressing first: a
-  // transfer under way; else the team's new versions (one, or a digest of
-  // several); else versions taken back. Updates that come during a transfer
-  // wait beside it as a small chip.
-  let { st, progress, busy, looks, cancelling = false, oncancel, onqueue, onupdate, onpick, onpreview }: {
+  // transfer under way; else what stops the work (a switch that didn't
+  // finish, an older version...); else the team's new versions (one, or a
+  // digest of several); else versions taken back; else the rest of what the
+  // page has to say. What else there is waits beside it as a chip (+N), its
+  // list opening below (updates that come during a transfer: their own chip).
+  let { st, progress, busy, looks, cancelling = false, oncancel, onqueue, onupdate, onpick, onpreview, issues = [], issue }: {
     st: State;
     progress: Progress | null;
     busy: string;
@@ -28,6 +32,8 @@
     onupdate: () => void; // get the team's versions
     onpick: (id: string) => void; // a version in the graph, with its details
     onpreview?: () => void; // what getting them all would change, file by file
+    issues?: string[]; // what the page has to say until it's dealt with (notices.svelte.ts)
+    issue?: Snippet<["lead" | "panel", string[]]>; // shows them (ProjectBanners)
   } = $props();
 
   let shown = $state.raw<Progress | null>(null);
@@ -69,17 +75,25 @@
   const hold = $derived(!!shown && (shown.stage === "scanning" || shown.stage === "storing"));
   const goOn = $derived(!!shown && (shown.stage === "checking" || shown.stage === "uploading"));
 
+  // What leads, and the rest beside it.
+  const lead = $derived(visible ? "transfer" : issues.length && pressing.has(issues[0]) ? "issue"
+    : news.length ? "news" : st.takenBack?.length ? "takenBack" : issues.length ? "issue" : "");
+  const restIssues = $derived(visible ? [] : lead === "issue" ? issues.slice(1) : issues);
+  const restNews = $derived(lead === "issue" && news.length > 0);
+  const restCount = $derived(restIssues.length + (restNews ? 1 : 0));
+
   let open = $state(false); // the digest's list
+  let restOpen = $state(false); // the rest's list
   let box = $state<HTMLElement>();
   function ondown(e: PointerEvent) {
-    if (open && box && !box.contains(e.target as Node)) open = false;
+    if (box && !box.contains(e.target as Node)) { open = false; restOpen = false; }
   }
 </script>
 
-<svelte:window onpointerdown={ondown} onkeydown={(e) => { if (open && e.key === "Escape") open = false; }} />
+<svelte:window onpointerdown={ondown} onkeydown={(e) => { if (e.key === "Escape") { open = false; restOpen = false; } }} />
 
 <div class="slot" bind:this={box} role="status" aria-live="polite">
-  {#if visible}
+  {#if lead === "transfer"}
     <!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
     <div class="transfer" class:clickable={!!onqueue} onclick={onqueue} role={onqueue ? "button" : undefined} tabindex={onqueue ? 0 : undefined}
       onkeydown={(e) => { if (onqueue && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onqueue(); } }}
@@ -107,7 +121,9 @@
         <span>+{tn(news.length, "{n} update", "{n} updates")}</span>
       </span>
     {/if}
-  {:else if news.length === 1}
+  {:else if lead === "issue" && issue}
+    {@render issue("lead", issues)}
+  {:else if lead === "news" && news.length === 1}
     {@const v = news[0]}
     <div class="capsule">
       <Avatar name={v.author} seed={v.authorId} color={lookOf(v)?.color} picture={lookOf(v)?.picture} size={22} />
@@ -115,7 +131,7 @@
       <button class="small" onclick={() => onpick(v.id)}>{t("Preview")}</button>
       {#if !st.olderVersion}<button class="small primary" onclick={onupdate} disabled={!!busy}>{t("Get updates")}</button>{/if}
     </div>
-  {:else if news.length > 1}
+  {:else if lead === "news"}
     <div class="capsule digest">
       <button class="open" aria-expanded={open} onclick={() => (open = !open)}>
         <span class="faces">{#each authors.slice(0, 3) as v (v.authorId || v.author)}<Avatar name={v.author} seed={v.authorId} color={lookOf(v)?.color} picture={lookOf(v)?.picture} size={22} />{/each}</span>
@@ -143,11 +159,27 @@
         {/if}
       </div>
     {/if}
-  {:else if st.takenBack?.length}
+  {:else if lead === "takenBack"}
     <div class="capsule">
       <span class="say">{takenBackText(st.takenBack)}</span>
       {#if !st.olderVersion}<button class="small primary" onclick={onupdate} disabled={!!busy}>{t("Get updates")}</button>{/if}
     </div>
+  {/if}
+  {#if restCount && issue}
+    <button class="chip more" aria-expanded={restOpen} onclick={() => { restOpen = !restOpen; open = false; }}
+      title={t("More to see")}>+{restCount}</button>
+    {#if restOpen}
+      <div class="list rest">
+        {#if restNews}
+          <div class="row">
+            <Avatar name={news[0].author} seed={news[0].authorId} color={lookOf(news[0])?.color} picture={lookOf(news[0])?.picture} size={22} />
+            <div class="rtext"><Tx text={t("{count} from {who}", { who: names(news) })} strong={{ count: tn(news.length, "{n} update", "{n} updates") }} /></div>
+            {#if !st.olderVersion}<button class="small primary" onclick={() => { restOpen = false; onupdate(); }} disabled={!!busy}>{t("Get updates")}</button>{/if}
+          </div>
+        {/if}
+        {@render issue("panel", restIssues)}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -191,5 +223,7 @@
   .rtext { flex: 1; min-width: 0; font-size: var(--fs-sm); }
   .rtext > div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .small { font-size: var(--fs-sm); }
+  .more { cursor: pointer; border: none; color: inherit; padding: 0 var(--sp-10); font-variant-numeric: tabular-nums; }
+  .rest { width: 440px; max-height: 60vh; overflow: auto; }
   .all { width: 100%; margin-top: var(--sp-4); }
 </style>

@@ -1770,6 +1770,7 @@
 "{count} from {who}": "{who}님의 {count}",
 "Get all": "모두 받기",
 "Preview all changes": "모든 변경 미리 보기",
+"More to see": "더 보기",
 "{who} merged “{version}”": "{who}님이 “{version}” 병합",
 "{who} shared “{version}”": "{who}님이 “{version}” 공유"
 }
