@@ -308,3 +308,47 @@ func TestVersionSteps(t *testing.T) {
 		t.Fatalf("the first version's: %+v", s)
 	}
 }
+
+// A merge was made of what it brought in: its steps are those of the
+// versions on the lane it merged.
+func TestMergeVersionSteps(t *testing.T) {
+	withSteps(t)
+	a, _ := codeTeam(t)
+	save := func(msg string) {
+		t.Helper()
+		time.Sleep(1100 * time.Millisecond) // (times are to the second)
+		if _, _, err := a.Save(msg, Strategy("fail")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(t, a.Root, "main.txt", "one")
+	save("main")
+	if err := a.CreateBranch("lane"); err != nil {
+		t.Fatal(err)
+	}
+	a.StepTurn("s1", "Lane work", "")
+	write(t, a.Root, "lane.txt", "a")
+	a.TakeStep("s1", "Write", "")
+	write(t, a.Root, "lane.txt", "b")
+	a.TakeStep("s1", "Edit", "")
+	save("lane: two steps")
+	if _, err := a.SwitchBranch("main", false); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, "main.txt", "two")
+	save("main moves on")
+	if _, err := a.MergeBranch("lane", "", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	log, _ := a.Log()
+	if len(log[0].Parents) != 2 {
+		t.Fatalf("not a merge: %+v", log[0])
+	}
+	got, err := a.VersionSteps(log[0].ID)
+	if err != nil || len(got) != 1 || got[0].Steps != 2 || got[0].Turns[0].Prompt != "Lane work" {
+		t.Fatalf("the merge's steps: %+v %v", got, err)
+	}
+	if s, _ := a.VersionSteps(log[1].ID); len(s) != 0 { // (main went on from where the lane began)
+		t.Fatalf("main's own version: %+v", s)
+	}
+}

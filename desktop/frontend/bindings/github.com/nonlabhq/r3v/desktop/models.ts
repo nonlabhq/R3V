@@ -3374,6 +3374,11 @@ export class StepsInfo {
     "settings": project$0.StepSettings;
 
     /**
+     * Hooked: Claude Code in this copy makes them (its hooks are set up).
+     */
+    "hooked": boolean;
+
+    /**
      * Session is the one asked for, or the latest (nil: none yet).
      */
     "session": project$0.Session | null;
@@ -3390,6 +3395,9 @@ export class StepsInfo {
         if (!("settings" in $$source)) {
             this["settings"] = (new project$0.StepSettings());
         }
+        if (!("hooked" in $$source)) {
+            this["hooked"] = false;
+        }
         if (!("session" in $$source)) {
             this["session"] = null;
         }
@@ -3405,17 +3413,17 @@ export class StepsInfo {
      */
     static createFrom($$source: any = {}): StepsInfo {
         const $$createField2_0 = $$createType73;
-        const $$createField3_0 = $$createType75;
-        const $$createField4_0 = $$createType77;
+        const $$createField4_0 = $$createType75;
+        const $$createField5_0 = $$createType77;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("settings" in $$parsedSource) {
             $$parsedSource["settings"] = $$createField2_0($$parsedSource["settings"]);
         }
         if ("session" in $$parsedSource) {
-            $$parsedSource["session"] = $$createField3_0($$parsedSource["session"]);
+            $$parsedSource["session"] = $$createField4_0($$parsedSource["session"]);
         }
         if ("sessions" in $$parsedSource) {
-            $$parsedSource["sessions"] = $$createField4_0($$parsedSource["sessions"]);
+            $$parsedSource["sessions"] = $$createField5_0($$parsedSource["sessions"]);
         }
         return new StepsInfo($$parsedSource as Partial<StepsInfo>);
     }

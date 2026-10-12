@@ -52,6 +52,21 @@
     if (!here) return;
     api.Steps(p.root, "").then((s) => (steps = s)).catch(() => {});
   });
+  // Claude Code in this folder (not a workspace R3V made) makes steps once
+  // R3V's hooks are in its settings.
+  let hooking = $state(false);
+  async function setUpSteps() {
+    hooking = true;
+    try {
+      await api.SetUpSteps(p.root);
+      steps = await api.Steps(p.root, "");
+      toast(t("Set up: Claude Code makes steps here from its next prompt (start it again if it's running)."), "ok", 9000);
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      hooking = false;
+    }
+  }
   async function setSteps(off: boolean, noPrompts: boolean) {
     try {
       await api.SetStepSettings(p.root, { off, no_prompts: noPrompts });
@@ -343,6 +358,13 @@
           <input type="checkbox" class="switch" role="switch" aria-label={t("Keep a step after each move")} checked={!steps.settings.off}
             onchange={(e) => setSteps(!(e.currentTarget as HTMLInputElement).checked, !!steps!.settings.no_prompts)} />
         </div>
+        {#if !steps.settings.off && !steps.hooked}
+          <div class="action">
+            <div><strong>{t("Claude Code here doesn't make steps yet")}</strong>
+              <p class="hint">{t("An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).")}</p></div>
+            <button onclick={setUpSteps} disabled={hooking}>{t("Set up")}</button>
+          </div>
+        {/if}
         {#if !steps.settings.off}
           <div class="action">
             <div><strong>{t("Keep the prompts")}</strong>

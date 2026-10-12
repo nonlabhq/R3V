@@ -266,6 +266,36 @@ func ToolOf(root string) string {
 
 // setHook puts our hook for event (command "": takes it out), beside the
 // project's own hooks for it.
+// StepHooks reports whether Claude Code in the copy in root makes steps:
+// its settings have R3V's prompt and post-tool hooks (ClaudeCode with steps).
+func StepHooks(root string) bool {
+	data, err := os.ReadFile(filepath.Join(root, ".claude", "settings.local.json"))
+	if err != nil {
+		return false
+	}
+	var settings struct {
+		Hooks map[string][]struct {
+			Hooks []struct {
+				Command string `json:"command"`
+			} `json:"hooks"`
+		} `json:"hooks"`
+	}
+	if json.Unmarshal(data, &settings) != nil {
+		return false
+	}
+	has := func(event, suffix string) bool {
+		for _, e := range settings.Hooks[event] {
+			for _, h := range e.Hooks {
+				if IsOurHook(h.Command) && strings.HasSuffix(h.Command, suffix) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return has("UserPromptSubmit", "hook prompt") && has("PostToolUse", "hook post-tool")
+}
+
 func setHook(hooks map[string]any, event, matcher, command string) {
 	list, _ := hooks[event].([]any)
 	ours := map[string]any{"type": "command", "command": command}

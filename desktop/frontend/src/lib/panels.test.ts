@@ -77,6 +77,14 @@ describe("ProjectSettings in its tab", () => {
     expect(onunlink).toHaveBeenCalled();
   });
 
+  it("sets Claude Code up to make steps in a folder that isn't a workspace", async () => {
+    api.ProjectInfo.mockResolvedValue({ branch: "main", rules: { applied: [], error: "" } });
+    api.Steps.mockResolvedValue({ available: true, on: true, settings: {}, hooked: false, session: null, sessions: [] });
+    render(ProjectSettings, { p: project("Song") as never, inline: true, onclose: vi.fn(), onrenamed: vi.fn(), oncheck: vi.fn(), ondelete: vi.fn(), onunlink: vi.fn(), onlocate: vi.fn() });
+    await fireEvent.click(await screen.findByRole("button", { name: "Set up" }));
+    await waitFor(() => expect(api.SetUpSteps).toHaveBeenCalledWith("C:/Song"));
+  });
+
   it("opens the project check (Live version, samples, plugins)", async () => {
     api.ProjectCheck.mockReturnValue(new Promise(() => {}));
     api.ProjectInfo.mockResolvedValue({ branch: "main", rules: { applied: [], error: "" } });

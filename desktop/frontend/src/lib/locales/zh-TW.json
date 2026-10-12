@@ -1780,6 +1780,10 @@
 "The project's own folder: the workspaces are made from it, and it stays": "專案本身的資料夾：工作區由它建立，它不能刪除",
 "The agent's prompts and steps that made it": "做出它的 agent 提示與步驟",
 "(no prompt)": "（無提示）",
+"Set up": "設定",
+"Claude Code here doesn't make steps yet": "這裡的 Claude Code 還沒有記錄步驟",
+"An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "直接在這個資料夾（不是工作區）工作的 agent，在 R3V 的 hook 加進它的設定（.claude/settings.local.json，不納入版本）後就會記錄步驟。",
+"Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "已設定：Claude Code 從下一個提示起在這裡記錄步驟（若正在執行請重新啟動）。",
 "{who} merged “{version}”": "{who} 合併了「{version}」",
 "{who} shared “{version}”": "{who} 上傳了「{version}」"
 }

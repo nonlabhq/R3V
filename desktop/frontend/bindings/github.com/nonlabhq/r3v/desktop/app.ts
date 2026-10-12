@@ -1339,6 +1339,15 @@ export function SetTracked(root: string, rel: string, dir: boolean, tracked: boo
 }
 
 /**
+ * SetUpSteps sets Claude Code up in the copy in root to make steps (its
+ * hooks, in .claude/settings.local.json, which R3V never tracks): a copy no
+ * workspace was made for, the main one say, where an agent works too.
+ */
+export function SetUpSteps(root: string): $CancellablePromise<void> {
+    return $Call.ByID(2124632521, root);
+}
+
+/**
  * ShareVersions shares the versions committed here with the project's team
  * without committing the files (a project added to a team, shared later).
  */
