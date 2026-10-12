@@ -44,7 +44,7 @@
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
   import PromptDialog from "./PromptDialog.svelte";
   import StepsTimeline from "./StepsTimeline.svelte";
-  import { refreshWorkspaces } from "./workspaces.svelte";
+  import { readingWorkspaces, refreshWorkspaces, workspacesSeen } from "./workspaces.svelte";
   import LeaveChangesDialog from "./LeaveChangesDialog.svelte";
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
@@ -80,6 +80,9 @@
   let tab = $state<Tab>((() => {
     try {
       const t = localStorage.getItem(tabKey);
+      // (Workspaces only when it was open since the app started: after a
+      // start the project opens at once, its workspaces read meanwhile)
+      if (t === "agents" && !workspacesSeen.has(untrack(() => root))) return "overview";
       return tabs.includes(t as Tab) ? (t as Tab) : "overview";
     } catch {
       return "overview";
@@ -87,19 +90,21 @@
   })());
   $effect(() => {
     const t = tab;
+    if (t === "agents") workspacesSeen.add(untrack(() => root));
     try { localStorage.setItem(tabKey, t); } catch { /* not remembered */ }
   });
   // (the Agents tab remembered, and not offered now: Versions)
   $effect(() => { if (st && tab === "agents" && !st.agentWorkspaces) tab = "overview"; });
   // The workspaces read in the background, so their tab opens at once
-  // (reading them scans each one's files and asks the team).
+  // (reading them scans each one's files and asks the team): a moment after
+  // the project is shown, not while it is read.
   const hasWorkspaces = $derived(!!st?.agentWorkspaces && (st?.workspaceCount ?? 0) > 0);
   $effect(() => {
     if (!hasWorkspaces) return;
     const r = root;
-    refreshWorkspaces(r).catch(() => {});
+    const first = setTimeout(() => refreshWorkspaces(r).catch(() => {}), 2000);
     const timer = setInterval(() => { if (!document.hidden && tab !== "agents") refreshWorkspaces(r).catch(() => {}); }, 30000);
-    return () => clearInterval(timer);
+    return () => { clearTimeout(first); clearInterval(timer); };
   });
   let message = $state("");
   let busy = $state("");
@@ -991,7 +996,7 @@
       <button class:on={tab === "files"} onclick={() => (tab = "files")}>{t("Files")}</button>
       {#if st.agentWorkspaces}
         <button class:on={tab === "agents"} onclick={() => (tab = "agents")}>
-          {t("Workspaces")}{#if st.workspaceCount}<span class="count" title={tn(st.workspaceCount, "{n} workspace", "{n} workspaces")}>{st.workspaceCount}</span>{/if}
+          {t("Workspaces")}{#if readingWorkspaces(root)}<span class="tab-spin" role="status" aria-label={t("Reading the workspaces…")} title={t("Reading the workspaces…")}></span>{/if}{#if st.workspaceCount}<span class="count" title={tn(st.workspaceCount, "{n} workspace", "{n} workspaces")}>{st.workspaceCount}</span>{/if}
         </button>
       {/if}
       {#if settings}
@@ -1348,6 +1353,9 @@
   .pending-h strong { color: var(--accent); font-style: italic; font-size: var(--fs-lg); }
   .panel-foot { flex: none; padding: var(--sp-12) var(--sp-14); border-top: var(--border-width) solid var(--line-strong); }
   .pending-h .faint { font-size: var(--fs-sm); }
+  .tab-spin { display: inline-block; width: 10px; height: 10px; margin-left: var(--sp-6); border-radius: 50%;
+    border: 1.5px solid var(--line); border-top-color: var(--accent); animation: turn .8s linear infinite; vertical-align: middle; }
+  @media (prefers-reduced-motion: reduce) { .tab-spin { animation: none; } }
   .pending-steps { margin-left: auto; align-self: center; }
   .pending-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
   .pending-body > :global(*) { flex: 1; min-height: 0; }

@@ -217,6 +217,7 @@ describe("HistoryGraph", () => {
 });
 
 describe("HistoryGraph with agents", () => {
+  const dots = () => [...document.querySelectorAll("button.node[role='option']")]; // (not the date range's options)
   // main: m3 (merged the renderer) - m2 - m1; the agent's branch: r2 - r1 off m1.
   const agentVersion = (id: string, message: string, parents: string[]) => ({ ...version(id, message, parents), branch: "b-render",
     actor: { tool: "claude-code", model: "opus" } });
@@ -225,22 +226,41 @@ describe("HistoryGraph with agents", () => {
     { ...version("m1", "Sketch", []), branch: "main" }];
   const branches = [main, { name: "b-render", latest: "r2", label: "renderer", kind: "agent" }];
 
-  it("folds agents' branches away until shown, their labels and versions marked", async () => {
+  it("hides merged branches until shown from the filter, agents' labels and versions marked", async () => {
     show({ versions: history, branches });
-    expect(screen.getAllByRole("option")).toHaveLength(3);
+    expect(dots()).toHaveLength(3);
     expect(screen.queryByText("renderer")).toBeNull();
-    const toggle = screen.getByRole("button", { name: "Show agents' branches" });
-    expect(toggle.textContent).toContain("1");
-    await fireEvent.click(toggle);
-    expect(screen.getAllByRole("option")).toHaveLength(5);
+    const filter = screen.getByRole("button", { name: "Graph filters" });
+    expect(filter.getAttribute("title")).toBe("Graph filters: 1 branch hidden");
+    await fireEvent.click(filter);
+    const merged = screen.getByRole("switch", { name: /Merged branches/ });
+    await fireEvent.click(merged);
+    expect(dots()).toHaveLength(5);
     screen.getByText("renderer");
     screen.getByTitle("An agent's branch");
     // An agent's version: its title only, the tool named, a spark on its dot.
     const dot = screen.getByRole("option", { name: /^Fix the renderer, Robin \(Claude Code\),/ });
     expect(dot.querySelector("[data-agent='claude-code']")).toBeTruthy();
     expect(screen.getByRole("option", { name: /^Bass,/ }).querySelector("[data-agent]")).toBeNull();
-    await fireEvent.click(screen.getByRole("button", { name: "Hide agents' branches" }));
-    expect(screen.getAllByRole("option")).toHaveLength(3);
+    // Agents' branches off: hidden, merged or not.
+    await fireEvent.click(screen.getByRole("switch", { name: /Agents' branches/ }));
+    expect(dots()).toHaveLength(3);
+  });
+
+  it("keeps only the versions in a date range, and dims those not by the authors picked", async () => {
+    const old = { ...version("m0", "Old idea", []), branch: "main", time: new Date(Date.now() - 40 * 86400_000).toISOString() };
+    const recent = history.map((v) => (v.id === "m1" ? { ...v, parents: ["m0"] } : v));
+    show({ versions: [...recent, old], branches, remember: "C:/Song" });
+    expect(dots()).toHaveLength(4);
+    await fireEvent.click(screen.getByRole("button", { name: "Graph filters" }));
+    await fireEvent.change(screen.getByRole("combobox"), { target: { value: "30" } });
+    expect(dots()).toHaveLength(3);
+    expect(JSON.parse(localStorage.getItem("r3v.graph.filter:C:/Song")!).range).toBe("30"); // kept
+    await fireEvent.click(screen.getByRole("button", { name: /Author/ }));
+    await fireEvent.click(screen.getByRole("menuitemcheckbox", { name: /Robin/ }));
+    expect(document.querySelectorAll(".node.dim")).toHaveLength(0); // (all Robin's)
+    await fireEvent.click(screen.getByRole("button", { name: "Show everything" }));
+    expect(dots()).toHaveLength(6);
   });
 
   it("shows an agent's branch with work not merged yet, folding only the merged ones", () => {
@@ -248,12 +268,12 @@ describe("HistoryGraph with agents", () => {
     show({ versions: open, branches: [...branches, { name: "b-ui", latest: "u1", label: "ui", kind: "agent" }] });
     screen.getByText("ui");
     expect(screen.queryByText("renderer")).toBeNull();
-    expect(screen.getByRole("button", { name: "Show agents' branches" }).textContent).toContain("1");
+    expect(screen.getByRole("button", { name: "Graph filters" }).getAttribute("title")).toBe("Graph filters: 1 branch hidden");
   });
 
   it("never folds the agent's branch you are on", () => {
     show({ versions: history, branches, branch: "b-render", head: "r2", selected: "r2" });
-    expect(screen.getAllByRole("option")).toHaveLength(5);
-    expect(screen.queryByRole("button", { name: "Show agents' branches" })).toBeNull();
+    expect(dots()).toHaveLength(5);
+    expect(screen.getByRole("button", { name: "Graph filters" }).getAttribute("title")).toBe("Graph filters");
   });
 });

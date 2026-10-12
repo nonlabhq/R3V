@@ -61,6 +61,8 @@ type AgentWorkspace struct {
 // where each is against its base branch (the team is asked; out of reach,
 // Ahead and Behind are nil).
 func (a *App) AgentWorkspaces(root string) ([]AgentWorkspace, error) {
+	sw := startWatch("AgentWorkspaces " + filepath.Base(root))
+	defer sw.done()
 	r, err := project.Open(root)
 	if err != nil {
 		return nil, err
@@ -69,6 +71,7 @@ func (a *App) AgentWorkspaces(root string) ([]AgentWorkspace, error) {
 	if err != nil {
 		return nil, err
 	}
+	sw.lap("statuses")
 	recs := branchRecords(r, false)
 	if recs == nil {
 		recs = branchRecords(r, true)
