@@ -42,6 +42,7 @@
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
   import PromptDialog from "./PromptDialog.svelte";
   import StepsTimeline from "./StepsTimeline.svelte";
+  import { refreshWorkspaces } from "./workspaces.svelte";
   import LeaveChangesDialog from "./LeaveChangesDialog.svelte";
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
@@ -88,6 +89,16 @@
   });
   // (the Agents tab remembered, and not offered now: Versions)
   $effect(() => { if (st && tab === "agents" && !st.agentWorkspaces) tab = "overview"; });
+  // The workspaces read in the background, so their tab opens at once
+  // (reading them scans each one's files and asks the team).
+  const hasWorkspaces = $derived(!!st?.agentWorkspaces && (st?.workspaceCount ?? 0) > 0);
+  $effect(() => {
+    if (!hasWorkspaces) return;
+    const r = root;
+    refreshWorkspaces(r).catch(() => {});
+    const timer = setInterval(() => { if (!document.hidden && tab !== "agents") refreshWorkspaces(r).catch(() => {}); }, 30000);
+    return () => clearInterval(timer);
+  });
   let message = $state("");
   let busy = $state("");
   let progress = $state<Progress | null>(null);

@@ -1755,5 +1755,6 @@
 "Recording steps": "Guardando pasos",
 "How “{version}” was made": "Cómo se hizo “{version}”",
 "made in {n} step": "hecho en {n} paso",
-"made in {n} steps": "hecho en {n} pasos"
+"made in {n} steps": "hecho en {n} pasos",
+"Show it all": "Mostrarlo todo"
 }

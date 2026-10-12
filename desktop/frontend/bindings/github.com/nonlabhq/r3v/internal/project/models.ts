@@ -112,6 +112,11 @@ export class Step {
     "on": string;
     "time": string;
     "tool": string;
+
+    /**
+     * Detail: what the call did, in a line (a command's description).
+     */
+    "detail"?: string;
     "actor"?: string;
 
     /**
@@ -150,10 +155,10 @@ export class Step {
      * Creates a new Step instance from a string or object.
      */
     static createFrom($$source: any = {}): Step {
-        const $$createField7_0 = $$createType2;
+        const $$createField8_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("files" in $$parsedSource) {
-            $$parsedSource["files"] = $$createField7_0($$parsedSource["files"]);
+            $$parsedSource["files"] = $$createField8_0($$parsedSource["files"]);
         }
         return new Step($$parsedSource as Partial<Step>);
     }

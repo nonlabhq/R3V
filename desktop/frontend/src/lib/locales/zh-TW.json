@@ -1755,5 +1755,6 @@
 "Recording steps": "正在記錄步驟",
 "How “{version}” was made": "「{version}」是怎麼做出來的",
 "made in {n} step": "由 {n} 個步驟做成",
-"made in {n} steps": "由 {n} 個步驟做成"
+"made in {n} steps": "由 {n} 個步驟做成",
+"Show it all": "顯示全部"
 }

@@ -49,14 +49,16 @@ type StepSettings struct {
 
 // Step is one step of a session.
 type Step struct {
-	N     int      `json:"n"`
-	Turn  int      `json:"turn"`
-	ID    string   `json:"version"` // the files as they were (a version never shared)
-	On    string   `json:"on"`      // the version the project was on
-	Time  string   `json:"time"`
-	Tool  string   `json:"tool"`
-	Actor string   `json:"actor,omitempty"`
-	Files []string `json:"files"` // changed since the step before
+	N    int    `json:"n"`
+	Turn int    `json:"turn"`
+	ID   string `json:"version"` // the files as they were (a version never shared)
+	On   string `json:"on"`      // the version the project was on
+	Time string `json:"time"`
+	Tool string `json:"tool"`
+	// Detail: what the call did, in a line (a command's description).
+	Detail string   `json:"detail,omitempty"`
+	Actor  string   `json:"actor,omitempty"`
+	Files  []string `json:"files"` // changed since the step before
 }
 
 // Turn is a prompt (or a note given with a step) and the steps after it.
@@ -88,6 +90,7 @@ type stepLine struct {
 	On         string   `json:"on,omitempty"`
 	Time       string   `json:"time"`
 	Tool       string   `json:"tool,omitempty"`
+	Detail     string   `json:"detail,omitempty"`
 	Actor      string   `json:"actor,omitempty"`
 	Files      []string `json:"files,omitempty"`
 	Own        bool     `json:"own,omitempty"` // Version was made for this step (dropped with it)
@@ -214,6 +217,12 @@ func (r *Repo) StepTurn(session, prompt, transcript string) error {
 // the session's step before (nil when they didn't): tool is what moved
 // them, note a note given by hand (a turn of its own).
 func (r *Repo) TakeStep(session, tool, note string) (*Step, error) {
+	return r.TakeStepWith(session, tool, "", note)
+}
+
+// TakeStepWith is TakeStep with what the call did, in a line (a command's
+// description, redacted).
+func (r *Repo) TakeStepWith(session, tool, detail, note string) (*Step, error) {
 	if !r.StepsOn() {
 		return nil, nil
 	}
@@ -292,7 +301,7 @@ func (r *Repo) TakeStep(session, tool, note string) (*Step, error) {
 		id = m.ID
 	}
 	l := stepLine{N: stepCount(lines) + 1, Turn: turn, Version: id, On: head, Time: time.Now().UTC().Format(time.RFC3339),
-		Tool: tool, Files: changedPaths(orEmpty(before), m), Own: id != head}
+		Tool: tool, Detail: redact.Text(detail), Files: changedPaths(orEmpty(before), m), Own: id != head}
 	if r.Actor != nil {
 		l.Actor = r.Actor.Tool
 	}
@@ -318,7 +327,7 @@ func (l stepLine) step() Step {
 	if files == nil {
 		files = []string{}
 	}
-	return Step{N: l.N, Turn: l.Turn, ID: l.Version, On: l.On, Time: l.Time, Tool: l.Tool, Actor: l.Actor, Files: files}
+	return Step{N: l.N, Turn: l.Turn, ID: l.Version, On: l.On, Time: l.Time, Tool: l.Tool, Detail: l.Detail, Actor: l.Actor, Files: files}
 }
 
 // orEmpty is m, or no files when m is nil.

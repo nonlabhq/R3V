@@ -1,13 +1,16 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { api, ago, errorText, type Session, type StepChange } from "./api";
+  import { api, ago, errorText, type Session, type Step, type StepChange, type TalkEntry } from "./api";
   import { toast } from "./notify.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import Modal from "./Modal.svelte";
 
-  // A session's turns (prompts), each with the steps it led to, the latest
-  // first: compare two; go back to one when onback is given (the work
-  // you're on, not a version's steps or another copy's).
+  // A session as it went: each prompt (the latest first), then what the
+  // agent said and the steps it made, in order. The agent's words and what
+  // each call did come from the conversation the agent tool keeps (read
+  // when shown, never copied). Compare two steps; go back to one when
+  // onback is given (the work you're on, not a version's steps or another
+  // copy's).
   let { root, session, busy = false, onback }: {
     root: string; // the copy whose steps they are
     session: Session;
@@ -18,6 +21,45 @@
   let asking = $state<number | null>(null);
   let from = $state<number | null>(null);
   let diff = $state<{ a: number; b: number; changes: StepChange[] } | null>(null);
+  let open = $state<Record<string, boolean>>({}); // words shown whole
+
+  // The conversation, read once per session.
+  let talk = $state<TalkEntry[]>([]);
+  $effect(() => {
+    const id = session.id, at = root;
+    talk = [];
+    api.StepsTalk(at, id).then((x) => { if (id === session.id) talk = x ?? []; }).catch(() => {});
+  });
+
+  const ms = (s: string) => Date.parse(s) || 0;
+  type Item = { kind: "reply"; time: number; text: string; key: string } | { kind: "step"; time: number; step: Step; detail: string; key: string };
+
+  // A turn's items in order: the agent's replies between its prompt and the
+  // next, and its steps, each with what its call did.
+  function itemsOf(i: number): Item[] {
+    const turns = session.turns;
+    const start = ms(turns[i].time) - 5000;
+    const end = i + 1 < turns.length ? ms(turns[i + 1].time) - 5000 : Infinity;
+    const inTurn = talk.filter((e) => { const x = ms(e.time); return x >= start && x < end; });
+    const items: Item[] = inTurn.filter((e) => e.kind === "reply")
+      .map((e, n) => ({ kind: "reply", time: ms(e.time), text: e.text ?? "", key: `r${i}-${n}` }));
+    let prev = start;
+    for (const st of turns[i].steps) {
+      const at = ms(st.time) + 1500;
+      const calls = inTurn.filter((e) => e.kind === "tool" && ms(e.time) > prev && ms(e.time) <= at);
+      const call = [...calls].reverse().find((e) => e.tool === st.tool) ?? calls.at(-1);
+      items.push({ kind: "step", time: ms(st.time), step: st, detail: st.detail || call?.detail || "", key: `s${st.n}` });
+      prev = at;
+    }
+    return items.sort((a, b) => a.time - b.time);
+  }
+
+  // A message another session relayed (Claude Code wraps it): who from, and its words.
+  function promptOf(p: string): { from: string; text: string } {
+    const m = /^\s*<cross-session-message\b([^>]*)>([\s\S]*?)(?:<\/cross-session-message>\s*)?$/.exec(p);
+    if (!m) return { from: "", text: p };
+    return { from: /from-name="([^"]*)"/.exec(m[1])?.[1] ?? "", text: m[2].trim() };
+  }
 
   // What made a step, in words: the agent tool's name for it, or R3V's.
   function toolLabel(tool: string): string {
@@ -41,30 +83,43 @@
     }
   }
   const statusText = (st: string) => ({ added: t("added"), modified: t("changed"), deleted: t("deleted") } as Record<string, string>)[st] ?? st;
+  const toggle = (key: string) => (open[key] = !open[key]);
 </script>
 
 <div class="turns">
-  {#each [...session.turns].reverse() as turn (turn.n)}
+  {#each [...session.turns.keys()].reverse() as i (session.turns[i].n)}
+    {@const turn = session.turns[i]}
     <div class="turn">
-      {#if turn.prompt}<p class="prompt" title={turn.prompt}>“{turn.prompt}”</p>
-      {:else if turn.note}<p class="prompt note">{turn.note}</p>{/if}
-      {#each [...turn.steps].reverse() as st (st.n)}
-        <div class="step" class:viewing={!onback}>
-          <span class="n">{st.n}</span>
-          <span class="tool">{toolLabel(st.tool)}</span>
-          <span class="files faint" title={st.files.join("\n")}>{filesText(st.files)}</span>
-          <span class="time faint">{ago(st.time)}</span>
-          <span class="acts">
-            {#if from === null}
-              <button class="ghost small" onclick={() => (from = st.n)}>{t("Compare")}</button>
-            {:else if from === st.n}
-              <button class="ghost small" onclick={() => (from = null)}>{t("Cancel")}</button>
-            {:else}
-              <button class="small" onclick={() => compare(Math.min(from!, st.n), Math.max(from!, st.n))}>{t("Compare with step {n}", { n: from })}</button>
-            {/if}
-            {#if onback}<button class="small" disabled={busy} onclick={() => (asking = st.n)}>{t("Go back")}</button>{/if}
-          </span>
-        </div>
+      {#if turn.prompt}
+        {@const p = promptOf(turn.prompt)}
+        <button class="words prompt" class:whole={open[`p${turn.n}`]} onclick={() => toggle(`p${turn.n}`)} title={t("Show it all")}>
+          {#if p.from}<span class="from">{p.from}</span>{/if}<span class="text">{p.text}</span>
+        </button>
+      {:else if turn.note}<p class="note">{turn.note}</p>{/if}
+      {#each itemsOf(i) as it (it.key)}
+        {#if it.kind === "reply"}
+          <button class="words reply" class:whole={open[it.key]} onclick={() => toggle(it.key)} title={t("Show it all")}>
+            <span class="text">{it.text}</span>
+          </button>
+        {:else}
+          {@const st = it.step}
+          <div class="step" class:viewing={!onback}>
+            <span class="n">{st.n}</span>
+            <span class="tool" title={it.detail}>{toolLabel(st.tool)}{#if it.detail && !st.files.includes(it.detail)}<span class="detail">{` · ${it.detail}`}</span>{/if}</span>
+            <span class="files faint" title={st.files.join("\n")}>{filesText(st.files)}</span>
+            <span class="time faint">{ago(st.time)}</span>
+            <span class="acts">
+              {#if from === null}
+                <button class="ghost small" onclick={() => (from = st.n)}>{t("Compare")}</button>
+              {:else if from === st.n}
+                <button class="ghost small" onclick={() => (from = null)}>{t("Cancel")}</button>
+              {:else}
+                <button class="small" onclick={() => compare(Math.min(from!, st.n), Math.max(from!, st.n))}>{t("Compare with step {n}", { n: from })}</button>
+              {/if}
+              {#if onback}<button class="small" disabled={busy} onclick={() => (asking = st.n)}>{t("Go back")}</button>{/if}
+            </span>
+          </div>
+        {/if}
       {/each}
     </div>
   {/each}
@@ -92,13 +147,20 @@
 {/if}
 
 <style>
-  .turn { margin: var(--sp-8) 0; }
-  .prompt { margin: 0 0 var(--sp-4); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .prompt.note { font-style: italic; }
-  .step { display: grid; grid-template-columns: 28px minmax(80px, auto) 1fr auto auto; align-items: center; gap: var(--sp-8);
+  .turn { margin: var(--sp-10) 0; }
+  .words { display: block; width: 100%; text-align: left; background: none; border: none; padding: var(--sp-2) 0; color: inherit;
+    font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+  .words .text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: pre-wrap; }
+  .words.whole .text { display: block; -webkit-line-clamp: unset; line-clamp: unset; }
+  .prompt { font-weight: var(--fw-semibold); }
+  .prompt .from { display: block; font-weight: normal; font-size: var(--fs-xs); color: var(--faint); }
+  .reply { color: var(--muted); padding-left: var(--sp-12); border-left: 2px solid var(--line); margin: var(--sp-4) 0; }
+  .note { margin: 0 0 var(--sp-4); font-size: var(--fs-sm); font-style: italic; }
+  .step { display: grid; grid-template-columns: 28px minmax(80px, 2fr) minmax(0, 2fr) auto auto; align-items: center; gap: var(--sp-8);
     padding: var(--sp-2) 0; font-size: var(--fs-sm); }
   .n { color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; }
   .tool { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail { color: var(--muted); }
   .files { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .time { white-space: nowrap; }
   .acts { display: flex; gap: var(--sp-4); }

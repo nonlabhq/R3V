@@ -22,6 +22,7 @@ export function previewURL(root: string, path: string, version = "", max = 2048)
   return `/r3v-preview?${q}`;
 }
 export type { TrackEdit, Session, Turn, Step, StepChange, StepSettings } from "../../bindings/github.com/nonlabhq/r3v/internal/project/models";
+export type { Entry as TalkEntry } from "../../bindings/github.com/nonlabhq/r3v/internal/transcript/models";
 export type { Member } from "../../bindings/github.com/nonlabhq/r3v/internal/remote/models";
 
 export const api = App;
