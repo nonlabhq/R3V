@@ -41,6 +41,7 @@
   import LiveBlockedDialog from "./LiveBlockedDialog.svelte";
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
   import PromptDialog from "./PromptDialog.svelte";
+  import StepsTimeline from "./StepsTimeline.svelte";
   import LeaveChangesDialog from "./LeaveChangesDialog.svelte";
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
@@ -759,6 +760,13 @@
       if (branchAfterGo === id) { branchAfterGo = ""; newBranch = ""; }
     },
   });
+  // Back to an agent's step (StepsTimeline): as going to a version, Live's
+  // check and all.
+  function stepBack(session: string, n: number) {
+    run({ name: "step-back", call: (_res, force) => api.StepBack(root, session, n, force),
+      done: () => toast(t("The files are as at step {n}. They were kept as a step first.", { n }), "ok", 8000) });
+  }
+
   // New branch from a version: go to it first (a branch starts where you
   // are), then name the branch.
   let branchAfterGo = $state("");
@@ -1053,6 +1061,7 @@
                 <strong>{t("Your changes")}</strong>
                 <span class="faint">{t("not committed yet · on {branch}", { branch: bl(st.branch) })}</span>
               </div>
+              <StepsTimeline {root} version={`${st.head} ${refreshKey} ${st.changes.length}`} busy={!!busy} onback={stepBack} />
               <div class="pending-body">{@render changesPanel("changes", true)}</div>
               <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
             {:else if shownParked}

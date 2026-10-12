@@ -32,6 +32,10 @@ words: [glossary.md](glossary.md).
   explain <file>` says why a file is tracked. Leave out what a build or a
   tool makes again (caches, renders, build outputs) before the first
   commit: `rules: - ignore: "renders/"`.
+- **Steps** (Nightly): R3V's hooks keep the files after each of your tool
+  calls, under the person's prompt, so the person can go back to any of
+  them. Nothing to do on your side; don't run `r3v step back` yourself
+  (it changes the files of the copy, the person's edits included).
 - Version ids are long hex strings; any unique prefix (10 characters, as
   the text output shows) works where a command takes one.
 

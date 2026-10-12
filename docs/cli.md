@@ -162,6 +162,17 @@ r3v lock --break <path>                # take anyone's lock off a path (the pers
 
 Agent locks keep two agents (each in a workspace of the project) from changing the same file that can't be merged: textures, models, sounds, `.blend`, Unity and Unreal assets (the team's lock kinds when it has them, `.r3v.yaml`'s `file_locks` narrowing them). Code never locks: it merges hunk by hunk; `--claim` only tells other agents you're on it. `agent setup` writes `.claude/settings.local.json` (a `PreToolUse` hook running `r3v hook pre-tool`, and `R3V_ACTOR` in `env`, merged with what is there; this copy's, never tracked) and, in the main copy, adds the agents' lines to `CLAUDE.md` (commit it); `workspace add --agent claude-code` sets a workspace up; the hook locks a file when the agent first changes it, or refuses the change saying who holds it. A commit by an agent changing a file another workspace holds, or one the person changed and hasn't committed, is refused (`files_locked_by_agent`); a person's commit never is. A lock is held until its branch is merged; one whose agent hasn't been heard of for 15 minutes is stale, and the next lock asked over it takes it. Kept on this computer only, beside the project's store (`.r3v/agent-locks`). See [design/agent-workspaces.md](design/agent-workspaces.md).
 
+## Steps: an agent's moves (Nightly)
+
+```
+r3v steps [--session ID] [--list]      # the latest session's prompts and steps (--list: the sessions)
+r3v step [-m NOTE]                     # a step of the files as they are now
+r3v step back <n> [--session ID]       # the files as at step n (the files now are a step first)
+r3v step diff <a> [<b>] [--session ID] # what changed from step a to step b (or to the files now)
+```
+
+A step is the project after one of an agent's moves: after each tool call that changed files (Edit, Write, a shell command, an MCP tool), R3V keeps the files as they are, under the prompt that asked for it. `agent setup` adds the hooks that make them (`UserPromptSubmit`: `r3v hook prompt`; `PostToolUse`: `r3v hook post-tool`); run it again in a copy set up before 0.1.44. Steps stay on this computer (`.r3v/steps/<session>.jsonl`, their files in the local store), never in the history or the team's storage; a session is kept while it has steps on the version the project is on, then 7 days, within 2 GB. Prompts are kept with keys and passwords taken out; the app's project settings turn prompts, or steps, off. `step back` is the person's: it changes the files of the copy it runs in. See [design/steps.md](design/steps.md).
+
 ## Working with Live Sets directly
 
 ```
