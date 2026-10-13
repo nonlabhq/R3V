@@ -8,7 +8,9 @@
   import { storageKind } from "./teamText";
 
   // A team's home (a click on the team in the sidebar): who's in it, and its
-  // projects or its settings. Not a tab: the tabs show no tab picked.
+  // projects (those on this computer, then those still only on the team; a
+  // project's workspaces counted on it, not listed) or its settings. Not a
+  // tab: the tabs show no tab picked.
   let { overview, team, projects, open, onopen, onadd, adding = false, reload, canMove = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
@@ -31,8 +33,13 @@
   });
 
   let kind = $derived(storageKind(team));
+  let mains = $derived(projects.filter((p) => !p.workspace));
+  let here = $derived(mains.filter((p) => p.status !== "remote"));
+  let away = $derived(mains.filter((p) => p.status === "remote"));
+  const same = (a = "", b = "") => !!a && !!b && a.replace(/[\/]+$/, "").toLowerCase() === b.replace(/[\/]+$/, "").toLowerCase();
+  const spaces = (p: TeamProject) => projects.filter((w) => w.workspace && same(w.mainRoot, p.root)).length;
   let summary = $derived([members.length ? tn(members.length, "{n} member", "{n} members") : "",
-    tn(projects.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
+    tn(mains.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
   const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status]
     ?? `⑂ ${p.branchLabel || p.branch}`);
 </script>
@@ -64,17 +71,20 @@
   </div>
 
   {#if section === "projects"}
+    {#snippet card(p: TeamProject)}
+      {@const n = spaces(p)}
+      <button class="card {p.status}" onclick={() => onopen(p)} title={p.root || p.name}>
+        <ProjectIcon {p} size={36} />
+        <span class="text">
+          <span class="name">{p.name}</span>
+          <span class="meta">{status(p)}{n ? ` · ${tn(n, "{n} workspace", "{n} workspaces")}` : ""}</span>
+        </span>
+        {#if open(p)}<span class="tag">{t("open")}</span>{:else if p.status === "remote"}<span class="cloud" aria-hidden="true">☁</span>{/if}
+      </button>
+    {/snippet}
+    <h2>{t("On this computer")}<span class="count">{here.length}</span></h2>
     <div class="cards">
-      {#each projects as p (p.root || p.id)}
-        <button class="card {p.status}" onclick={() => onopen(p)} title={p.root || p.name}>
-          <ProjectIcon {p} size={36} />
-          <span class="text">
-            <span class="name">{p.name}</span>
-            <span class="meta">{status(p)}</span>
-          </span>
-          {#if open(p)}<span class="tag">{t("open")}</span>{:else if p.status === "remote"}<span class="cloud" aria-hidden="true">☁</span>{/if}
-        </button>
-      {/each}
+      {#each here as p (p.root || p.id)}{@render card(p)}{/each}
       <button class="card add" onclick={onadd} disabled={adding}>
         <span class="plus" aria-hidden="true">+</span>
         <span class="text">
@@ -83,6 +93,13 @@
         </span>
       </button>
     </div>
+    {#if away.length}
+      <h2>{t("On the team only")}<span class="count">{away.length}</span>
+        <span class="hint">{t("Open one to download it to this computer")}</span></h2>
+      <div class="cards">
+        {#each away as p (p.id)}{@render card(p)}{/each}
+      </div>
+    {/if}
   {:else}
     {#key team.id}
       <TeamSettings {team} inline author={overview.author} {reload} onclose={() => (section = "projects")}
@@ -110,6 +127,10 @@
     font-size: var(--fs-base); color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: calc(var(--border-width) * -1); }
   .switch button:hover:not(:disabled) { background: transparent; color: var(--text); }
   .switch button.on { color: var(--text); font-weight: var(--fw-semibold); border-bottom-color: var(--accent); }
+  h2 { display: flex; align-items: baseline; gap: var(--sp-8); margin: var(--sp-20) 0 var(--sp-10); font-size: var(--fs-md);
+    font-weight: var(--fw-semibold); color: var(--muted); }
+  h2 .count { font-size: var(--fs-sm); color: var(--faint); font-variant-numeric: tabular-nums; }
+  h2 .hint { font-size: var(--fs-sm); font-weight: normal; color: var(--faint); }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--sp-12); }
   .card { position: relative; display: flex; align-items: center; gap: var(--sp-12); min-height: 72px; padding: var(--sp-14) var(--sp-16);
     border-radius: var(--radius-lg); background: var(--panel); text-align: left; }
