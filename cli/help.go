@@ -22,7 +22,7 @@ func wantsHelp(args []string) bool {
 }
 
 // helpAliases are the commands' older names, shown under the current one.
-var helpAliases = map[string]string{"save": "commit", "snapshot": "commit", "checkout": "goto", "profile": "rules"}
+var helpAliases = map[string]string{"save": "commit", "snapshot": "commit", "checkout": "goto", "profile": "rules", "tag": "milestone", "tags": "milestones"}
 
 // helpFor is a command's lines from the usage (with their continuation
 // lines); with a subcommand among args (r3v rules preset --help), only

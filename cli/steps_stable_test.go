@@ -25,3 +25,12 @@ func TestNoResultsInStable(t *testing.T) {
 		t.Fatal("r3v result in Stable")
 	}
 }
+
+// Nor milestones (tag, tags).
+func TestNoMilestonesInStable(t *testing.T) {
+	for _, c := range []string{"milestone", "milestones", "tag", "tags"} {
+		if _, ok := extraCommands[c]; ok {
+			t.Fatalf("r3v %s in Stable", c)
+		}
+	}
+}
