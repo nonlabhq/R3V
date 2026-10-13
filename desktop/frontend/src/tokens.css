@@ -30,7 +30,8 @@
   --muted: #a1a1a1;
   --faint: #767676;
   --dim: #5a5a5a;         /* marks that are switched off */
-  --switch-knob: #d0d0d0; /* a switch that is off (white when on) */
+  --switch-knob: #d0d0d0; /* a switch that is off */
+  --switch-knob-on: #ffffff; /* ...and on */
 
   /* The accent: R3V's green, for what to do next and what is done. */
   --accent: #ff4a1c;

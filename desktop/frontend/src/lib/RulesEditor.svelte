@@ -169,6 +169,7 @@
 {/if}
 
 <style>
+  input.switch { margin-left: var(--sp-8); } /* (its look: style.css) */
   section { margin-top: var(--sp-18); }
   h3 { margin: 0 0 var(--sp-6); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
   .hint { margin: 0 0 var(--sp-8); color: var(--muted); font-size: var(--fs-md); }
@@ -191,13 +192,6 @@
   .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .why { flex: 1; min-width: 0; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .size { font-size: var(--fs-sm); width: 70px; text-align: right; flex: none; }
-  .switch { appearance: none; position: relative; width: 26px; height: 15px; margin: 0 0 0 var(--sp-8); flex: none; cursor: pointer;
-    border-radius: var(--radius-lg); background: var(--line); transition: background .15s; }
-  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
-    background: var(--muted); transition: transform .15s; }
-  .switch:checked { background: var(--accent); }
-  .switch:checked::after { transform: translateX(11px); background: #fff; }
-  .switch:disabled { opacity: .5; cursor: default; }
   .rule { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-4) 0; }
   .rule .mono { flex: 1; }
   .kind { font-size: var(--fs-xs); padding: 1px var(--sp-8); border-radius: var(--radius-pill); background: var(--danger-bg); color: var(--danger-text); }

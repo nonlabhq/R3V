@@ -769,12 +769,6 @@
   .fitem:hover { background: var(--hover); }
   .check { width: 12px; color: var(--accent); }
   .freset { color: var(--accent-text); }
-  .switch { appearance: none; flex: none; width: 26px; height: 15px; border-radius: var(--radius-pill); background: var(--line);
-    position: relative; cursor: pointer; transition: background .15s; }
-  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
-    background: var(--switch-knob); transition: transform .15s; }
-  .switch:checked { background: var(--accent); }
-  .switch:checked::after { transform: translateX(11px); }
   .node.dim { opacity: .25; }
   .zoombar svg { position: static; }
   .toolbar .back { font-weight: var(--fw-semibold); }
