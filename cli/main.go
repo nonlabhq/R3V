@@ -74,9 +74,9 @@ advanced:
                                          deletes those unused for a day (and a week old)
 
 set commands:
-  info <set.als>                         tracks, devices, clips, plugins, samples
-  diff <a.als> <b.als>                   semantic diff
-  merge-sets <base> <ours> <theirs> -o <out>  track-level 3-way merge of files
+  diff <a.als> <b.als>                   two Live Sets on disk, track by track
+  info <set.als>                         a Live Set: tracks, devices, clips, plugins, samples
+  merge-sets <base> <ours> <theirs> -o <out>  track-level 3-way merge of Live Sets
         [--strategy fail|ours|theirs|both]
 
   version                                show the R3V version
@@ -129,7 +129,7 @@ func Run(args []string) int {
 	case "info":
 		err = cmdInfo(rest)
 	case "diff":
-		err = cmdDiff(rest)
+		err = cmdFileDiff(rest)
 	case "merge-sets":
 		code, err = cmdMerge(rest)
 	case "merge":
@@ -262,22 +262,6 @@ func cmdInfo(args []string) error {
 		}
 		fmt.Printf("  %s%s  (type %s, %s bytes)\n", name, pack, r.RelativePathType, r.FileSize)
 	}
-	return nil
-}
-
-func cmdDiff(args []string) error {
-	if len(args) != 2 {
-		return fmt.Errorf("usage: r3v diff <a.als> <b.als>")
-	}
-	a, err := als.Load(args[0])
-	if err != nil {
-		return err
-	}
-	b, err := als.Load(args[1])
-	if err != nil {
-		return err
-	}
-	fmt.Println(diff.Diff(a, b).Render())
 	return nil
 }
 

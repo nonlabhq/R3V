@@ -269,6 +269,27 @@ func (r *Repo) VersionChanges(ref string) ([]FileChange, error) {
 	return r.fileChanges(parent, m)
 }
 
+// ChangesBetween lists what changed from version from to version to (any
+// two versions: what to has that from hasn't).
+func (r *Repo) ChangesBetween(from, to string) ([]FileChange, error) {
+	load := func(ref string) (*Manifest, error) {
+		id, err := r.Resolve(ref)
+		if err != nil {
+			return nil, err
+		}
+		return r.Load(id)
+	}
+	a, err := load(from)
+	if err != nil {
+		return nil, err
+	}
+	b, err := load(to)
+	if err != nil {
+		return nil, err
+	}
+	return r.fileChanges(a, b)
+}
+
 // MissingSets lists the sets of version ref and its first parent that are
 // not on this computer: VersionChanges can't tell what changed in them.
 func (r *Repo) MissingSets(ref string) ([]string, error) {
