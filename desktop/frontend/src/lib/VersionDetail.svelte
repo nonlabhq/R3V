@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChangeMark from "./ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, detailsOf, errorText, titleOf, type ProjectFile, type Version } from "./api";
   import FileIcon from "./FileIcon.svelte";
@@ -108,7 +109,6 @@
   const dir = (p: string) => p.slice(0, p.lastIndexOf("/") + 1);
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"),
     renamed: t("Moved"), untracked: t("No longer tracked") } as Record<string, string>)[s] ?? s;
-  const sym: Record<string, string> = { added: "A", modified: "M", deleted: "D", renamed: "R", untracked: "U" };
 
   // This version (a) against the one before it (b).
   function sides(f: ProjectFile): { a: Side | null; b: Side | null } {
@@ -178,7 +178,7 @@
                 <button class:on={f.path === picked} class:tree={view === "tree"} onclick={() => (picked = f.path)} title={f.path} data-path={f.path}>
                   <FileIcon path={f.path} kind={f.kind} />
                   <span class="names"><span class="fname">{name(f.path)}</span>{#if view === "list" && dir(f.path)}<span class="fdir">{dir(f.path)}</span>{/if}</span>
-                  <span class="st {f.status}" title={statusName(f.status)}>{sym[f.status] ?? "?"}</span>
+                  <ChangeMark status={f.status} title={statusName(f.status)} />
                 </button>
               </li>
             {/if}
@@ -233,11 +233,6 @@
   .fname, .fdir { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fname { font-size: var(--fs-md); }
   .fdir { font-size: var(--fs-xs); color: var(--faint); }
-  .st { flex: none; width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center;
-    justify-content: center; font-size: var(--fs-2xs); font-weight: var(--fw-bold); background: var(--mod-soft); color: var(--mod); }
-  .st.added { background: var(--add-soft); color: var(--add); }
-  .st.deleted { background: var(--del-soft); color: var(--del); }
-  .st.renamed { background: var(--warn-soft); color: var(--warn); }
   .diff { overflow: auto; padding: var(--sp-14) var(--sp-16); min-width: 0; }
   .diff-h { margin-bottom: var(--sp-10); }
   .dname { display: flex; align-items: center; gap: var(--sp-6); font-weight: var(--fw-semibold); }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChangeMark from "./ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, formatBytes, titleOf, type FileVersion, type MemberLook, type ProjectFile, type State } from "./api";
   import { toast } from "./notify.svelte";
@@ -54,8 +55,6 @@
   let changes = $derived(!picked && isChanged(file) && file.status !== "ignored");
   let hadOne = $derived(["modified", "deleted", "renamed"].includes(file.status));
 
-  const sym: Record<string, string> = { added: "A", modified: "M", deleted: "D", renamed: "R" };
-  const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"), renamed: t("Moved") } as Record<string, string>)[s] ?? "";
   const changeText = () => file.status === "renamed"
     ? t(file.edited ? "Moved from {path}, and changed, since the version you're on" : "Moved from {path} since the version you're on", { path: file.from })
     : file.status === "added" ? t("New since the version you're on") : file.status === "deleted" ? t("Deleted since the version you're on")
@@ -101,7 +100,7 @@
   <header>
     <span class="badge"><FileIcon path={file.path} kind={file.kind} /></span>
     <strong class="name" title={file.path}>{baseName(file.path)}</strong>
-    {#if sym[file.status]}<span class="st {file.status}" title={statusName(file.status)}>{sym[file.status]}</span>{/if}
+    <ChangeMark status={file.status} />
   </header>
   {#if lock && !lock.person}
     <p class="lockline">
@@ -190,11 +189,6 @@
   .badge { flex: none; min-width: 22px; height: 18px; padding: 0 var(--sp-4); border-radius: var(--radius-sm); background: var(--hover-strong);
     color: var(--muted); font-size: var(--fs-2xs); font-weight: var(--fw-bold); display: inline-flex; align-items: center; justify-content: center; }
   .name { flex: 1; min-width: 0; font-size: var(--fs-lg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .st { flex: none; font-size: var(--fs-2xs); font-weight: var(--fw-bold); padding: 1px var(--sp-6); border-radius: var(--radius-sm);
-    background: var(--mod-soft); color: var(--mod); }
-  .st.added { background: var(--add-soft); color: var(--add); }
-  .st.deleted { background: var(--del-soft); color: var(--del); }
-  .st.renamed { background: var(--warn-soft); color: var(--warn); }
   .lockline { flex: none; display: flex; align-items: center; gap: var(--sp-8); margin: 0 var(--sp-18) var(--sp-10);
     font-size: var(--fs-sm); color: var(--muted); }
   .locktext { flex: 1; min-width: 0; }

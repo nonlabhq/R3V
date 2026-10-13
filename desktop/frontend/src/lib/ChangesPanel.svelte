@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChangeMark from "./ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { folderMoves } from "./moves";
   import type { Snippet } from "svelte";
@@ -314,7 +315,6 @@
   }
   const versionLabel = (v: FileVersion) => `“${titleOf(v.version.message) || v.version.short}”`;
 
-  const sym: Record<string, string> = { added: "+", modified: "~", deleted: "−", untracked: "○", renamed: "M", unchanged: "", ignored: "" };
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"), renamed: t("Moved"),
     untracked: t("No longer tracked: the rules leave it out now") } as Record<string, string>)[s];
   // Folders that moved, said once on the folder (see moves.ts).
@@ -426,7 +426,7 @@
                     {@const v = liveShort(f.live)}
                     <span class="live" class:odd={usualLive && v !== usualLive} title={t("Saved with {app}", { app: f.live })}>{v}</span>
                   {/if}
-                  {#if sym[f.status]}<span class="sym" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
+                  <ChangeMark status={f.status} title={statusName(f.status)} />
                 </span>
               </button>
               <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, f.path); }}>⋯</button>
@@ -456,7 +456,7 @@
                     <span class="live" class:odd={usualLive && v !== usualLive}
                       title={t("Saved with {app}", { app: f.live }) + (usualLive && v !== usualLive ? " — " + t("most sets here use Live {version}", { version: usualLive }) : "")}>{v}</span>
                   {/if}
-                  {#if sym[f.status]}<span class="sym" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
+                  <ChangeMark status={f.status} title={statusName(f.status)} />
                 </span>
               </button>
               <button class="ghost more" title={t("More")} onclick={(e) => { e.stopPropagation(); openMenu(e, f.path); }}>⋯</button>
@@ -518,7 +518,7 @@
             {#each history as h (h.version.id)}
               <li>
                 <button class:on={h.version.id === picked} onclick={() => pick(h.version.id)}>
-                  <span class="vsym {h.status}">{sym[h.status]}</span>
+                  <ChangeMark status={h.status} />
                   <span class="vmsg">{titleOf(h.version.message) || t("(no description)")}</span>
                   {#if h.status === "renamed"}<span class="from" title={t("Moved here from {path}", { path: h.from })}>← {h.from}</span>{/if}
                   <span class="faint">{h.version.author} · {ago(h.version.time)}</span>
@@ -688,24 +688,14 @@
   /* What changed, at the end of the row: a small colored square. */
   /* What changed at the far right; ⋯ (on hover) just left of it, in room kept for it. */
   .right { margin-left: auto; display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-6); flex: none; min-width: 56px; }
-  .right .sym, .right .count { margin-left: 22px; }
-  .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
-    font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
-  .file.added .sym { background: var(--add-soft); }
-  .file.deleted .sym { background: var(--del-soft); }
-  .file.modified .sym { background: var(--mod-soft); }
-  .file.added .sym { color: var(--add); }
-  .file.deleted .sym { color: var(--del); }
-  .file.modified .sym { color: var(--mod); }
+  .right :global(.mark), .right .count { margin-left: 22px; }
   .file.deleted .fname { text-decoration: line-through; color: var(--muted); }
-  .file.untracked .sym, .file.untracked .fname { color: var(--muted); }
+  .file.untracked .fname { color: var(--muted); }
   .file.ignored .fname, .file.unchanged .fname { color: var(--muted); }
   .file.ignored .fname { color: var(--faint); }
   .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .from { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: var(--fs-sm); color: var(--faint); }
-  .file.renamed .sym { color: var(--warn); background: var(--warn-soft); }
-  .vsym.renamed { color: var(--warn); }
   .live { font-size: var(--fs-xs); padding: 0 var(--sp-4); border-radius: var(--radius-pill); background: var(--hover); color: var(--muted);
     font-variant-numeric: tabular-nums; flex: none; }
   .live.odd { background: var(--warn-bg); color: var(--warn); }
@@ -731,10 +721,6 @@
     padding: var(--sp-6) var(--sp-8); border-radius: var(--radius); text-align: left; }
   .versions button:hover { background: var(--panel); }
   .versions button.on { background: var(--panel-2); }
-  .vsym { width: 12px; text-align: center; font-weight: var(--fw-bold); }
-  .vsym.added { color: var(--add); }
-  .vsym.deleted { color: var(--del); }
-  .vsym.modified { color: var(--mod); }
   .vmsg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .picked { border-top: var(--border-width) solid var(--line); padding-top: var(--sp-14); }
   .restore { display: flex; align-items: center; gap: var(--sp-10); margin-bottom: var(--sp-14); }
