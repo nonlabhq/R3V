@@ -53,6 +53,9 @@ words: [glossary.md](glossary.md).
   on return (`switch --json`: `parked`, `restored`).
 - Branches are archived (`branch archive`), not deleted; only an archived
   branch is deleted for good (`branch delete`: ask the user).
+- A tag is a milestone (Nightly): `milestone NAME [VERSION] [-m NOTE]`
+  names a shared version for the whole team, `milestones` lists them
+  (`tag` and `tags` work too). Only shared versions take one.
 
 ## Everyday flow
 
