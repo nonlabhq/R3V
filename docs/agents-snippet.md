@@ -23,5 +23,6 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   outputs (`rules: - ignore: "cache/"`); `r3v rules explain <file>` says why a file is tracked.
   `target/` matches at any depth; a pattern with a `/` inside starts at the project folder
   (`**/src-tauri/gen/` for any depth).
+- A new project: `r3v teams`, then `r3v init --team NAME` (Nightly): never ask for a connection code.
 - Never use `--force` without asking, never print connection codes (they hold storage keys), don't
   edit `.r3v/`, and keep it out of formatters and linters (Biome `"!**/.r3v"`, `.prettierignore`).

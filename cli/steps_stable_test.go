@@ -34,3 +34,10 @@ func TestNoMilestonesInStable(t *testing.T) {
 		}
 	}
 }
+
+// Nor teams by name: --team is refused (a connection code it is).
+func TestNoTeamByNameInStable(t *testing.T) {
+	if _, err := joinedTeam("Band"); err == nil {
+		t.Fatal("--team in Stable")
+	}
+}

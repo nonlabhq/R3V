@@ -23,7 +23,11 @@ words: [glossary.md](glossary.md).
   changes; `discard` throws the changes away. Ask the user.
 - **Never print connection codes** (`r3v connection-code`, `r3v
   remote <code>`, `r3v clone <code>`): they contain the team's storage
-  keys. Don't put them in files, logs or messages.
+  keys. Don't put them in files, logs or messages, and don't ask the user
+  for one: a new project goes on a team this computer has joined, by its
+  name (Nightly): `r3v teams` lists them, `r3v init --team NAME` makes the
+  folder that team's project (`remote --team NAME` for one made before,
+  `clone --team NAME <project>` to download one).
 - **Don't edit `.r3v/`.** It is R3V's own data; keep it out of formatters,
   linters and search-and-replace too (Biome: `"!**/.r3v"` in
   `files.includes`; Prettier: `.r3v/` in `.prettierignore`). `.r3v.yaml` (the
