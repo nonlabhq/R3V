@@ -110,6 +110,10 @@
   let busy = $state("");
   let progress = $state<Progress | null>(null);
   let refreshing = $state(false);
+  // The branch menu and the steps above the graph: the graph's newest
+  // versions start below them.
+  let graphBarH = $state(0);
+  const GRAPH_BAR_TOP = 30; // its distance from the graph's top, and a little room under it
   const refreshShow = 450; // ms the dimmed page stays at least
 
   // dialogs
@@ -1046,7 +1050,7 @@
       {#if tab === "overview"}
         <div class="overview" bind:clientWidth={overviewWidth}>
           <div class="graph-pane">
-            <div class="graph-bar">
+            <div class="graph-bar" bind:offsetHeight={graphBarH}>
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
                 onsettings={(key) => (branchSettings = key)} onmilestone={(id) => (graphPick = id)} />
               <StepsTimeline {root} version={`${st.head} ${refreshKey} ${st.changes.length}`} busy={!!busy} onback={stepBack} />
@@ -1085,7 +1089,7 @@
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since, where: placeOf(p) }))}
-              {parkedActions} remember={root}
+              {parkedActions} remember={root} top={graphBarH ? graphBarH + GRAPH_BAR_TOP : 0}
               reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
           {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}

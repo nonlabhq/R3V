@@ -23,7 +23,7 @@
   // agents' branches (never the one you're on), versions out of a date
   // range, and dims those not by the authors picked. An agent's version has
   // a spark on its dot.
-  let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, looks, milestones, onsettings, remember = "" }: {
+  let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, top: covered = 0, looks, milestones, onsettings, remember = "" }: {
     versions: Version[];
     branches: { name: string; latest: string; label?: string; color?: string; parent?: string; kind?: string }[];
     branch: string;    // the branch you are on
@@ -38,6 +38,7 @@
     parkedActions?: Snippet<[string]>; // ...for parked changes (by key)
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
+    top?: number;        // px at the top covered by what is above the graph (where its newest versions start)
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
     milestones?: { version: string; name: string }[]; // versions the team named
     onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
@@ -339,12 +340,12 @@
     // main as near the middle as the labels allow
     const lo = Math.min(0, width - full), hi = Math.max(0, width - full);
     panX = Math.min(Math.max(width / 2 - center, lo), hi);
-    panY = Math.max(0, (boxHeight - height) / 2);
+    panY = Math.max(covered, (boxHeight - height) / 2);
   }
   // Until you move it, the view follows the column's size (and the graph's).
   let moved = false;
   $effect(() => {
-    width; boxHeight; center; height;
+    width; boxHeight; center; height; covered;
     if (!moved && width && boxHeight && (versions.length || pending)) resetView();
   });
   // Some of the graph always stays in sight.
@@ -373,7 +374,7 @@
     if (!id || !c) return;
     const nx = panX + x(c.col), ny = panY + (id === "pending" ? yRow(0) : y(id));
     if (nx < 40 || nx > width - 40) { panX = width / 2 - x(c.col); moved = true; }
-    if (ny < 40 || ny > boxHeight - 40) { panY = boxHeight / 3 - (ny - panY); moved = true; }
+    if (ny < covered + 40 || ny > boxHeight - 40) { panY = Math.max(boxHeight / 3, covered + LABEL_H + 12) - (ny - panY); moved = true; }
     clamp();
   }
   // Back to what matters now: your changes when you have some, else the
@@ -390,7 +391,7 @@
     const c = id === "pending" ? pendAt : g.chainOf.get(id);
     if (!c) return;
     panX = width / 2 - x(c.col);
-    panY = boxHeight / 3 - (id === "pending" ? yRow(0) : y(id));
+    panY = Math.max(boxHeight / 3, covered + LABEL_H + 12) - (id === "pending" ? yRow(0) : y(id));
     moved = true;
     clamp();
   }
@@ -466,7 +467,7 @@
   // Keep the picked version in sight (↑ ↓).
   function reveal(id: string) {
     const yy = panY + (id === "pending" ? yRow(0) : y(id));
-    if (yy < 40) panY += 40 - yy;
+    if (yy < covered + 40) panY += covered + 40 - yy;
     else if (yy > boxHeight - 40) panY -= yy - (boxHeight - 40);
   }
 
