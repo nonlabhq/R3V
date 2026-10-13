@@ -6,13 +6,8 @@
   import Tx from "./Tx.svelte";
   import { toast } from "./notify.svelte";
   import ProjectIcon from "./ProjectIcon.svelte";
-  import Swatches from "./Swatches.svelte";
-  import { projectColor } from "./palette";
-  import { projectIconNames, projectIcons } from "./projectIcons";
-  import { appIconNames, appIcons } from "./appIcons";
+  import LookPicker from "./LookPicker.svelte";
   import { portal } from "./portal";
-  import EmojiPicker from "./EmojiPicker.svelte";
-  import { emojiName, emojiOf } from "./emoji";
   import BranchSettings from "./BranchSettings.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
@@ -92,69 +87,15 @@
     }
   }
 
-  // Its icon and colour, for the whole team (Nightly: a team that keeps
-  // looks). Each pick is saved at once.
-  // svelte-ignore state_referenced_locally
-  let look = $state({ icon: p.icon ?? "", color: p.color ?? "" });
-  let lookBusy = $state(false);
+  // Its icon, colour and picture, for the whole team (Nightly: a team that
+  // keeps looks): LookPicker saves each pick; the list follows.
   async function setLook(icon: string, color: string) {
-    if (lookBusy) return; // one at a time: the team keeps the last pick
-    const was = look;
-    look = { icon, color };
-    lookBusy = true;
-    try {
-      await api.SetProjectLook(team!.id, p.id, icon, color);
-      onrenamed();
-    } catch (e) {
-      look = was;
-      toast(errorText(e), "error");
-    } finally {
-      lookBusy = false;
-    }
+    await api.SetProjectLook(team!.id, p.id, icon, color);
+    onrenamed();
   }
-
-  // The icon before the name opens the picker (on a team that keeps looks),
-  // placed under it on the window, above when there's no room below.
-  const POP_W = 392;
-  let lookOpen = $state(false);
-  let iconBtn = $state<HTMLButtonElement>();
-  let popH = $state(0);
-  let anchor = $state<DOMRect | null>(null);
-  let popAt = $derived.by(() => {
-    if (!anchor) return { left: 0, top: 0 };
-    const left = Math.max(8, Math.min(anchor.left, innerWidth - POP_W - 8));
-    const below = anchor.bottom + 6;
-    return { left, top: below + popH > innerHeight - 8 && anchor.top - popH - 6 > 8 ? anchor.top - popH - 6 : below };
-  });
-  // Built-in icons or emoji: the picker opens on the kind the project has.
-  let lookTab = $state<"icons" | "emoji">("icons");
-  function toggleLook() {
-    anchor = iconBtn?.getBoundingClientRect() ?? null;
-    if (!lookOpen) lookTab = emojiOf(look.icon) ? "emoji" : "icons";
-    lookOpen = !lookOpen;
-  }
-  // An icon or an emoji picked: saved, and the picker closes (a colour
-  // keeps it open, for an icon next).
-  async function pickIcon(icon: string) {
-    if (lookBusy) return;
-    closeLook(true);
-    await setLook(icon, look.color);
-  }
-  function closeLook(refocus = false) {
-    lookOpen = false;
-    if (refocus) iconBtn?.focus();
-  }
-  // Esc closes the picker before the dialog it's in (the dialog listens on
-  // the window too, after this).
-  function lookKey(e: KeyboardEvent) {
-    if (lookOpen && e.key === "Escape") {
-      e.preventDefault();
-      closeLook(true);
-    }
-  }
-  function lookClick(e: MouseEvent) {
-    const el = e.target as HTMLElement;
-    if (lookOpen && !el.closest(".look-pop") && !el.closest(".look-btn")) closeLook();
+  async function setPicture(url: string) {
+    await api.SetProjectPicture(team!.id, p.id, url);
+    onrenamed();
   }
 
   // The project's branches, each opening its settings (where the team keeps
@@ -213,7 +154,6 @@
     unreal: t("Unreal project"), godot: t("Godot project"), design: t("Design files"), code: t("Code and documents"), none: t("Files as they are") } as Record<string, string>)[preset] ?? preset;
 </script>
 
-<svelte:window onkeydowncapture={lookKey} onclick={lookClick} onresize={() => closeLook()} />
 
 {#if rulesOpen}
   <RulesWindow root={p.root} onclose={() => { rulesOpen = false; api.ProjectInfo(p.root).then((i) => (info = i)).catch(() => {}); }} />
@@ -223,12 +163,10 @@
     <h3>{t("Name")}</h3>
     <div class="line">
       {#if team?.looks}
-        <button bind:this={iconBtn} class="ghost look-btn" class:open={lookOpen} onclick={toggleLook}
-          title={t("Icon and colour")} aria-label={t("Icon and colour")} aria-haspopup="dialog" aria-expanded={lookOpen}>
-          <ProjectIcon p={{ id: p.id, name: p.name, status: "downloaded", icon: look.icon, color: look.color }} size={36} />
-        </button>
+        <LookPicker seed={p.id} name={p.name} icon={p.icon ?? ""} color={p.color ?? ""} picture={p.picture ?? ""}
+          label={t("Icon and colour")} initialLabel={t("The project's initial")} onlook={setLook} onpicture={setPicture} />
       {:else}
-        <ProjectIcon p={{ id: p.id, name: p.name, status: "downloaded", icon: p.icon, color: p.color }} size={36} />
+        <ProjectIcon p={{ id: p.id, name: p.name, status: "downloaded", icon: p.icon, color: p.color, picture: p.picture }} size={36} />
       {/if}
       <input bind:value={name} maxlength="100" aria-label={t("Project name")}
         onkeydown={(e) => { if (e.key === "Enter" && name.trim() && name.trim() !== p.name) rename(); }} />
@@ -236,46 +174,6 @@
     </div>
     <p class="hint">{team ? t("Project name shared by the whole team.") : t("Project name in R3V.")} {t("Local folder keeps its name.")}</p>
   </section>
-
-  {#if lookOpen && team?.looks}
-    <div class="look-pop surface-menu" role="dialog" aria-label={t("Icon and colour")} use:portal bind:offsetHeight={popH}
-      style:left="{popAt.left}px" style:top="{popAt.top}px" style:width="{POP_W}px">
-      <div class="kinds" role="tablist" aria-label={t("Icon")}>
-        <button role="tab" class:on={lookTab === "icons"} aria-selected={lookTab === "icons"} onclick={() => (lookTab = "icons")}>{t("Icons")}</button>
-        <button role="tab" class:on={lookTab === "emoji"} aria-selected={lookTab === "emoji"} onclick={() => (lookTab = "emoji")}>{t("Emoji")}</button>
-      </div>
-      {#if lookTab === "icons"}
-        <!-- (an emoji has its own colours: the colour is for the icons) -->
-        <Swatches value={projectColor(p.id || p.name, look.color)} label={t("Colour")} disabled={lookBusy} onpick={(c) => setLook(look.icon, c)} />
-        <!-- the programs first (brand names: not translated), then the drawn icons -->
-        <div class="group">
-          <h4>{t("Apps")}</h4>
-          <div class="icons" role="radiogroup" aria-label={t("Apps")}>
-            {#each appIconNames as name (name)}
-              <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
-                title={appIcons[name].title} aria-label={appIcons[name].title} onclick={() => pickIcon(name)}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html appIcons[name].svg}</svg>
-              </button>
-            {/each}
-          </div>
-        </div>
-        <div class="icons" role="radiogroup" aria-label={t("Icon")}>
-          <button class="ic" class:on={!look.icon} role="radio" aria-checked={!look.icon} aria-disabled={lookBusy}
-            title={t("The project's initial")} aria-label={t("The project's initial")} onclick={() => pickIcon("")}>
-            {([...p.name.trim()][0] ?? "?").toUpperCase()}</button>
-          {#each projectIconNames as name (name)}
-            <button class="ic" class:on={look.icon === name} role="radio" aria-checked={look.icon === name} aria-disabled={lookBusy}
-              aria-label={name} onclick={() => pickIcon(name)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{@html projectIcons[name]}</svg>
-            </button>
-          {/each}
-        </div>
-      {:else}
-        <EmojiPicker onpick={(e) => { const n = emojiName(e); if (n) pickIcon(n); }} />
-      {/if}
-      <p class="hint">{t("The whole team sees them.")}</p>
-    </div>
-  {/if}
 
   {#if branchList?.names && branchList.branches.length}
     <section>
@@ -465,11 +363,6 @@
   h3 { margin: 0 0 var(--sp-8); font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
   .line { display: flex; gap: var(--sp-8); align-items: center; }
   .line input { flex: 1; }
-  .look-btn { flex: none; padding: 0; line-height: 0; border-radius: var(--radius); }
-  .look-btn:hover:not(:disabled), .look-btn.open { outline: 2px solid var(--line-strong); outline-offset: 2px; background: transparent; }
-  .look-pop { position: fixed; z-index: var(--z-menu); display: flex; flex-direction: column; gap: var(--sp-10);
-    padding: var(--sp-12); border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
-  .look-pop .hint { margin: 0; }
   .branches { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .brow { width: 100%; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-6) var(--sp-8); text-align: left; }
   .bdot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
@@ -482,16 +375,6 @@
   .drow .bname { color: var(--muted); }
   .bdot.gone { opacity: .5; }
   button.small { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); }
-  .kinds { display: flex; gap: var(--sp-2); padding: var(--sp-2); border-radius: var(--radius); background: var(--bg-sunken); align-self: flex-start; }
-  .kinds button { padding: var(--sp-2) var(--sp-10); font-size: var(--fs-sm); border-color: transparent; background: transparent; color: var(--muted); }
-  .kinds button.on { background: var(--panel-2); color: var(--text); }
-  .group { display: flex; flex-direction: column; gap: var(--sp-6); }
-  .group h4 { margin: 0; }
-  .icons { display: grid; grid-template-columns: repeat(auto-fill, 32px); gap: var(--sp-4); }
-  .ic { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
-    font-weight: var(--fw-bold); font-size: var(--fs-md); color: var(--muted); }
-  .ic svg { width: 18px; height: 18px; }
-  .ic.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
   .hint { margin: var(--sp-6) 0 0; font-size: var(--fs-md); color: var(--muted); }
   .action .hint { margin-top: var(--sp-2); }
   dl { display: grid; grid-template-columns: 90px 1fr; gap: var(--sp-6) var(--sp-10); margin: 0; font-size: var(--fs-base); align-items: center; }

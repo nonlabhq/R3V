@@ -1,11 +1,11 @@
 <script lang="ts">
+  import TeamMark from "./TeamMark.svelte";
   import { t as tr, tn } from "./i18n.svelte"; // t is a team here
   import { api, errorText, type Overview, type TeamSummary } from "./api";
   import { toast } from "./notify.svelte";
   import Modal from "./Modal.svelte";
   import JoinOrCreate from "./JoinOrCreate.svelte";
   import IdentityForm from "./IdentityForm.svelte";
-  import { cssColor, initial, pickFor } from "./palette";
   import { storageKind } from "./teamText";
 
   // The team shown: a click on it opens its home (onhome; home: shown now),
@@ -170,7 +170,7 @@
   <!-- the team (a click opens its home), and the others behind the caret -->
   <div class="current" class:on={home}>
     <button class="switch" onclick={() => { open = false; onhome(); }} title={current?.address ?? ""} aria-current={home ? "page" : undefined}>
-      {#if current}<span class="mark" style:--c={cssColor(pickFor(current.id))} aria-hidden="true">{initial(current.name)}</span>{/if}
+      {#if current}<TeamMark team={current} size={32} />{/if}
       <span class="tt">
         <span class="name">{current?.name ?? tr("No team")}</span>
         <span class="label">{current ? storageKind(current) : tr("Team")}</span>
@@ -301,8 +301,6 @@
   }
   .switch:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
   .current.on .switch { background: var(--accent-bg); }
-  .mark { flex: none; width: 32px; height: 32px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
-    font-weight: var(--fw-bold); color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); }
   .tt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .label { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

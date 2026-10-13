@@ -58,6 +58,8 @@ clips), not its logo. A new one is checked against the brand's guidelines
 | A member's colour and picture | `members/<id>.json`: `color` (a name), `picture` (the picture's SHA-256) |
 | The picture | `pictures/members/<id>/<sha256>`: a square PNG or JPEG, at most 256 pixels (the app makes 128) and 64 KB |
 | A project's icon and colour | `projects/<pid>/project.json`: `icon`, `color` (names) |
+| A project's own picture | `projects/<pid>/project.json`: `picture` (its SHA-256); the picture in `pictures/projects/<pid>/<sha256>` |
+| The team's icon, colour and picture | `team.json`: `icon`, `color`, `picture`; the picture in `pictures/team/<sha256>` |
 
 Records are rewritten whole by every R3V, keeping fields it doesn't know
 (`jsonx.Extra`), so a rename by an older R3V keeps a look.
@@ -84,8 +86,12 @@ it never deletes a picture (`TestCleanupKeepsPictures`). Backups copy
 A first share that stopped after writing the project's record keeps that
 record when it's done again (a look or a name given meanwhile stays).
 
-A project's own picture (later) would go the same way under
-`pictures/projects/<pid>/`, named by the record's `picture`.
+A project's own picture (`remote.SetProjectPicture`) and the team's
+(`remote.SetTeamPicture`) go the same way, under `pictures/projects/<pid>/`
+and `pictures/team/`, named by `project.json`'s and `team.json`'s
+`picture` (`TestProjectAndTeamPictures` stops at each step). A picture
+shows instead of the icon; picking an icon removes it. On a hosted team,
+R3V Cloud decides who may write `team.json` (admins) and these folders.
 
 ## Not a team feature
 
@@ -105,11 +111,15 @@ Stable doesn't reach looks: `remote.Looks` is false, `SetMemberLook`,
 ## On this computer
 
 - `teams.json`: `look: {color, picture}` (the picture by its SHA-256).
-  Stable keeps it untouched.
+  Stable keeps it untouched. Each team's own look, as it last gave it:
+  `teams[].look: {icon, color, picture}` (the sidebar shows every team's
+  without asking them).
 - `pictures/<sha256>` in the settings folder: your picture, and teammates'
-  as their teams gave them (named by their hash, so never stale). Written
+  as their teams gave them, and projects' and teams' (named by their hash,
+so never stale). Written
   whole (`store.WriteAtomic`), checked against the name when read. The app
-  deletes those not shown for 30 days when it starts (not yours): they
+  deletes those not shown for 30 days when it starts (not yours, nor your
+teams'): they
   come again from the team.
 - `MemberLooks(root)` maps a project's team members to their looks, asking
   the team at most once a minute; the team watch makes it ask sooner.

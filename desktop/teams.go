@@ -57,6 +57,11 @@ type TeamSummary struct {
 	BackupFailing bool `json:"backupFailing"`
 	// Looks: the team keeps pictures, icons and colours (Nightly).
 	Looks bool `json:"looks"`
+	// Icon, Color and Picture: how the team shows (names, "" for the app's
+	// pick; Picture a data: URL, "" for none), as it last gave them.
+	Icon    string `json:"icon"`
+	Color   string `json:"color"`
+	Picture string `json:"picture"`
 	// Moving: the team is moving to R3V Cloud (no shares meanwhile).
 	// MovedTo: it moved there (the hosted team's address); MovedToTeam:
 	// that team's id here, once this computer has joined it.
@@ -86,9 +91,11 @@ type TeamProject struct {
 	Branch string `json:"branch"`
 	// BranchLabel: what people called the branch, as last asked ("": its key).
 	BranchLabel string `json:"branchLabel"`
-	// Icon and Color: how the team shows it (names; "" for the app's pick).
-	Icon  string `json:"icon"`
-	Color string `json:"color"`
+	// Icon and Color: how the team shows it (names; "" for the app's pick);
+	// Picture: its own picture (a data: URL; "" for none), over the icon.
+	Icon    string `json:"icon"`
+	Color   string `json:"color"`
+	Picture string `json:"picture"`
 	// Workspace: an agent's workspace of a project, shown as a project
 	// (OpenWorkspace); MainRoot is the project's main copy.
 	Workspace bool   `json:"workspace"`
@@ -109,12 +116,16 @@ type Overview struct {
 
 func teamSummary(t teams.Team) TeamSummary {
 	svc, hosted := cloud.Hosted(t)
-	return TeamSummary{Hosted: hosted, SignedOut: hosted && !cloud.SignedIn(svc), TestService: hosted && svc != cloud.Service(), ID: t.ID, Name: t.Name, Address: t.Remote.Display(), IsStorage: t.Remote.IsStorage(),
+	s := TeamSummary{Hosted: hosted, SignedOut: hosted && !cloud.SignedIn(svc), TestService: hosted && svc != cloud.Service(), ID: t.ID, Name: t.Name, Address: t.Remote.Display(), IsStorage: t.Remote.IsStorage(),
 		MemberID: t.MemberID, MemberName: t.MemberName, KeysUnreadable: t.KeysUnreadable,
 		ShareSetup: t.ShareSetup && t.Remote.IsStorage(), CanShareSetup: t.Remote.IsStorage(),
 		Preupload:     !t.NoPreupload && t.Remote.IsStorage(),
 		AskShareSetup: t.Remote.IsStorage() && t.MemberID != "" && !t.SetupAsked && !t.ShareSetup,
 		BackupFailing: backup.Failing(t.Backup), Looks: remote.Looks}
+	if remote.Looks && t.Look != nil {
+		s.Icon, s.Color, s.Picture = t.Look.Icon, t.Look.Color, dataURL(readPicture(t.Look.Picture))
+	}
+	return s
 }
 
 func folderProject(root, status string) TeamProject {
@@ -178,6 +189,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 			}
 			if remote.Looks {
 				ov.Projects[i].Icon, ov.Projects[i].Color = p.Icon, p.Color
+				ov.Projects[i].Picture = dataURL(readPicture(p.Picture))
 			}
 			if ok && fresh && p.Name != "" && ov.Projects[i].Name != p.Name {
 				// The team's name wins (someone renamed it, or the folder is
@@ -209,6 +221,12 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 				if synced {
 					ov.Teams[i].Name = info.Name
 				}
+				if remote.Looks {
+					look := teams.TeamLook{Icon: info.Icon, Color: info.Color, Picture: info.Picture}
+					fetchPicture(b, remote.PicturesOf("team", ""), info.Picture)
+					teams.SyncTeamLook(t.ID, look)
+					ov.Teams[i].Icon, ov.Teams[i].Color, ov.Teams[i].Picture = look.Icon, look.Color, dataURL(readPicture(look.Picture))
+				}
 				ov.Teams[i].Moving = info.Moving != nil
 				ov.Teams[i].MovedTo = info.MovedTo
 				if to := store.FindByURL(info.MovedTo); info.MovedTo != "" && to != nil {
@@ -226,6 +244,11 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		addRemote(lastTeamProjects(t.ID), false)
 	} else {
 		rememberTeamProjects(t.ID, ps)
+		if remote.Looks {
+			for _, p := range ps {
+				fetchPicture(b, remote.PicturesOf("project", p.ID), p.Picture)
+			}
+		}
 		addRemote(ps, true)
 	}
 	sortProjects(ov.Projects)
@@ -272,13 +295,13 @@ func (a *App) AllProjects() ([]TeamProjects, error) {
 		for _, p := range lastTeamProjects(t.ID) {
 			if i, ok := seen[p.ID]; ok {
 				if remote.Looks {
-					ps[i].Icon, ps[i].Color = p.Icon, p.Color
+					ps[i].Icon, ps[i].Color, ps[i].Picture = p.Icon, p.Color, dataURL(readPicture(p.Picture))
 				}
 				continue
 			}
 			tp := TeamProject{ID: p.ID, Name: p.Name, Status: "remote"}
 			if remote.Looks {
-				tp.Icon, tp.Color = p.Icon, p.Color
+				tp.Icon, tp.Color, tp.Picture = p.Icon, p.Color, dataURL(readPicture(p.Picture))
 			}
 			ps = append(ps, tp)
 		}
@@ -848,10 +871,10 @@ func rememberTeamProjects(teamID string, ps []remote.Project) {
 	all := readTeamProjects()
 	keep := make([]remote.Project, len(ps))
 	for i, p := range ps {
-		keep[i] = remote.Project{ID: p.ID, Name: p.Name, Icon: p.Icon, Color: p.Color}
+		keep[i] = remote.Project{ID: p.ID, Name: p.Name, Icon: p.Icon, Color: p.Color, Picture: p.Picture}
 	}
 	if slices.EqualFunc(all[teamID], keep, func(a, b remote.Project) bool {
-		return a.ID == b.ID && a.Name == b.Name && a.Icon == b.Icon && a.Color == b.Color
+		return a.ID == b.ID && a.Name == b.Name && a.Icon == b.Icon && a.Color == b.Color && a.Picture == b.Picture
 	}) {
 		return // unchanged: not written every minute
 	}

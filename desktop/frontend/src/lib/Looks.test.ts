@@ -16,6 +16,7 @@ vi.mock("./picture", () => ({ squarePicture: mocks.square, SIDE: 128 }));
 
 import UserSettings from "./UserSettings.svelte";
 import ProjectSettings from "./ProjectSettings.svelte";
+import TeamSettings from "./TeamSettings.svelte";
 import HistoryGraph from "./HistoryGraph.svelte";
 import type { TeamSummary } from "./api";
 
@@ -114,7 +115,7 @@ describe("User settings", () => {
 });
 
 describe("Project icon and colour", () => {
-  const p = { id: "p1", name: "Song", root: "C:/Song", status: "remote", branch: "", branchLabel: "", icon: "", color: "",
+  const p = { id: "p1", name: "Song", root: "C:/Song", status: "remote", branch: "", branchLabel: "", icon: "", color: "", picture: "",
     workspace: false, mainRoot: "" };
   const props = { p, onclose: () => {}, onrenamed: () => {}, oncheck: () => {}, ondelete: () => {}, onunlink: () => {}, onlocate: () => {} };
 
@@ -152,6 +153,30 @@ describe("Project icon and colour", () => {
     await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringContaining("doesn't have"), "error"));
     await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
     expect(screen.getByRole("radio", { name: "The project's initial" }).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("takes a picture of its own, and an icon picked takes its place", async () => {
+    mocks.square.mockResolvedValue(PIC);
+    render(ProjectSettings, { ...props, team: team() });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    const input = screen.getByTestId("look-file") as HTMLInputElement;
+    Object.defineProperty(input, "files", { value: [new File(["x"], "cover.png", { type: "image/png" })], configurable: true });
+    await fireEvent.change(input);
+    await waitFor(() => expect(api.SetProjectPicture).toHaveBeenCalledWith("t1", "p1", PIC));
+    expect((screen.getByRole("button", { name: "Icon and colour" }).querySelector("img") as HTMLImageElement).src).toBe(PIC);
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    await fireEvent.click(screen.getByRole("radio", { name: "drum" }));
+    await waitFor(() => expect(api.SetProjectLook).toHaveBeenLastCalledWith("t1", "p1", "drum", ""));
+    expect(api.SetProjectPicture).toHaveBeenLastCalledWith("t1", "p1", "");
+  });
+
+  it("is offered for the team too, in its settings", async () => {
+    const reload = vi.fn(async () => {});
+    render(TeamSettings, { team: team({ address: "s3+https://x/b", isStorage: true }), reload, onclose: () => {}, inline: true });
+    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    await fireEvent.click(screen.getByRole("radio", { name: "The team's initial" }));
+    await waitFor(() => expect(api.SetTeamLook).toHaveBeenCalledWith("t1", "", ""));
+    expect(reload).toHaveBeenCalled();
   });
 
   it("isn't offered where the team keeps no looks", () => {

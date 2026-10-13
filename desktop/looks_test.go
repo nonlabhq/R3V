@@ -107,6 +107,34 @@ func TestLooks(t *testing.T) {
 			t.Errorf("overview: %+v %v", ov, err)
 		}
 	}
+
+	// A picture of its own, over its icon; the team's icon and picture.
+	if err := a.SetProjectPicture(team.ID, tp.ID, pngURL(t, 64)); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SetTeamLook(team.ID, "e-1f3b8", "b6"); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SetTeamPicture(team.ID, pngURL(t, 32)); err != nil {
+		t.Fatal(err)
+	}
+	os.RemoveAll(teams.PicturesDir()) // (another computer: read from the team)
+	ov, err := a.Overview()
+	if err != nil || !strings.HasPrefix(ov.Projects[0].Picture, "data:image/png") || ov.Projects[0].Icon != "drum" {
+		t.Errorf("the project's picture: %+v %v", ov.Projects, err)
+	}
+	if tm := ov.Teams[0]; tm.Icon != "e-1f3b8" || tm.Color != "b6" || !strings.HasPrefix(tm.Picture, "data:image/png") {
+		t.Errorf("the team's look: %+v", tm)
+	}
+	if err := a.SetTeamPicture(team.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	if ov, _ := a.LocalOverview(); ov.Teams[0].Picture != "" || ov.Teams[0].Icon != "e-1f3b8" {
+		t.Errorf("the team's picture removed: %+v", ov.Teams[0])
+	}
+	if err := a.SetProjectPicture(team.ID, tp.ID, "data:image/png;base64,bm90"); err == nil {
+		t.Error("not a picture: taken")
+	}
 }
 
 // Kept pictures: named by their sum only; ones nothing showed for a while

@@ -336,15 +336,20 @@ func isSum(s string) bool {
 const pictureAge = 30 * 24 * time.Hour
 
 // prunePictures deletes the kept pictures not shown for pictureAge, except
-// the user's own, and what a write stopped half-way left.
+// the user's own and their teams', and what a write stopped half-way left.
 func prunePictures() {
 	s, err := teams.Load()
 	if err != nil {
 		return
 	}
-	own := ""
+	own := map[string]bool{}
 	if s.Look != nil {
-		own = s.Look.Picture
+		own[s.Look.Picture] = true
+	}
+	for _, t := range s.Teams { // (the sidebar shows every team's)
+		if t.Look != nil {
+			own[t.Look.Picture] = true
+		}
 	}
 	dir := teams.PicturesDir()
 	entries, err := os.ReadDir(dir)
@@ -353,7 +358,7 @@ func prunePictures() {
 	}
 	for _, e := range entries {
 		info, err := e.Info()
-		if err != nil || e.IsDir() || e.Name() == own || time.Since(info.ModTime()) < pictureAge {
+		if err != nil || e.IsDir() || own[e.Name()] || time.Since(info.ModTime()) < pictureAge {
 			continue
 		}
 		os.Remove(filepath.Join(dir, e.Name()))

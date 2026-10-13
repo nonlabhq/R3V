@@ -320,3 +320,100 @@ func TestProjectLook(t *testing.T) {
 		t.Errorf("a team that can't keep looks: %v", err)
 	}
 }
+
+// A project's and the team's own pictures, kept as a member's: the record
+// names a picture that is there wherever it stops, the old ones go.
+func TestProjectAndTeamPictures(t *testing.T) {
+	withLooks(t)
+	red := picture(t, 128, color.RGBA{255, 0, 0, 255})
+	blue := picture(t, 128, color.RGBA{0, 0, 255, 255})
+	project := func(b remote.Backend) remote.Project {
+		ps, _ := b.Projects()
+		return ps[0]
+	}
+	cases := []struct {
+		name string
+		dir  string
+		set  func(b remote.Backend, pic []byte) error
+		sum  func(b remote.Backend) string
+	}{
+		{"project", "pictures/projects/" + song + "/", func(b remote.Backend, pic []byte) error { return remote.SetProjectPicture(b, song, pic) },
+			func(b remote.Backend) string { return project(b).Picture }},
+		{"team", "pictures/team/", func(b remote.Backend, pic []byte) error { return remote.SetTeamPicture(b, pic) },
+			func(b remote.Backend) string { info, _ := b.Info(); return info.Picture }},
+	}
+	for _, c := range cases {
+		f, b := newTeam(t)
+		b.PutProject(remote.Project{ID: song, Name: "Song", Icon: "drum"})
+		b.SetInfo(remote.TeamInfo{Name: "Band", Icon: "mic"})
+		if err := c.set(b, red); err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		got, err := b.GetPictureIn(c.dir, c.sum(b))
+		if err != nil || !bytes.Equal(got, red) {
+			t.Fatalf("%s: GetPictureIn: %v", c.name, err)
+		}
+		if p := project(b); p.Name != "Song" || p.Icon != "drum" {
+			t.Errorf("%s: the project's record: %+v", c.name, p)
+		}
+		if info, _ := b.Info(); info.Name != "Band" || info.Icon != "mic" || len(info.Features) != 0 {
+			t.Errorf("%s: the team's record: %+v", c.name, info)
+		}
+		// Stopped at each step: the record names a picture that is there.
+		for _, at := range []string{c.dir, "projects/", "team.json", c.dir + c.sum(b)} {
+			f.at = at
+			c.set(b, blue)
+			f.at = ""
+			if sum := c.sum(b); sum != "" {
+				if _, err := b.GetPictureIn(c.dir, sum); err != nil {
+					t.Errorf("%s: stopped at %s: %v", c.name, at, err)
+				}
+			}
+		}
+		if err := c.set(b, blue); err != nil {
+			t.Fatal(err)
+		}
+		if keys := pictureKeys(t, f); len(keys) != 1 || !strings.HasSuffix(keys[0], c.sum(b)) {
+			t.Errorf("%s: pictures after a change: %v", c.name, keys)
+		}
+		if err := c.set(b, nil); err != nil {
+			t.Fatal(err)
+		}
+		if c.sum(b) != "" || len(pictureKeys(t, f)) != 0 {
+			t.Errorf("%s: after removing: %q %v", c.name, c.sum(b), pictureKeys(t, f))
+		}
+	}
+	_, b := newTeam(t)
+	if err := remote.SetProjectPicture(b, song, red); !errors.Is(err, remote.ErrNotFound) {
+		t.Errorf("a project not in the team: %v", err)
+	}
+	if err := remote.SetProjectPicture(b, song, []byte("not a picture")); err == nil {
+		t.Error("not a picture: taken")
+	}
+	if _, err := b.GetPictureIn(remote.PicturesOf("project", "../x"), "ab"); !errors.Is(err, remote.ErrNotFound) {
+		t.Errorf("a folder that isn't one: %v", err)
+	}
+}
+
+// The team's icon and colour, in team.json; a rename keeps them.
+func TestTeamLook(t *testing.T) {
+	withLooks(t)
+	_, b := newTeam(t)
+	b.SetInfo(remote.TeamInfo{Name: "Band"})
+	if err := remote.SetTeamLook(b, "e-1f3b8", "b4"); err != nil {
+		t.Fatal(err)
+	}
+	if err := remote.Rename(b, "The Band"); err != nil {
+		t.Fatal(err)
+	}
+	if info, _ := b.Info(); info.Name != "The Band" || info.Icon != "e-1f3b8" || info.Color != "b4" {
+		t.Errorf("record: %+v", info)
+	}
+	if err := remote.SetTeamLook(b, "<svg>", ""); err == nil {
+		t.Error("an icon that isn't a name was taken")
+	}
+	f, _ := newTeam(t)
+	if err := remote.SetTeamLook(remote.NewBucketBackend(perProject{f}), "mic", ""); !errors.Is(err, remote.ErrNoLooks) {
+		t.Errorf("a team that can't keep looks: %v", err)
+	}
+}

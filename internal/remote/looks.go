@@ -24,9 +24,9 @@ import (
 // member's other pictures go. Stopped half-way, the record still names a
 // picture that is there; a picture left over goes at the member's next
 // change. Storage cleanup (gc.go) only looks under objects/ and chunked/,
-// never under pictures/. (A project's own picture would go under
-// pictures/projects/<project id>/, named by its record's picture, the same
-// way.)
+// never under pictures/. A project's own picture goes under
+// pictures/projects/<project id>/ and the team's under pictures/team/, named
+// by their records' picture, the same way.
 //
 // Looks only add to what a team stores: every R3V rewrites a record whole,
 // keeping the fields it doesn't know, and older ones never look under
@@ -52,7 +52,9 @@ const (
 	// the app makes them 128).
 	MaxPictureSide = 256
 
-	memberPicturesDir = "pictures/members/"
+	memberPicturesDir  = "pictures/members/"
+	projectPicturesDir = "pictures/projects/"
+	teamPicturesDir    = "pictures/team/"
 )
 
 var (
@@ -65,7 +67,8 @@ var (
 	ErrBadPicture = errors.New("a picture must be a square PNG or JPEG of at most 256 pixels and 64 KB")
 )
 
-// PictureStore is storage that keeps member pictures.
+// PictureStore is storage that keeps pictures: members', projects' and the
+// team's, each in its own folder (PicturesOf).
 type PictureStore interface {
 	// PutPicture stores a checked picture of member id; it returns the
 	// picture's SHA-256 (hex), what the member's record names.
@@ -74,6 +77,25 @@ type PictureStore interface {
 	GetPicture(id, sum string) ([]byte, error)
 	// PrunePictures deletes member id's pictures other than those in keep.
 	PrunePictures(id string, keep ...string) error
+	// PutPictureIn, GetPictureIn and PrunePicturesIn: the same, in a
+	// folder of PicturesOf.
+	PutPictureIn(dir string, data []byte) (string, error)
+	GetPictureIn(dir, sum string) ([]byte, error)
+	PrunePicturesIn(dir string, keep ...string) error
+}
+
+// PicturesOf is the folder of the pictures of what (a member, a project:
+// its id; the team: ""), "" when the id isn't one.
+func PicturesOf(kind, id string) string {
+	switch {
+	case kind == "member" && ValidMemberID(id):
+		return memberPicturesDir + id + "/"
+	case kind == "project" && validHex(id, 32):
+		return projectPicturesDir + id + "/"
+	case kind == "team" && id == "":
+		return teamPicturesDir
+	}
+	return ""
 }
 
 var _ PictureStore = (*BucketBackend)(nil)
@@ -110,34 +132,44 @@ func ValidLookName(c string) bool {
 	return true
 }
 
-func pictureKey(id, sum string) string { return memberPicturesDir + id + "/" + sum }
-
 func (s *BucketBackend) PutPicture(id string, data []byte) (string, error) {
+	return s.PutPictureIn(PicturesOf("member", id), data)
+}
+
+func (s *BucketBackend) GetPicture(id, sum string) ([]byte, error) {
+	return s.GetPictureIn(PicturesOf("member", id), sum)
+}
+
+func (s *BucketBackend) PrunePictures(id string, keep ...string) error {
+	return s.PrunePicturesIn(PicturesOf("member", id), keep...)
+}
+
+func (s *BucketBackend) PutPictureIn(dir string, data []byte) (string, error) {
 	if !Looks {
 		return "", ErrLooksNotInBuild
 	}
-	if !ValidMemberID(id) {
-		return "", errors.New("invalid member id")
+	if dir == "" {
+		return "", errors.New("invalid id")
 	}
 	if err := CheckPicture(data); err != nil {
 		return "", err
 	}
 	h := sha256.Sum256(data)
 	sum := hex.EncodeToString(h[:])
-	if err := s.b.Put(pictureKey(id, sum), bytes.NewReader(data), int64(len(data)), sum, ""); err != nil {
+	if err := s.b.Put(dir+sum, bytes.NewReader(data), int64(len(data)), sum, ""); err != nil {
 		return "", err
 	}
 	return sum, nil
 }
 
-func (s *BucketBackend) GetPicture(id, sum string) ([]byte, error) {
+func (s *BucketBackend) GetPictureIn(dir, sum string) ([]byte, error) {
 	if !Looks {
 		return nil, ErrLooksNotInBuild
 	}
-	if !ValidMemberID(id) || !validHex(sum, 64) {
+	if dir == "" || !validHex(sum, 64) {
 		return nil, ErrNotFound
 	}
-	data, err := s.get(pictureKey(id, sum))
+	data, err := s.get(dir + sum)
 	if err != nil {
 		return nil, err
 	}
@@ -147,14 +179,14 @@ func (s *BucketBackend) GetPicture(id, sum string) ([]byte, error) {
 	return data, nil
 }
 
-func (s *BucketBackend) PrunePictures(id string, keep ...string) error {
+func (s *BucketBackend) PrunePicturesIn(dir string, keep ...string) error {
 	if !Looks {
 		return ErrLooksNotInBuild
 	}
-	if !ValidMemberID(id) {
-		return errors.New("invalid member id")
+	if dir == "" {
+		return errors.New("invalid id")
 	}
-	keys, err := s.list(memberPicturesDir + id + "/")
+	keys, err := s.list(dir)
 	if err != nil {
 		return err
 	}
@@ -255,4 +287,102 @@ func SetProjectLook(b Backend, pid, icon, color string) error {
 	p := ps[i]
 	p.Icon, p.Color = icon, color
 	return b.PutProject(p)
+}
+
+// SetProjectPicture sets project pid's own picture (nil for none: its icon
+// shows): the picture first, then the record naming it, then its other
+// pictures go (as a member's).
+func SetProjectPicture(b Backend, pid string, picture []byte) error {
+	if !Looks {
+		return ErrLooksNotInBuild
+	}
+	ps, ok := keepsLooks(b)
+	if !ok {
+		return ErrNoLooks
+	}
+	dir := PicturesOf("project", pid)
+	if dir == "" {
+		return ErrNotFound
+	}
+	list, err := b.Projects()
+	if err != nil {
+		return err
+	}
+	i := slices.IndexFunc(list, func(p Project) bool { return p.ID == pid })
+	if i < 0 {
+		return ErrNotFound
+	}
+	sum := ""
+	if picture != nil {
+		if sum, err = ps.PutPictureIn(dir, picture); err != nil {
+			return err
+		}
+	}
+	p := list[i]
+	p.Picture = sum
+	if err := b.PutProject(p); err != nil {
+		return err
+	}
+	keep := []string{sum}
+	if list, err := b.Projects(); err != nil {
+		return err
+	} else if i := slices.IndexFunc(list, func(p Project) bool { return p.ID == pid }); i >= 0 {
+		keep = append(keep, list[i].Picture)
+	}
+	return ps.PrunePicturesIn(dir, keep...)
+}
+
+// SetTeamLook sets how the team shows: icon and color (names, "" for the
+// app's pick), in team.json.
+func SetTeamLook(b Backend, icon, color string) error {
+	if !Looks {
+		return ErrLooksNotInBuild
+	}
+	if _, ok := keepsLooks(b); !ok {
+		return ErrNoLooks
+	}
+	if !ValidLookName(icon) || !ValidLookName(color) {
+		return errors.New("unknown icon or colour")
+	}
+	info, err := b.Info()
+	if err != nil {
+		return err // never write the info back without what it holds
+	}
+	info.Icon, info.Color = icon, color
+	return b.SetInfo(info)
+}
+
+// SetTeamPicture sets the team's own picture (nil for none), as
+// SetProjectPicture a project's.
+func SetTeamPicture(b Backend, picture []byte) error {
+	if !Looks {
+		return ErrLooksNotInBuild
+	}
+	ps, ok := keepsLooks(b)
+	if !ok {
+		return ErrNoLooks
+	}
+	dir := PicturesOf("team", "")
+	sum := ""
+	var err error
+	if picture != nil {
+		if sum, err = ps.PutPictureIn(dir, picture); err != nil {
+			return err
+		}
+	}
+	info, err := b.Info()
+	if err != nil {
+		return err
+	}
+	info.Picture = sum
+	if err := b.SetInfo(info); err != nil {
+		return err
+	}
+	keep := []string{sum}
+	if info, err := b.Info(); err != nil {
+		return err
+	} else {
+		keep = append(keep, info.Picture)
+	}
+	return ps.PrunePicturesIn(dir, keep...)
 }

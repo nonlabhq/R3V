@@ -57,6 +57,9 @@ type Team struct {
 	// LocksAsked: turning file locks on was offered once (or decided):
 	// not offered again.
 	LocksAsked bool `json:"locksAsked,omitempty"`
+	// Look: how the team shows (its icon, colour, picture), as its storage
+	// last gave it: the sidebar shows every team's without asking them.
+	Look *TeamLook `json:"look,omitempty"`
 	// KeysUnreadable: the team's keys were sealed by another Windows user
 	// or on another computer (teams.json copied): connect again with the
 	// team's connection code.
@@ -82,6 +85,41 @@ func (v Team) MarshalJSON() ([]byte, error) {
 type Look struct {
 	Color   string `json:"color,omitempty"`
 	Picture string `json:"picture,omitempty"`
+}
+
+// TeamLook is a team's icon and colour (names) and picture (its SHA-256:
+// the file is in PicturesDir); "" for none.
+type TeamLook struct {
+	Icon    string `json:"icon,omitempty"`
+	Color   string `json:"color,omitempty"`
+	Picture string `json:"picture,omitempty"`
+}
+
+// SyncTeamLook keeps team id's look as its storage gives it; it reports
+// whether it changed.
+func SyncTeamLook(id string, look TeamLook) bool {
+	same := func(s *Store) bool {
+		t := s.Find(id)
+		return t == nil || (t.Look == nil && look == TeamLook{}) || (t.Look != nil && *t.Look == look)
+	}
+	if s, err := Load(); err != nil || same(s) {
+		return false
+	}
+	changed := false
+	Update(func(s *Store) error {
+		if same(s) {
+			return nil
+		}
+		t := s.Find(id)
+		if look == (TeamLook{}) {
+			t.Look = nil
+		} else {
+			t.Look = &look
+		}
+		changed = true
+		return nil
+	})
+	return changed
 }
 
 // PicturesDir keeps pictures by their SHA-256: the user's own, and their

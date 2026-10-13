@@ -27,13 +27,23 @@ func TestStableHasNoLooks(t *testing.T) {
 	if err := a.SetProjectLook("t", "p", "drum", ""); !errors.Is(err, remote.ErrLooksNotInBuild) {
 		t.Errorf("SetProjectLook: %v", err)
 	}
+	if err := a.SetProjectPicture("t", "p", "data:image/png;base64,"); !errors.Is(err, remote.ErrLooksNotInBuild) {
+		t.Errorf("SetProjectPicture: %v", err)
+	}
+	if err := a.SetTeamLook("t", "mic", ""); !errors.Is(err, remote.ErrLooksNotInBuild) {
+		t.Errorf("SetTeamLook: %v", err)
+	}
+	if err := a.SetTeamPicture("t", "data:image/png;base64,"); !errors.Is(err, remote.ErrLooksNotInBuild) {
+		t.Errorf("SetTeamPicture: %v", err)
+	}
 	if s, _ := teams.Load(); s.Look != nil {
 		t.Errorf("look kept: %+v", s.Look)
 	}
 	if looks, err := a.MemberLooks(t.TempDir()); err != nil || len(looks) != 0 {
 		t.Errorf("MemberLooks: %v %v", looks, err)
 	}
-	if s := teamSummary(teams.Team{Remote: remote.Config{URL: "s3+https://storage.example/bucket/r3v"}}); s.Looks {
+	if s := teamSummary(teams.Team{Remote: remote.Config{URL: "s3+https://storage.example/bucket/r3v"},
+		Look: &teams.TeamLook{Icon: "mic"}}); s.Looks || s.Icon != "" {
 		t.Error("a team keeps looks in Stable")
 	}
 }
