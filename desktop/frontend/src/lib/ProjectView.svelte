@@ -36,7 +36,7 @@
   import ActionIcon from "./ActionIcon.svelte";
   import Modal from "./Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
-  import ProjectCheck from "./ProjectCheck.svelte";
+  import ProjectCheck, { hasCheck } from "./ProjectCheck.svelte";
   import MergeDecisions, { type MergeKind } from "./MergeDecisions.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ArchiveDialog from "./ArchiveDialog.svelte";
@@ -268,12 +268,14 @@
     if (restored && thenCommit) commit(true);
   }
 
-  // Just downloaded, or asked for: the project's check.
+  // Just downloaded, or asked for: the project's check. (Just downloaded:
+  // only when it has something to say, a Live project's say.)
   let checkOpen = $state<"" | "downloaded" | "check">("");
   $effect(() => {
     if (st && untrack(() => downloaded)) {
-      checkOpen = "downloaded";
       ondownloadseen?.();
+      const r = root;
+      api.ProjectCheck(r).then((rep) => { if (r === root && hasCheck(rep, "downloaded")) checkOpen = "downloaded"; }).catch(() => {});
     }
   });
 
