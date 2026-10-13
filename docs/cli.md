@@ -191,10 +191,22 @@ r3v step diff <a> [<b>] [--session ID] # what changed from step a to step b (or 
 
 A step is the project after one of an agent's moves: after each tool call that changed files (Edit, Write, a shell command, an MCP tool), R3V keeps the files as they are, under the prompt that asked for it. `agent setup` adds the hooks that make them (`UserPromptSubmit`: `r3v hook prompt`; `PostToolUse`: `r3v hook post-tool`); run it again in a copy set up before 0.1.44. Steps stay on this computer (`.r3v/steps/<session>.jsonl`, their files in the local store), never in the history or the team's storage; a session is kept while it has steps on the version the project is on, then 7 days, within 2 GB. Prompts are kept with keys and passwords taken out; the app's project settings turn prompts, or steps, off. `step back` is the person's: it changes the files of the copy it runs in. See [design/steps.md](design/steps.md).
 
+## What changed in a file (Nightly)
+
+Each kind of file the way it reads: text line by line, a Live Set track by
+track, a picture its size, any other file its size (`--json`: `kind`,
+`hunks`, `set_changes`, `picture`, `size_old`, `size_new`).
+
+```
+r3v diff [PATHS]                            # your changes, since the version you're on
+r3v diff --version V [PATHS]                # what a version changed
+r3v diff --from A --to B [PATHS]            # between two versions
+```
+
 ## Working with Live Sets directly
 
 ```
 r3v info <set.als>                          # tracks, devices, clips, automation, plugins, samples
-r3v diff <a.als> <b.als>                    # semantic diff
+r3v diff <a.als> <b.als>                    # two sets on disk, track by track
 r3v merge-sets <base> <ours> <theirs> -o out.als [--strategy fail|ours|theirs|both]
 ```

@@ -65,6 +65,7 @@ words: [glossary.md](glossary.md).
 
 ```sh
 r3v status --json            # what changed; is the team ahead?
+r3v diff --json              # what changed in each file (text: line hunks; Nightly)
 r3v update --preview --json  # what the team shared: versions, changes, conflicts
 r3v commit -m "Brighter mix on the chorus" --json
 r3v commit -m "Fix the renderer's lights" -m "They were twice too bright on HDR screens." --json
@@ -310,7 +311,9 @@ Codes are stable; messages are for people and may change.
 - Live sets (`.als`) merge track by track; other files merge only when one
   side changed them.
 - `r3v status` shows what changed inside a modified set
-  (`set_changes`); `r3v diff a.als b.als` compares two sets.
+  (`set_changes`); `r3v diff` (Nightly) shows every changed file the way it
+  reads (`--version V`, `--from A --to B`), and `r3v diff a.als b.als` compares
+  two sets on disk.
 - `r3v watch` keeps running and reports teammates' new versions; it is
   for people (no `--json`).
 - The CLI is `r3v` on PATH after installing the app (a new terminal sees
