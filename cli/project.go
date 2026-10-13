@@ -13,6 +13,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
+	"github.com/nonlabhq/r3v/internal/teams"
 )
 
 // openRepo opens the project here, kept from other programs (the app) until
@@ -87,8 +88,17 @@ func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	author := fs.String("author", "", "name recorded on snapshots (default: OS user)")
 	preset := fs.String("preset", "", "for a folder R3V doesn't recognise: code (text merged line by line, .gitignore followed) or none (every file as it is)")
+	teamName := fs.String("team", "", "a team this computer has joined (its name, as r3v teams lists it): the project is that team's")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	var team *teams.Team
+	if *teamName != "" { // (before anything is made: a name that isn't one leaves the folder as it was)
+		t, err := joinedTeam(*teamName)
+		if err != nil {
+			return err
+		}
+		team = t
 	}
 	dir := "."
 	if fs.NArg() > 0 {
@@ -108,7 +118,23 @@ func cmdInit(args []string) error {
 	}
 	ensureRules(r)
 	fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
-	fmt.Println("next: r3v remote <connection-code>, then r3v commit -m \"first version\"")
+	if team != nil {
+		release, err := r.Lock(30 * time.Second)
+		if err != nil {
+			return err
+		}
+		held = append(held, release)
+		if err := joinTeam(r, team); err != nil {
+			return err
+		}
+		fmt.Printf("it is %s's: r3v commit -m \"first version\" shares it\n", team.Name)
+		return nil
+	}
+	if teamByName {
+		fmt.Println("next: r3v remote --team NAME (r3v teams lists them), then r3v commit -m \"first version\"")
+	} else {
+		fmt.Println("next: r3v remote <connection-code>, then r3v commit -m \"first version\"")
+	}
 	return nil
 }
 

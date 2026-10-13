@@ -38,6 +38,7 @@ func parseArgs(fs *flag.FlagSet, args []string) ([]string, error) {
 
 func cmdRemote(args []string) error {
 	fs := flag.NewFlagSet("remote", flag.ContinueOnError)
+	teamName := fs.String("team", "", "a team this computer has joined, by name (r3v teams lists them)")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
@@ -45,6 +46,17 @@ func cmdRemote(args []string) error {
 	r, err := openRepo()
 	if err != nil {
 		return err
+	}
+	if *teamName != "" {
+		t, err := joinedTeam(*teamName)
+		if err != nil {
+			return err
+		}
+		if err := joinTeam(r, t); err != nil {
+			return err
+		}
+		fmt.Printf("connected to team %q\nnext: r3v commit -m \"message\" to share this project\n", t.Name)
+		return nil
 	}
 	if len(pos) == 0 {
 		t, err := r.Team()
@@ -142,9 +154,17 @@ func syncHosted() {
 func cmdClone(args []string) error {
 	fs := flag.NewFlagSet("clone", flag.ContinueOnError)
 	author := fs.String("author", "", "your name on saved versions (default: OS user)")
+	teamName := fs.String("team", "", "a team this computer has joined, by name, instead of a connection code")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
+	}
+	var team *teams.Team
+	if *teamName != "" {
+		if team, err = joinedTeam(*teamName); err != nil {
+			return err
+		}
+		pos = append([]string{""}, pos...) // (no code)
 	}
 	if len(pos) < 2 {
 		return errors.New("usage: r3v clone <connection-code> <project name or id> [folder]")
@@ -153,7 +173,13 @@ func cmdClone(args []string) error {
 	if len(pos) > 2 {
 		dir = pos[2]
 	}
-	r, m, err := project.Clone(pos[0], pos[1], dir, *author)
+	var r *project.Repo
+	var m *project.Manifest
+	if team != nil {
+		r, m, err = project.CloneFromTeam(team, pos[1], dir, *author, nil)
+	} else {
+		r, m, err = project.Clone(pos[0], pos[1], dir, *author)
+	}
 	if err != nil {
 		return err
 	}
