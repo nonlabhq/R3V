@@ -3879,10 +3879,12 @@ export class TeamProject {
     "branchLabel": string;
 
     /**
-     * Icon and Color: how the team shows it (names; "" for the app's pick).
+     * Icon and Color: how the team shows it (names; "" for the app's pick);
+     * Picture: its own picture (a data: URL; "" for none), over the icon.
      */
     "icon": string;
     "color": string;
+    "picture": string;
 
     /**
      * Workspace: an agent's workspace of a project, shown as a project
@@ -3916,6 +3918,9 @@ export class TeamProject {
         }
         if (!("color" in $$source)) {
             this["color"] = "";
+        }
+        if (!("picture" in $$source)) {
+            this["picture"] = "";
         }
         if (!("workspace" in $$source)) {
             this["workspace"] = false;
@@ -4017,6 +4022,14 @@ export class TeamSummary {
     "looks": boolean;
 
     /**
+     * Icon, Color and Picture: how the team shows (names, "" for the app's
+     * pick; Picture a data: URL, "" for none), as it last gave them.
+     */
+    "icon": string;
+    "color": string;
+    "picture": string;
+
+    /**
      * Moving: the team is moving to R3V Cloud (no shares meanwhile).
      * MovedTo: it moved there (the hosted team's address); MovedToTeam:
      * that team's id here, once this computer has joined it.
@@ -4084,6 +4097,15 @@ export class TeamSummary {
         }
         if (!("looks" in $$source)) {
             this["looks"] = false;
+        }
+        if (!("icon" in $$source)) {
+            this["icon"] = "";
+        }
+        if (!("color" in $$source)) {
+            this["color"] = "";
+        }
+        if (!("picture" in $$source)) {
+            this["picture"] = "";
         }
         if (!("moving" in $$source)) {
             this["moving"] = false;

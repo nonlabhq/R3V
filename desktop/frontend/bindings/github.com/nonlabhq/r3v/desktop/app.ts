@@ -1305,6 +1305,14 @@ export function SetProjectLook(teamID: string, projectID: string, icon: string, 
 }
 
 /**
+ * SetProjectPicture sets a team project's own picture (a data: URL; "" for
+ * none: its icon shows) for the whole team.
+ */
+export function SetProjectPicture(teamID: string, projectID: string, url: string): $CancellablePromise<void> {
+    return $Call.ByID(3293494230, teamID, projectID, url);
+}
+
+/**
  * SetShareSetup turns sharing this computer's setup with a team on (it is
  * shared now) or off (the shared one is deleted).
  */
@@ -1327,6 +1335,21 @@ export function SetStepSettings(root: string, s: project$0.StepSettings): $Cance
  */
 export function SetTeamLocks(teamID: string, on: boolean, kinds: string[]): $CancellablePromise<void> {
     return $Call.ByID(1834461926, teamID, on, kinds);
+}
+
+/**
+ * SetTeamLook sets the team's icon and colour (names) for the whole team.
+ */
+export function SetTeamLook(teamID: string, icon: string, color: string): $CancellablePromise<void> {
+    return $Call.ByID(1203745501, teamID, icon, color);
+}
+
+/**
+ * SetTeamPicture sets the team's own picture (a data: URL; "" for none) for
+ * the whole team.
+ */
+export function SetTeamPicture(teamID: string, url: string): $CancellablePromise<void> {
+    return $Call.ByID(1868753228, teamID, url);
 }
 
 /**
