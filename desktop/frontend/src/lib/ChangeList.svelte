@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChangeMark from "./ChangeMark.svelte";
   import { folderMoves } from "./moves";
   import { lineKind, type Change } from "./api";
   import FileIcon from "./FileIcon.svelte";
@@ -9,7 +10,6 @@
   // the end of each file's row, a set's track changes under it.
   let { changes, empty = "" }: { changes: Change[]; empty?: string } = $props();
 
-  const sym: Record<string, string> = { added: "+", modified: "~", deleted: "−", untracked: "○", renamed: "M" };
   const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"),
     untracked: t("No longer tracked"), renamed: t("Moved") } as Record<string, string>)[s];
   // Folders that moved, said once on the folder (see moves.ts).
@@ -80,7 +80,7 @@
             {#if c.status === "renamed" && !moves.covered(c.path)}
               <span class="from" title={`Moved from ${c.from}${c.edited ? ", and changed" : ""}`}>← {fromLabel(c)}</span>
             {/if}
-            <span class="right"><span class="sym" title={statusName(c.status)}>{sym[c.status] ?? "·"}</span></span>
+            <span class="right"><ChangeMark status={c.status} /></span>
           </div>
           {#if c.tracks?.length}
             <div class="wsum" style:margin-left="{row.depth * 14 + 42}px"><WeightSummary tracks={c.tracks} /></div>
@@ -111,13 +111,6 @@
   .file.deleted .fname { text-decoration: line-through; color: var(--muted); }
   .right { margin-left: auto; display: flex; align-items: center; flex: none; }
   .count { font-size: var(--fs-xs); padding: 0 var(--sp-6); border-radius: var(--radius-lg); background: var(--hover); color: var(--mod); }
-  .sym { width: 16px; height: 16px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center;
-    font-size: var(--fs-sm); font-weight: var(--fw-bold); line-height: 1; }
-  .file.added .sym { color: var(--add); background: var(--add-soft); }
-  .file.deleted .sym { color: var(--del); background: var(--del-soft); }
-  .file.modified .sym { color: var(--mod); background: var(--mod-soft); }
-  .file.untracked .sym { color: var(--muted); }
-  .file.renamed .sym { color: var(--warn); background: var(--warn-soft); }
   .from { flex: 0 1000 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: var(--fs-sm); color: var(--faint); }
   .details {

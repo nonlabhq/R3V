@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChangeMark, { changeLetter } from "./ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { Events } from "@wailsio/runtime";
   import { api, ago, errorText, formatBytes, previewURL, titleOf, type MemberLook, type ProjectFile, type State, type Version } from "./api";
@@ -461,8 +462,6 @@
     api.ShowFile(root, p).catch((e) => toast(errorText(e), "error"));
   }
 
-  const sym: Record<string, string> = { added: "A", modified: "M", deleted: "D", renamed: "R" };
-  const statusName = (s: string) => ({ added: t("New"), modified: t("Changed"), deleted: t("Deleted"), renamed: t("Moved") } as Record<string, string>)[s] ?? "";
   let changedTotal = $derived(tree.changed);
   const emptyText = () => searching ? (filter.trim() ? t("No files here or below match “{text}”.", { text: filter.trim() }) : t("No files of these kinds here or below."))
     : t("No files in this folder. Drop files here to copy them in.");
@@ -627,7 +626,7 @@
                 {#if c.key === "type"}
                   <span class="type faint" role="gridcell">{typeOf(f)}</span>
                 {:else if c.key === "status"}
-                  <span role="gridcell">{#if sym[f.status]}<span class="st {f.status}" title={statusName(f.status)}>{sym[f.status]}</span>{:else}<span class="faint">—</span>{/if}</span>
+                  <span role="gridcell">{#if changeLetter(f.status)}<ChangeMark status={f.status} />{:else}<span class="faint">—</span>{/if}</span>
                 {:else if c.key === "size"}
                   <span class="num faint" role="gridcell">{formatBytes(f.size)}</span>
                 {:else}
@@ -666,7 +665,7 @@
                   <img src="{previewURL(root, f.path, '', 320)}&t={f.modified}" alt="" loading="lazy" draggable="false"
                     onerror={() => (thumbFailed[f.path] = true)} />
                 {/if}
-                {#if sym[f.status]}<span class="st corner {f.status}" title={statusName(f.status)}>{sym[f.status]}</span>{/if}
+                {#if changeLetter(f.status)}<span class="corner"><ChangeMark status={f.status} /></span>{/if}
                 {#if fileLock(f.path)}<span class="lock-corner"><LockBadge lock={fileLock(f.path)!} {looks} {branchName} /></span>{/if}
               </span>
               {#if renaming && !renaming.dir && renaming.path === f.path}
@@ -889,11 +888,6 @@
   .num { text-align: right; font-size: var(--fs-sm); }
   .who { min-width: 0; display: flex; align-items: center; gap: var(--sp-6); font-size: var(--fs-sm); color: var(--muted); }
   .wtxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .st { display: inline-flex; font-size: var(--fs-2xs); font-weight: var(--fw-bold); padding: 1px var(--sp-6); border-radius: var(--radius-sm);
-    background: var(--mod-soft); color: var(--mod); }
-  .st.added { background: var(--add-soft); color: var(--add); }
-  .st.deleted { background: var(--del-soft); color: var(--del); }
-  .st.renamed { background: var(--warn-soft); color: var(--warn); }
   .rename { width: 100%; padding: var(--sp-2) var(--sp-6); font-size: var(--fs-md); }
 
   .area.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--sp-12); align-content: start; padding-top: var(--sp-4); }

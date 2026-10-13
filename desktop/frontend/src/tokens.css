@@ -83,6 +83,15 @@
   --add-soft: rgba(82, 168, 255, .18);
   --del-soft: rgba(217, 84, 26, .18);
   --mod-soft: rgba(245, 184, 61, .16);
+  /* What happened to a file (ChangeMark: A C D M), the same everywhere. */
+  --change-added: #4cc38a;
+  --change-changed: #52a8ff;
+  --change-deleted: #f0565a;
+  --change-moved: #f5b83d;
+  --change-added-soft: rgba(76, 195, 138, .18);
+  --change-changed-soft: rgba(82, 168, 255, .18);
+  --change-deleted-soft: rgba(240, 86, 90, .18);
+  --change-moved-soft: rgba(245, 184, 61, .16);
 
   /* The palette (R3V VI, b1-b12): the colours people, projects and
      branches get. A team stores a colour's number ("b3", lib/palette.ts),
