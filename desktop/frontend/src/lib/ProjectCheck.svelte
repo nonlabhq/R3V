@@ -1,8 +1,16 @@
+<script lang="ts" module>
+  import type { Report } from "../../bindings/github.com/nonlabhq/r3v/internal/health/models";
+
+  /** Whether a check has anything to show (a Live project's, the team's
+   *  setups; before the first version, what teammates will need). */
+  export const hasCheck = (r: Report | null, mode: "added" | "downloaded" | "check") =>
+    mode === "added" || (!!r && (!!r.live || r.teamSetups));
+</script>
+
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, formatBytes } from "./api";
   import CheckIcon from "./CheckIcon.svelte";
-  import type { Report } from "../../bindings/github.com/nonlabhq/r3v/internal/health/models";
 
   // A project's check, at a glance: tiles for the Live version, samples,
   // plugins, teammates and (before the first version) the upload, each

@@ -83,6 +83,21 @@ const commitButton = () => screen.getByRole("button", { name: /^Commit/ });
 const toasted = (text: string | RegExp) =>
   waitFor(() => expect(toast.mock.calls.some(([t]) => (typeof text === "string" ? t === text : text.test(t)))).toBe(true));
 
+describe("ProjectView: just downloaded", () => {
+  it("shows the project's check only when it has something to say", async () => {
+    api.ProjectCheck.mockResolvedValue({ live: null, team: [], teamSetups: false, shareSetup: false });
+    const ondownloadseen = vi.fn();
+    await show({}, { downloaded: true, ondownloadseen });
+    await waitFor(() => expect(api.ProjectCheck).toHaveBeenCalled());
+    expect(ondownloadseen).toHaveBeenCalled();
+    expect(screen.queryByText(/is downloaded/)).toBeNull();
+    cleanup();
+    api.ProjectCheck.mockResolvedValue({ live: null, team: [], teamSetups: true, shareSetup: true });
+    await show({}, { downloaded: true });
+    expect(await screen.findByText("“Song” is downloaded")).toBeTruthy();
+  });
+});
+
 describe("ProjectView: refreshing", () => {
   it("reads the project again on F5, the page dimmed meanwhile", async () => {
     await show();
