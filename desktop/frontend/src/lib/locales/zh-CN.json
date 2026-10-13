@@ -1797,6 +1797,8 @@
 "Author": "作者",
 "Everyone": "所有人",
 "Show everything": "全部显示",
+"Reading the files…": "正在读取文件…",
+"Another program may be using the project (an agent committing, say): R3V reads its files once it's done.": "可能有其他程序正在使用这个项目（例如 agent 正在 commit）：结束后 R3V 就会读取文件。",
 "R3V can't read this picture: try a PNG or JPEG.": "R3V 无法读取这张图片：请试试 PNG 或 JPEG。",
 "Upload image…": "上传图片…",
 "Remove image": "移除图片",

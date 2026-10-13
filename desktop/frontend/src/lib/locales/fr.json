@@ -1797,6 +1797,8 @@
 "Author": "Auteur",
 "Everyone": "Tout le monde",
 "Show everything": "Tout afficher",
+"Reading the files…": "Lecture des fichiers…",
+"Another program may be using the project (an agent committing, say): R3V reads its files once it's done.": "Un autre programme utilise peut-être le projet (un agent qui fait un commit, par exemple) : R3V lit ses fichiers dès qu'il a fini.",
 "R3V can't read this picture: try a PNG or JPEG.": "R3V ne peut pas lire cette image : essaie un PNG ou un JPEG.",
 "Upload image…": "Importer une image…",
 "Remove image": "Retirer l'image",

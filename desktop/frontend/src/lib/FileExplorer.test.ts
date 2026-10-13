@@ -69,6 +69,21 @@ async function show() {
 const folder = (name: string) => screen.getAllByRole("button").find((b) => b.classList.contains("folder") && b.textContent?.includes(name))!;
 
 describe("FileExplorer", () => {
+  it("says it's reading the files until they come, not that there are none; slow, why", async () => {
+    vi.useFakeTimers();
+    let done!: (f: unknown) => void;
+    api.ProjectFiles.mockReturnValue(new Promise((r) => (done = r)));
+    render(FileExplorer, { root: ROOT, st, onrestore: vi.fn(), ondiscard: vi.fn() });
+    expect(screen.getByRole("status").textContent).toContain("Reading the files…");
+    expect(screen.queryByText(/No files in this folder/)).toBeNull();
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(screen.getByText(/Another program may be using the project/)).toBeTruthy();
+    done(files);
+    vi.useRealTimers();
+    await waitFor(() => expect(rowNames().length).toBeGreaterThan(0));
+    expect(screen.queryByText("Reading the files…")).toBeNull();
+  });
+
   it("lists only folders on the left, with the changed files inside each", async () => {
     await show();
     expect(treeNames()).toEqual(["Song", "Art", "Samples"]); // (the project's own folder on a row of its own)
