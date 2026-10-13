@@ -506,11 +506,4 @@
   .action strong { font-size: var(--fs-base); font-weight: var(--fw-semibold); }
   .action button { flex: none; }
   .danger-zone h3 { color: var(--danger); }
-  .switch { appearance: none; position: relative; width: 26px; height: 15px; margin: 0; flex: none; cursor: pointer;
-    border: none; padding: 0; border-radius: var(--radius-lg); background: var(--hover-strong); transition: background .15s; }
-  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
-    background: var(--switch-knob); transition: transform .15s; }
-  .switch:checked { background: var(--accent); }
-  .switch:checked::after { transform: translateX(11px); background: #fff; }
-  .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
