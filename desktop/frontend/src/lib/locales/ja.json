@@ -1797,6 +1797,8 @@
 "Author": "作成者",
 "Everyone": "全員",
 "Show everything": "すべて表示",
+"Reading the files…": "ファイルを読み込み中…",
+"Another program may be using the project (an agent committing, say): R3V reads its files once it's done.": "別のプログラム（コミット中のエージェントなど）がプロジェクトを使っている可能性があります。終わり次第ファイルを読み込みます。",
 "R3V can't read this picture: try a PNG or JPEG.": "この画像は読み込めません。PNG か JPEG を試してください。",
 "Upload image…": "画像をアップロード…",
 "Remove image": "画像を削除",

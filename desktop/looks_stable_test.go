@@ -30,6 +30,9 @@ func TestStableHasNoLooks(t *testing.T) {
 	if err := a.SetProjectPicture("t", "p", "data:image/png;base64,"); !errors.Is(err, remote.ErrLooksNotInBuild) {
 		t.Errorf("SetProjectPicture: %v", err)
 	}
+	if a.CanSetTeamLook("t") {
+		t.Error("CanSetTeamLook in Stable")
+	}
 	if err := a.SetTeamLook("t", "mic", ""); !errors.Is(err, remote.ErrLooksNotInBuild) {
 		t.Errorf("SetTeamLook: %v", err)
 	}

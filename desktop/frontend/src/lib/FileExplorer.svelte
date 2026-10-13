@@ -59,6 +59,14 @@
   function lockFromMenu(m: { path: string; dir: boolean }) { menu = null; lockPaths(root, lockTargets(m)); }
   function unlockFromMenu(path: string) { menu = null; unlockPaths(root, [path]); }
   let loadedAt = $state(0);
+  // Until the files are first read: said so (an agent committing holds the
+  // project a while; reading waits for it), not "no files".
+  let slow = $state(false);
+  $effect(() => {
+    if (loadedAt) return;
+    const id = setTimeout(() => (slow = true), 3000);
+    return () => clearTimeout(id);
+  });
   function loadFiles() {
     return api.ProjectFiles(root, true).then((f) => { files = f ?? []; loadedAt = Date.now(); })
       .catch((e) => toast(errorText(e), "error"));
@@ -159,11 +167,13 @@
   }
   const clamp = (n: number, lo: number, hi: number) => Math.round(Math.min(hi, Math.max(lo, n)));
   function resizeTree(e: PointerEvent) { const w0 = widths.tree; dragWidth(e, (dx) => (widths.tree = clamp(w0 + dx, 160, 440))); }
-  // The file panel: as set, but never more than half the card (the files
-  // keep room on a narrow window).
+  // The file panel: as set, as wide as leaves the files LIST_MIN (they keep
+  // room on a narrow window).
+  const LIST_MIN = 360;
   let cardW = $state(0);
-  let panelPx = $derived(cardW ? Math.min(widths.panel, Math.max(240, Math.round(cardW / 2))) : widths.panel);
-  function resizePanel(e: PointerEvent) { const w0 = panelPx; dragWidth(e, (dx) => (widths.panel = clamp(w0 - dx, 260, 760))); }
+  let panelMax = $derived(cardW ? Math.max(260, cardW - LIST_MIN) : 1600);
+  let panelPx = $derived(Math.min(widths.panel, panelMax));
+  function resizePanel(e: PointerEvent) { const w0 = panelPx; dragWidth(e, (dx) => (widths.panel = clamp(w0 - dx, 260, panelMax))); }
   // (a column's left edge: the name column takes what is left)
   function resizeCol(e: PointerEvent, c: (typeof COLS)[number]) { const w0 = cols[c.key]; dragWidth(e, (dx) => (cols[c.key] = clamp(w0 - dx, c.min, 600))); }
   let colMenu = $state<{ x: number; y: number } | null>(null);
@@ -468,6 +478,13 @@
   let thumbFailed = $state<Record<string, boolean>>({});
 </script>
 
+{#snippet reading()}
+  <div class="muted empty reading" role="status">
+    <span class="spin" aria-hidden="true"></span>{t("Reading the files…")}
+    {#if slow}<p class="faint">{t("Another program may be using the project (an agent committing, say): R3V reads its files once it's done.")}</p>{/if}
+  </div>
+{/snippet}
+
 <svelte:window onclick={(e) => { if (menu && !(e.target as HTMLElement).closest(".ctx")) menu = null; }}
   onkeydown={(e) => { if (e.key === "Escape" && menu) menu = null; }} onpointerup={onPointerUp} />
 
@@ -638,7 +655,7 @@
               {/each}
             </div>
           {:else}
-            {#if !subfolders.length}<p class="muted empty">{emptyText()}</p>{/if}
+            {#if !loadedAt}{@render reading()}{:else if !subfolders.length}<p class="muted empty">{emptyText()}</p>{/if}
           {/each}
         {:else}
           {#each subfolders as d (d.path)}
@@ -681,7 +698,7 @@
               </span>
             </div>
           {:else}
-            {#if !subfolders.length}<p class="muted empty">{emptyText()}</p>{/if}
+            {#if !loadedAt}{@render reading()}{:else if !subfolders.length}<p class="muted empty">{emptyText()}</p>{/if}
           {/each}
         {/if}
         {#if marquee}
@@ -931,4 +948,10 @@
   .cols-menu .note { margin: var(--sp-2) var(--sp-8) var(--sp-6); text-transform: uppercase; letter-spacing: .06em; }
   .item.check { gap: var(--sp-8); margin: 0; color: var(--text); font-size: var(--fs-md); cursor: pointer; }
   .item.check input { width: auto; margin: 0; }
+  .reading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8); }
+  .reading p { flex-basis: 100%; margin: 0; font-size: var(--fs-sm); }
+  .reading .spin { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line); border-top-color: var(--accent);
+    animation: turn .8s linear infinite; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .reading .spin { animation: none; } }
 </style>

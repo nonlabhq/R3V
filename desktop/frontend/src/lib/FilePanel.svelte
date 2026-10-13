@@ -68,6 +68,14 @@
   // The line above the history is dragged to share the panel's height
   // (remembered on this computer).
   const TOP_KEY = "r3v.filePanelTop";
+  // The history folded or not: one choice for the project's files (kept).
+  const histKey = $derived(`r3v.fileHistory:${root}`);
+  let histOpen = $state(true);
+  $effect(() => { try { histOpen = localStorage.getItem(histKey) !== "0"; } catch { histOpen = true; } });
+  function toggleHistory() {
+    histOpen = !histOpen;
+    try { localStorage.setItem(histKey, histOpen ? "1" : "0"); } catch { /* not kept */ }
+  }
   let topH = $state((() => { try { return Number(localStorage.getItem(TOP_KEY)) || 320; } catch { return 320; } })());
   let bodyH = $state(0);
   let topPx = $derived(bodyH ? Math.round(Math.min(Math.max(140, topH), Math.max(140, bodyH - 120))) : topH);
@@ -113,7 +121,7 @@
   {/if}
 
   <div class="body" bind:clientHeight={bodyH}>
-    <div class="top" style:height={file.status === "ignored" ? undefined : `${topPx}px`}>
+    <div class="top" class:grow={!histOpen} style:height={file.status === "ignored" || !histOpen ? undefined : `${topPx}px`}>
     <div class="preview">
       {#if file.status === "ignored"}
         <p class="muted">{t("R3V doesn't keep this file in versions: the project's rules leave it out (see the project's settings, ⚙ at the top).")}</p>
@@ -141,10 +149,14 @@
 
     {#if file.status !== "ignored"}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="hsplit" onpointerdown={resizeTop}></div>
-      <section class="history">
-        <h3>{t("History of this file")}</h3>
-        {#if history === null}
+      {#if histOpen}<div class="hsplit" onpointerdown={resizeTop}></div>{/if}
+      <section class="history" class:folded={!histOpen}>
+        <h3><button class="fold" aria-expanded={histOpen} onclick={toggleHistory}>
+          <span class="chev" aria-hidden="true">{histOpen ? "▾" : "▸"}</span>{t("History of this file")}{#if !histOpen && history?.length}<span class="n">{history.length}</span>{/if}
+        </button></h3>
+        {#if !histOpen}
+          <!-- (folded: the file takes the room) -->
+        {:else if history === null}
           <p class="muted small">{t("Loading…")}</p>
         {:else if history.length === 0}
           <p class="muted small">{t("No committed versions of this file yet.")}</p>
@@ -198,6 +210,14 @@
   .hsplit { flex: none; height: 9px; margin: -4px 0; position: relative; z-index: 1; cursor: row-resize; touch-action: none; }
   .hsplit:hover, .hsplit:active { background: linear-gradient(to bottom, transparent 4px, var(--accent) 4px, var(--accent) 5px, transparent 5px); }
   .history { flex: 1; min-height: 0; overflow: auto; }
+  .history.folded { flex: none; padding-bottom: var(--sp-10); }
+  .history.folded h3 { margin: 0; }
+  .top.grow { flex: 1; }
+  .fold { display: inline-flex; align-items: center; gap: var(--sp-6); padding: 0; border: none; background: none; color: inherit;
+    font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
+  .fold:hover:not(:disabled) { background: none; color: var(--text); }
+  .fold .chev { font-size: var(--fs-2xs); }
+  .fold .n { margin-left: var(--sp-4); color: var(--faint); font-variant-numeric: tabular-nums; }
   .preview { margin: 0 var(--sp-18); min-height: 120px; overflow: auto; border-radius: var(--radius-lg);
     background: var(--bg-sunken); padding: var(--sp-8); }
   .preview > p { padding: var(--sp-12); }

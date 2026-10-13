@@ -172,11 +172,19 @@ describe("Project icon and colour", () => {
 
   it("is offered for the team too, in its settings", async () => {
     const reload = vi.fn(async () => {});
+    api.CanSetTeamLook.mockResolvedValue(true);
     render(TeamSettings, { team: team({ address: "s3+https://x/b", isStorage: true }), reload, onclose: () => {}, inline: true });
-    await fireEvent.click(screen.getByRole("button", { name: "Icon and colour" }));
+    await fireEvent.click(await screen.findByRole("button", { name: "Icon and colour" }));
     await fireEvent.click(screen.getByRole("radio", { name: "The team's initial" }));
     await waitFor(() => expect(api.SetTeamLook).toHaveBeenCalledWith("t1", "", ""));
     expect(reload).toHaveBeenCalled();
+  });
+
+  it("isn't offered on a hosted team to who isn't its owner or an admin", async () => {
+    api.CanSetTeamLook.mockResolvedValue(false);
+    render(TeamSettings, { team: team({ hosted: true }), reload: vi.fn(async () => {}), onclose: () => {}, inline: true });
+    await waitFor(() => expect(api.CanSetTeamLook).toHaveBeenCalledWith("t1"));
+    expect(screen.queryByRole("button", { name: "Icon and colour" })).toBeNull();
   });
 
   it("isn't offered where the team keeps no looks", () => {

@@ -112,6 +112,9 @@ func TestLooks(t *testing.T) {
 	if err := a.SetProjectPicture(team.ID, tp.ID, pngURL(t, 64)); err != nil {
 		t.Fatal(err)
 	}
+	if !a.CanSetTeamLook(team.ID) {
+		t.Error("a storage team's look can't be changed by its member")
+	}
 	if err := a.SetTeamLook(team.ID, "e-1f3b8", "b6"); err != nil {
 		t.Fatal(err)
 	}

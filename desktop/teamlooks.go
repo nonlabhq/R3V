@@ -3,6 +3,7 @@ package desktop
 import (
 	"errors"
 
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teams"
 )
@@ -120,4 +121,25 @@ func syncTeamLook(teamID string, b remote.Backend) error {
 	}
 	teams.SyncTeamLook(teamID, teams.TeamLook{Icon: info.Icon, Color: info.Color, Picture: info.Picture})
 	return nil
+}
+
+// CanSetTeamLook reports whether the team's look may be changed from here:
+// on a hosted team, by its owners and admins (as its name); on storage, by
+// anyone in it.
+func (a *App) CanSetTeamLook(teamID string) bool {
+	if !remote.Looks {
+		return false
+	}
+	s, err := teams.Load()
+	if err != nil {
+		return false
+	}
+	t := s.Find(teamID)
+	if t == nil {
+		return false
+	}
+	if _, hosted := cloud.Hosted(*t); hosted {
+		return isAdmin(myRole(t))
+	}
+	return true
 }
