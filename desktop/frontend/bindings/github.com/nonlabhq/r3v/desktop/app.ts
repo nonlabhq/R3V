@@ -286,6 +286,15 @@ export function Busy(): $CancellablePromise<boolean> {
 }
 
 /**
+ * CanSetTeamLook reports whether the team's look may be changed from here:
+ * on a hosted team, by its owners and admins (as its name); on storage, by
+ * anyone in it.
+ */
+export function CanSetTeamLook(teamID: string): $CancellablePromise<boolean> {
+    return $Call.ByID(3573971501, teamID);
+}
+
+/**
  * CancelSave stops root's commit or share under way, if it can still stop
  * (false when there is none).
  */

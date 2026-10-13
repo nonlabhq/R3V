@@ -118,7 +118,14 @@
 
   let changed = $derived(!!conn && !!saved && JSON.stringify(conn) !== JSON.stringify(saved));
 
-  // The team's icon, colour and picture, for everyone (Nightly: looks).
+  // The team's icon, colour and picture, for everyone (Nightly: looks); on
+  // a hosted team, its owners and admins change them (as its name).
+  let canLook = $state(false);
+  $effect(() => {
+    const id = team.id;
+    canLook = false;
+    if (team.looks) api.CanSetTeamLook(id).then((v) => { if (team.id === id) canLook = !!v; }).catch(() => {});
+  });
   async function setLook(icon: string, color: string) {
     await api.SetTeamLook(team.id, icon, color);
     await reload();
@@ -198,7 +205,7 @@
   <section>
     <h3>{t("Name")}</h3>
     <div class="name-line">
-      {#if team.looks && !offline}
+      {#if team.looks && !offline && canLook}
         <LookPicker seed={team.id} name={team.name} icon={team.icon ?? ""} color={team.color ?? ""} picture={team.picture ?? ""}
           label={t("Icon and colour")} initialLabel={t("The team's initial")} onlook={setLook} onpicture={setPicture} />
       {:else}
