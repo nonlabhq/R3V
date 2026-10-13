@@ -13,6 +13,8 @@
   import Fold from "./Fold.svelte";
   import CloudPeople from "./CloudPeople.svelte";
   import TeamLocks from "./TeamLocks.svelte";
+  import LookPicker from "./LookPicker.svelte";
+  import TeamMark from "./TeamMark.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
@@ -116,6 +118,16 @@
 
   let changed = $derived(!!conn && !!saved && JSON.stringify(conn) !== JSON.stringify(saved));
 
+  // The team's icon, colour and picture, for everyone (Nightly: looks).
+  async function setLook(icon: string, color: string) {
+    await api.SetTeamLook(team.id, icon, color);
+    await reload();
+  }
+  async function setPicture(url: string) {
+    await api.SetTeamPicture(team.id, url);
+    await reload();
+  }
+
   async function renameForEveryone() {
     renaming = true;
     try {
@@ -185,7 +197,15 @@
 {#snippet body()}
   <section>
     <h3>{t("Name")}</h3>
-    <input bind:value={name} aria-label={t("Team name")} />
+    <div class="name-line">
+      {#if team.looks && !offline}
+        <LookPicker seed={team.id} name={team.name} icon={team.icon ?? ""} color={team.color ?? ""} picture={team.picture ?? ""}
+          label={t("Icon and colour")} initialLabel={t("The team's initial")} onlook={setLook} onpicture={setPicture} />
+      {:else}
+        <TeamMark {team} size={36} />
+      {/if}
+      <input bind:value={name} aria-label={t("Team name")} />
+    </div>
     {#if name !== team.name}
       <div class="row btns">
         {#if name.trim()}
@@ -417,4 +437,6 @@
   .keep input { width: auto; margin-top: var(--sp-4); }
   .keep .faint { display: block; margin-top: var(--sp-2); }
   .keep.sub { margin-left: var(--sp-24); }
+  .name-line { display: flex; align-items: center; gap: var(--sp-8); }
+  .name-line input { flex: 1; }
 </style>

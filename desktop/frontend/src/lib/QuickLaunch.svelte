@@ -5,11 +5,11 @@
 </script>
 
 <script lang="ts">
+  import TeamMark from "./TeamMark.svelte";
   import { onMount } from "svelte";
   import { t } from "./i18n.svelte";
   import { api, type TeamProject, type TeamSummary } from "./api";
   import ProjectIcon from "./ProjectIcon.svelte";
-  import { cssColor, initial, pickFor } from "./palette";
 
   // Ctrl+T or the + by the tabs: a team's home or a project, of any team,
   // found by its name. Empty, it offers the projects opened last and the
@@ -96,7 +96,7 @@
             {#if i.p.status === "remote"}<span class="hint">☁ {t("On the team")}</span>
             {:else if n === at}<span class="hint">{t("Enter to open")}</span>{/if}
           {:else}
-            <span class="mark" style:--c={cssColor(pickFor(i.team))} aria-hidden="true">{initial(teamName(i.team))}</span>
+            <TeamMark team={teams.find((x) => x.id === i.team) ?? { id: i.team, name: teamName(i.team) }} size={26} />
             <span class="text"><span class="name">{teamName(i.team)}</span><span class="sub">{t("Team home")}</span></span>
             {#if i.team === current}<span class="hint">{t("shown")}</span>{:else if n === at}<span class="hint">{t("Enter to open")}</span>{/if}
           {/if}
@@ -128,8 +128,6 @@
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { font-size: var(--fs-sm); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hint { flex: none; font-size: var(--fs-sm); color: var(--faint); }
-  .mark { flex: none; width: 26px; height: 26px; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
-    font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); }
   .none { margin: var(--sp-12) var(--sp-10); color: var(--faint); font-size: var(--fs-md); }
   .foot { display: flex; gap: var(--sp-16); padding: var(--sp-10) var(--sp-10) var(--sp-2); margin-top: var(--sp-6);
     border-top: var(--border-width) solid var(--line); font-size: var(--fs-xs); color: var(--faint); }

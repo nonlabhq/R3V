@@ -1,4 +1,5 @@
 <script lang="ts">
+  import TeamMark from "./lib/TeamMark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
   import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
@@ -11,7 +12,6 @@
   import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
   import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
     type TabRef, type TabSnap } from "./lib/tabs";
-  import { cssColor, initial, pickFor } from "./lib/palette";
   import ProjectIcon from "./lib/ProjectIcon.svelte";
   import { untrack } from "svelte";
   import { spinner } from "./lib/spin.svelte";
@@ -823,8 +823,7 @@
       </div>
       {#if current}
         <div class="team-slot">
-          <button class="team-mark" class:on={home} onclick={() => goHome()} title={current.name} aria-label={current.name}
-            style:--c={cssColor(pickFor(current.id))}>{initial(current.name)}</button>
+          <button class="team-mark" class:on={home} onclick={() => goHome()} title={current.name} aria-label={current.name}><TeamMark team={current} size={36} /></button>
         </div>
       {/if}
       <div class="section-slot">
@@ -953,7 +952,7 @@
                 title={proj ? tabTitle(team?.name ?? "", proj) : name}
                 onclick={() => goTab(x)}>
                 {#if proj}<ProjectIcon p={proj} size={16} />{/if}{name}
-                {#if manyTeams && team}<span class="tab-team" style:--c={cssColor(pickFor(team.id))} aria-hidden="true">{initial(team.name)}</span>{/if}
+                {#if manyTeams && team}<span class="tab-team"><TeamMark {team} size={16} /></span>{/if}
               </button>
               <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
                 title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
@@ -1262,8 +1261,8 @@
   .shell.folded .section-slot { display: flex; align-items: center; }
   .shell.folded .section-slot .fold { margin: 0; }
   .team-mark { flex: none !important; width: 36px; height: 36px; padding: 0; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
-    font-weight: var(--fw-bold); color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); border-color: transparent; }
-  .team-mark:hover:not(:disabled) { border-color: var(--line-strong); background: color-mix(in srgb, var(--c) 28%, var(--panel)); }
+    background: transparent; border-color: transparent; }
+  .team-mark:hover:not(:disabled) { border-color: var(--line-strong); background: transparent; }
   .team-mark.on { border-color: var(--accent); }
   .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center;
     padding: 0; margin: 0 calc(var(--sp-6) * -1); }
@@ -1392,8 +1391,7 @@
     padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .tab-name:hover:not(:disabled) { background: transparent; }
   /* Which team a tab is on, once tabs of more than one are open. */
-  .tab-team { flex: none; margin-left: auto; padding: 0 var(--sp-4); border-radius: var(--radius-pill); font-size: var(--fs-2xs);
-    font-weight: var(--fw-semibold); line-height: 1.4; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
+  .tab-team { flex: none; margin-left: auto; display: inline-flex; }
   .tab-x { border: none; background: transparent; padding: 0 var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; visibility: hidden; }
   .tab:hover .tab-x, .tab.on .tab-x { visibility: visible; }
   .tab-x:hover:not(:disabled) { background: transparent; color: var(--text); }

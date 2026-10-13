@@ -15,7 +15,7 @@
   let { st, team, entry, onteamsettings, notice }: {
     st: State;
     team?: TeamSummary; // none: on this computer only
-    entry?: Pick<TeamProject, "id" | "icon" | "color">; // the team's look for it
+    entry?: Pick<TeamProject, "id" | "icon" | "color" | "picture">; // the team's look for it
     onteamsettings?: (team: TeamSummary) => void;
     notice?: Snippet;
   } = $props();
@@ -56,7 +56,7 @@
       </div>
     {/if}
     <div class="name">
-      <ProjectIcon p={{ id: entry?.id, name: st.name, status: "downloaded", icon: entry?.icon, color: entry?.color }} size={30} />
+      <ProjectIcon p={{ id: entry?.id, name: st.name, status: "downloaded", icon: entry?.icon, color: entry?.color, picture: entry?.picture }} size={30} />
       <h1>{st.name}{#if preuploads[st.root]} <PreuploadIcon p={preuploads[st.root]} />{/if}</h1>
     </div>
   </div>

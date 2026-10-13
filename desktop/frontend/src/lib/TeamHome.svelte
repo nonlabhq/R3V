@@ -1,10 +1,10 @@
 <script lang="ts">
+  import TeamMark from "./TeamMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, type Member, type Overview, type TeamProject, type TeamSummary } from "./api";
   import ProjectIcon from "./ProjectIcon.svelte";
   import Avatar from "./Avatar.svelte";
   import TeamSettings from "./TeamSettings.svelte";
-  import { cssColor, initial, pickFor } from "./palette";
   import { storageKind } from "./teamText";
 
   // A team's home (a click on the team in the sidebar): who's in it, and its
@@ -46,7 +46,7 @@
 
 <div class="home">
   <header>
-    <span class="mark" style:--c={cssColor(pickFor(team.id))} aria-hidden="true">{initial(team.name)}</span>
+    <TeamMark {team} size={52} />
     <div class="title">
       <h1>{team.name}</h1>
       <p class="sub">{summary}</p>
@@ -112,8 +112,6 @@
 <style>
   .home { height: 100%; overflow: auto; padding: var(--sp-32) var(--sp-40) var(--sp-40); }
   header { display: flex; align-items: center; gap: var(--sp-16); }
-  .mark { flex: none; width: 52px; height: 52px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;
-    font-size: var(--fs-xl); font-weight: var(--fw-bold); color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); }
   .title { min-width: 0; }
   h1 { margin: 0; font-size: var(--fs-2xl); font-weight: var(--fw-bold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { margin: var(--sp-2) 0 0; font-size: var(--fs-md); color: var(--muted); }
