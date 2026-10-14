@@ -23,5 +23,6 @@ go.sum text eol=lf
 # Test fixtures stay in plain git (no LFS needed to run the tests)
 testdata/**/*.wav -filter -diff -merge -text
 
-# The stored formats corpus: bytes as R3V writes them (their hashes are their names)
-testdata/formats/** -text -diff
+# The stored formats corpus: bytes as R3V writes them (their hashes are their
+# names), never converted; the text files among them still diff
+testdata/formats/** -text
