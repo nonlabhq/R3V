@@ -3085,6 +3085,14 @@ export class State {
     "head": string;
 
     /**
+     * Busy: another program holds the project (an agent committing): read
+     * as it was, nothing kept; read again once it's done. Stale: as R3V
+     * last read it (LastState), before it is read now.
+     */
+    "busy": boolean;
+    "stale": boolean;
+
+    /**
      * Tool is the program the project is made with ("Ableton Live", "Unity";
      * "" when its rules don't say); Openable what "Open in <Tool>" offers
      * (relative paths, "." for the project folder).
@@ -3221,6 +3229,12 @@ export class State {
         if (!("head" in $$source)) {
             this["head"] = "";
         }
+        if (!("busy" in $$source)) {
+            this["busy"] = false;
+        }
+        if (!("stale" in $$source)) {
+            this["stale"] = false;
+        }
         if (!("tool" in $$source)) {
             this["tool"] = "";
         }
@@ -3302,61 +3316,61 @@ export class State {
      */
     static createFrom($$source: any = {}): State {
         const $$createField0_0 = $$createType40;
-        const $$createField15_0 = $$createType10;
-        const $$createField16_0 = $$createType5;
+        const $$createField17_0 = $$createType10;
         const $$createField18_0 = $$createType5;
-        const $$createField20_0 = $$createType66;
-        const $$createField22_0 = $$createType37;
-        const $$createField23_0 = $$createType10;
-        const $$createField24_0 = $$createType68;
-        const $$createField25_0 = $$createType35;
-        const $$createField26_0 = $$createType35;
+        const $$createField20_0 = $$createType5;
+        const $$createField22_0 = $$createType66;
+        const $$createField24_0 = $$createType37;
+        const $$createField25_0 = $$createType10;
+        const $$createField26_0 = $$createType68;
         const $$createField27_0 = $$createType35;
-        const $$createField28_0 = $$createType9;
-        const $$createField30_0 = $$createType70;
-        const $$createField31_0 = $$createType72;
+        const $$createField28_0 = $$createType35;
+        const $$createField29_0 = $$createType35;
+        const $$createField30_0 = $$createType9;
+        const $$createField32_0 = $$createType70;
+        const $$createField33_0 = $$createType72;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rules" in $$parsedSource) {
             $$parsedSource["rules"] = $$createField0_0($$parsedSource["rules"]);
         }
         if ("openable" in $$parsedSource) {
-            $$parsedSource["openable"] = $$createField15_0($$parsedSource["openable"]);
+            $$parsedSource["openable"] = $$createField17_0($$parsedSource["openable"]);
         }
         if ("olderVersion" in $$parsedSource) {
-            $$parsedSource["olderVersion"] = $$createField16_0($$parsedSource["olderVersion"]);
+            $$parsedSource["olderVersion"] = $$createField18_0($$parsedSource["olderVersion"]);
         }
         if ("unfinished" in $$parsedSource) {
-            $$parsedSource["unfinished"] = $$createField18_0($$parsedSource["unfinished"]);
+            $$parsedSource["unfinished"] = $$createField20_0($$parsedSource["unfinished"]);
         }
         if ("parked" in $$parsedSource) {
-            $$parsedSource["parked"] = $$createField20_0($$parsedSource["parked"]);
+            $$parsedSource["parked"] = $$createField22_0($$parsedSource["parked"]);
         }
         if ("changes" in $$parsedSource) {
-            $$parsedSource["changes"] = $$createField22_0($$parsedSource["changes"]);
+            $$parsedSource["changes"] = $$createField24_0($$parsedSource["changes"]);
         }
         if ("inUse" in $$parsedSource) {
-            $$parsedSource["inUse"] = $$createField23_0($$parsedSource["inUse"]);
+            $$parsedSource["inUse"] = $$createField25_0($$parsedSource["inUse"]);
         }
         if ("myEdits" in $$parsedSource) {
-            $$parsedSource["myEdits"] = $$createField24_0($$parsedSource["myEdits"]);
+            $$parsedSource["myEdits"] = $$createField26_0($$parsedSource["myEdits"]);
         }
         if ("incoming" in $$parsedSource) {
-            $$parsedSource["incoming"] = $$createField25_0($$parsedSource["incoming"]);
+            $$parsedSource["incoming"] = $$createField27_0($$parsedSource["incoming"]);
         }
         if ("takenBack" in $$parsedSource) {
-            $$parsedSource["takenBack"] = $$createField26_0($$parsedSource["takenBack"]);
+            $$parsedSource["takenBack"] = $$createField28_0($$parsedSource["takenBack"]);
         }
         if ("history" in $$parsedSource) {
-            $$parsedSource["history"] = $$createField27_0($$parsedSource["history"]);
+            $$parsedSource["history"] = $$createField29_0($$parsedSource["history"]);
         }
         if ("branches" in $$parsedSource) {
-            $$parsedSource["branches"] = $$createField28_0($$parsedSource["branches"]);
+            $$parsedSource["branches"] = $$createField30_0($$parsedSource["branches"]);
         }
         if ("branchGone" in $$parsedSource) {
-            $$parsedSource["branchGone"] = $$createField30_0($$parsedSource["branchGone"]);
+            $$parsedSource["branchGone"] = $$createField32_0($$parsedSource["branchGone"]);
         }
         if ("milestones" in $$parsedSource) {
-            $$parsedSource["milestones"] = $$createField31_0($$parsedSource["milestones"]);
+            $$parsedSource["milestones"] = $$createField33_0($$parsedSource["milestones"]);
         }
         return new State($$parsedSource as Partial<State>);
     }

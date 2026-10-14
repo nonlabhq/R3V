@@ -184,6 +184,11 @@ type State struct {
 	Offline     string `json:"offline"`     // why the team's storage is unreachable
 	LiveRunning bool   `json:"liveRunning"` // a set of this project is open in Live
 	Head        string `json:"head"`
+	// Busy: another program holds the project (an agent committing): read
+	// as it was, nothing kept; read again once it's done. Stale: as R3V
+	// last read it (LastState), before it is read now.
+	Busy  bool `json:"busy"`
+	Stale bool `json:"stale"`
 	// Tool is the program the project is made with ("Ableton Live", "Unity";
 	// "" when its rules don't say); Openable what "Open in <Tool>" offers
 	// (relative paths, "." for the project folder).

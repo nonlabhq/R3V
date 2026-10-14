@@ -73,26 +73,39 @@ func (a *App) Edition() string { return version.Edition }
 
 // ServiceStartup starts a team watch for every downloaded team project (in all
 // teams, so notices keep coming whichever team is selected).
+// The background work starts a moment after R3V does (startupQuiet): the
+// first page reads its project first, without it in the way.
 func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
-	store, err := teams.Load()
-	if err != nil {
-		return nil
-	}
-	for _, root := range store.Roots() {
-		a.startWatch(root)
-	}
-	go a.syncHosted()
-	go a.shareSetups(ctx)
-	go a.backUpOnSchedule(ctx)
-	go a.preuploadOnSchedule(ctx)
-	if remote.HostedTeams {
-		a.resumeTeamMoves() // (a move finishing when R3V closed goes on)
-	}
-	if remote.Looks {
-		go prunePictures()
-	}
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(startupQuiet):
+		}
+		store, err := teams.Load()
+		if err != nil {
+			return
+		}
+		for _, root := range store.Roots() {
+			a.startWatch(root)
+		}
+		go a.syncHosted()
+		go a.shareSetups(ctx)
+		go a.backUpOnSchedule(ctx)
+		go a.preuploadOnSchedule(ctx)
+		if remote.HostedTeams {
+			a.resumeTeamMoves() // (a move finishing when R3V closed goes on)
+		}
+		if remote.Looks {
+			go prunePictures()
+		}
+	}()
 	return nil
 }
+
+// startupQuiet is how long after starting R3V waits before its background
+// work (the team watches, setups, backups, uploads before commits).
+const startupQuiet = 3 * time.Second
 
 func (a *App) ServiceShutdown() error {
 	a.mu.Lock()
@@ -135,6 +148,36 @@ func (a *App) open(root string) (*project.Repo, func(), error) {
 	r.OnProgress, done = a.progressFor(r.Root)
 	return r, func() { done(); release(); unlock() }, nil
 }
+
+// openRead opens the project in root to read it: with its lock when that
+// is free at once, else read only (another program holds it, an agent
+// committing say: nothing is written here, and busy says so) rather than
+// wait for it.
+func (a *App) openRead(root string) (r *project.Repo, unlock func(), busy bool, err error) {
+	a.working.Add(1)
+	unlock0 := a.lock(root)
+	free := func() { unlock0(); a.working.Add(-1) }
+	if r, err = project.Open(root); err != nil {
+		free()
+		return nil, nil, false, err
+	}
+	release, err := r.Lock(readLockWait)
+	if errors.Is(err, project.ErrBusy) {
+		r.ReadOnly = true
+		return r, free, true, nil
+	}
+	if err != nil {
+		free()
+		return nil, nil, false, err
+	}
+	var done func()
+	r.OnProgress, done = a.progressFor(r.Root)
+	return r, func() { done(); release(); free() }, false, nil
+}
+
+// readLockWait is how long reading a project waits for another program's
+// lock before reading it as it is.
+const readLockWait = 300 * time.Millisecond
 
 // ProgressEvent tells the frontend how a long step (save, upload, download)
 // is going.
@@ -399,7 +442,7 @@ func (a *App) ShowLogFolder() error { return shellOpen(logDir()) }
 func (a *App) State(root string) (*State, error) {
 	sw := startWatch("State " + filepath.Base(root))
 	defer sw.done()
-	r, unlock, err := a.open(root)
+	r, unlock, busy, err := a.openRead(root)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +450,7 @@ func (a *App) State(root string) (*State, error) {
 	sw.lap("open")
 	// On the latest version of another branch (e.g. gone there before this
 	// was handled): that branch is where commits go.
-	if r.OnOlderVersion() && r.Config.Remote != nil {
+	if r.OnOlderVersion() && r.Config.Remote != nil && !busy {
 		r.AdoptBranchAtHead()
 	}
 	st := &State{Root: r.Root, Name: r.Config.Name, Author: r.Config.Author, Branch: r.BranchName(),
@@ -446,7 +489,10 @@ func (a *App) State(root string) (*State, error) {
 			st.Unfinished = &v
 		}
 	}
-	r.TidyParked()
+	st.Busy = busy
+	if !busy {
+		r.TidyParked()
+	}
 	st.Parking, st.Parked = project.Parking, parkedSets(r)
 	if rules, _ := r.Profile(); rules != nil {
 		st.Tool = rules.Tool()
@@ -469,7 +515,7 @@ func (a *App) State(root string) (*State, error) {
 			changed = append(changed, c.Path)
 		}
 	}
-	if len(changed) > 0 && r.Config.Remote != nil {
+	if len(changed) > 0 && r.Config.Remote != nil && !busy {
 		go a.autoLock(r.Root, changed) // (files of a locked kind changed meanwhile)
 	}
 	if r.Config.Remote != nil {
@@ -503,6 +549,9 @@ func (a *App) State(root string) (*State, error) {
 	st.Milestones = part.Milestones
 	if part.OlderVersion != nil {
 		st.OlderVersion = part.OlderVersion
+	}
+	if !busy {
+		keepState(st)
 	}
 	return st, nil
 }

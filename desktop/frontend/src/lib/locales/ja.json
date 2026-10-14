@@ -1797,6 +1797,8 @@
 "Author": "作成者",
 "Everyone": "全員",
 "Show everything": "すべて表示",
+"As R3V last saw it: reading the project now…": "前回 R3V が読んだ状態です。プロジェクトを読み込み中…",
+"Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "別のプログラム（コミット中のエージェントなど）がプロジェクトを変更中です。今の状態を表示し、終わったら読み直します。",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file} は別のプログラムが使用中です（書き込み中など）。空いたら R3V が読み込みます。",
 "{file} and {n} more file are in use by another program (still writing them, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（書き込み中など）。空いたら R3V が読み込みます。",
 "{file} and {n} more files are in use by another program (still writing them, say): R3V reads them once they're free.": "{file} ほか {n} 件のファイルは別のプログラムが使用中です（書き込み中など）。空いたら R3V が読み込みます。",

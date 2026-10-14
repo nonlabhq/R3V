@@ -1797,6 +1797,8 @@
 "Author": "Autor",
 "Everyone": "Todos",
 "Show everything": "Mostrar todo",
+"As R3V last saw it: reading the project now…": "Como R3V lo vio la última vez: leyendo el proyecto…",
+"Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "Otro programa está cambiando el proyecto (un agente haciendo commit, por ejemplo): se muestra como está ahora y se vuelve a leer cuando termine.",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file} lo está usando otro programa (todavía escribiéndolo, por ejemplo): R3V lo lee cuando quede libre.",
 "{file} and {n} more file are in use by another program (still writing them, say): R3V reads them once they're free.": "{file} y {n} archivo más los está usando otro programa (todavía escribiéndolos, por ejemplo): R3V los lee cuando queden libres.",
 "{file} and {n} more files are in use by another program (still writing them, say): R3V reads them once they're free.": "{file} y {n} archivos más los está usando otro programa (todavía escribiéndolos, por ejemplo): R3V los lee cuando queden libres.",

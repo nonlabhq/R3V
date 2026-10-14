@@ -83,6 +83,26 @@ const commitButton = () => screen.getByRole("button", { name: /^Commit/ });
 const toasted = (text: string | RegExp) =>
   waitFor(() => expect(toast.mock.calls.some(([t]) => (typeof text === "string" ? t === text : text.test(t)))).toBe(true));
 
+describe("ProjectView: opening", () => {
+  it("shows the project as R3V last saw it until it's read, and says so", async () => {
+    api.LastState.mockResolvedValue(state({ stale: true }));
+    api.State.mockReturnValue(new Promise(() => {})); // (an agent holds it a while)
+    render(ProjectView, { root: ROOT, refreshKey: 0, teams: [], onchanged: vi.fn(), onsettings: vi.fn() });
+    expect(await screen.findByRole("heading", { name: "Song" })).toBeTruthy();
+    expect(screen.getByText(/As R3V last saw it/)).toBeTruthy();
+  });
+
+  it("says another program is changing it, and reads it again", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    await show({ busy: true });
+    expect(screen.getByText(/Another program is changing the project/)).toBeTruthy();
+    const reads = api.State.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(3100);
+    expect(api.State.mock.calls.length).toBeGreaterThan(reads);
+    vi.useRealTimers();
+  });
+});
+
 describe("ProjectView: just downloaded", () => {
   it("shows the project's check only when it has something to say", async () => {
     api.ProjectCheck.mockResolvedValue({ live: null, team: [], teamSetups: false, shareSetup: false });

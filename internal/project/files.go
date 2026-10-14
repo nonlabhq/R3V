@@ -41,7 +41,9 @@ func (r *Repo) Files(all bool) ([]ProjectFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer ix.save()
+	if !r.ReadOnly {
+		defer ix.save()
+	}
 	changes, err := r.statusOf(files)
 	if err != nil {
 		return nil, err

@@ -38,6 +38,8 @@ export function issuesOf(st: State, o: { working: boolean; restorable: number; l
   if (team && !st.head && !st.incoming.length && !o.working) k.push("notShared");
   else if (team && st.head && st.unshared && !o.working) k.push("unshared");
   if (st.inUse?.length) k.push("inUse");
+  if (st.stale) k.push("stale");
+  else if (st.busy) k.push("busy");
   if (st.locksOffer && o.locks && !o.working) k.push("locks");
   return k;
 }
