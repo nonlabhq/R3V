@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/nonlabhq/r3v/docs"
 	"github.com/nonlabhq/r3v/internal/als"
@@ -91,6 +92,15 @@ for programs and AI agents:
   <command> --help                       a command's lines from this list
 `
 
+// fullUsage is the usage with this build's own sections (extraUsage) among
+// the others, before the Live Sets' and the agents' ones, not after them.
+func fullUsage() string {
+	if i := strings.Index(usage, "\nset commands:"); i >= 0 && extraUsage != "" {
+		return usage[:i] + extraUsage + usage[i:]
+	}
+	return usage + extraUsage
+}
+
 // extraCommands are commands only some builds have (the Nightly channel's),
 // and extraUsage their lines in the usage.
 var (
@@ -109,7 +119,7 @@ func Run(args []string) int {
 		if jsonMode {
 			return fail("", usageError("usage: r3v <command> [args] (r3v help)"))
 		}
-		fmt.Fprint(os.Stderr, usage+extraUsage)
+		fmt.Fprint(os.Stderr, fullUsage())
 		return exitUsage
 	}
 	command, rest := args[0], args[1:]
@@ -195,7 +205,7 @@ func Run(args []string) int {
 		if jsonMode {
 			return fail(command, usageError("unknown command %q", command))
 		}
-		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", command, usage+extraUsage)
+		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", command, fullUsage())
 		return exitUsage
 	}
 	if err != nil {
@@ -312,7 +322,7 @@ func cmdMerge(args []string) (int, error) {
 func cmdHelp(args []string) error {
 	switch {
 	case len(args) == 0:
-		fmt.Print(usage + extraUsage)
+		fmt.Print(fullUsage())
 	case args[0] == "agents" && len(args) == 1:
 		fmt.Print(docs.Agents)
 	case args[0] == "agents" && len(args) == 2 && args[1] == "--snippet":
