@@ -706,14 +706,8 @@ func liveGuard(r *project.Repo, force bool) string {
 // this project open in Live ("?" when Live runs but that cannot be told).
 func toolOpen(r *project.Repo) string {
 	rules, _ := r.Profile()
-	for _, name := range rules.Running() {
-		if check := handlers.Running(name); check != nil {
-			if open := check(r.Root); open != "" {
-				return open
-			}
-		}
-	}
-	return ""
+	_, open := handlers.OpenIn(r.Root, rules.Running())
+	return open
 }
 
 // blocked asks the user to close the set in Live first.

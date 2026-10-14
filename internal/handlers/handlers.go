@@ -104,3 +104,18 @@ func Running(name string) RunningFunc {
 	defer mu.RUnlock()
 	return runnings[name]
 }
+
+// OpenIn runs the running-tool checks named (a project's rules': its
+// presets' running:) on the project in root: the first that says a tool
+// has something of it open, and what ("?" when it can't tell what); ""
+// when none.
+func OpenIn(root string, names []string) (check, what string) {
+	for _, name := range names {
+		if fn := Running(name); fn != nil {
+			if open := fn(root); open != "" {
+				return name, open
+			}
+		}
+	}
+	return "", ""
+}

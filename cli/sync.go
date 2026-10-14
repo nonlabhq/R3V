@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/cloud"
-	"github.com/nonlabhq/r3v/internal/livecheck"
+	"github.com/nonlabhq/r3v/internal/handlers"
 	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -200,7 +200,40 @@ func strategyFlag(fs *flag.FlagSet) *string {
 		"when you and others changed the same track or file: fail (ask), ours (keep yours), theirs (keep theirs), both (keep both)")
 }
 
-var openSet = livecheck.OpenSet
+// openTool runs the project's running-tool checks (its presets' running:
+// Live, the Unity, Unreal and Godot editors, design apps): which one has
+// what of the project open ("" when none).
+var openTool = func(r *project.Repo) (check, what string) {
+	rules, _ := r.Profile()
+	return handlers.OpenIn(r.Root, rules.Running())
+}
+
+// toolNames: the running-tool checks' programs, for people.
+var toolNames = map[string]string{"ableton-live": "Ableton Live", "unity-editor": "the Unity Editor",
+	"unreal-editor": "the Unreal Editor", "godot-editor": "the Godot editor", "design-apps": "a design app"}
+
+// openError explains that what a tool has open (check: which tool) must be
+// closed first: a Live Set as before (set_open_in_live), any other tool's
+// files_open_in_tool.
+func openError(check, what, why string) error {
+	if check == "ableton-live" {
+		return liveOpenError(what, why)
+	}
+	tool := toolNames[check]
+	if tool == "" {
+		tool = check
+	}
+	msg := fmt.Sprintf("%s has this project open", tool)
+	if what != "?" && what != "" {
+		msg = fmt.Sprintf("%s has %q open", tool, what)
+	}
+	if why != "" {
+		msg = why + ", but " + msg
+	}
+	return &cliError{Code: "files_open_in_tool", Exit: exitLiveOpen,
+		Err:  errors.New(msg + ".\nSave and close it there, then run this again (or use --force if it is not open)"),
+		Hint: "ask the user to save and close the project in " + tool + "; use --force only if it is not open"}
+}
 
 // liveOpenError explains that set ("?" if unknown) must be closed in Live.
 func liveOpenError(set, why string) error {
@@ -220,20 +253,21 @@ func liveOpenError(set, why string) error {
 	return ce
 }
 
-// guardLive refuses to rewrite sets while one is open in Live, unless forced.
+// guardLive refuses to rewrite the project's files while a tool has them
+// open (a set in Live, a project in an editor), unless forced.
 func guardLive(r *project.Repo, force bool) error {
-	set := ""
-	if !force {
-		set = openSet(r.Root)
+	if force {
+		return nil
 	}
-	if set == "" {
+	check, what := openTool(r)
+	if check == "" {
 		return nil
 	}
 	incoming, err := r.Incoming()
 	if err != nil || !incoming {
 		return err
 	}
-	return liveOpenError(set, "others saved new versions that must be merged into your files")
+	return openError(check, what, "others saved new versions that must be merged into your files")
 }
 
 func printMerge(res *project.SyncResult) {
