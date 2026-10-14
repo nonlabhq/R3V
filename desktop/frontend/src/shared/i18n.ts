@@ -13,13 +13,18 @@ function fill(text: string, vars?: Vars): string {
 
 let tr: Translate = fill;
 let trn: TranslateN = (n, one, other, vars) => fill(n === 1 ? one : other, { n, ...vars });
+let lang = () => (typeof navigator === "undefined" ? "en" : navigator.language || "en");
 
 /** Sets the translator the shared components use (a reactive one keeps
- * them in the language in use). */
-export function setTranslator(t: Translate, tn: TranslateN) {
+ * them in the language in use), and the language (for dates). */
+export function setTranslator(t: Translate, tn: TranslateN, language?: () => string) {
   tr = t;
   trn = tn;
+  if (language) lang = language;
 }
+
+/** The language in use ("zh-TW"). */
+export const language = () => lang();
 
 /** A text in the language in use. */
 export const t: Translate = (text, vars) => tr(text, vars);

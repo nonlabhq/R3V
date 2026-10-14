@@ -25,7 +25,7 @@
   import CombineDialog from "./CombineDialog.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import History from "./History.svelte";
-  import HistoryGraph from "./HistoryGraph.svelte";
+  import VersionGraph from "$shared/VersionGraph.svelte";
   import BranchMenu from "./BranchMenu.svelte";
   import BranchSettings from "./BranchSettings.svelte";
   import MilestoneDialog from "./MilestoneDialog.svelte";
@@ -1108,7 +1108,7 @@
                 <button class="danger-act" onclick={() => (discardingParked = p)}>{t("Discard")}</button>
               {/if}
             {/snippet}
-            <HistoryGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color, parent: b.parent, kind: b.kind }))}
+            <VersionGraph actions={cardActions} versions={st.history} branches={st.branches.map((b) => ({ name: b.name, latest: b.latest?.id ?? "", label: b.label, color: b.color, parent: b.parent, kind: b.kind }))}
               branch={st.branch} head={st.head} incoming={incomingIds} {looks} milestones={st.milestones ?? []}
               onsettings={st.branchNames ? (key) => (branchSettings = key) : undefined}
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}

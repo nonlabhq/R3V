@@ -105,4 +105,4 @@ export function tn(n: number, one: string, other: string, vars?: Record<string, 
 }
 
 // The shared components (src/shared) in the language in use too.
-setTranslator(t, tn);
+setTranslator(t, tn, language);

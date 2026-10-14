@@ -1,15 +1,18 @@
-<script lang="ts">
-  import { t, tn } from "./i18n.svelte";
-  import { ago, titleOf, toolName, type MemberLook, type Version } from "./api";
-  import AgentBadge from "$shared/AgentBadge.svelte";
-  import { colorOf, cssColor } from "$shared/palette";
-  import Avatar from "$shared/Avatar.svelte";
-  import { branchGraph } from "$shared/branchGraph";
-  import { branchLabel, branchLane } from "$shared/branches";
+<script lang="ts" generics="V extends GraphVersion">
+  import { t, tn } from "./i18n";
+  import { ago, titleOf } from "./text";
+  import { toolName } from "./tools";
+  import type { GraphBranch, GraphMilestone, GraphVersion, MemberLook } from "./types";
+  import AgentBadge from "./AgentBadge.svelte";
+  import { colorOf, cssColor } from "./palette";
+  import Avatar from "./Avatar.svelte";
+  import { branchGraph } from "./branchGraph";
+  import { branchLabel, branchLane } from "./branches";
   import { portal } from "./portal";
   import type { Snippet } from "svelte";
 
-  // The Overview's left column: the branch graph (see branchGraph.ts), main
+  // The project's version graph (the App's Overview, R3V Cloud's project
+  // page): the branch graph (see branchGraph.ts), main
   // in the middle. Each branch has its name at the top (picking it picks
   // its newest version; its right half opens the branch's settings); every
   // version is a dot with its author's picture, else their initial (on
@@ -22,25 +25,27 @@
   // top right (kept on this computer) hides branches merged into main and
   // agents' branches (never the one you're on), versions out of a date
   // range, and dims those not by the authors picked. An agent's version has
-  // a spark on its dot.
-  let { versions: allVersions, branches: allBranches, branch, head, incoming, pending, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, top: covered = 0, looks, milestones, onsettings, remember = "" }: {
-    versions: Version[];
-    branches: { name: string; latest: string; label?: string; color?: string; parent?: string; kind?: string }[];
+  // a spark on its dot. What only the App has (your changes, parked ones,
+  // what a card's buttons do) comes in through pending, parked and the
+  // snippets: without them, the graph only shows and picks.
+  let { versions: allVersions, branches: allBranches, branch, head, incoming = new Set(), pending = 0, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, top: covered = 0, looks, milestones, onsettings, remember = "" }: {
+    versions: V[];
+    branches: GraphBranch[];
     branch: string;    // the branch you are on
     head: string;      // the version you are on
-    incoming: Set<string>;
-    pending: number;   // files changed and not committed (0: no dot for them)
+    incoming?: Set<string>; // versions not downloaded yet (dashed)
+    pending?: number;  // files changed and not committed (0: no dot for them)
     // Changes parked elsewhere (Nightly): a dashed tag beside the version they were made on.
     parked?: { key: string; base: string; files: number; since: string; where: string }[];
     selected: string;  // a version id, or "pending"
     onselect: (id: string) => void;
-    actions?: Snippet<[Version]>; // the hover card's buttons for a version
+    actions?: Snippet<[V]>; // the hover card's buttons for a version
     parkedActions?: Snippet<[string]>; // ...for parked changes (by key)
     reserve?: number;    // px on the right covered by the details (the graph centres in the rest)
     panelInset?: number; // the details' distance from the top and bottom
     top?: number;        // px at the top covered by what is above the graph (where its newest versions start)
     looks?: Record<string, MemberLook | undefined>; // by member id (none: the team keeps no looks)
-    milestones?: { version: string; name: string }[]; // versions the team named
+    milestones?: GraphMilestone[]; // versions the team named
     onsettings?: (branch: string) => void; // a branch's settings (none: its label only picks)
     remember?: string; // where the graph's filter is kept on this computer (e.g. the project's folder)
   } = $props();
@@ -94,14 +99,14 @@
   let since = $derived(filter.range === "custom" ? (filter.from ? Date.parse(filter.from + "T00:00:00") : -Infinity)
     : filter.range === "all" ? -Infinity : Date.now() - Number(filter.range) * 86400_000);
   let until = $derived(filter.range === "custom" && filter.to ? Date.parse(filter.to + "T23:59:59.999") : Infinity);
-  const inRange = (v: Version) => { const at = Date.parse(v.time); return !(at < since || at > until); };
+  const inRange = (v: V) => { const at = Date.parse(v.time); return !(at < since || at > until); };
   let versions = $derived(allVersions.filter((v) => v.id === head || (!(v.branch && folded.has(v.branch)) && inRange(v))));
   let branches = $derived(folded.size ? allBranches.filter((b) => !folded.has(b.name)) : allBranches);
   // The authors (by member, else name), the newest first; those picked stand out.
-  const whoOf = (v: Version) => v.authorId || v.author;
+  const whoOf = (v: V) => v.authorId || v.author;
   let authors = $derived([...new Map(allVersions.map((v) => [whoOf(v), v.author] as const)).entries()]);
   let picked = $derived(new Set(filter.authors));
-  const dimmed = (v: Version) => picked.size > 0 && !picked.has(whoOf(v));
+  const dimmed = (v: V) => picked.size > 0 && !picked.has(whoOf(v));
   function toggleAuthor(id: string) {
     const next = new Set(filter.authors);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -261,7 +266,7 @@
 
   const initial = (name: string) => ([...name.trim()][0] ?? "?").toUpperCase();
   // How a version's author shows (null: initials as they always were).
-  const lookOf = (v: Version) => looks && {
+  const lookOf = (v: V) => looks && {
     color: colorOf(looks[v.authorId]?.color ?? "", v.authorId || v.author), picture: looks[v.authorId]?.picture ?? "" };
   // Pictures that can't be shown (bad data from the team): initials.
   let broken = $state(new Set<string>());

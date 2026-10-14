@@ -7,7 +7,7 @@
   import { toast } from "./notify.svelte";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
   import LookPicker from "./LookPicker.svelte";
-  import { portal } from "./portal";
+  import { portal } from "$shared/portal";
   import BranchSettings from "./BranchSettings.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";

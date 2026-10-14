@@ -26,12 +26,11 @@ export type { Entry as TalkEntry } from "../../bindings/github.com/nonlabhq/r3v/
 export type { Member } from "../../bindings/github.com/nonlabhq/r3v/internal/remote/models";
 
 export const api = App;
-import { t, tn, language } from "./i18n.svelte";
+import { t, tn } from "./i18n.svelte";
 
 // A version's message is a title, its first line, and details, the rest
 // (Git's way; docs/design/agent-workspaces.md, "Title and details").
-/** A version's title: its message's first line. */
-export const titleOf = (message: string | undefined | null) => (message ?? "").split("\n", 1)[0].trimEnd();
+export { ago, titleOf } from "$shared/text";
 /** A version's details: its message after the title, blank lines round them left out. */
 export function detailsOf(message: string | undefined | null): string {
   const m = message ?? "", i = m.indexOf("\n");
@@ -50,19 +49,6 @@ export function errorText(e: unknown): string {
 // asked how to keep it (KindDialog).
 export const unknownKind = (e: unknown) => /does not look like a project R3V knows/.test(errorText(e));
 
-export function ago(iso: string): string {
-  const t = Date.parse(iso);
-  if (isNaN(t)) return "";
-  const s = Math.max(0, (Date.now() - t) / 1000);
-  // In the language in use ("5 min ago", "5 分鐘前"…).
-  const rel = new Intl.RelativeTimeFormat(language(), { numeric: "auto", style: "short" });
-  if (s < 60) return rel.format(0, "second");
-  if (s < 3600) return rel.format(-Math.floor(s / 60), "minute");
-  if (s < 86400) return rel.format(-Math.floor(s / 3600), "hour");
-  const d = new Date(t);
-  return d.toLocaleDateString(language(), { month: "short", day: "numeric" }) +
-    " " + d.toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
-}
 
 const AUTHOR_KEY = "r3v.author";
 export function savedAuthor(): string {
