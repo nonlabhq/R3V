@@ -3,6 +3,7 @@
 package desktop
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -48,5 +49,19 @@ func TestLinks(t *testing.T) {
 	}
 	if a.TakeLink() != nil || a.handLinks([]string{"--background"}) {
 		t.Error("more links than handed over")
+	}
+	// Links the page never takes: the newest few are kept.
+	var many []string
+	for i := range maxPendingLinks + 3 {
+		many = append(many, fmt.Sprintf("r3v://project/%032x", i))
+	}
+	a.handLinks(many)
+	for i := 3; i < maxPendingLinks+3; i++ {
+		if got := a.TakeLink(); got == nil || got.Project != fmt.Sprintf("%032x", i) {
+			t.Fatalf("kept link %d: %+v", i, got)
+		}
+	}
+	if a.TakeLink() != nil {
+		t.Error("more than the newest links kept")
 	}
 }
