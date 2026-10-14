@@ -1,0 +1,212 @@
+{
+  "about": "R3V's stored formats, and what R3V reads from each (docs/design/formats.md); written by internal/formats (go test ./internal/formats -run Corpus -update), read by its test and by readers outside R3V.",
+  "records": [
+    {
+      "name": "a first version",
+      "file": "records/685d878430c0abce6443eb809576d7fb9569db442c79dfb59e657a5d986113b9.json",
+      "id": "685d878430c0abce6443eb809576d7fb9569db442c79dfb59e657a5d986113b9",
+      "ok": true,
+      "expect": {
+        "version": 2,
+        "parents": [],
+        "author": "Yi",
+        "author_id": "0123456789abcdef0123456789abcdef",
+        "time": "2026-10-12T09:22:14Z",
+        "title": "First version",
+        "details": "",
+        "branch": "main",
+        "actor": null,
+        "files": 3,
+        "size": 13,
+        "tree": "4523f9594c4643de386859c9e096f60a5aef0eaea9aac8037237a238b41e05c7",
+        "external": []
+      }
+    },
+    {
+      "name": "a merge an agent made",
+      "file": "records/1d9d727cbcb52edd0673c0da0e2d1f6374db4ba855951d7048095d270e0ad70c.json",
+      "id": "1d9d727cbcb52edd0673c0da0e2d1f6374db4ba855951d7048095d270e0ad70c",
+      "ok": true,
+      "expect": {
+        "version": 2,
+        "parents": [
+          "685d878430c0abce6443eb809576d7fb9569db442c79dfb59e657a5d986113b9",
+          "d93244e7b08131ef10eda16a0717627450cf0e51d1ca713c41d301a51b9a6e54"
+        ],
+        "author": "Yi",
+        "author_id": "",
+        "time": "2026-10-13T01:02:03Z",
+        "title": "Merge branch lane/render",
+        "details": "Lights were too bright.",
+        "branch": "main",
+        "actor": {
+          "kind": "agent",
+          "tool": "claude-code",
+          "model": "opus"
+        },
+        "files": 3,
+        "size": 13,
+        "tree": "4523f9594c4643de386859c9e096f60a5aef0eaea9aac8037237a238b41e05c7",
+        "external": [
+          {
+            "path": "C:/Samples/Pack/hat.wav",
+            "hash": "18e1dd392168f601d0e568612a2bf40e6555c033e033b580ae6627d8aeee1150",
+            "size": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "an older version (format 1: no branch)",
+      "file": "records/a558db95867eebcafabe03b083e394628e03f7c1211e72ac8cef2efb6c08d4be.json",
+      "id": "a558db95867eebcafabe03b083e394628e03f7c1211e72ac8cef2efb6c08d4be",
+      "ok": true,
+      "expect": {
+        "version": 1,
+        "parents": [
+          "685d878430c0abce6443eb809576d7fb9569db442c79dfb59e657a5d986113b9"
+        ],
+        "author": "Mia",
+        "author_id": "",
+        "time": "2026-09-30T12:00:00Z",
+        "title": "Bass line",
+        "details": "",
+        "branch": "",
+        "actor": null,
+        "files": 3,
+        "size": 13,
+        "tree": "4523f9594c4643de386859c9e096f60a5aef0eaea9aac8037237a238b41e05c7",
+        "external": []
+      }
+    },
+    {
+      "name": "made by a newer R3V",
+      "file": "records/newer.json",
+      "id": "6de9781e8cad07e05148247ff1d7c0b741e9a6e8257d8b9b4eb9b9c8111581b4",
+      "ok": false,
+      "error": "newer"
+    },
+    {
+      "name": "not a version record",
+      "file": "records/not-a-record.json",
+      "id": "a9f7e8c7b1f0cbd76a8f2e797388844bc92baac66e3bc23fd49bdc57049bf43e",
+      "ok": false,
+      "error": "not_a_record"
+    },
+    {
+      "name": "named by another hash",
+      "file": "records/wrong-hash.json",
+      "id": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "ok": false,
+      "error": "hash"
+    }
+  ],
+  "trees": [
+    {
+      "name": "project folder",
+      "file": "trees/4523f9594c4643de386859c9e096f60a5aef0eaea9aac8037237a238b41e05c7",
+      "hash": "4523f9594c4643de386859c9e096f60a5aef0eaea9aac8037237a238b41e05c7",
+      "ok": true,
+      "entries": [
+        {
+          "kind": "d",
+          "name": "Samples",
+          "hash": "e5f84cd11f8e7f032b13e89f28fc8575de4cec2a8e90f071fff6a3f0c947a043",
+          "size": 0
+        },
+        {
+          "kind": "f",
+          "name": "Song.als",
+          "hash": "63f75c890b05405e6e1f047072642b40949dab5912aa9c0ae6f2e654dff943dd",
+          "size": 4
+        },
+        {
+          "kind": "f",
+          "name": "notes – v2 ü.md",
+          "hash": "ab5aa97074c454a0632057e704220d9a6678fbf773a0a5806fc09b8173b07309",
+          "size": 5
+        }
+      ]
+    },
+    {
+      "name": "a subfolder",
+      "file": "trees/e5f84cd11f8e7f032b13e89f28fc8575de4cec2a8e90f071fff6a3f0c947a043",
+      "hash": "e5f84cd11f8e7f032b13e89f28fc8575de4cec2a8e90f071fff6a3f0c947a043",
+      "ok": true,
+      "entries": [
+        {
+          "kind": "f",
+          "name": "kick.wav",
+          "hash": "0db10f2c2f332cd27cf1407fa16c686337b2b23f46125d6e17740dbfc6df427e",
+          "size": 4
+        }
+      ]
+    },
+    {
+      "name": "an empty folder",
+      "file": "trees/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ok": true
+    },
+    {
+      "name": "a bad line",
+      "file": "trees/bad-line",
+      "hash": "392b4d22da23560c511ea57806d749a7af94ca7089246ddefcf890e4633b21dc",
+      "ok": false,
+      "error": "bad_line"
+    },
+    {
+      "name": "named by another hash",
+      "file": "trees/wrong-hash",
+      "hash": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa",
+      "ok": false,
+      "error": "hash"
+    }
+  ],
+  "blobs": [
+    {
+      "name": "a small file, as it is",
+      "file": "blobs/plain-40749eb4363fd6c9ebde39bd22c084c2f5f6235bc90f979145731a5839093522",
+      "hash": "40749eb4363fd6c9ebde39bd22c084c2f5f6235bc90f979145731a5839093522",
+      "mode": "plain",
+      "ok": true,
+      "contents": "contents/40749eb4363fd6c9ebde39bd22c084c2f5f6235bc90f979145731a5839093522"
+    },
+    {
+      "name": "a file that compresses (zstd)",
+      "file": "blobs/z-a90a4207fa02eccb1b0c59f7c44d07f70dcba6bc5ab9b65d2e9fb1e0612f4114",
+      "hash": "a90a4207fa02eccb1b0c59f7c44d07f70dcba6bc5ab9b65d2e9fb1e0612f4114",
+      "mode": "z",
+      "ok": true,
+      "contents": "contents/a90a4207fa02eccb1b0c59f7c44d07f70dcba6bc5ab9b65d2e9fb1e0612f4114"
+    },
+    {
+      "name": "a file that starts like a header",
+      "file": "blobs/s-220b902e4a4f1af0164f3d11444cea73dea684ca445d6fa9ffadc67bc44e0927",
+      "hash": "220b902e4a4f1af0164f3d11444cea73dea684ca445d6fa9ffadc67bc44e0927",
+      "mode": "s",
+      "ok": true,
+      "contents": "contents/220b902e4a4f1af0164f3d11444cea73dea684ca445d6fa9ffadc67bc44e0927"
+    },
+    {
+      "name": "a big file as pieces (a chunk list)",
+      "file": "blobs/c-4fffe2a40c21ba0f54abc06d086b9bd4e803cd5ada55da75174b54f9106b5286",
+      "hash": "4fffe2a40c21ba0f54abc06d086b9bd4e803cd5ada55da75174b54f9106b5286",
+      "mode": "c",
+      "ok": true,
+      "contents": "contents/4fffe2a40c21ba0f54abc06d086b9bd4e803cd5ada55da75174b54f9106b5286",
+      "pieces": [
+        "pieces/7fb638fe6a8de3603d5fe85dcec0f41371f4bb55a21964244cd96e1b7466fce3",
+        "pieces/00862dd0d059677ebbe0275bf1c9e2a1fb1504a64088ae803d4c8deffc52ac6d"
+      ]
+    },
+    {
+      "name": "made by a newer R3V (a mode R3V doesn't know)",
+      "file": "blobs/newer-mode",
+      "hash": "",
+      "mode": "q",
+      "ok": false,
+      "error": "newer"
+    }
+  ]
+}

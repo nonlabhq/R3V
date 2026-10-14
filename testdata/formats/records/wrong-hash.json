@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "parents": null,
+  "author": "Yi",
+  "author_id": "0123456789abcdef0123456789abcdef",
+  "time": "2026-10-12T09:22:14Z",
+  "message": "First version",
+  "branch": "main",
+  "files": 3,
+  "size": 13,
+  "tree": "4523f9594c4643de386859c9e096f60a5aef0eaea9aac8037237a238b41e05c7"
+}
