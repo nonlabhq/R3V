@@ -14,8 +14,8 @@ const files = Object.entries(sources).map(([path, text]) => {
 });
 
 // Their own colours on purpose (see tokens.css).
-const ownColours = ["lib/SetView.svelte", "shared/FileIcon.svelte", "lib/ImageCompare.svelte",
-  "lib/ModelCompare.svelte", "lib/VideoCompare.svelte", "lib/WeightSummary.svelte"];
+const ownColours = ["lib/SetView.svelte", "shared/FileIcon.svelte", "shared/viewers/ImageCompare.svelte",
+  "shared/viewers/ModelCompare.svelte", "shared/viewers/VideoCompare.svelte", "lib/WeightSummary.svelte"];
 
 describe("design tokens", () => {
   it("finds the components", () => expect(files.length).toBeGreaterThan(40));

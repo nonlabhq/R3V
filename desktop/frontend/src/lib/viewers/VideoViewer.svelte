@@ -1,15 +1,15 @@
 <script lang="ts">
+  import VideoViewer from "$shared/viewers/VideoViewer.svelte";
   import { api, errorText } from "../api";
   import { toast } from "../notify.svelte";
-  import VideoCompare from "../VideoCompare.svelte";
-  import { sideURL } from "./urls";
+  import { appSource } from "./appSource";
   import type { ViewerProps } from "./types";
 
-  // A video to watch; comparing, the other beside it, played together.
-  let { root, a, b, compare, stamp }: ViewerProps = $props();
-  const take = (s: typeof a) => (s ? { label: s.label, src: sideURL(root, s, stamp) } : null);
+  // Videos (the shared viewer); the one in the folder opens in its program.
+  let { root, file, a, b, compare, stamp }: ViewerProps = $props();
+  const source = $derived(appSource(root, stamp));
   const shown = $derived(a ?? b);
 </script>
 
-<VideoCompare a={take(a)} b={take(b)} {compare}
+<VideoViewer {source} {file} {a} {b} {compare}
   onopen={shown && !shown.version ? () => api.OpenInLive(root, shown.path).catch((e) => toast(errorText(e), "error")) : undefined} />

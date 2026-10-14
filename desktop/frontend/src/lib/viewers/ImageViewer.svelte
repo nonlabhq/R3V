@@ -1,12 +1,11 @@
 <script lang="ts">
-  import ImageCompare from "../ImageCompare.svelte";
-  import { sidePreviewURL } from "./urls";
+  import ImageViewer from "$shared/viewers/ImageViewer.svelte";
+  import { appSource } from "./appSource";
   import type { ViewerProps } from "./types";
 
-  // A picture or design file; comparing, both large, side by side or under a
-  // slider (its own setting).
-  let { root, a, b, compare, stamp }: ViewerProps = $props();
-  const take = (s: typeof a) => (s ? { label: s.label, src: sidePreviewURL(root, s, stamp) } : null);
+  // Pictures and design files (the shared viewer, design files as pictures).
+  let { root, file, a, b, compare, stamp }: ViewerProps = $props();
+  const source = $derived(appSource(root, stamp));
 </script>
 
-<ImageCompare a={take(a)} b={take(b)} {compare} />
+<ImageViewer {source} {file} {a} {b} {compare} />
