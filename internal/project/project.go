@@ -84,6 +84,9 @@ type Repo struct {
 	Only []string
 	// Park: what the last GoTo did with uncommitted changes (Parking).
 	Park *ParkOutcome
+	// ReadOnly: another program holds the project (an agent committing):
+	// reading it keeps nothing here (the file index isn't written).
+	ReadOnly bool
 	// Actor, when set, is the agent the versions made here are by (the
 	// CLI finds it in the environment: package actor); nil, a person's.
 	Actor *Actor

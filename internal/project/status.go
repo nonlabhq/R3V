@@ -28,7 +28,9 @@ func (r *Repo) Status() ([]Change, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer ix.save()
+	if !r.ReadOnly {
+		defer ix.save()
+	}
 	return r.statusOf(files)
 }
 

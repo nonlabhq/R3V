@@ -8,8 +8,11 @@ import (
 	"time"
 )
 
-// With R3V_TRACE set, slow calls log how long each step took.
+// Calls that take slowCall or more log how long each step took (in the
+// app's log, r3v.log); with R3V_TRACE set, every call does.
 var tracing = os.Getenv("R3V_TRACE") != ""
+
+const slowCall = 2 * time.Second
 
 type stopwatch struct {
 	name  string
@@ -25,16 +28,13 @@ func startWatch(name string) *stopwatch {
 
 // lap records the time since the previous lap under a step name.
 func (s *stopwatch) lap(step string) {
-	if !tracing {
-		return
-	}
 	now := time.Now()
 	s.laps = append(s.laps, fmt.Sprintf("%s %s", step, now.Sub(s.last).Round(time.Millisecond)))
 	s.last = now
 }
 
 func (s *stopwatch) done() {
-	if tracing {
+	if tracing || time.Since(s.start) >= slowCall {
 		log.Printf("trace %s: %s total — %s", s.name, time.Since(s.start).Round(time.Millisecond), strings.Join(s.laps, ", "))
 	}
 }

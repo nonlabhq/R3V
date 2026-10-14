@@ -58,7 +58,9 @@ func fileKind(r *project.Repo, p string) string {
 // ProjectFiles lists the changed files; with all, every tracked file in the
 // project folder (not those the rules leave out).
 func (a *App) ProjectFiles(root string, all bool) ([]ProjectFile, error) {
-	r, unlock, err := a.open(root)
+	sw := startWatch("ProjectFiles " + filepath.Base(root))
+	defer sw.done()
+	r, unlock, _, err := a.openRead(root)
 	if err != nil {
 		return nil, err
 	}
