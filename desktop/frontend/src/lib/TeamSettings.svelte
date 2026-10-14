@@ -206,7 +206,7 @@
     <h3>{t("Name")}</h3>
     <div class="name-line">
       {#if team.looks && !offline && canLook}
-        <LookPicker seed={team.id} name={team.name} icon={team.icon ?? ""} color={team.color ?? ""} picture={team.picture ?? ""}
+        <LookPicker seed={team.id} name={team.name} icon={team.icon ?? ""} color={team.color ?? ""} picture={team.picture ?? ""} solid
           label={t("Icon and colour")} initialLabel={t("The team's initial")} onlook={setLook} onpicture={setPicture} />
       {:else}
         <TeamMark {team} size={36} />

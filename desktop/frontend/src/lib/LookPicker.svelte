@@ -17,8 +17,9 @@
   // own over them. The button shows it; a click opens the picker under it
   // (above when there's no room). Each pick is saved at once; an icon
   // picked takes the place of the picture.
-  let { seed, name, icon, color, picture = "", size = 36, label, initialLabel, onlook, onpicture }: {
+  let { seed, name, icon, color, picture = "", size = 36, solid = false, label, initialLabel, onlook, onpicture }: {
     seed: string; // its id (the colour picked for it when none is chosen)
+    solid?: boolean; // shown filled in (a team's mark)
     name: string; // (its initial)
     icon: string;
     color: string;
@@ -123,7 +124,7 @@
 <svelte:window onkeydowncapture={onkey} {onclick} onresize={() => close()} />
 
 <button bind:this={btn} class="ghost look-btn" class:open onclick={toggle} title={label} aria-label={label} aria-haspopup="dialog" aria-expanded={open}>
-  <ProjectIcon p={{ id: seed, name, status: "downloaded", icon: look.icon, color: look.color, picture: look.picture }} {size} />
+  <ProjectIcon p={{ id: seed, name, status: "downloaded", icon: look.icon, color: look.color, picture: look.picture }} {size} {solid} />
 </button>
 
 {#if open}
