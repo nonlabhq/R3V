@@ -277,6 +277,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 2 | `usage` | fix the command (`r3v help`) |
 | 3 | `merge_conflict` | read `conflicts` (decide with the user); run again with `--resolve <key>=<choice>`, `--decisions`, `--resolved <path>=<file>` or `--strategy ours\|theirs\|both` |
 | 4 | `set_open_in_live` | ask the user to save and close `set` in Live, then run again |
+| 4 | `files_open_in_tool` | another tool (the Unity, Unreal or Godot editor, a design app) has the project open: ask the user to save and close it there, then run again |
 | 5 | `team_unreachable` | network or storage down: try again later |
 | 5 | `project_busy` | the R3V app or another command is using the project: try again in a moment |
 | 6 | `not_a_project` | not in a tracked folder: `r3v init`, or `cd` into the project |

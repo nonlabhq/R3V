@@ -303,14 +303,14 @@ func cmdMergeBranch(args []string) error {
 	return nil
 }
 
-// guardLiveAlways refuses while a set of the project is open in Live: the
-// command rewrites sets.
+// guardLiveAlways refuses while a tool has the project's files open (a set
+// in Live, a project in an editor): the command rewrites them.
 func guardLiveAlways(r *project.Repo, force bool) error {
 	if force {
 		return nil
 	}
-	if set := openSet(r.Root); set != "" {
-		return liveOpenError(set, "")
+	if check, what := openTool(r); check != "" {
+		return openError(check, what, "")
 	}
 	return nil
 }

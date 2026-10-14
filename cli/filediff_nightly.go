@@ -2,9 +2,13 @@
 
 package cli
 
-// diff of a project's files is on the Nightly channel while it's new.
+// The file commands for any kind of file (diff, info, merge-files) are on
+// the Nightly channel while they're new.
 func init() {
-	fileDiffs = true
-	jsonCommands["diff"] = true
+	fileCommands = true
+	extraCommands["merge-files"] = cmdMergeFiles
+	for _, c := range []string{"diff", "info", "merge-files"} {
+		jsonCommands[c] = true
+	}
 	extraUsage += fileDiffsUsage
 }

@@ -91,9 +91,14 @@ describe("ProjectSettings in its tab", () => {
     await waitFor(() => expect(api.SetUpSteps).toHaveBeenCalledWith("C:/Song"));
   });
 
-  it("opens the project check (Live version, samples, plugins)", async () => {
+  it("opens the project check (Live version, samples, plugins) of a Live project; other kinds have none", async () => {
     api.ProjectCheck.mockReturnValue(new Promise(() => {}));
-    api.ProjectInfo.mockResolvedValue({ branch: "main", rules: { applied: [], error: "" } });
+    api.ProjectInfo.mockResolvedValue({ branch: "main", tool: "Unity", rules: { applied: [], error: "" } });
+    render(ProjectSettings, { p: project("Game") as never, inline: true, onclose: vi.fn(), onrenamed: vi.fn(), oncheck: vi.fn(), ondelete: vi.fn(), onunlink: vi.fn(), onlocate: vi.fn() });
+    await screen.findByText("Check project…");
+    expect(screen.queryByText("Project check")).toBeNull();
+    cleanup();
+    api.ProjectInfo.mockResolvedValue({ branch: "main", tool: "Ableton Live", rules: { applied: [], error: "" } });
     render(ProjectSettings, { p: project("Song") as never, inline: true, onclose: vi.fn(), onrenamed: vi.fn(), oncheck: vi.fn(), ondelete: vi.fn(), onunlink: vi.fn(), onlocate: vi.fn() });
     await fireEvent.click((await screen.findAllByRole("button", { name: "Check…" }))[0]);
     expect(await screen.findByRole("dialog", { name: "Project check" })).toBeTruthy();

@@ -68,10 +68,18 @@
     ⚠ {t("R3V can't read the project right now, so what you see may be out of date: {error}", { error: loadError })}
   {:else if k === "inUse" && st.inUse?.length}
     {@const first = st.inUse[0].slice(st.inUse[0].lastIndexOf("/") + 1)}
-    {st.inUse.length === 1
-      ? t("{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.", { file: first })
-      : tn(st.inUse.length - 1, "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.",
-        "{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.", { file: first })}
+    <!-- (Live's own example for a Live project: a Freeze file it's writing) -->
+    {#if st.tool === "Ableton Live"}
+      {st.inUse.length === 1
+        ? t("{file} is in use by another program (Live writing a Freeze file, say): R3V reads it once it's free.", { file: first })
+        : tn(st.inUse.length - 1, "{file} and {n} more file are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.",
+          "{file} and {n} more files are in use by another program (Live writing Freeze files, say): R3V reads them once they're free.", { file: first })}
+    {:else}
+      {st.inUse.length === 1
+        ? t("{file} is in use by another program (still writing it, say): R3V reads it once it's free.", { file: first })
+        : tn(st.inUse.length - 1, "{file} and {n} more file are in use by another program (still writing them, say): R3V reads them once they're free.",
+          "{file} and {n} more files are in use by another program (still writing them, say): R3V reads them once they're free.", { file: first })}
+    {/if}
   {:else if k === "cloud" && st.cloudFolder}
     <Tx text={t("This project is in your {cloud} folder.")} strong={{ cloud: st.cloudFolder }} />
     <span class="muted">{t("{cloud} also syncs R3V's history (the hidden .r3v folder): used from two computers it can damage it, and files kept online-only aren't really here. Best keep projects in a folder {cloud} doesn't sync: R3V and your team storage already keep them safe.", { cloud: st.cloudFolder })}</span>

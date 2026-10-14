@@ -54,9 +54,9 @@ type pictureSizes struct {
 	NewHeight int `json:"new_height"`
 }
 
-// fileDiffs: diff takes the project's files, any kind (Nightly while new;
+// fileCommands: diff takes the project's files, any kind (Nightly while new;
 // Stable compares two sets on disk only).
-var fileDiffs = false
+var fileCommands = false
 
 const fileDiffsUsage = `
 files (each kind the way it reads: text line by line, a Live Set track by track,
@@ -65,6 +65,11 @@ a picture its size, any other file its size; Nightly):
   diff --version V [PATHS]               what a version changed
   diff --from A --to B [PATHS]           what changed between two versions
   diff --files <a> <b>                   two files on disk, any kind (two Live Sets: track by track)
+  info <file>                            what a file is (a set's tracks, audio's format, a picture's
+                                         size, text's lines) and, in a project, whether R3V keeps it
+  merge-files <base> <ours> <theirs> -o <out> [--strategy fail|ours|theirs|both]
+                                         a 3-way merge of three files, each kind the way it merges
+                                         (merge-sets: the same, for Live Sets)
 `
 
 const (
@@ -89,7 +94,7 @@ func cmdFileDiff(args []string) error {
 		}
 	}
 	if *files {
-		if !fileDiffs {
+		if !fileCommands {
 			return usageError("diff --files needs R3V's Nightly channel")
 		}
 		if len(pos) != 2 || *version != "" || *from != "" || *to != "" {
@@ -102,7 +107,7 @@ func cmdFileDiff(args []string) error {
 		result("diff", map[string]any{"files": []fileDiffJSON{d}}, func() { printFileDiffs([]fileDiffJSON{d}) })
 		return nil
 	}
-	if !fileDiffs {
+	if !fileCommands {
 		return usageError("usage: r3v diff <a.als> <b.als> (a project's files: R3V's Nightly channel)")
 	}
 	r, err := openRepo()

@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 	os.Setenv("R3V_CONFIG_DIR", dir)
 	os.Setenv(actor.EnvTool, actor.None)        // run by an agent or not, the same results
-	openSet = func(string) string { return "" } // Live is not running
+	openTool = func(*project.Repo) (string, string) { return "", "" } // no tool has a project open
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)
@@ -145,11 +145,17 @@ func TestJSON(t *testing.T) {
 	}
 
 	// The set is open in Live: B is told, nothing changes.
-	openSet = func(string) string { return "Song.als" }
+	openTool = func(*project.Repo) (string, string) { return "ableton-live", "Song.als" }
 	exit, rep = run(t, b, "commit", "-m", "B's notes", "--strategy", "theirs")
-	openSet = func(string) string { return "" }
 	if exit != 4 || rep.Error.Code != "set_open_in_live" || rep.Error.Set != "Song.als" {
 		t.Fatalf("Live open: %d %+v", exit, rep.Error)
+	}
+	// Another tool's editor: the same, said for it.
+	openTool = func(*project.Repo) (string, string) { return "unity-editor", "?" }
+	exit, rep = run(t, b, "commit", "-m", "B's notes", "--strategy", "theirs")
+	openTool = func(*project.Repo) (string, string) { return "", "" }
+	if exit != 4 || rep.Error.Code != "files_open_in_tool" || !strings.Contains(rep.Error.Message, "Unity Editor") {
+		t.Fatalf("Unity open: %d %+v", exit, rep.Error)
 	}
 	exit, rep = run(t, b, "commit", "-m", "B's notes", "--strategy", "theirs")
 	json.Unmarshal(rep.Result, &sv)
