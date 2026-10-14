@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/nonlabhq/r3v/internal/store"
 	"github.com/nonlabhq/r3v/internal/teams"
@@ -23,19 +24,31 @@ func stateFile(root string) string {
 	return filepath.Join(teams.Dir(), "states", hex.EncodeToString(h[:12])+".json")
 }
 
-// keepState keeps st for the next start (in the background: never in the
-// way of the page).
+// keepState keeps st for the next start: written when it changed since
+// it was last kept (a state is read often, and changes seldom).
 func keepState(st *State) {
 	data, err := json.Marshal(st)
 	if err != nil {
 		return
 	}
-	go func() {
-		path := stateFile(st.Root)
-		os.MkdirAll(filepath.Dir(path), 0o700)
-		store.WriteAtomic(path, bytes.NewReader(data))
-	}()
+	path := stateFile(st.Root)
+	sum := sha256.Sum256(data)
+	keptStates.Lock()
+	defer keptStates.Unlock()
+	if keptStates.sums[path] == sum {
+		return
+	}
+	os.MkdirAll(filepath.Dir(path), 0o700)
+	if store.WriteAtomic(path, bytes.NewReader(data)) == nil {
+		keptStates.sums[path] = sum
+	}
 }
+
+// keptStates: what each state file holds (its SHA-256), as last written.
+var keptStates = struct {
+	sync.Mutex
+	sums map[string][32]byte
+}{sums: map[string][32]byte{}}
 
 // LastState is the project's state as R3V last read it (Stale), nil when it
 // never did: shown until State answers.

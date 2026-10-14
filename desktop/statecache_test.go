@@ -22,11 +22,7 @@ func TestStateBusyAndLastState(t *testing.T) {
 	if err != nil || st.Busy {
 		t.Fatalf("free: %+v %v", st, err)
 	}
-	var last *State
-	for i := 0; i < 50 && last == nil; i++ { // (kept in the background)
-		time.Sleep(20 * time.Millisecond)
-		last, _ = a.LastState(root)
-	}
+	last, _ := a.LastState(root)
 	if last == nil || !last.Stale || last.Root != st.Root || last.Name != st.Name {
 		t.Fatalf("kept: %+v", last)
 	}
