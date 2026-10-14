@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import { api, errorText } from "./api";
+  import { t } from "../i18n";
   import { highlightLines, languageOf } from "./highlight";
-  import type { TextChanges, TextContent } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
+  import { TooBig, type FileSource, type TextChanges, type TextContent } from "./source";
+  import { diffOf, textOf } from "./text";
 
   // A text file: the whole of one version, or, when comparing, its changes
   // line by line from the version before —
   // around the changes, or the whole file. A version is a version id, "" for
   // the file on disk now, "none" for no file (added or deleted). `stamp`
   // refetches "now". Files that aren't text show a short note.
-  let { root, file, from, to, compare, stamp = 0, fromFile = "" }: {
-    root: string; file: string; from: string; to: string; compare: boolean; stamp?: number;
+  let { source, file, from, to, compare, stamp = 0, fromFile = "" }: {
+    source: FileSource; file: string; from: string; to: string; compare: boolean; stamp?: number;
     fromFile?: string; // the file's path in `from`, when it was elsewhere
   } = $props();
 
@@ -35,7 +35,11 @@
   let diffHTML = $state<string[] | null>(null); // the hunks' lines, in order
   let failed = $state("");
   let seq = 0;
+  const errorText = (e: unknown) => String((e as Error)?.message ?? e);
+  const readText = (src: FileSource, path: string, version: string) =>
+    src.text ? src.text(path, version) : textOf(src, path, version);
   $effect(() => {
+    const src = source;
     const n = ++seq;
     stamp; // reload with it
     diff = null;
@@ -47,9 +51,17 @@
     const colorContent = (c: TextContent | null) => {
       if (c?.text && lang) highlightLines(c.lines, lang).then((h) => { if (n === seq) contentHTML = h; }).catch(() => {});
     };
-    const fail = (e: unknown) => { if (n === seq) failed = errorText(e); };
+    const fail = (e: unknown) => {
+      if (n !== seq) return;
+      if (e instanceof TooBig) {
+        content = { text: false, tooBig: true, lines: [], truncated: false };
+        diff = { text: false, tooBig: true, added: 0, removed: 0, hunks: [], truncated: false };
+      }
+      else failed = errorText(e);
+    };
     if (comparing) {
-      api.TextDiff(root, file, from, to, whole, fromFile === file ? "" : fromFile).then((r) => {
+      const other = fromFile === file ? "" : fromFile;
+      (src.diff ? src.diff(file, from, to, whole, other) : diffOf(src, file, from, to, whole, other)).then((r) => {
         if (n !== seq) return;
         diff = r;
         // Each hunk colored as one text: a comment over several of its lines
@@ -60,11 +72,11 @@
         }
         // Nothing changed: the file itself, then.
         if (r && r.text && r.hunks.length === 0) {
-          api.TextFile(root, shownFile, shown).then((c) => { if (n === seq) { content = c; colorContent(c); } }).catch(fail);
+          readText(src, shownFile, shown).then((c) => { if (n === seq) { content = c; colorContent(c); } }).catch(fail);
         }
       }).catch(fail);
     } else {
-      api.TextFile(root, shownFile, shown).then((c) => { if (n === seq) { content = c; colorContent(c); } }).catch(fail);
+      readText(src, shownFile, shown).then((c) => { if (n === seq) { content = c; colorContent(c); } }).catch(fail);
     }
   });
   // Where each hunk starts among all the hunks' lines (for diffHTML).

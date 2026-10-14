@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t as tr } from "./i18n.svelte"; // t is a track or take here
+  import { t as tr } from "../i18n"; // t is a track or take here
 
   // A video to watch; comparing, both side by side, played together with one
   // set of controls.

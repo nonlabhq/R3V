@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 // src/shared is used by R3V Cloud's web app too (README.md): what is here
-// imports only what is here, Svelte and the test tools, never the App
-// (../lib, its bindings, Wails).
+// imports only what is here, Svelte, the test tools and the libraries the
+// viewers load when needed (highlight.js, three), never the App (../lib,
+// its bindings, Wails).
 
 const sources = import.meta.glob<string>("./**/*.{ts,svelte,css}", { query: "?raw", import: "default", eager: true });
-const allowed = /^(\.\/|svelte($|\/)|vitest$|@testing-library\/)/;
+const allowed = /^(\.\.?\/|svelte($|\/)|vitest$|@testing-library\/|highlight\.js($|\/)|three($|\/))/;
 
 describe("shared", () => {
   it("finds its files", () => expect(Object.keys(sources).length).toBeGreaterThan(15));
@@ -14,7 +15,9 @@ describe("shared", () => {
     const bad: string[] = [];
     for (const [path, text] of Object.entries(sources))
       for (const m of text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|@import\s+(?:url\()?)["']([^"']+)["']/g))
-        if (!allowed.test(m[1]) || m[1].includes("..")) bad.push(`${path}: ${m[1]}`);
+        // (one folder down, ../ is still here; never further up)
+        if (!allowed.test(m[1]) || (m[1].startsWith("..") && (path.split("/").length < 3 || m[1].startsWith("../.."))))
+          bad.push(`${path}: ${m[1]}`);
     expect(bad).toEqual([]);
   });
 });

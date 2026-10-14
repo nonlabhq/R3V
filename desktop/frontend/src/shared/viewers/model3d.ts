@@ -21,8 +21,18 @@ export async function createViewer(canvas: HTMLCanvasElement, url: string, ext: 
   const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js");
 
   const manager = new THREE.LoadingManager();
-  manager.setURLModifier((u) => (u === url || u.startsWith("blob:") || u.startsWith("data:") || u.includes("r3v-file?")
-    ? u : resolve(decodeURIComponent(u.replace(/^\.?\//, "")))));
+  // A file the model names comes as the loader makes it: the model's own
+  // folder (its URL's, even a blob: one's) and the name. Those resolve
+  // through the source; the model itself, data: and the loader's own blob:
+  // URLs (a .glb's pictures) stay as they are.
+  const base = url.slice(0, url.lastIndexOf("/") + 1);
+  manager.setURLModifier((u) => {
+    if (u === url || u.startsWith("data:") || u.includes("r3v-file?")) return u;
+    let rel = (base && u.startsWith(base) ? u.slice(base.length) : u).replace(/^\.?\//, "");
+    if (/^[a-z][a-z0-9+.-]*:/i.test(rel)) return u; // (a URL, not a file of the project)
+    try { rel = decodeURIComponent(rel); } catch { /* as it is */ }
+    return resolve(rel) || u;
+  });
   // Textures load after the model: those still without an image once all
   // are done weren't found.
   let loaded: any = null;

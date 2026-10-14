@@ -4,7 +4,7 @@
 // tags are made, so HTML in a file shows as text and never runs; links are
 // http(s) and mailto only, opened by the app (data-href), never in the page.
 // Pictures and videos of the project itself (a relative path, from the
-// note's folder) are shown in it, read through the app (MdFiles.url); the
+// note's folder) are shown in it, read through the viewer's source (MdFiles.url); the
 // web's are left as they are, never loaded.
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -12,7 +12,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 /** Where the note is, to show the project's pictures and videos in it. */
 export type MdFiles = {
   dir: string; // the note's folder, relative to the project ("" at its top)
-  url: (path: string) => string; // a project file's address for the page
+  url: (path: string) => string; // a project file's address for the page ("": filled in later, by data-path)
 };
 
 const IMAGE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
@@ -35,9 +35,10 @@ export function localPath(dir: string, ref: string): string | null {
 function media(ref: string, alt: string, files?: MdFiles): string | null {
   const path = files ? localPath(files.dir, ref.replace(/&amp;/g, "&")) : null;
   if (!path || !files) return null;
-  const src = esc(files.url(path));
-  if (IMAGE.test(path)) return `<img src="${src}" alt="${alt}" title="${esc(path)}" loading="lazy">`;
-  if (VIDEO.test(path)) return `<video src="${src}" controls preload="metadata" title="${esc(path)}"></video>`;
+  // (no address yet: data-path says which, for the page to fill in)
+  const url = files.url(path), src = url ? ` src="${esc(url)}"` : "";
+  if (IMAGE.test(path)) return `<img${src} alt="${alt}" title="${esc(path)}" data-path="${esc(path)}" loading="lazy">`;
+  if (VIDEO.test(path)) return `<video${src} controls preload="metadata" title="${esc(path)}" data-path="${esc(path)}"></video>`;
   return null;
 }
 

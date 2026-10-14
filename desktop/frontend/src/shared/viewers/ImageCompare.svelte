@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t as tr } from "./i18n.svelte"; // t is a track or take here
-  import { imageLook, setImageMode } from "./viewers/settings.svelte";
+  import { t as tr } from "../i18n"; // t is a track or take here
+  import { imageLook, setImageMode } from "./settings.svelte";
 
   // A design file: one large; comparing, both large, side by side or under a
   // slider (remembered).

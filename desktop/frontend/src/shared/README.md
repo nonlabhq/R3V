@@ -5,7 +5,9 @@ same: the design tokens and the plain elements' look, colours and branch
 lanes, project and program icons, kinds of file, the version graph
 (VersionGraph: drawn from versions and branches; the App adds your
 changes, parked ones and the card's buttons through its props and
-snippets) and the small components built on them.
+snippets), the file viewers (`viewers/`: text and its changes,
+Markdown, pictures, video, 3D models) and the small components built on
+them.
 
 The App imports it as `$shared/…`. R3V Cloud copies this folder, pinned to
 an R3V commit, and never changes its copy: what the web app needs here is
@@ -22,3 +24,10 @@ The rules (`contract.test.ts` checks the first):
   translate them through what `setTranslator` was given (the App's own
   i18n; the web app's).
 - Styles use the tokens (`tokens.css`), as everywhere in the App.
+- A viewer gets a project's files from the source it is given
+  (`viewers/source.ts`): `open(path, version)` gives a URL to fetch or to
+  show, closed when done; a file more than the source shows is `TooBig`.
+  The App's source reads its local file server (and text in Go); the web
+  app's reads the team's storage in the browser.
+- Libraries the viewers load when needed: highlight.js, three (at the
+  App's versions, `desktop/frontend/package.json`).

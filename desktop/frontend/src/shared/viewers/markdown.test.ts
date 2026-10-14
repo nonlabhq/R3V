@@ -23,7 +23,7 @@ describe("markdown", () => {
   it("shows the project's pictures and videos, from the note's folder; the web's are never loaded", () => {
     const files = { dir: "docs/devlog", url: (p: string) => `/f?path=${p}` };
     expect(md("![first](media/01_first.png)", files)).toBe(
-      '<p><span class="media"><img src="/f?path=docs/devlog/media/01_first.png" alt="first" title="docs/devlog/media/01_first.png" loading="lazy"></span></p>');
+      '<p><span class="media"><img src="/f?path=docs/devlog/media/01_first.png" alt="first" title="docs/devlog/media/01_first.png" data-path="docs/devlog/media/01_first.png" loading="lazy"></span></p>');
     expect(md("3 s: [embers.mp4](media/embers%20loop.mp4)", files)).toContain(
       'embers.mp4<span class="media"><video src="/f?path=docs/devlog/media/embers loop.mp4" controls');
     expect(md("![up](../cover.jpg)", files)).toContain('src="/f?path=docs/cover.jpg"');
