@@ -39,7 +39,7 @@ func helpFor(command string, args []string) (string, bool) {
 			break
 		}
 	}
-	all := usage + extraUsage
+	all := fullUsage()
 	pick := func(sub string) []string {
 		var out []string
 		taking := false
