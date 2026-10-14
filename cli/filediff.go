@@ -64,6 +64,7 @@ a picture its size, any other file its size; Nightly):
   diff [PATHS]                           what changed in each file since the version you're on
   diff --version V [PATHS]               what a version changed
   diff --from A --to B [PATHS]           what changed between two versions
+  diff --files <a> <b>                   two files on disk, any kind (two Live Sets: track by track)
 `
 
 const (
@@ -76,15 +77,30 @@ func cmdFileDiff(args []string) error {
 	version := fs.String("version", "", "what a version changed (against the version before it)")
 	from := fs.String("from", "", "compare from this version...")
 	to := fs.String("to", "", "...to this one (default: your files now)")
+	files := fs.Bool("files", false, "compare two files on disk (any kind; in a project or not)")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
 	}
 	// Two Live Sets on disk: compared as before.
-	if *version == "" && *from == "" && *to == "" && len(pos) == 2 && isSetFile(pos[0]) && isSetFile(pos[1]) {
+	if !*files && *version == "" && *from == "" && *to == "" && len(pos) == 2 && isSetFile(pos[0]) && isSetFile(pos[1]) {
 		if _, err := os.Stat(pos[0]); err == nil {
 			return diffSetFiles(pos[0], pos[1])
 		}
+	}
+	if *files {
+		if !fileDiffs {
+			return usageError("diff --files needs R3V's Nightly channel")
+		}
+		if len(pos) != 2 || *version != "" || *from != "" || *to != "" {
+			return usageError("usage: r3v diff --files <a> <b>")
+		}
+		d, err := diffDiskFiles(pos[0], pos[1])
+		if err != nil {
+			return err
+		}
+		result("diff", map[string]any{"files": []fileDiffJSON{d}}, func() { printFileDiffs([]fileDiffJSON{d}) })
+		return nil
 	}
 	if !fileDiffs {
 		return usageError("usage: r3v diff <a.als> <b.als> (a project's files: R3V's Nightly channel)")
@@ -188,13 +204,21 @@ func compareFile(r *project.Repo, c project.FileChange, old, cur string) fileDif
 	if c.Status != "deleted" {
 		b, d.SizeNew, bErr = readSide(r, c.Path, cur)
 	}
+	describe(&d, c.Path, a, b, aErr == nil && bErr == nil, func() *diff.SetDiff { return c.SetDiff })
+	return d
+}
+
+// describe fills in how a file changed from a to b, the way its kind reads
+// (read: both sides were read whole enough to compare; setDiff: a Live
+// Set's changes, when it is one).
+func describe(d *fileDiffJSON, path string, a, b []byte, read bool, setDiff func() *diff.SetDiff) {
 	switch {
-	case isSetFile(c.Path):
+	case isSetFile(path):
 		d.Kind = "set"
-		if c.SetDiff != nil {
-			d.SetChanges = setLines(c.SetDiff.Render())
+		if sd := setDiff(); sd != nil {
+			d.SetChanges = setLines(sd.Render())
 		}
-	case aErr == nil && bErr == nil && isText(a) && isText(b) && (len(a) > 0 || len(b) > 0):
+	case read && isText(a) && isText(b) && (len(a) > 0 || len(b) > 0):
 		d.Kind = "text"
 		if len(a) > maxDiffText || len(b) > maxDiffText {
 			d.TooBig = true
@@ -229,7 +253,6 @@ func compareFile(r *project.Repo, c project.FileChange, old, cur string) fileDif
 			}
 		}
 	}
-	return d
 }
 
 // readSide reads path in version (a version id, "" for the folder now): at
@@ -320,6 +343,57 @@ func humanSize(n int64) string {
 		return fmt.Sprintf("%.1f KB", float64(n)/(1<<10))
 	}
 	return fmt.Sprintf("%d B", n)
+}
+
+// diffDiskFiles compares two files on disk, a with b (diff --files).
+func diffDiskFiles(a, b string) (fileDiffJSON, error) {
+	read := func(p string) ([]byte, int64, error) {
+		f, err := os.Open(p)
+		if err != nil {
+			return nil, 0, err
+		}
+		defer f.Close()
+		fi, err := f.Stat()
+		if err != nil {
+			return nil, 0, err
+		}
+		if fi.IsDir() {
+			return nil, 0, fmt.Errorf("%s is a folder: diff --files takes two files", p)
+		}
+		data, err := io.ReadAll(io.LimitReader(f, maxDiffText+1))
+		return data, fi.Size(), err
+	}
+	d := fileDiffJSON{Path: filepath.ToSlash(b), From: filepath.ToSlash(a), Status: "modified", Kind: "binary"}
+	da, sa, err := read(a)
+	if err != nil {
+		return d, err
+	}
+	db, sb, err := read(b)
+	if err != nil {
+		return d, err
+	}
+	d.SizeOld, d.SizeNew = sa, sb
+	if bytes.Equal(da, db) && sa == sb {
+		d.Status = "same"
+	}
+	var setErr error
+	describe(&d, b, da, db, true, func() *diff.SetDiff {
+		if !isSetFile(a) {
+			return nil
+		}
+		sa, err := als.Load(a)
+		if err != nil {
+			setErr = err
+			return nil
+		}
+		sb, err := als.Load(b)
+		if err != nil {
+			setErr = err
+			return nil
+		}
+		return diff.Diff(sa, sb)
+	})
+	return d, setErr
 }
 
 // diffSetFiles compares two Live Sets on disk (r3v diff a.als b.als).

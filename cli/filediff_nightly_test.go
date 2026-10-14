@@ -96,3 +96,31 @@ func TestFileDiffTwoSets(t *testing.T) {
 		t.Fatalf("exit %d", code)
 	}
 }
+
+// Two files on disk, any kind: text line by line, two sets track by track.
+func TestFileDiffDiskFiles(t *testing.T) {
+	live := filepath.Join("..", "testdata", "live")
+	sa, _ := filepath.Abs(filepath.Join(live, "SampleAbletonProject.als"))
+	sb, _ := filepath.Abs(filepath.Join(live, "SampleAbletonProject_v2.als"))
+	dir := t.TempDir()
+	a, b := filepath.Join(dir, "a.txt"), filepath.Join(dir, "b.txt")
+	os.WriteFile(a, []byte("kick\nsnare\n"), 0o644)
+	os.WriteFile(b, []byte("kick\nhats\n"), 0o644)
+	exit, rep := run(t, dir, "diff", "--files", a, b)
+	if exit != 0 {
+		t.Fatalf("diff --files: %+v", rep.Error)
+	}
+	var got struct{ Files []fileDiffJSON }
+	json.Unmarshal(rep.Result, &got)
+	if len(got.Files) != 1 || got.Files[0].Kind != "text" || got.Files[0].Added != 1 || got.Files[0].Removed != 1 {
+		t.Fatalf("text: %+v", got.Files)
+	}
+	exit, rep = run(t, dir, "diff", "--files", sa, sb)
+	json.Unmarshal(rep.Result, &got)
+	if exit != 0 || len(got.Files) != 1 || got.Files[0].Kind != "set" || len(got.Files[0].SetChanges) == 0 {
+		t.Fatalf("sets: %+v %+v", got.Files, rep.Error)
+	}
+	if exit, _ := run(t, dir, "diff", "--files", a); exit == 0 {
+		t.Error("one file: taken")
+	}
+}
