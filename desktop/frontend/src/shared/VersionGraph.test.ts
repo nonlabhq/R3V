@@ -114,7 +114,7 @@ describe("VersionGraph", () => {
     expect(capsule.style.top).toBe(dot.style.top); // on its version's row
     const box = screen.getByRole("listbox");
     expect(box.querySelectorAll(".mline")).toHaveLength(2);
-    expect(box.querySelectorAll(".mring")).toHaveLength(2);
+    expect(box.querySelectorAll(".node.ms")).toHaveLength(2); // (an orange ring)
     expect(dot.getAttribute("aria-label")).toContain("⚑ v0.3 Playtest");
     await fireEvent.click(capsule);
     expect(onselect).toHaveBeenLastCalledWith("m2");

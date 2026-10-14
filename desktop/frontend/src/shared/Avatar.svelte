@@ -18,7 +18,7 @@
 
 <style>
   .av { flex: none; width: var(--s); height: var(--s); border-radius: 50%; overflow: hidden; display: inline-flex;
-    align-items: center; justify-content: center; font-size: calc(var(--s) * .46); font-weight: var(--fw-semibold);
-    line-height: 1; color: var(--c); background: color-mix(in srgb, var(--c) 22%, var(--panel)); }
+    align-items: center; justify-content: center; font-size: calc(var(--s) * .42); font-weight: var(--fw-bold);
+    line-height: 1; color: var(--palette-ink); background: var(--c); }
   img { width: 100%; height: 100%; object-fit: cover; display: block; }
 </style>
