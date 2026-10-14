@@ -103,7 +103,10 @@ func resolveLink(l Link) LinkTarget {
 	return out
 }
 
-// pendingLinks: links handed over but not yet taken by the page.
+// pendingLinks: links handed over but not yet taken by the page; a few at
+// most (a page that never takes them doesn't make them pile up).
+const maxPendingLinks = 8
+
 var pendingLinks struct {
 	sync.Mutex
 	list []Link
@@ -120,6 +123,9 @@ func (a *App) handLinks(args []string) bool {
 	for _, arg := range args {
 		if l, ok := ParseLink(arg); ok {
 			pendingLinks.Lock()
+			if len(pendingLinks.list) == maxPendingLinks {
+				pendingLinks.list = pendingLinks.list[1:] // (the oldest goes)
+			}
 			pendingLinks.list = append(pendingLinks.list, l)
 			pendingLinks.Unlock()
 			found = true
