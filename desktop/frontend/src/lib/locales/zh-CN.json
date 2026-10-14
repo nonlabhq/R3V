@@ -1797,6 +1797,8 @@
 "Author": "作者",
 "Everyone": "所有人",
 "Show everything": "全部显示",
+"This computer hasn't joined that team: join it in R3V first.": "这台电脑还没加入那个团队：请先在 R3V 中加入。",
+"No team on this computer has that project.": "这台电脑上的团队都没有这个项目。",
 "As R3V last saw it: reading the project now…": "R3V 上次看到的样子：正在读取项目…",
 "Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "其他程序正在修改这个项目（例如 agent 正在 commit）：先显示目前的样子，结束后会重新读取。",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file} 正被其他程序使用（例如还在写入）：空出来后 R3V 就会读取。",

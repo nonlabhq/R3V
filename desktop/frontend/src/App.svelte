@@ -9,6 +9,7 @@
   import ProjectView from "./lib/ProjectView.svelte";
   import TeamHome from "./lib/TeamHome.svelte";
   import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
+  import { linkPick } from "./lib/links.svelte";
   import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
   import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
     type TabRef, type TabSnap } from "./lib/tabs";
@@ -373,6 +374,18 @@
   }
   // From the quick launcher: a team's home, or a project (its team shown
   // first).
+  // r3v:// links (R3V Cloud's web app; Nightly): a team, a project, a
+  // version, opened as the quick launcher opens them; what this computer
+  // hasn't is said.
+  async function openLinks() {
+    for (let l = await api.TakeLink().catch(() => null); l; l = await api.TakeLink().catch(() => null)) {
+      if (l.missing === "team") { toast(t("This computer hasn't joined that team: join it in R3V first."), "info", 8000); continue; }
+      if (l.missing === "project") { toast(t("No team on this computer has that project."), "info", 8000); continue; }
+      if (l.version) { linkPick.project = l.project; linkPick.version = l.version; }
+      await launch({ team: l.team, project: l.project ? ({ id: l.project, root: "" } as TeamProject) : undefined });
+    }
+  }
+
   async function launch(pick: LaunchPick) {
     launching = false;
     if (pick.team !== teamId) {
@@ -738,11 +751,14 @@
     });
     // A hosted team's people, roles or projects changed (R3V-Cloud).
     const offTeams = Events.On("teams", () => reload());
+    const offLinks = Events.On("open-link", () => openLinks());
+    openLinks(); // (started from a link)
     return () => {
       offProgress();
       offUpdate();
       offWatch();
       offTeams();
+      offLinks();
     };
   });
 

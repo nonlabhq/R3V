@@ -1263,6 +1263,44 @@ export class IgnoreOption {
 }
 
 /**
+ * LinkTarget is where a link leads on this computer, for the page: the
+ * team (this computer's id) and the project and version to show; Missing
+ * says what this computer doesn't have ("team", "project").
+ */
+export class LinkTarget {
+    "team": string;
+    "project": string;
+    "version": string;
+    "missing": string;
+
+    /** Creates a new LinkTarget instance. */
+    constructor($$source: Partial<LinkTarget> = {}) {
+        if (!("team" in $$source)) {
+            this["team"] = "";
+        }
+        if (!("project" in $$source)) {
+            this["project"] = "";
+        }
+        if (!("version" in $$source)) {
+            this["version"] = "";
+        }
+        if (!("missing" in $$source)) {
+            this["missing"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new LinkTarget instance from a string or object.
+     */
+    static createFrom($$source: any = {}): LinkTarget {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new LinkTarget($$parsedSource as Partial<LinkTarget>);
+    }
+}
+
+/**
  * LockItem is a lock: a file, or a folder (Prefix, Path ending in "/").
  */
 export class LockItem {

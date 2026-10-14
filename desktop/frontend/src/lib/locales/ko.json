@@ -1797,6 +1797,8 @@
 "Author": "작성자",
 "Everyone": "모두",
 "Show everything": "모두 보기",
+"This computer hasn't joined that team: join it in R3V first.": "이 컴퓨터는 그 팀에 참여하지 않았습니다. 먼저 R3V에서 참여하세요.",
+"No team on this computer has that project.": "이 컴퓨터의 어떤 팀에도 그 프로젝트가 없습니다.",
 "As R3V last saw it: reading the project now…": "R3V가 마지막으로 본 상태입니다. 프로젝트를 읽는 중…",
 "Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "다른 프로그램(커밋 중인 에이전트 등)이 프로젝트를 바꾸는 중입니다. 지금 상태를 보여 주고, 끝나면 다시 읽습니다.",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file}을(를) 다른 프로그램이 사용 중입니다(아직 쓰는 중 등). 비면 R3V가 읽습니다.",

@@ -56,7 +56,10 @@ func Run() {
 		},
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: instanceID(),
-			OnSecondInstanceLaunch: func(application.SecondInstanceData) {
+			// R3V started again while it runs: shown (with the r3v:// link it
+			// was given, if any: links.go).
+			OnSecondInstanceLaunch: func(d application.SecondInstanceData) {
+				svc.handLinks(d.Args)
 				showWindow()
 			},
 		},
@@ -111,6 +114,9 @@ func Run() {
 		window.Hide()
 		e.Cancel()
 	})
+
+	// Started from an r3v:// link: the page opens it once it's up (TakeLink).
+	svc.handLinks(os.Args[1:])
 
 	// From the tray (or minimised) the team watches look for new versions less often.
 	svc.setHidden(slices.Contains(os.Args[1:], backgroundFlag))

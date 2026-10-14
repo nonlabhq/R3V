@@ -77,7 +77,7 @@ Pop-Location
 
 Step "installer"
 Push-Location (Join-Path $desktop "build\windows")
-& $makensis /V2 "/DVERSION=$Version" "/DNUMVER=$NumVersion" "/DDIST=$dist" installer.nsi; Check "makensis"
+& $makensis /V2 "/DVERSION=$Version" "/DNUMVER=$NumVersion" "/DDIST=$dist" "/DCHANNEL=$Channel" installer.nsi; Check "makensis"
 Pop-Location
 
 # The release's manifest (dist\update.json, uploaded with the installer):

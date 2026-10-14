@@ -30,6 +30,7 @@ export {
     HunkSide,
     HunkText,
     IgnoreOption,
+    LinkTarget,
     LockItem,
     LockOutcome,
     LocksView,
