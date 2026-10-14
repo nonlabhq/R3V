@@ -14,7 +14,7 @@
   import CloudPeople from "./CloudPeople.svelte";
   import TeamLocks from "./TeamLocks.svelte";
   import LookPicker from "./LookPicker.svelte";
-  import TeamMark from "./TeamMark.svelte";
+  import TeamMark from "$shared/TeamMark.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and

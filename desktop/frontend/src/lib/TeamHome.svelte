@@ -1,9 +1,9 @@
 <script lang="ts">
-  import TeamMark from "./TeamMark.svelte";
+  import TeamMark from "$shared/TeamMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, type Member, type Overview, type TeamProject, type TeamSummary } from "./api";
-  import ProjectIcon from "./ProjectIcon.svelte";
-  import Avatar from "./Avatar.svelte";
+  import ProjectIcon from "$shared/ProjectIcon.svelte";
+  import Avatar from "$shared/Avatar.svelte";
   import TeamSettings from "./TeamSettings.svelte";
   import { storageKind } from "./teamText";
 

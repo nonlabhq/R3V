@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import type { TeamProject } from "./api";
+  import { t } from "./i18n";
+  import type { ProjectLook } from "./types";
   import { cssColor, initial, projectColor } from "./palette";
   import { projectIcons } from "./projectIcons";
   import { emojiOf } from "./emoji";
@@ -10,9 +10,7 @@
   // colour (the team's pick, else one picked from its name: the same every
   // time); where it is shows as a small mark (on the team only, folder
   // missing).
-  let { p, size = 22 }: {
-    p: Pick<TeamProject, "name" | "status"> & { id?: string; icon?: string; color?: string; picture?: string }; size?: number;
-  } = $props();
+  let { p, size = 22 }: { p: ProjectLook; size?: number } = $props();
   let broken = $state(""); // a picture that can't be shown: the icon instead
 
   // (Object.hasOwn: a name from the team's records is never a built-in key.)

@@ -4,8 +4,8 @@
   import Modal from "./Modal.svelte";
   import Swatches from "./Swatches.svelte";
   import { toast } from "./notify.svelte";
-  import { MAIN, branchColor, branchLabel } from "./branches";
-  import { cssColor } from "./palette";
+  import { MAIN, branchColor, branchLabel } from "$shared/branches";
+  import { cssColor } from "$shared/palette";
   import ArchiveDialog from "./ArchiveDialog.svelte";
 
   // A branch's settings, for the whole team: its name (any words, any

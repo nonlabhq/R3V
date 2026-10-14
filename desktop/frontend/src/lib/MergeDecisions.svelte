@@ -8,9 +8,9 @@
   import { t, tn } from "./i18n.svelte";
   import { ago, titleOf, type Conflict, type MemberLook, type Version } from "./api";
   import type { Combined, HunkSide } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
-  import { branchLabel, branchLane, type BranchLook } from "./branches";
-  import Avatar from "./Avatar.svelte";
-  import FileIcon from "./FileIcon.svelte";
+  import { branchLabel, branchLane, type BranchLook } from "$shared/branches";
+  import Avatar from "$shared/Avatar.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import Modal from "./Modal.svelte";
   import Tx from "./Tx.svelte";
   import MergeSetPreview from "./MergeSetPreview.svelte";

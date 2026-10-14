@@ -1,5 +1,5 @@
 <script lang="ts">
-  import TeamMark from "./TeamMark.svelte";
+  import TeamMark from "$shared/TeamMark.svelte";
   import { t as tr, tn } from "./i18n.svelte"; // t is a team here
   import { api, errorText, type Overview, type TeamSummary } from "./api";
   import { toast } from "./notify.svelte";

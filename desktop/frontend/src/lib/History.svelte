@@ -1,5 +1,5 @@
 <script lang="ts">
-  import AgentBadge from "./AgentBadge.svelte";
+  import AgentBadge from "$shared/AgentBadge.svelte";
   import { t } from "./i18n.svelte";
   import { api, ago, errorText, detailsOf, titleOf, type Change, type Version } from "./api";
   import { layout } from "./graph";

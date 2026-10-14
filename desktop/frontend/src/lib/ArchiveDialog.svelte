@@ -3,8 +3,8 @@
   import { api, ago, errorText, type Branch, type Version, type Workspace } from "./api";
   import Modal from "./Modal.svelte";
   import { toast } from "./notify.svelte";
-  import { branchGraph } from "./branchGraph";
-  import { MAIN, branchLabel } from "./branches";
+  import { branchGraph } from "$shared/branchGraph";
+  import { MAIN, branchLabel } from "$shared/branches";
 
   // Archiving a branch (docs/design/branch-tree.md): it goes with the
   // branches made from it, each listed with who is on it and what of theirs

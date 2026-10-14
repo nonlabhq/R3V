@@ -1,14 +1,14 @@
 <script lang="ts">
-  import ChangeMark, { changeLetter } from "./ChangeMark.svelte";
+  import ChangeMark, { changeLetter } from "$shared/ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { Events } from "@wailsio/runtime";
   import { api, ago, errorText, formatBytes, previewURL, titleOf, type MemberLook, type ProjectFile, type State, type Version } from "./api";
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import { onDroppedFiles, clearDropMarks } from "./filedrop";
-  import { FILE_TYPES, extOf, typeOf as fileType, typeTitle, type FileType } from "./fileTypes";
-  import Avatar from "./Avatar.svelte";
+  import { FILE_TYPES, extOf, typeOf as fileType, typeTitle, type FileType } from "$shared/fileTypes";
+  import Avatar from "$shared/Avatar.svelte";
   import FilePanel from "./FilePanel.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { portal } from "./portal";
@@ -18,7 +18,7 @@
   import LockBadge from "./LockBadge.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import { breakLock, holderName, lockAt, locksOf, lockPaths, unlockPaths, type LockItem } from "./locks.svelte";
-  import { branchLabel } from "./branches";
+  import { branchLabel } from "$shared/branches";
 
   // The Files tab, file-centred (the Overview is version-centred): the
   // project's folders on the left (with how many changed files each holds),

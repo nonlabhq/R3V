@@ -1,14 +1,14 @@
 <script lang="ts">
-  import ChangeMark from "./ChangeMark.svelte";
+  import ChangeMark from "$shared/ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, formatBytes, titleOf, type FileVersion, type MemberLook, type ProjectFile, type State } from "./api";
   import { toast } from "./notify.svelte";
   import { viewerFor, type Side } from "./viewers";
-  import { branchGraph } from "./branchGraph";
-  import { branchLabel, branchLane } from "./branches";
-  import { initial } from "./palette";
+  import { branchGraph } from "$shared/branchGraph";
+  import { branchLabel, branchLane } from "$shared/branches";
+  import { initial } from "$shared/palette";
   import { baseName, isChanged } from "./files";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import LockBadge from "./LockBadge.svelte";
   import { lockText, type LockItem } from "./locks.svelte";
 

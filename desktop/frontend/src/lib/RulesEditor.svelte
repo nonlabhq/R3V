@@ -3,7 +3,7 @@
   import Tx from "./Tx.svelte";
   import { api, errorText, formatBytes } from "./api";
   import type { RulesDetail, RuleNode, RuleSuggestion } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import { toast } from "./notify.svelte";
   import { editRulesText, leftOutText, presetName } from "./rules";
 

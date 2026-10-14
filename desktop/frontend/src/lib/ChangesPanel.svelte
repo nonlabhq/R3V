@@ -1,12 +1,12 @@
 <script lang="ts">
-  import ChangeMark from "./ChangeMark.svelte";
+  import ChangeMark from "$shared/ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { folderMoves } from "./moves";
   import type { Snippet } from "svelte";
   import { api, ago, errorText, formatBytes, titleOf, type FileVersion, type ProjectFile, type State } from "./api";
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";

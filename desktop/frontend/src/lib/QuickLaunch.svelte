@@ -5,11 +5,11 @@
 </script>
 
 <script lang="ts">
-  import TeamMark from "./TeamMark.svelte";
+  import TeamMark from "$shared/TeamMark.svelte";
   import { onMount } from "svelte";
   import { t } from "./i18n.svelte";
   import { api, type TeamProject, type TeamSummary } from "./api";
-  import ProjectIcon from "./ProjectIcon.svelte";
+  import ProjectIcon from "$shared/ProjectIcon.svelte";
 
   // Ctrl+T or the + by the tabs: a team's home or a project, of any team,
   // found by its name. Empty, it offers the projects opened last and the
