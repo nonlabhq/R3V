@@ -201,12 +201,13 @@ track, a picture its size, any other file its size (`--json`: `kind`,
 r3v diff [PATHS]                            # your changes, since the version you're on
 r3v diff --version V [PATHS]                # what a version changed
 r3v diff --from A --to B [PATHS]            # between two versions
+r3v diff --files <a> <b>                    # two files on disk, any kind
 ```
 
 ## Working with Live Sets directly
 
 ```
 r3v info <set.als>                          # tracks, devices, clips, automation, plugins, samples
-r3v diff <a.als> <b.als>                    # two sets on disk, track by track
+r3v diff <a.als> <b.als>                    # two sets on disk (as diff --files, in text)
 r3v merge-sets <base> <ours> <theirs> -o out.als [--strategy fail|ours|theirs|both]
 ```

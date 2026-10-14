@@ -92,13 +92,21 @@ for programs and AI agents:
   <command> --help                       a command's lines from this list
 `
 
+// setDiffLine is the Live Sets' own diff: where diff takes any files
+// (Nightly's diff --files), it isn't listed among the set commands.
+const setDiffLine = "  diff <a.als> <b.als>                   two Live Sets on disk, track by track\n"
+
 // fullUsage is the usage with this build's own sections (extraUsage) among
 // the others, before the Live Sets' and the agents' ones, not after them.
 func fullUsage() string {
-	if i := strings.Index(usage, "\nset commands:"); i >= 0 && extraUsage != "" {
-		return usage[:i] + extraUsage + usage[i:]
+	u := usage
+	if fileDiffs {
+		u = strings.Replace(u, setDiffLine, "", 1)
 	}
-	return usage + extraUsage
+	if i := strings.Index(u, "\nset commands:"); i >= 0 && extraUsage != "" {
+		return u[:i] + extraUsage + u[i:]
+	}
+	return u + extraUsage
 }
 
 // extraCommands are commands only some builds have (the Nightly channel's),
