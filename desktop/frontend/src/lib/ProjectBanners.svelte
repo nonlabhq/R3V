@@ -40,7 +40,7 @@
 
   const team = $derived(st.teamName || t("the team"));
   const ruleOf = (k: string) => st.rules.suggestions.find((s) => k === `rule:${s.folder}\n${s.preset}`);
-  const tone = (k: string) => (k === "older" ? "older" : ["notShared", "unshared", "inUse", "locks"].includes(k) ? "info" : "warn");
+  const tone = (k: string) => (k === "older" ? "older" : ["notShared", "unshared", "inUse", "locks", "stale", "busy"].includes(k) ? "info" : "warn");
 
   let open = $state(false); // the lead's whole text
   let box = $state<HTMLElement>();
@@ -66,6 +66,10 @@
     <span class="muted">{t("Your files and versions here are as they were.")}</span>
   {:else if k === "loadError"}
     ⚠ {t("R3V can't read the project right now, so what you see may be out of date: {error}", { error: loadError })}
+  {:else if k === "stale"}
+    {t("As R3V last saw it: reading the project now…")}
+  {:else if k === "busy"}
+    {t("Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.")}
   {:else if k === "inUse" && st.inUse?.length}
     {@const first = st.inUse[0].slice(st.inUse[0].lastIndexOf("/") + 1)}
     <!-- (Live's own example for a Live project: a Freeze file it's writing) -->

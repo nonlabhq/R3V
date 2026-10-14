@@ -156,6 +156,20 @@
   // so the page never waits for the team.
   let teamLoading = false;
   let loadedAt = 0;
+  // Opened for the first time since R3V started: as R3V last read it, at
+  // once (LastState: stale), while it is read now.
+  $effect(() => {
+    const r = root;
+    if (untrack(() => st)) return;
+    api.LastState(r).then((last) => { if (last && r === root && !st) st = last; }).catch(() => {});
+  });
+  // Another program holds the project (an agent committing): read again in
+  // a moment.
+  $effect(() => {
+    if (!st?.busy) return;
+    const id = setTimeout(() => load(), 3000);
+    return () => clearTimeout(id);
+  });
   async function load() {
     const r = root;
     loadedAt = Date.now();

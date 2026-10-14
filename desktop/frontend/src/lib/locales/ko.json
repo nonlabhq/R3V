@@ -1797,6 +1797,8 @@
 "Author": "작성자",
 "Everyone": "모두",
 "Show everything": "모두 보기",
+"As R3V last saw it: reading the project now…": "R3V가 마지막으로 본 상태입니다. 프로젝트를 읽는 중…",
+"Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "다른 프로그램(커밋 중인 에이전트 등)이 프로젝트를 바꾸는 중입니다. 지금 상태를 보여 주고, 끝나면 다시 읽습니다.",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file}을(를) 다른 프로그램이 사용 중입니다(아직 쓰는 중 등). 비면 R3V가 읽습니다.",
 "{file} and {n} more file are in use by another program (still writing them, say): R3V reads them once they're free.": "{file} 외 {n}개 파일을 다른 프로그램이 사용 중입니다(아직 쓰는 중 등). 비면 R3V가 읽습니다.",
 "{file} and {n} more files are in use by another program (still writing them, say): R3V reads them once they're free.": "{file} 외 {n}개 파일을 다른 프로그램이 사용 중입니다(아직 쓰는 중 등). 비면 R3V가 읽습니다.",

@@ -378,8 +378,7 @@
     if (pick.team !== teamId) {
       switching = true;
       try {
-        await api.SelectTeam(pick.team);
-        await reload();
+        await showTeam(pick.team);
       } catch (e) {
         toast(errorText(e), "error");
         return;
@@ -398,8 +397,7 @@
     if (x.p) return select(x.p);
     switching = true;
     try {
-      await api.SelectTeam(x.team);
-      await reload();
+      await showTeam(x.team);
     } catch (e) {
       toast(errorText(e), "error");
     } finally {
@@ -407,6 +405,13 @@
     }
     const p = teamId === x.team ? entries.find((e) => rowKey(e) === x.key) : undefined;
     if (p) select(p);
+  }
+  // Another team shown at once: its projects as this computer knows them
+  // (LocalOverview), the team asked after, in the background (reload).
+  async function showTeam(id: string) {
+    await api.SelectTeam(id);
+    overview = await api.LocalOverview();
+    reload();
   }
   // Tabs closed, newest last: Ctrl+Shift+T opens the last one again (on its
   // team, while that team is still here).
