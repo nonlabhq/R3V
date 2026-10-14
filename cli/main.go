@@ -36,6 +36,7 @@ setup:
   remote <connection-code>               connect this project to team storage (S3-compatible bucket)
   clone <code> <project> [folder]       download a team's project
   teams                                  teams this computer is connected to
+  version                                show the R3V version
   connection-code --endpoint URL --bucket NAME --access-key K --secret-key S [--prefix P] [--name TEAM]
                                          create a code for team storage
 
@@ -80,8 +81,6 @@ set commands:
   merge-sets <base> <ours> <theirs> -o <out>  track-level 3-way merge of Live Sets
         [--strategy fail|ours|theirs|both]
 
-  version                                show the R3V version
-
 for programs and AI agents:
   --json                                 status, log, save, update, merge, backup, version: one
                                          JSON object on stdout; errors with fixed codes
@@ -92,21 +91,24 @@ for programs and AI agents:
   <command> --help                       a command's lines from this list
 `
 
-// setDiffLine is the Live Sets' own diff: where diff takes any files
-// (Nightly's diff --files), it isn't listed among the set commands.
-const setDiffLine = "  diff <a.als> <b.als>                   two Live Sets on disk, track by track\n"
+// setCommandsAt is where the Live Sets' own commands are listed: where
+// diff, info and merge-files take any kind of file (Nightly), they aren't
+// (the old names still work).
+const setCommandsAt = "\nset commands:\n"
 
 // fullUsage is the usage with this build's own sections (extraUsage) among
 // the others, before the Live Sets' and the agents' ones, not after them.
 func fullUsage() string {
 	u := usage
-	if fileDiffs {
-		u = strings.Replace(u, setDiffLine, "", 1)
+	i := strings.Index(u, setCommandsAt)
+	if i < 0 {
+		return u + extraUsage
 	}
-	if i := strings.Index(u, "\nset commands:"); i >= 0 && extraUsage != "" {
-		return u[:i] + extraUsage + u[i:]
+	if fileCommands {
+		end := strings.Index(u[i+len(setCommandsAt):], "\n\n") + i + len(setCommandsAt) + 1
+		return u[:i] + extraUsage + u[end:]
 	}
-	return u + extraUsage
+	return u[:i] + extraUsage + u[i:]
 }
 
 // extraCommands are commands only some builds have (the Nightly channel's),
@@ -145,7 +147,7 @@ func Run(args []string) int {
 	code := 0
 	switch command {
 	case "info":
-		err = cmdInfo(rest)
+		err = cmdFileInfo(rest)
 	case "diff":
 		err = cmdFileDiff(rest)
 	case "merge-sets":

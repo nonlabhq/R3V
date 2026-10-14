@@ -202,6 +202,10 @@ r3v diff [PATHS]                            # your changes, since the version yo
 r3v diff --version V [PATHS]                # what a version changed
 r3v diff --from A --to B [PATHS]            # between two versions
 r3v diff --files <a> <b>                    # two files on disk, any kind
+r3v info <file>                             # what it is (a set's tracks, audio's format, a picture's
+                                            # size, text's lines) and whether R3V keeps it
+r3v merge-files <base> <ours> <theirs> -o out [--strategy fail|ours|theirs|both]
+                                            # a 3-way merge, each kind the way it merges
 ```
 
 ## Working with Live Sets directly

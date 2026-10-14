@@ -44,10 +44,17 @@ func TestNoTeamByNameInStable(t *testing.T) {
 
 // Stable's diff compares two sets on disk only, not a project's files.
 func TestNoFileDiffsInStable(t *testing.T) {
-	if fileDiffs || jsonCommands["diff"] {
+	if fileCommands || jsonCommands["diff"] {
 		t.Fatal("diff of a project's files in Stable")
 	}
 	if err := cmdFileDiff([]string{"notes.md"}); err == nil {
 		t.Fatal("diff notes.md taken in Stable")
+	}
+}
+
+// Nor merge-files, nor info of any kind of file.
+func TestNoFileCommandsInStable(t *testing.T) {
+	if _, ok := extraCommands["merge-files"]; ok || jsonCommands["info"] {
+		t.Fatal("merge-files or info --json in Stable")
 	}
 }
