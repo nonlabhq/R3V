@@ -106,6 +106,7 @@ Work goes in lanes, each a session of its own; only Core merges into `main`.
 |---|---|---|---|
 | Core | this repository: the command line, the app, what is stored, releases | `main`, the version, tags, releases, the end-to-end run | the main checkout, short branches `feat/…`, `fix/…`, `ui/…`, `docs/…` |
 | Cloud | the private R3V-Cloud service, and its client here (`internal/cloud`, the broker in `internal/remote`) | the R3V-Cloud repository (its `main`, its deployments) | `feat/cloud` only, in `../R3V.wt/cloud` |
+| Web | what this repository gives R3V Cloud's web version: the formats' test data and notes (`testdata/formats`, `docs/design/formats.md`), the app's `r3v://` links | its branches | `feat/web-…`, in `../R3V.wt/web` |
 | Experiments | a direction being tried | its branch | `exp/<name>`, in `../R3V.wt/<name>`, one worktree each |
 
 ### Rules
@@ -139,15 +140,64 @@ Work goes in lanes, each a session of its own; only Core merges into `main`.
    - whether it touches anything on the must-not-break list;
    - the tests run, and their results;
    - the R3V-Cloud commit or deployment it goes with, if any.
-3. Core reviews it: correctness, the must-not-break list, the
-   interruption checks (see Interruptions), and that Stable stays as it
-   was.
+3. Core reviews it (see How Core reviews): correctness, the
+   must-not-break list, the interruption checks (see Interruptions), and
+   that Stable stays as it was.
 4. Core fixes what it finds on `fix/<lane>-review` on top of the lane's
    branch and merges both with `--no-ff`; something that needs rethinking
    goes back to the lane instead.
 5. Core tells the lane, which merges `main` back and reviews Core's fixes
    (it knows its code best).
 6. Releasing stays Core's, after the full end-to-end run.
+
+### How Core reviews
+
+A lane can run the same checks before handing over.
+
+1. **The hand-over**: the five points above are there (else Core asks
+   first); the branch has `main` in; `git log main..BRANCH` and
+   `git diff --stat main...BRANCH` say what it holds.
+2. **The checks**, in a worktree of Core's own (`../R3V.wt/review-<lane>`,
+   never the lane's): `go build`, `go vet` and `gofmt -l`; `go test
+   -timeout 30m ./...` plain and `-tags nightly`; for UI changes
+   `npx svelte-check`, `npm test`, `node scripts/i18n-check.mjs` and
+   `npm run smoke`; bindings with only real changes (`git diff -w`).
+3. **By hand, the riskiest first**:
+   - *Stable as it was*: what's new is behind Nightly, with a Stable test;
+     Stable's `r3v -h` and app look the same.
+   - *What must not break* (AGENTS.md): stored formats, hashes, chunk
+     boundaries, what a team stores, the CLI's `--json` (fields added,
+     never renamed or removed) and error codes, the settings folder both
+     channels share (new fields safe to ignore).
+   - *Interruptions*: a new step that writes to storage or the project
+     has its kill tests and says what the app shows in between.
+   - *Secrets and outside input*: no keys, codes or sessions in logs,
+     errors or test output; what comes from outside (a link, a file, the
+     service) is checked before it's used.
+   - *The code*: as the code around it; words as docs/ux-principles.md;
+     colours and sizes from the tokens; every locale.
+   - Correctness: a code review of the whole diff (several reviewers in
+     parallel), weighed with the above.
+4. **The outcome**: small things fixed on `fix/<lane>-review`, both merged
+   `--no-ff`; what needs rethinking goes back to the lane with the list.
+   Then the version, a Nightly to try, and the lane told (it merges
+   `main` back and reviews Core's fixes). Every review is reported with
+   the repository, the branch and the commit: found, fixed, sent back.
+
+For the Web lane in particular:
+
+- `testdata/formats` is in a public repository: files whose licence and
+  source are known, no one's personal data, small (made by a program
+  where possible, not big binaries).
+- `docs/design/formats.md` is what R3V Cloud's readers (TypeScript) and
+  this repository (Go) both follow: a Go test reads the same
+  `testdata/formats`, so the two can't drift apart.
+- `r3v://` links come from outside (a web page, another program): they
+  only show (a project, a version), never act (download, update, change
+  files); what they carry is checked strictly (no paths of their own, no
+  commands); registered for the user only; passed to the R3V already
+  running; behind Nightly, with a Stable test that Stable doesn't
+  register them.
 
 ### Between this repository and R3V-Cloud
 
