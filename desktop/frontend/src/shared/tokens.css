@@ -33,7 +33,7 @@
   --switch-knob: #d0d0d0; /* a switch that is off */
   --switch-knob-on: #ffffff; /* ...and on */
 
-  /* The accent: R3V's green, for what to do next and what is done. */
+  /* The accent: R3V's orange, for what to do next and what is done. */
   --accent: #ff4a1c;
   --accent-hover: #ff6237;
   --accent-ink: #140600;  /* text on the accent */
@@ -109,6 +109,10 @@
   --palette-b10: #6eca73; /* green */
   --palette-b11: #d1b6f3; /* lilac */
   --palette-b12: #5ed9e6; /* cyan */
+  /* Text on a palette colour filled in (6:1 or more on each). Shown
+     softly, a palette colour is a tint of it over the panel, the text in
+     the colour itself: color-mix(in srgb, var(--c) 16-22%, var(--panel)). */
+  --palette-ink: #0b0b0c;
 
   /* The lanes of the history graph: the main branch's, then the palette
      in order (branches take them as they come, round again after 12). */
