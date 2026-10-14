@@ -1797,6 +1797,8 @@
 "Author": "Autor",
 "Everyone": "Todos",
 "Show everything": "Mostrar todo",
+"This computer hasn't joined that team: join it in R3V first.": "Este equipo no se ha unido a ese equipo de trabajo: únete primero en R3V.",
+"No team on this computer has that project.": "Ningún equipo de este computador tiene ese proyecto.",
 "As R3V last saw it: reading the project now…": "Como R3V lo vio la última vez: leyendo el proyecto…",
 "Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "Otro programa está cambiando el proyecto (un agente haciendo commit, por ejemplo): se muestra como está ahora y se vuelve a leer cuando termine.",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file} lo está usando otro programa (todavía escribiéndolo, por ejemplo): R3V lo lee cuando quede libre.",

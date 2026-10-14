@@ -28,6 +28,7 @@ noticeTiming.showAfter = 0; // (transfers shown at once in tests)
 noticeTiming.stay = 0;
 import type { TeamSummary } from "./api";
 import { preuploads, queue } from "./preupload.svelte";
+import { linkPick } from "./links.svelte";
 
 // jsdom has no ResizeObserver (bind:clientHeight uses it).
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
@@ -100,6 +101,18 @@ describe("ProjectView: opening", () => {
     await vi.advanceTimersByTimeAsync(3100);
     expect(api.State.mock.calls.length).toBeGreaterThan(reads);
     vi.useRealTimers();
+  });
+});
+
+describe("ProjectView: an r3v:// link", () => {
+  it("picks the version a link asked for in the graph, once", async () => {
+    api.VersionFiles.mockResolvedValue([]);
+    linkPick.project = "p1";
+    linkPick.version = "h0";
+    await show({ history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] },
+      { entry: { id: "p1", name: "Song", root: ROOT, status: "downloaded" } });
+    expect(await screen.findByRole("heading", { name: "v1" })).toBeTruthy();
+    expect(linkPick.project).toBe("");
   });
 });
 

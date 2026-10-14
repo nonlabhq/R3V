@@ -1797,6 +1797,8 @@
 "Author": "作者",
 "Everyone": "所有人",
 "Show everything": "全部顯示",
+"This computer hasn't joined that team: join it in R3V first.": "這台電腦還沒加入那個團隊：請先在 R3V 中加入。",
+"No team on this computer has that project.": "這台電腦上的團隊都沒有這個專案。",
 "As R3V last saw it: reading the project now…": "R3V 上次看到的樣子：正在讀取專案…",
 "Another program is changing the project (an agent committing, say): shown as it is now, read again once it's done.": "其他程式正在修改這個專案（例如 agent 正在 commit）：先顯示目前的樣子，結束後會重新讀取。",
 "{file} is in use by another program (still writing it, say): R3V reads it once it's free.": "{file} 正被其他程式使用（例如還在寫入）：空出來後 R3V 就會讀取。",

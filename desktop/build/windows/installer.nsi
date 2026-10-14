@@ -14,6 +14,11 @@ Unicode true
 !ifndef DIST
   !error "DIST (folder with the built executables) is required"
 !endif
+; The channel built (stable, nightly): Nightly opens r3v:// links.
+!ifndef CHANNEL
+  !define CHANNEL "stable"
+!endif
+!define LINK_KEY "Software\Classes\r3v"
 
 ; A build with extensions passes its own name (/DAPP="R3V Pro") and
 ; welcome line (/DTAGLINE=...): it installs next to the public app, with its
@@ -100,6 +105,14 @@ Section "${APP}" SecApp
   WriteRegStr HKCU "${UNINST_KEY}" "UninstallString" '"$INSTDIR\Uninstall ${APP}.exe"'
   WriteRegDWORD HKCU "${UNINST_KEY}" "NoModify" 1
   WriteRegDWORD HKCU "${UNINST_KEY}" "NoRepair" 1
+!if "${CHANNEL}" == "nightly"
+  ; r3v:// links (R3V Cloud's web app: a team, a project, a version) open
+  ; here (desktop/links.go).
+  WriteRegStr HKCU "${LINK_KEY}" "" "URL:R3V"
+  WriteRegStr HKCU "${LINK_KEY}" "URL Protocol" ""
+  WriteRegStr HKCU "${LINK_KEY}\DefaultIcon" "" "$INSTDIR\icon.ico"
+  WriteRegStr HKCU "${LINK_KEY}\shell\open\command" "" '"$INSTDIR\${APP}.exe" "%1"'
+!endif
 SectionEnd
 
 Section "Start with Windows" SecAutostart
@@ -167,6 +180,11 @@ Section "un.${APP}" UnSecApp
   Delete "$DESKTOP\${APP}.lnk"
   DeleteRegValue HKCU "${RUN_KEY}" "${APP}"
   DeleteRegKey HKCU "${UNINST_KEY}"
+  ; r3v:// links: taken away when they open this R3V (another may have them).
+  ReadRegStr $0 HKCU "${LINK_KEY}\shell\open\command" ""
+  ${If} $0 == '"$INSTDIR\${APP}.exe" "%1"'
+    DeleteRegKey HKCU "${LINK_KEY}"
+  ${EndIf}
   ; Projects (.r3v folders) and server data are always left in place.
 SectionEnd
 

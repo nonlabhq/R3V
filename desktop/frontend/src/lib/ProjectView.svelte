@@ -45,6 +45,7 @@
   import PromptDialog from "./PromptDialog.svelte";
   import StepsTimeline from "./StepsTimeline.svelte";
   import { refreshWorkspaces, workspacesSeen } from "./workspaces.svelte";
+  import { linkPick } from "./links.svelte";
   import LeaveChangesDialog from "./LeaveChangesDialog.svelte";
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
@@ -338,6 +339,13 @@
   // Overview: what is picked in the graph ("pending": your changes); by
   // default your changes when there are some, else the version you're on.
   let graphPick = $state("");
+  // A version an r3v:// link asked for: picked in the graph (links.svelte.ts).
+  $effect(() => {
+    if (!st || !linkPick.version || entry?.id !== linkPick.project) return;
+    tab = "overview";
+    graphPick = linkPick.version;
+    linkPick.project = linkPick.version = "";
+  });
   let shown = $derived.by(() => {
     if (!st) return "";
     if (graphPick === "pending" ? st.changes.length > 0
