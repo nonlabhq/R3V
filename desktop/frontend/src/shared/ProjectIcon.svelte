@@ -10,8 +10,8 @@
   // colour (the team's pick, else one picked from its name: the same every
   // time); where it is shows as a small mark (on the team only, folder
   // missing).
-  // plain: no colour of its own picked, a light mark (a team's).
-  let { p, size = 22, plain = false }: { p: ProjectLook; size?: number; plain?: boolean } = $props();
+  // solid: the colour filled in, the letter in ink (a team's mark).
+  let { p, size = 22, solid = false }: { p: ProjectLook; size?: number; solid?: boolean } = $props();
   let broken = $state(""); // a picture that can't be shown: the icon instead
 
   // (Object.hasOwn: a name from the team's records is never a built-in key.)
@@ -21,7 +21,7 @@
   let pic = $derived(!!p.picture && p.picture !== broken);
 </script>
 
-<span class="pi {p.status}" class:plain={plain && !p.color} class:emoji={!!emoji && !pic} class:pic style:--c={cssColor(projectColor(p.id || p.name, p.color))} style:--s="{size}px" aria-hidden="true">
+<span class="pi {p.status}" class:solid class:emoji={!!emoji && !pic} class:pic style:--c={cssColor(projectColor(p.id || p.name, p.color))} style:--s="{size}px" aria-hidden="true">
   {#if pic}
     <img src={p.picture} alt="" draggable="false" onerror={() => (broken = p.picture ?? "")} />
   {:else if emoji}
@@ -37,15 +37,15 @@
 
 <style>
   .pi { position: relative; flex: none; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .28);
-    display: inline-flex; align-items: center; justify-content: center; font-size: calc(var(--s) * .44);
-    font-family: var(--font-brand); font-weight: var(--fw-bold); line-height: 1; color: var(--palette-ink); background: var(--c); }
-  .pi.plain { background: var(--text); }
+    display: inline-flex; align-items: center; justify-content: center; font-size: calc(var(--s) * .5);
+    font-weight: var(--fw-bold); line-height: 1; color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--panel)); }
+  .pi.solid { color: var(--palette-ink); background: var(--c); }
   .pi svg { width: 62%; height: 62%; }
   .pi.emoji, .pi.pic { background: transparent; }
   .pi img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
   .e { font-size: calc(var(--s) * .78); line-height: 1; font-weight: normal;
     font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif; }
-  .pi.remote { opacity: .45; }
+  .pi.remote { opacity: .6; }
   .mark { position: absolute; right: -4px; bottom: -4px; font-size: 9px; line-height: 1; padding: 1px 2px;
     border-radius: var(--radius-pill); background: var(--bg-sunken); color: var(--muted); }
   .mark.warn { color: var(--warn); }
