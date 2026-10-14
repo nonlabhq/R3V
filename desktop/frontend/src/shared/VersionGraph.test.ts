@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
-import HistoryGraph from "./HistoryGraph.svelte";
+import VersionGraph from "./VersionGraph.svelte";
 
 // The Overview's branch graph, rendered in jsdom: what it draws for a
 // history, and how picking, the keyboard, the toolbar and dragging behave.
@@ -27,13 +27,26 @@ const main = { name: "main", latest: "m3" };
 
 function show(over: Record<string, unknown> = {}) {
   const onselect = vi.fn();
-  render(HistoryGraph, { versions, branches: [main], branch: "main", head: "m3", incoming: new Set<string>(),
+  render(VersionGraph, { versions, branches: [main], branch: "main", head: "m3", incoming: new Set<string>(),
     pending: 0, selected: "m3", onselect, ...over });
   return { onselect };
 }
 afterEach(() => cleanup());
 
-describe("HistoryGraph", () => {
+// As R3V Cloud's web app uses it: versions and branches only, nothing of
+// the App's (no changes, nothing parked, no card buttons).
+describe("VersionGraph read only", () => {
+  it("shows and picks without the App's parts", async () => {
+    const onselect = vi.fn();
+    render(VersionGraph, { versions, branches: [main], branch: "main", head: "m3", selected: "m3", onselect });
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    expect(screen.queryByRole("option", { name: "Your changes" })).toBeNull();
+    await fireEvent.click(screen.getByRole("option", { name: /^Bass,/ }));
+    expect(onselect).toHaveBeenLastCalledWith("m2");
+  });
+});
+
+describe("VersionGraph", () => {
   it("goes back to your changes (else the version you are on) on a click in the background", async () => {
     const { onselect } = show({ pending: 2, selected: "m1" });
     await fireEvent.click(screen.getByRole("listbox"));
@@ -216,7 +229,7 @@ describe("HistoryGraph", () => {
   });
 });
 
-describe("HistoryGraph with agents", () => {
+describe("VersionGraph with agents", () => {
   const dots = () => [...document.querySelectorAll("button.node[role='option']")]; // (not the date range's options)
   // main: m3 (merged the renderer) - m2 - m1; the agent's branch: r2 - r1 off m1.
   const agentVersion = (id: string, message: string, parents: string[]) => ({ ...version(id, message, parents), branch: "b-render",

@@ -11,7 +11,7 @@
   import Avatar from "$shared/Avatar.svelte";
   import FilePanel from "./FilePanel.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
-  import { portal } from "./portal";
+  import { portal } from "$shared/portal";
   import { gridKey, navKey, ownKey, type NavRow } from "./keynav";
   import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick,
     type Folder, type Selection } from "./files";

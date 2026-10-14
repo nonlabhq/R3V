@@ -7,7 +7,7 @@
   import { projectColor } from "$shared/palette";
   import { projectIconNames, projectIcons } from "$shared/projectIcons";
   import { appIconNames, appIcons } from "$shared/appIcons";
-  import { portal } from "./portal";
+  import { portal } from "$shared/portal";
   import EmojiPicker from "./EmojiPicker.svelte";
   import { emojiName, emojiOf } from "$shared/emoji";
   import { squarePicture } from "./picture";

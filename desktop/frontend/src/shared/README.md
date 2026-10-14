@@ -2,8 +2,10 @@
 
 What the App shares with R3V Cloud's web app, so the two look and work the
 same: the design tokens and the plain elements' look, colours and branch
-lanes, project and program icons, kinds of file, the branch graph's layout,
-and the small components built on them.
+lanes, project and program icons, kinds of file, the version graph
+(VersionGraph: drawn from versions and branches; the App adds your
+changes, parked ones and the card's buttons through its props and
+snippets) and the small components built on them.
 
 The App imports it as `$shared/…`. R3V Cloud copies this folder, pinned to
 an R3V commit, and never changes its copy: what the web app needs here is

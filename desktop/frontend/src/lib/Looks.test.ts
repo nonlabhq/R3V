@@ -17,7 +17,7 @@ vi.mock("./picture", () => ({ squarePicture: mocks.square, SIDE: 128 }));
 import UserSettings from "./UserSettings.svelte";
 import ProjectSettings from "./ProjectSettings.svelte";
 import TeamSettings from "./TeamSettings.svelte";
-import HistoryGraph from "./HistoryGraph.svelte";
+import HistoryGraph from "$shared/VersionGraph.svelte";
 import type { TeamSummary } from "./api";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
