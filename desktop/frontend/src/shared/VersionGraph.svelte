@@ -546,9 +546,6 @@
             {#if ghost.label}<text x={ghost.x + 18} y={ghost.y + 4} fill="var(--lane-{ghost.color})">{ghost.label}</text>{/if}
           </g>
         {/if}
-        {#each marks as m (m.id)}
-          <circle class="mring" cx={x(m.col)} cy={top + m.y} r="18" fill="none" stroke="var(--lane-{m.color})" stroke-width="2" />
-        {/each}
       </svg>
 
       {#each marks as m (m.id)}
@@ -584,7 +581,7 @@
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
         <button class="node" class:dim={dimmed(v)} class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v?.id === v.id)} class:incoming={incoming.has(v.id)}
-          class:side={!c.name} data-id={v.id} role="option" aria-selected={selected === v.id}
+          class:side={!c.name} class:merged={merged.has(c)} class:ms={flags.has(v.id)} data-id={v.id} role="option" aria-selected={selected === v.id}
           style:left="{x(c.col)}px" style:top="{y(v.id)}px" style:--c="var(--lane-{c.color})"
           class:tinted={!!lk} class:pic={showPic(lk)} style:--m={lk ? cssColor(lk.color) : undefined}
           aria-label={`${titleOf(v.message) || t("(no description)")}, ${v.author}${v.actor ? ` (${toolName(v.actor.tool) || t("An agent")})` : ""}, ${ago(v.time)}${flags.has(v.id) ? `, ⚑ ${flags.get(v.id)!.join(", ")}` : ""}`}
@@ -784,22 +781,28 @@
   .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
   svg { position: absolute; left: 0; top: 0; overflow: visible; } /* (a preview may reach past the graph) */
   .empty { padding: var(--sp-16); }
-  .node { position: absolute; width: 24px; height: 24px; margin: -12px 0 0 -12px; padding: 0; border-radius: 50%;
-    border: 2px solid var(--c); background: var(--panel-2); color: var(--text); font-size: var(--fs-xs);
-    font-weight: var(--fw-semibold); line-height: 20px; text-align: center; }
+  /* A version: its author's colour filled in (their initial in ink), its
+     branch's colour round it; picked, bigger. */
+  .node { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; padding: 0; border-radius: 50%;
+    border: 2.5px solid var(--c); background: var(--panel-2); color: var(--text); font-size: var(--fs-xs);
+    font-weight: var(--fw-bold); line-height: 1; display: flex; align-items: center; justify-content: center; }
   .node:hover:not(:disabled) { border-color: var(--c); background: var(--hover); }
-  .node.tinted { color: var(--m); background: color-mix(in srgb, var(--m) 22%, var(--panel)); }
-  .node.pic { line-height: 0; } /* (the img is round itself: the flag may stick out) */
+  .node.tinted, .node.tinted:hover:not(:disabled) { color: var(--palette-ink); background: var(--m); }
+  .node.on { width: 34px; height: 34px; margin: -17px 0 0 -17px; }
   .node img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; pointer-events: none; }
-  .node.here { background: var(--c); color: var(--bg); }
+  /* the version you are on: a ring more (filled in its branch's colour when the team keeps no looks) */
+  .node.here { box-shadow: 0 0 0 2px var(--line-strong); }
+  .node.here:not(.tinted) { background: var(--c); color: var(--palette-ink); }
+  /* a milestone: an orange ring */
+  .node.ms { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--accent); }
+  .node.here.ms { box-shadow: 0 0 0 2px var(--line-strong), 0 0 0 3px var(--panel), 0 0 0 5px var(--accent); }
   /* where your files are now (your changes, else the version you're on): a glow in its branch's colour */
   .node.now { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 75%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--c) 40%, transparent)); }
-  .node.here.pic { box-shadow: 0 0 0 2px var(--c); }
   .node.incoming { border-style: dashed; color: var(--muted); }
-  .node.side { opacity: .75; }
-  .node.pending { border-style: dashed; color: var(--c); background: var(--panel); }
-  .node.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
-  .node.pending.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
+  .node.side, .node.merged { opacity: .75; }
+  .node.pending, .node.pending:hover:not(:disabled) { border-style: dashed; color: var(--c); background: transparent; }
+  .node.on, .node.here.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
+  .node.on.ms { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c), 0 0 0 5.5px var(--panel), 0 0 0 7.5px var(--accent); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   /* a card's button previewed: what it would make, faint */
   .would { opacity: .5; pointer-events: none; }
