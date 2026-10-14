@@ -276,10 +276,13 @@
 
     <section>
       <h3>{t("Health")}</h3>
-      <div class="action">
-        <div><strong>{t("Project check")}</strong><p class="hint">{t("Check the project: Live version, samples, plugins")}</p></div>
-        <button onclick={() => (healthOpen = true)}>{t("Check…")}</button>
-      </div>
+      <!-- (what a project check looks at: a Live project's; other kinds have none yet) -->
+      {#if info?.tool === "Ableton Live"}
+        <div class="action">
+          <div><strong>{t("Project check")}</strong><p class="hint">{t("Check the project: Live version, samples, plugins")}</p></div>
+          <button onclick={() => (healthOpen = true)}>{t("Check…")}</button>
+        </div>
+      {/if}
       <div class="action">
         <div><strong>{t("Check project…")}</strong><p class="hint">{t("Reads its whole history again, looking for damage.")}</p></div>
         <button onclick={oncheck}>{t("Check…")}</button>
