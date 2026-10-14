@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import tokens from "../tokens.css?raw";
+import tokens from "../shared/tokens.css?raw";
 
-// Colours live in src/tokens.css; components use them by role. These
+// Colours live in src/shared/tokens.css; components use them by role. These
 // keep it that way: a raw colour in a component, or a token that isn't
 // defined (a typo falls back to nothing, silently), fails here.
 
@@ -14,7 +14,7 @@ const files = Object.entries(sources).map(([path, text]) => {
 });
 
 // Their own colours on purpose (see tokens.css).
-const ownColours = ["lib/SetView.svelte", "lib/FileIcon.svelte", "lib/ImageCompare.svelte",
+const ownColours = ["lib/SetView.svelte", "shared/FileIcon.svelte", "lib/ImageCompare.svelte",
   "lib/ModelCompare.svelte", "lib/VideoCompare.svelte", "lib/WeightSummary.svelte"];
 
 describe("design tokens", () => {

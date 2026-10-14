@@ -5,8 +5,8 @@
   import StepsDialog from "./StepsDialog.svelte";
   import { cachedWorkspaces, refreshWorkspaces } from "./workspaces.svelte";
   import type { Session } from "./api";
-  import { branchLabel } from "./branches";
-  import AgentBadge from "./AgentBadge.svelte";
+  import { branchLabel } from "$shared/branches";
+  import AgentBadge from "$shared/AgentBadge.svelte";
   import LockBadge from "./LockBadge.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import Modal from "./Modal.svelte";

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { api, errorText, type State, type TeamProject, type TeamSummary } from "./api";
-  import ProjectIcon from "./ProjectIcon.svelte";
+  import ProjectIcon from "$shared/ProjectIcon.svelte";
   import { toast } from "./notify.svelte";
   import PreuploadIcon from "./PreuploadIcon.svelte";
   import { preuploads } from "./preupload.svelte";

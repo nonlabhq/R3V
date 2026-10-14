@@ -1,6 +1,6 @@
 <script lang="ts">
   import { language, t } from "./i18n.svelte";
-  import { emojiData } from "./emoji";
+  import { emojiData } from "./emojiData";
 
   // The emoji picker (emoji-picker-element: categories, a search in the
   // app's language, skin tones, the recently used), loaded when first

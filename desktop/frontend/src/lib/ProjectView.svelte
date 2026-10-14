@@ -4,7 +4,7 @@
   import { api, ago, errorText, formatBytes, titleOf, type State, type Result, type Preview, type TeamSummary, type ParkedSet,
     type Progress, type Version, type RuleSuggestion as Suggestion, type SampleSpot, type MemberLook, type TeamProject,
     type AgentWorkspace } from "./api";
-  import { appIconFor } from "./appIcons";
+  import { appIconFor } from "$shared/appIcons";
   import { toast } from "./notify.svelte";
   import { holderName, loadLocks, watchLocks } from "./locks.svelte";
   import { watchProject } from "./projectWatch.svelte";
@@ -29,7 +29,7 @@
   import BranchMenu from "./BranchMenu.svelte";
   import BranchSettings from "./BranchSettings.svelte";
   import MilestoneDialog from "./MilestoneDialog.svelte";
-  import { branchLabel, freeColor } from "./branches";
+  import { branchLabel, freeColor } from "$shared/branches";
   import Splitter from "./Splitter.svelte";
   import { splitPx } from "./splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";

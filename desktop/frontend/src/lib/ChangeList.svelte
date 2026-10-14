@@ -1,8 +1,8 @@
 <script lang="ts">
-  import ChangeMark from "./ChangeMark.svelte";
+  import ChangeMark from "$shared/ChangeMark.svelte";
   import { folderMoves } from "./moves";
   import { lineKind, type Change } from "./api";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import WeightSummary from "./WeightSummary.svelte";
   import { t } from "./i18n.svelte";
 

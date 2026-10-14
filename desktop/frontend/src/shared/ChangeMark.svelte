@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { t } from "./i18n.svelte";
+  import { t } from "./i18n";
 
   // What happened to a file, as one letter the same everywhere (Your
   // changes, a version's files, the Files tab): A new, C changed, D

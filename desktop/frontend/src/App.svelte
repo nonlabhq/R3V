@@ -1,5 +1,5 @@
 <script lang="ts">
-  import TeamMark from "./lib/TeamMark.svelte";
+  import TeamMark from "$shared/TeamMark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
   import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
@@ -13,7 +13,7 @@
   import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
   import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
     type TabRef, type TabSnap } from "./lib/tabs";
-  import ProjectIcon from "./lib/ProjectIcon.svelte";
+  import ProjectIcon from "$shared/ProjectIcon.svelte";
   import { untrack } from "svelte";
   import { spinner } from "./lib/spin.svelte";
   import KeptSamples from "./lib/KeptSamples.svelte";
@@ -32,7 +32,7 @@
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
   import Tooltip from "./lib/Tooltip.svelte";
-  import Avatar from "./lib/Avatar.svelte";
+  import Avatar from "$shared/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
   import KindDialog from "./lib/KindDialog.svelte";
   import ConfirmDialog from "./lib/ConfirmDialog.svelte";

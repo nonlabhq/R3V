@@ -1,3 +1,4 @@
+import { setTranslator } from "$shared/i18n";
 // The app's languages. Texts are written in English in the code and are
 // their own keys: t("Commit & Share") is looked up in the language's file
 // (locales/<code>.json, English text -> translation), and stays English
@@ -102,3 +103,6 @@ export function tn(n: number, one: string, other: string, vars?: Record<string, 
   }
   return t(n === 1 ? one : other, all);
 }
+
+// The shared components (src/shared) in the language in use too.
+setTranslator(t, tn);

@@ -11,7 +11,7 @@
 // Like projectIcons.ts, the names are what a team stores (a-z0-9-): add
 // icons, never rename or remove one. Titles are brand names: not translated.
 
-import type { Applied } from "../../bindings/github.com/nonlabhq/r3v/internal/profile/models";
+import type { AppliedPreset } from "./types";
 
 // A Simple Icons path, filled with the icon's colour (the picker and
 // ProjectIcon draw strokes by default).
@@ -50,7 +50,7 @@ const fileIcons: [RegExp, string][] = [
 // appIconFor names the icon of the one program a project is made with, from
 // the presets its rules apply and the files "Open in" offers; "" when there
 // are none or several (a Unity project with a Blender folder: not guessed).
-export function appIconFor(applied: Applied[] | null | undefined, openable: string[] | null | undefined): string {
+export function appIconFor(applied: AppliedPreset[] | null | undefined, openable: string[] | null | undefined): string {
   const found = new Set<string>();
   for (const a of applied ?? []) {
     if (presetIcons[a.preset]) found.add(presetIcons[a.preset]);

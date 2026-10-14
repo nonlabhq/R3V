@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { t } from "./i18n.svelte";
+  import { t } from "./i18n";
   // A kind of file in words ("Live Set", "Audio"…).
   export function kindTitle(kind: string): string {
     const titles: Record<string, string> = {

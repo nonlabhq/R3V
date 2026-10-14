@@ -43,13 +43,14 @@ Build it with `-tags server,nightly` to get the Style lab (Ctrl+Alt+L, in
 every Nightly build): looks to try (`src/lib/themes.ts`) and knobs for
 spacing, corners, borders, shadows, see-through surfaces, accent and font.
 "Copy as CSS" gives the tokens of what is on screen, to make it the default
-in `src/tokens.css`.
+in `src/shared/tokens.css`.
 
 ## Layout
 
 - `cmd/r3v` — command line tool (package `cli`; `--json` results and error codes in `cli/output.go`)
 - `docs/` — also a Go package: embeds `agents.md` for `r3v help agents`
 - `desktop/` — Windows desktop app (Wails v3, Svelte 5); installer in `desktop/build/windows/installer.nsi`
+  - `desktop/frontend/src/shared/` — what the App shares with R3V Cloud's web app (tokens, icons, the branch graph's layout, small components), imported as `$shared/…`; it never imports the App (its README)
 - `internal/xmltree` — ordered XML tree with byte-exact round-trip of Live's output
 - `internal/als` — Live Set model, content fingerprints (noise-aware), structural validator
 - `internal/diff` — track-level semantic diff

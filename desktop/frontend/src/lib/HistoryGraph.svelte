@@ -1,11 +1,11 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { ago, titleOf, toolName, type MemberLook, type Version } from "./api";
-  import AgentBadge from "./AgentBadge.svelte";
-  import { colorOf, cssColor } from "./palette";
-  import Avatar from "./Avatar.svelte";
-  import { branchGraph } from "./branchGraph";
-  import { branchLabel, branchLane } from "./branches";
+  import AgentBadge from "$shared/AgentBadge.svelte";
+  import { colorOf, cssColor } from "$shared/palette";
+  import Avatar from "$shared/Avatar.svelte";
+  import { branchGraph } from "$shared/branchGraph";
+  import { branchLabel, branchLane } from "$shared/branches";
   import { portal } from "./portal";
   import type { Snippet } from "svelte";
 

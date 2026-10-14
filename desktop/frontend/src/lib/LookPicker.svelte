@@ -2,14 +2,14 @@
   import { t } from "./i18n.svelte";
   import { errorText } from "./api";
   import { toast } from "./notify.svelte";
-  import ProjectIcon from "./ProjectIcon.svelte";
+  import ProjectIcon from "$shared/ProjectIcon.svelte";
   import Swatches from "./Swatches.svelte";
-  import { projectColor } from "./palette";
-  import { projectIconNames, projectIcons } from "./projectIcons";
-  import { appIconNames, appIcons } from "./appIcons";
+  import { projectColor } from "$shared/palette";
+  import { projectIconNames, projectIcons } from "$shared/projectIcons";
+  import { appIconNames, appIcons } from "$shared/appIcons";
   import { portal } from "./portal";
   import EmojiPicker from "./EmojiPicker.svelte";
-  import { emojiName, emojiOf } from "./emoji";
+  import { emojiName, emojiOf } from "$shared/emoji";
   import { squarePicture } from "./picture";
 
   // How a project or the team shows, for the whole team: its icon (drawn,

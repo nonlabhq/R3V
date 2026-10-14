@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import type { State } from "./api";
-  import { branchLabel } from "./branches";
+  import { branchLabel } from "$shared/branches";
 
   // The commit box under the Changes list: the description, and the button
   // that says what it commits (all the changes, or the ticked ones) and

@@ -3,9 +3,9 @@
   import { api, errorText, type TeamSummary, type Profile, type CloudStatus } from "./api";
 
   import Modal from "./Modal.svelte";
-  import Avatar from "./Avatar.svelte";
+  import Avatar from "$shared/Avatar.svelte";
   import Swatches from "./Swatches.svelte";
-  import { colorOf, randomColor } from "./palette";
+  import { colorOf, randomColor } from "$shared/palette";
   import { squarePicture } from "./picture";
   import { toast } from "./notify.svelte";
 

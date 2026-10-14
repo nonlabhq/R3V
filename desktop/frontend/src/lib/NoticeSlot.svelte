@@ -8,7 +8,7 @@
   import { t, tn } from "./i18n.svelte";
   import { ago, progressDetail, progressFraction, progressText, titleOf, type MemberLook, type Progress, type State, type Version } from "./api";
   import { newsOf, takenBackText } from "./teamText";
-  import Avatar from "./Avatar.svelte";
+  import Avatar from "$shared/Avatar.svelte";
   import Tx from "./Tx.svelte";
   import { pressing } from "./notices.svelte";
   import type { Snippet } from "svelte";

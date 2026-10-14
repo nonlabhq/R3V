@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { MemberLook } from "./api";
-  import Avatar from "./Avatar.svelte";
+  import Avatar from "$shared/Avatar.svelte";
   import { holderName, lockText, type LockItem } from "./locks.svelte";
 
   // A lock on a file or folder: a padlock and who holds it (their picture

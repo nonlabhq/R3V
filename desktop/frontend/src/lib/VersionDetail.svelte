@@ -1,9 +1,9 @@
 <script lang="ts">
-  import ChangeMark from "./ChangeMark.svelte";
+  import ChangeMark from "$shared/ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, detailsOf, errorText, titleOf, type ProjectFile, type Version } from "./api";
-  import FileIcon from "./FileIcon.svelte";
-  import AgentBadge from "./AgentBadge.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
+  import AgentBadge from "$shared/AgentBadge.svelte";
   import StepsDialog from "./StepsDialog.svelte";
   import type { Session } from "./api";
   import Splitter from "./Splitter.svelte";

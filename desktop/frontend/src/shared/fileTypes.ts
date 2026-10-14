@@ -1,4 +1,4 @@
-import { t } from "./i18n.svelte";
+import { t } from "./i18n";
 
 // Kinds of file by their extension, for finding them (the Files tab's
 // filter), naming them (its Type column) and drawing them (FileIcon). A

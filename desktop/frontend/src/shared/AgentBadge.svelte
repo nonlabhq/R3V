@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import { toolName } from "./api";
+  import { t } from "./i18n";
+  import { toolName } from "./tools";
 
   // An AI agent's mark: a small spark with the tool's name ("Claude Code"),
   // quiet beside a version or a branch. compact: the spark alone (its name

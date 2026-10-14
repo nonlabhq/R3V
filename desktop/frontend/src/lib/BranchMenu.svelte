@@ -1,8 +1,8 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { ago, type State } from "./api";
-  import { branchLabel, branchLane } from "./branches";
-  import AgentBadge from "./AgentBadge.svelte";
+  import { branchLabel, branchLane } from "$shared/branches";
+  import AgentBadge from "$shared/AgentBadge.svelte";
 
   // The branch you are on, and its menu: switch to another, merge one into
   // it, or start a new one from where you are. (Above the Overview's graph.)

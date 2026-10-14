@@ -5,14 +5,14 @@
   import RulesWindow from "./RulesWindow.svelte";
   import Tx from "./Tx.svelte";
   import { toast } from "./notify.svelte";
-  import ProjectIcon from "./ProjectIcon.svelte";
+  import ProjectIcon from "$shared/ProjectIcon.svelte";
   import LookPicker from "./LookPicker.svelte";
   import { portal } from "./portal";
   import BranchSettings from "./BranchSettings.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
-  import { branchLabel, branchLane } from "./branches";
+  import { branchLabel, branchLane } from "$shared/branches";
   import { ago, type BranchList, type ArchivedBranch, type StepsInfo } from "./api";
 
   // A project's settings: its name, where it is, its rules, and what can be

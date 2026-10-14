@@ -3,7 +3,7 @@
   import { formatBytes } from "./api";
   import Modal from "./Modal.svelte";
   import ProgressBar from "./ProgressBar.svelte";
-  import FileIcon from "./FileIcon.svelte";
+  import FileIcon from "$shared/FileIcon.svelte";
   import { preuploads, transfers, cancelling, cancelSave } from "./preupload.svelte";
 
   // The upload queue: each project's commit or update under way, and the big
