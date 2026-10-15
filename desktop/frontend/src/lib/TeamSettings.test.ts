@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 
-// The team's settings page (docs/design/team-settings.md): in tabs on
-// Nightly (General, Workflow), all on one page as before on Stable; with
-// the Go bindings mocked.
+// The team's settings page (docs/design/team-settings.md): in tabs
+// (General, Activity, Usage; Workflow on Nightly, whose settings are its
+// own: agents', R3V Cloud's file locks); with the Go bindings mocked.
 const mocks = vi.hoisted(() => {
   const fns: Record<string, ReturnType<typeof vi.fn>> = {};
   const api = new Proxy(fns, { get: (o, k: string) => (o[k] ??= vi.fn(async () => null)) });
@@ -30,7 +30,7 @@ afterEach(() => cleanup());
 
 describe("TeamSettings", () => {
   it("shows General and Workflow as tabs, the team's members in General, and remembers the tab", async () => {
-    render(TeamSettings, props({ tabs: true }));
+    render(TeamSettings, props({ tabs: true, workflowTab: true }));
     const nav = screen.getByRole("navigation", { name: "Team settings" });
     expect(nav.textContent).toContain("General");
     expect(await screen.findByText("Mia")).toBeTruthy(); // (a team on its own storage: who has shared)
@@ -40,10 +40,9 @@ describe("TeamSettings", () => {
     expect(localStorage.getItem("r3v.teamSettingsTab")).toBe("workflow");
   });
 
-  it("is one page without tabs (Stable), as before", () => {
-    render(TeamSettings, props());
-    expect(screen.queryByRole("navigation", { name: "Team settings" })).toBeNull();
-    expect(screen.getByText("Name")).toBeTruthy();
-    expect(screen.queryByText("Members")).toBeNull();
+  it("has no Workflow tab without its settings (Stable)", () => {
+    render(TeamSettings, props({ tabs: true }));
+    const nav = screen.getByRole("navigation", { name: "Team settings" });
+    expect([...nav.querySelectorAll("button")].map((b) => b.textContent)).toEqual(["General", "Activity", "Usage"]);
   });
 });

@@ -1,9 +1,7 @@
-//go:build nightly
-
 package cli
 
-// The file commands for any kind of file (diff, info, merge-files) are on
-// the Nightly channel while they're new.
+// The file commands for any kind of file (diff, info, merge-files), in
+// every build since 0.1.81.
 func init() {
 	fileCommands = true
 	extraCommands["merge-files"] = cmdMergeFiles

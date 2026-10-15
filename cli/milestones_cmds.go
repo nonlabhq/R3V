@@ -1,8 +1,6 @@
-//go:build nightly
-
 package cli
 
-// Milestones are on the Nightly channel while they're new; tag and tags
+// Milestones (in every build since 0.1.81); tag and tags
 // are what an agent that knows Git tries first.
 func init() {
 	for _, c := range []string{"milestone", "tag"} {

@@ -103,7 +103,7 @@
     {/if}
   {:else}
     {#key team.id}
-      <TeamSettings {team} inline tabs={canMove} author={overview.author} {reload} onclose={() => (section = "projects")}
+      <TeamSettings {team} inline tabs workflowTab={canMove} author={overview.author} {reload} onclose={() => (section = "projects")}
         onopenversion={(id, version) => { const p = mains.find((x) => x.id === id); if (p) { linkPick.project = id; linkPick.version = version; onopen(p); } }}
         teams={overview.teams} {canMove} offline={!!overview.teamError}
         roots={projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root)} />

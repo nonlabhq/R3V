@@ -1,5 +1,3 @@
-//go:build nightly
-
 package cli
 
 import (
@@ -57,5 +55,18 @@ func TestMilestoneCommands(t *testing.T) {
 	}
 	if exit, rep := run(t, a, "tags"); exit != 0 || len(list()) != 0 {
 		t.Fatalf("tags after removing: %s %+v", rep.Result, rep.Error)
+	}
+}
+
+// Milestones and the file commands are in every build since 0.1.81
+// (Stable too): r3v milestone, tag, diff of a project's files, merge-files.
+func TestFileCommandsInEveryBuild(t *testing.T) {
+	for _, c := range []string{"milestone", "milestones", "tag", "tags", "merge-files"} {
+		if _, ok := extraCommands[c]; !ok {
+			t.Errorf("r3v %s missing", c)
+		}
+	}
+	if !fileCommands || !jsonCommands["diff"] || !jsonCommands["info"] {
+		t.Error("the file commands missing")
 	}
 }

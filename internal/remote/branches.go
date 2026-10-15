@@ -30,10 +30,11 @@ import (
 //
 // Records only add to what a team stores (every R3V ignores the folder;
 // storage cleanup looks only under objects/ and chunked/), so they are not
-// a team feature. They are built in Nightly only (branches_nightly.go).
+// a team feature. In every build since 0.1.81.
 
-// BranchRecords: this build keeps branch records (the Nightly channel).
-var BranchRecords = false
+// BranchRecords: this build keeps branch records (tests turn it off to
+// play an older R3V).
+var BranchRecords = true
 
 // ErrNoBranchRecords: the team's storage can't keep branch records yet.
 var ErrNoBranchRecords = errors.New("this team can't keep branch names and colours yet")
