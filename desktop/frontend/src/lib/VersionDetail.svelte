@@ -6,8 +6,8 @@
   import AgentBadge from "$shared/AgentBadge.svelte";
   import StepsDialog from "./StepsDialog.svelte";
   import type { Session } from "./api";
-  import Splitter from "./Splitter.svelte";
-  import { splitPx } from "./splits.svelte";
+  import Splitter from "$shared/Splitter.svelte";
+  import { splitPx } from "$shared/splits.svelte";
   import { viewerFor, type Side } from "./viewers";
   import { navKey, ownKey } from "./keynav";
   import { changesView, pickChangesView } from "./changesview.svelte";
