@@ -43,6 +43,8 @@ export interface AgentDefaults {
  * setting some of their own. */
 export interface TeamWorkflowData {
   canEdit: boolean;
+  /** The agents' defaults mean something here (false: this App has no agents yet; the web leaves it out). */
+  agentsHere?: boolean;
   locks: boolean;
   locksOn: boolean;
   kinds: string[];

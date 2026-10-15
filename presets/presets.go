@@ -1,6 +1,7 @@
-// Package presets registers the project kinds that are still in testing
-// (Unity, Unreal, Godot, code, design files): the Nightly channel's builds import
-// it (see cmd/r3v/nightly.go); Stable builds leave them out.
+// Package presets registers the project kinds beyond Live (Unity, Unreal,
+// Godot, code, design files): the app and the command line import it (see
+// cmd/r3v/kinds.go); every build since 0.2. A kind still in testing would
+// come in through a Nightly-only import of its own.
 package presets
 
 import (

@@ -62,6 +62,7 @@ before and just don't show it. Members' and projects' looks are such data
 ([looks.md](looks.md)). A team feature is for what an older R3V would
 misread, lose or delete.
 
-Project kinds a Stable build doesn't know say so too: initializing a Unity,
-Unreal or Godot folder, or a `.r3v.yaml` naming a Nightly preset, fails with
-"needs R3V's Nightly channel" (CLI: `needs_nightly`, exit 6).
+Project kinds a Stable build doesn't know say so too: a `.r3v.yaml` naming a
+preset only Nightly has fails with "needs R3V's Nightly channel" (CLI:
+`needs_nightly`, exit 6). Unity, Unreal, Godot, code and design files are in
+every build since 0.2; one still in testing would be such a preset.

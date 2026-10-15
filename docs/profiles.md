@@ -67,7 +67,7 @@ The built-in presets:
 | Preset | For | Detected by | Leaves out |
 | --- | --- | --- | --- |
 | `ableton` | Ableton Live projects | an `Ableton Project Info` folder or a `.als` file | `/Backup/`, `*.asd` |
-| `code` (Nightly) | Software, and folders of documents | `.git/`, `.gitignore`, `package.json`, `go.mod`, `Cargo.toml` and the like | what the `.gitignore` files leave out, and tool folders and build outputs (`node_modules/`, `.venv/`, `dist/`, `target/`, `.next/`, `.svelte-kit/`, `coverage/` …), `.env`; merges text files line by line |
+| `code` | Software, and folders of documents | `.git/`, `.gitignore`, `package.json`, `go.mod`, `Cargo.toml` and the like | what the `.gitignore` files leave out, and tool folders and build outputs (`node_modules/`, `.venv/`, `dist/`, `target/`, `.next/`, `.svelte-kit/`, `coverage/` …), `.env`; merges text files line by line |
 
 A preset can ask for the project's `.gitignore` files (`gitignore: true`), and has a `priority` for detection (0 by default): when several presets recognize a folder, the highest wins. So a folder with a `.gitignore` can be a code project (a low priority) unless it is also, say, a Unity project.
 
@@ -81,7 +81,7 @@ A preset also tells R3V which built-in code handles which files, what to check b
 
 Files without a merge handler are chosen whole (yours, theirs or both) when both sides changed them. A `.json` file that merging line by line would leave broken (each side valid, the result not) is chosen whole too.
 
-### The project's own merges (Nightly)
+### The project's own merges
 
 `handlers:` in `.r3v.yaml` says how the project's files merge, over what the presets say. Patterns are as in rules, relative to the project folder; when several match a file, the last decides. `merge:` is `text` (line by line, conflicts hunk by hunk) or `whole` (chosen whole, no merge):
 
@@ -110,7 +110,7 @@ They are copied file by file with the system's copy, a block clone on ReFS and D
 
 ## File locks
 
-File locking (R3V Cloud teams, Nightly; see [design/locks.md](design/locks.md)) is set in the team's settings and each project's (Workflow), not in `.r3v.yaml`: a project follows the team's unless an admin sets its own there (on or off, other kinds, paths of its own). See [design/team-settings.md](design/team-settings.md).
+File locking (R3V Cloud teams; see [design/locks.md](design/locks.md)) is set in the team's settings and each project's (Workflow), not in `.r3v.yaml`: a project follows the team's unless an admin sets its own there (on or off, other kinds, paths of its own). See [design/team-settings.md](design/team-settings.md).
 
 R3V before 0.1.75 read a `file_locks:` section here, which could only narrow the team's settings. R3V no longer reads it: a project whose `.r3v.yaml` still has one shows a note, and an admin can move it into the project's settings (which takes the section out of the file: commit that).
 

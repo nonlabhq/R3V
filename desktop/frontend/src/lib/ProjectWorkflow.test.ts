@@ -16,7 +16,7 @@ vi.mock("./notify.svelte", () => ({ toast: vi.fn() }));
 import ProjectWorkflow from "./ProjectWorkflow.svelte";
 
 const view = (over = {}) => ({
-  team: true, canEdit: true, locks: true, teamLocksOn: false, teamKinds: ["unreal"], ownLocks: null,
+  team: true, agentsHere: true, canEdit: true, locks: true, teamLocksOn: false, teamKinds: ["unreal"], ownLocks: null,
   all: [{ id: "unreal", patterns: ["*.umap"] }], teamAgents: { steps: true, prompts: true, agentLocks: true },
   steps: null, prompts: null, agentLocks: null, mine: {}, rulesLocks: false, ...over,
 });
@@ -47,5 +47,13 @@ describe("ProjectWorkflow", () => {
     expect(steps.value).toBe("off");
     expect(screen.getByText(/still has file_locks/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Move them here" })).toBeNull();
+  });
+
+  it("has file locking only, in a build without agents (Stable)", async () => {
+    api.ProjectWorkflow.mockResolvedValue(view({ agentsHere: false }));
+    render(ProjectWorkflow, { root: "C:/Game" });
+    expect(await screen.findByRole("combobox", { name: "File locking" })).toBeTruthy();
+    expect(screen.queryByRole("combobox", { name: "Record agents' steps" })).toBeNull();
+    expect(screen.queryByText("Don't keep my prompts")).toBeNull();
   });
 });

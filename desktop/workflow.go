@@ -37,6 +37,8 @@ type WorkflowOverride struct {
 // TeamWorkflowView is a team's Workflow tab.
 type TeamWorkflowView struct {
 	CanEdit bool `json:"canEdit"`
+	// AgentsHere: this build has agents (their settings mean something here).
+	AgentsHere bool `json:"agentsHere"`
 	// Locks: file locking can be had (an R3V Cloud team, a build with it);
 	// LocksOn: projects lock unless they say otherwise; Kinds: those that
 	// lock by themselves.
@@ -52,9 +54,10 @@ type TeamWorkflowView struct {
 // ProjectWorkflowView is a project's Workflow section: the team's, the
 // project's own (nil: as the team's), and this computer's choices.
 type ProjectWorkflowView struct {
-	Team    bool `json:"team"` // the project is a team's (else all is this computer's)
-	CanEdit bool `json:"canEdit"`
-	Locks   bool `json:"locks"` // file locking can be had
+	Team       bool `json:"team"`       // the project is a team's (else all is this computer's)
+	AgentsHere bool `json:"agentsHere"` // this build has agents
+	CanEdit    bool `json:"canEdit"`
+	Locks      bool `json:"locks"` // file locking can be had
 	// The team's locks (on by default, kinds) and the project's own.
 	TeamLocksOn bool                 `json:"teamLocksOn"`
 	TeamKinds   []string             `json:"teamKinds"`
@@ -115,7 +118,7 @@ func (a *App) TeamWorkflow(teamID string) (*TeamWorkflowView, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := &TeamWorkflowView{CanEdit: canEditWorkflow(t), Kinds: []string{}, All: profile.LockKinds, Overrides: []WorkflowOverride{}}
+	out := &TeamWorkflowView{CanEdit: canEditWorkflow(t), AgentsHere: project.Steps, Kinds: []string{}, All: profile.LockKinds, Overrides: []WorkflowOverride{}}
 	if info.Workflow != nil {
 		out.Agents = agentsOf(*info.Workflow)
 	} else {
@@ -214,7 +217,7 @@ func (a *App) ProjectWorkflow(root string) (*ProjectWorkflowView, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := &ProjectWorkflowView{CanEdit: true, TeamKinds: []string{}, All: profile.LockKinds, Mine: r.StepSettingsNow()}
+	out := &ProjectWorkflowView{CanEdit: true, AgentsHere: project.Steps, TeamKinds: []string{}, All: profile.LockKinds, Mine: r.StepSettingsNow()}
 	if rules, err := r.Profile(); err == nil && rules.FileLocks.Set() {
 		out.RulesLocks = true
 	}

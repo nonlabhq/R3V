@@ -74,8 +74,6 @@
 
   // A folder R3V doesn't recognise: asked how to keep it (KindDialog).
   let kindAsk = $state<string | null>(null);
-  let nightly = $state(false);
-  api.Channel().then((c) => (nightly = c.build === "nightly")).catch(() => {});
   async function addFolder() {
     const folder = await api.ChooseFolder(t("Choose a project folder to share with the team"));
     if (folder) add(folder);
@@ -181,7 +179,7 @@
 </div>
 
 {#if kindAsk}
-  <KindDialog folder={kindAsk} code={nightly} busy={busy === "add"} onpick={(preset) => add(kindAsk!, preset)}
+  <KindDialog folder={kindAsk} code busy={busy === "add"} onpick={(preset) => add(kindAsk!, preset)}
     onclose={() => (kindAsk = null)} />
 {/if}
 

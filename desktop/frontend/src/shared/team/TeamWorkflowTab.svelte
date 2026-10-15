@@ -95,6 +95,7 @@
     {#if v.locks}{@render overrides(ownLocks, "locks")}{/if}
   </section>
 
+  {#if v.agentsHere !== false}
   <section>
     <h3>{t("Agents")}</h3>
     <p class="hint">{t("What projects do unless they set their own (in their settings).")}
@@ -111,6 +112,7 @@
     <p class="hint">{t("Changing these: teammates on an older R3V must update before they can share.")}</p>
     {@render overrides(ownAgents, "agents")}
   </section>
+  {/if}
 {:else if error}
   <p class="error">{error}</p>
 {/if}

@@ -63,7 +63,7 @@ in `src/shared/tokens.css`.
 - `internal/remote` — the `Backend` interface and its implementation on S3-compatible object storage (extensions can register more)
 - `internal/teams` — per-user team store (`%APPDATA%\R3V\teams.json`): team addresses, credentials, project locations
 - `internal/version` — release number, channel (Stable or Nightly) and Nightly build stamp
-- `presets/` — project kinds still in testing (Unity, Unreal, Godot, code, design files); only Nightly builds import them
+- `presets/` — the project kinds beyond Live (Unity, Unreal, Godot, code, design files); a kind still in testing comes in through a Nightly-only import of its own
 - `cmd/publish` — publishes a Nightly installer and its signed feed to the releases bucket
 - `testdata/golden` — the expected output of diff and merge: the specification
 - `testdata/live/` — sets saved by Ableton Live 12.3.1 (a project, its Backup folder, two hand-made branches): the fixtures, read byte for byte
@@ -116,9 +116,11 @@ Work goes in lanes, each a session of its own; only Core merges into `main`.
    (after the full end-to-end run). Other lanes hand over; they don't merge,
    not even a small fix in their own package: a change that looks like one
    lane's can reach Stable or the settings both channels share.
-2. **New things arrive behind Nightly**: a preset in `presets/`, a build
-   tag, or a switch set only in a `nightly` file (as `remote.HostedTeams`
-   is), with a Stable test that shows Stable doesn't reach it. Stable and
+2. **New things arrive behind Nightly**: a preset imported only by Nightly
+   builds, a build tag, or a switch set only in a `nightly` file (as
+   `project.Steps` is), with a Stable test that shows Stable doesn't reach
+   it. Moving one into Stable takes the gate away and turns its Stable test
+   into one that Stable has it. Stable and
    Nightly share the settings folder (teams, sessions): what Nightly writes
    there, Stable must be able to ignore safely.
 3. **What must not break** (AGENTS.md) is Core's: stored formats, content
