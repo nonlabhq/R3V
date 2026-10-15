@@ -2192,6 +2192,38 @@ export class Profile {
 }
 
 /**
+ * ProjectBytes is a project's part.
+ */
+export class ProjectBytes {
+    "id": string;
+    "name": string;
+    "bytes": number;
+
+    /** Creates a new ProjectBytes instance. */
+    constructor($$source: Partial<ProjectBytes> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("bytes" in $$source)) {
+            this["bytes"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProjectBytes instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProjectBytes {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ProjectBytes($$parsedSource as Partial<ProjectBytes>);
+    }
+}
+
+/**
  * ProjectFile is a file as the Changes tab lists it.
  */
 export class ProjectFile {
@@ -4455,6 +4487,71 @@ export class TeamSummary {
 }
 
 /**
+ * TeamUsageView is a team's Usage tab.
+ */
+export class TeamUsageView {
+    "hosted": boolean;
+
+    /**
+     * Counted: when R3V last counted ("" never); Used: what projects use,
+     * Stored: all the storage holds (unused files too).
+     */
+    "counted": string;
+    "used": number;
+    "stored": number;
+    "versions": number;
+    "projects": ProjectBytes[];
+
+    /**
+     * R3V Cloud: the plan's quota (0 none) and its name.
+     */
+    "quota": number;
+    "plan": string;
+
+    /** Creates a new TeamUsageView instance. */
+    constructor($$source: Partial<TeamUsageView> = {}) {
+        if (!("hosted" in $$source)) {
+            this["hosted"] = false;
+        }
+        if (!("counted" in $$source)) {
+            this["counted"] = "";
+        }
+        if (!("used" in $$source)) {
+            this["used"] = 0;
+        }
+        if (!("stored" in $$source)) {
+            this["stored"] = 0;
+        }
+        if (!("versions" in $$source)) {
+            this["versions"] = 0;
+        }
+        if (!("projects" in $$source)) {
+            this["projects"] = [];
+        }
+        if (!("quota" in $$source)) {
+            this["quota"] = 0;
+        }
+        if (!("plan" in $$source)) {
+            this["plan"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TeamUsageView instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TeamUsageView {
+        const $$createField5_0 = $$createType85;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("projects" in $$parsedSource) {
+            $$parsedSource["projects"] = $$createField5_0($$parsedSource["projects"]);
+        }
+        return new TeamUsageView($$parsedSource as Partial<TeamUsageView>);
+    }
+}
+
+/**
  * TeamWorkflowView is a team's Workflow tab.
  */
 export class TeamWorkflowView {
@@ -4510,7 +4607,7 @@ export class TeamWorkflowView {
         const $$createField3_0 = $$createType10;
         const $$createField4_0 = $$createType44;
         const $$createField5_0 = $$createType45;
-        const $$createField6_0 = $$createType85;
+        const $$createField6_0 = $$createType87;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kinds" in $$parsedSource) {
             $$parsedSource["kinds"] = $$createField3_0($$parsedSource["kinds"]);
@@ -4590,7 +4687,7 @@ export class TextChanges {
      * Creates a new TextChanges instance from a string or object.
      */
     static createFrom($$source: any = {}): TextChanges {
-        const $$createField4_0 = $$createType87;
+        const $$createField4_0 = $$createType89;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hunks" in $$parsedSource) {
             $$parsedSource["hunks"] = $$createField4_0($$parsedSource["hunks"]);
@@ -4730,7 +4827,7 @@ export class UndoPlan {
         const $$createField0_0 = $$createType10;
         const $$createField1_0 = $$createType10;
         const $$createField2_0 = $$createType39;
-        const $$createField4_0 = $$createType88;
+        const $$createField4_0 = $$createType90;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changed" in $$parsedSource) {
             $$parsedSource["changed"] = $$createField0_0($$parsedSource["changed"]);
@@ -4941,7 +5038,7 @@ export class VerifyResult {
      * Creates a new VerifyResult instance from a string or object.
      */
     static createFrom($$source: any = {}): VerifyResult {
-        const $$createField3_0 = $$createType90;
+        const $$createField3_0 = $$createType92;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("problems" in $$parsedSource) {
             $$parsedSource["problems"] = $$createField3_0($$parsedSource["problems"]);
@@ -5043,7 +5140,7 @@ export class Version {
     static createFrom($$source: any = {}): Version {
         const $$createField5_0 = $$createType10;
         const $$createField6_0 = $$createType10;
-        const $$createField11_0 = $$createType92;
+        const $$createField11_0 = $$createType94;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("parents" in $$parsedSource) {
             $$parsedSource["parents"] = $$createField5_0($$parsedSource["parents"]);
@@ -5289,7 +5386,7 @@ export class WorkspaceRemoval {
      * Creates a new WorkspaceRemoval instance from a string or object.
      */
     static createFrom($$source: any = {}): WorkspaceRemoval {
-        const $$createField1_0 = $$createType94;
+        const $$createField1_0 = $$createType96;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("left" in $$parsedSource) {
             $$parsedSource["left"] = $$createField1_0($$parsedSource["left"]);
@@ -5427,14 +5524,16 @@ const $$createType80 = $Create.Nullable($$createType79);
 const $$createType81 = SessionSummary.createFrom;
 const $$createType82 = $Create.Array($$createType81);
 const $$createType83 = remote$0.Capabilities.createFrom;
-const $$createType84 = WorkflowOverride.createFrom;
+const $$createType84 = ProjectBytes.createFrom;
 const $$createType85 = $Create.Array($$createType84);
-const $$createType86 = textdiff$0.Hunk.createFrom;
+const $$createType86 = WorkflowOverride.createFrom;
 const $$createType87 = $Create.Array($$createType86);
-const $$createType88 = TakeBack.createFrom;
-const $$createType89 = VerifyProblem.createFrom;
-const $$createType90 = $Create.Array($$createType89);
-const $$createType91 = Actor.createFrom;
-const $$createType92 = $Create.Nullable($$createType91);
-const $$createType93 = WorkspaceLeft.createFrom;
+const $$createType88 = textdiff$0.Hunk.createFrom;
+const $$createType89 = $Create.Array($$createType88);
+const $$createType90 = TakeBack.createFrom;
+const $$createType91 = VerifyProblem.createFrom;
+const $$createType92 = $Create.Array($$createType91);
+const $$createType93 = Actor.createFrom;
 const $$createType94 = $Create.Nullable($$createType93);
+const $$createType95 = WorkspaceLeft.createFrom;
+const $$createType96 = $Create.Nullable($$createType95);

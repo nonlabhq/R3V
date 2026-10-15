@@ -1867,5 +1867,16 @@
 "All projects": "Tous les projets",
 "Who": "Qui",
 "Nothing happened in this time.": "Rien ne s'est passé pendant cette période.",
-"The team can't be reached right now.": "L'équipe est injoignable pour le moment."
+"The team can't be reached right now.": "L'équipe est injoignable pour le moment.",
+"of {quota}": "sur {quota}",
+"Used": "Utilisé",
+"As R3V Cloud counts it for the team's plan.": "Tel que R3V Cloud le compte pour l'offre de l'équipe.",
+"used by the projects' versions": "utilisés par les versions des projets",
+"Not counted yet.": "Pas encore compté.",
+"Counting…": "Comptage…",
+"Count now": "Compter maintenant",
+"Counted {when}: {versions} versions; the storage holds {stored} in all (files no version uses yet, until a cleanup, too).": "Compté {when} : {versions} versions ; le stockage contient {stored} au total (y compris les fichiers qu'aucune version n'utilise, jusqu'à un nettoyage).",
+"What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "Ce que R3V conserve, tel que stocké (compressé). La facture de votre fournisseur de stockage peut être plus élevée : autres éléments dans le bucket, versions qu'il garde lui-même, requêtes.",
+"By project": "Par projet",
+"A file several projects use counts in each of them, and once in the total.": "Un fichier utilisé par plusieurs projets compte dans chacun d'eux, et une fois dans le total."
 }

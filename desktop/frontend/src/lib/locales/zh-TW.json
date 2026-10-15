@@ -1867,5 +1867,16 @@
 "All projects": "所有專案",
 "Who": "誰",
 "Nothing happened in this time.": "這段時間沒有動態。",
-"The team can't be reached right now.": "現在無法連線到團隊。"
+"The team can't be reached right now.": "現在無法連線到團隊。",
+"of {quota}": "/ {quota}",
+"Used": "已使用",
+"As R3V Cloud counts it for the team's plan.": "依 R3V Cloud 為團隊方案計算的用量。",
+"used by the projects' versions": "由各專案的版本使用",
+"Not counted yet.": "還沒有計算。",
+"Counting…": "計算中…",
+"Count now": "重新計算",
+"Counted {when}: {versions} versions; the storage holds {stored} in all (files no version uses yet, until a cleanup, too).": "{when}計算：{versions} 個版本；儲存空間共 {stored}（在清理之前，也包括沒有版本使用的檔案）。",
+"What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "R3V 存的量（壓縮後）。儲存服務商的帳單可能更多：bucket 裡的其他東西、服務商自己保留的版本、請求費用等。",
+"By project": "依專案",
+"A file several projects use counts in each of them, and once in the total.": "多個專案共用的檔案會算進每個專案，總計裡只算一次。"
 }
