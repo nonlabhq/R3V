@@ -3,7 +3,9 @@
 
 export {
     Capabilities,
-    Storage
+    ProjectLocks,
+    Storage,
+    Workflow
 } from "./models.js";
 
 export type {

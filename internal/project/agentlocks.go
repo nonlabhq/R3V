@@ -9,7 +9,6 @@ import (
 
 	"github.com/nonlabhq/r3v/internal/agentlock"
 	"github.com/nonlabhq/r3v/internal/profile"
-	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/store"
 )
 
@@ -47,46 +46,40 @@ func (e *ErrLockedByAgent) Error() string {
 // the store every workspace shares.
 func (r *Repo) AgentLockList() *agentlock.List { return agentlock.Open(r.CommonDir()) }
 
-// teamLocksFile keeps the team's lock settings as last read: the hook runs
-// on every tool call and can't ask the team.
+// teamLocksFile kept the team's lock settings before workflow settings
+// (workflow.go): read when there's nothing newer, removed once there is.
 const teamLocksFile = "team-locks.json"
 
-// RefreshAgentTeamLocks reads the team's lock settings into the list's copy
-// (best effort: out of reach, the last known stay).
-func (r *Repo) RefreshAgentTeamLocks() {
-	c, err := r.Client()
-	if err != nil {
-		return
-	}
-	info, err := c.Info()
-	if err != nil {
-		return
-	}
-	path := filepath.Join(r.AgentLockList().Dir(), teamLocksFile)
-	if s := remote.LocksOf(info); s.On {
-		writeJSON(path, s)
-	} else {
-		store.Remove(path)
-	}
-}
+// RefreshAgentTeamLocks reads the team's settings into this computer's copy
+// (RefreshWorkflow).
+func (r *Repo) RefreshAgentTeamLocks() { r.RefreshWorkflow() }
 
-// AgentLocking is what locks between workspaces: the team's kinds when the
-// team has lock settings, else every kind that can't be merged; narrowed by
-// the project's .r3v.yaml (file_locks), as the team's file locks are.
+// AgentLocking is what locks between workspaces (unless the team or the
+// project turned that off): the project's kinds and paths when it set its
+// own file locking, else the team's kinds when it locks files, else every
+// kind that can't be merged.
 func (r *Repo) AgentLocking() profile.Locking {
 	if r.agentLocking != nil {
 		return *r.agentLocking
 	}
-	team := profile.TeamLocks{On: true, Kinds: profile.AgentLockKinds()}
-	var s remote.LockSettings
-	if readJSON(filepath.Join(r.AgentLockList().Dir(), teamLocksFile), &s) == nil && s.On {
-		team.Kinds = s.Kinds
+	w := r.Workflow()
+	var l profile.Locking
+	if w.AgentLocksOn() {
+		team := profile.TeamLocks{On: true, Kinds: profile.AgentLockKinds()}
+		if w.Locks.On {
+			team.Kinds = w.Locks.Kinds
+		}
+		var f profile.FileLocks
+		if p := w.Project.Locks; p != nil {
+			if p.Kinds != nil {
+				team.Kinds = p.Kinds
+			}
+			f = profile.FileLocks{AutoOff: p.AutoOff, Add: p.Add, Remove: p.Remove}
+		}
+		l = profile.ResolveLocking(team, f)
+	} else {
+		l = profile.ResolveLocking(profile.TeamLocks{}, profile.FileLocks{})
 	}
-	var fl profile.FileLocks
-	if rules, err := r.Profile(); err == nil {
-		fl = rules.FileLocks
-	}
-	l := profile.ResolveLocking(team, fl)
 	r.agentLocking = &l
 	return l
 }

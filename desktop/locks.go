@@ -169,11 +169,8 @@ func lockTargetOf(root string) (*lockTarget, error) {
 	if err != nil && !s.On {
 		return nil, err
 	}
-	rules, _ := r.Profile()
-	l := profile.ResolveLocking(profile.TeamLocks{On: s.On, Kinds: s.Kinds}, profile.FileLocks{})
-	if rules != nil {
-		l = rules.Locking(profile.TeamLocks{On: s.On, Kinds: s.Kinds})
-	}
+	// The team's default, the project's own over it (team-settings.md).
+	l := project.LockingFor(s, projectLocksOf(t, r.Config.ProjectID))
 	if !l.On {
 		return nil, nil
 	}
@@ -628,7 +625,7 @@ func (a *App) TeamLocks(teamID string) (*TeamLocks, error) {
 	if err != nil {
 		return nil, err
 	}
-	out.Available, out.On, out.Kinds, out.Admin = true, s.On, s.Kinds, isAdmin(myRole(t))
+	out.Available, out.On, out.Kinds, out.Admin = true, remote.LocksDefault(s), s.Kinds, isAdmin(myRole(t))
 	if !s.On && len(s.Kinds) == 0 {
 		out.Kinds = profile.DefaultLockKinds() // (what turning it on starts with)
 	}
@@ -657,10 +654,25 @@ func (a *App) SetTeamLocks(teamID string, on bool, kinds []string) error {
 	if kinds == nil {
 		kinds = []string{}
 	}
-	if err := remote.SetLocks(b, remote.LockSettings{On: on, Kinds: kinds}); err != nil {
+	// on: projects lock unless they say otherwise. Off, the service still
+	// keeps locks for those that turned locking on themselves.
+	s := remote.LockSettings{On: on, Kinds: kinds}
+	if !on {
+		if ps, err := b.Projects(); err == nil {
+			for _, p := range ps {
+				if p.Workflow != nil && p.Workflow.Locks != nil && p.Workflow.Locks.On != nil && *p.Workflow.Locks.On {
+					off := false
+					s.On, s.Default = true, &off
+					break
+				}
+			}
+		}
+	}
+	if err := remote.SetLocks(b, s); err != nil {
 		return err
 	}
 	forgetTeamLocks(t.Remote.URL)
+	forgetProjectRecords(t.Remote.URL)
 	teams.Update(func(s *teams.Store) error {
 		if tm := s.Find(teamID); tm != nil {
 			tm.LocksAsked = true // (decided: not offered again)

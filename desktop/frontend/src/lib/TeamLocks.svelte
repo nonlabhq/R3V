@@ -8,7 +8,7 @@
   // A hosted team's file locking (docs/design/locks.md): off, manual locks
   // only, or manual locks and auto-lock for the kinds of file ticked. Admins
   // change it; everyone sees it.
-  let { team }: { team: TeamSummary } = $props();
+  let { team, onchanged }: { team: TeamSummary; onchanged?: () => void } = $props();
 
   let s = $state<TeamLocks | null>(null);
   let error = $state("");
@@ -25,6 +25,7 @@
     try {
       await api.SetTeamLocks(team.id, on, kinds);
       s = { ...s, on, kinds };
+      onchanged?.();
       if (on) toast(t("File locking is on for {team}", { team: team.name }), "ok");
     } catch (e) {
       error = errorText(e);
@@ -53,7 +54,7 @@
               <span>{lockKindName(k.id)} <span class="faint mono">{k.patterns.join(" ")}</span></span></label>
           {/each}
         </div>
-        <p class="faint small">{t("A project's .r3v.yaml can narrow this: turn locks off for it, or add and remove kinds of file.")}</p>
+        <p class="faint small">{t("This is what projects do unless they set their own, in their settings: on or off, other kinds, or paths of their own.")}</p>
       {:else}
         <p class="faint small">{t("Turning it on: teammates on an older R3V must update before they can share.")}</p>
       {/if}

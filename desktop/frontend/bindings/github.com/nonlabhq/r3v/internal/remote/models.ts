@@ -48,6 +48,56 @@ export class Capabilities {
 export type Member = any;
 
 /**
+ * ProjectLocks is a project's file locking, over the team's.
+ */
+export class ProjectLocks {
+    /**
+     * On: locking on or off in this project (nil: as the team's default).
+     */
+    "on"?: boolean | null;
+
+    /**
+     * Kinds: the kinds of file that lock by themselves here (nil: the
+     * team's); AutoOff: none do, manual locks only.
+     */
+    "kinds"?: string[];
+    "autoOff"?: boolean;
+
+    /**
+     * Add and Remove: paths that lock by themselves too, and those that
+     * never do (the patterns .r3v.yaml took: "Content/Maps/", "*.uasset").
+     */
+    "add"?: string[];
+    "remove"?: string[];
+
+    /** Creates a new ProjectLocks instance. */
+    constructor($$source: Partial<ProjectLocks> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProjectLocks instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProjectLocks {
+        const $$createField1_0 = $$createType0;
+        const $$createField3_0 = $$createType0;
+        const $$createField4_0 = $$createType0;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("kinds" in $$parsedSource) {
+            $$parsedSource["kinds"] = $$createField1_0($$parsedSource["kinds"]);
+        }
+        if ("add" in $$parsedSource) {
+            $$parsedSource["add"] = $$createField3_0($$parsedSource["add"]);
+        }
+        if ("remove" in $$parsedSource) {
+            $$parsedSource["remove"] = $$createField4_0($$parsedSource["remove"]);
+        }
+        return new ProjectLocks($$parsedSource as Partial<ProjectLocks>);
+    }
+}
+
+/**
  * Storage is team storage (an S3-compatible bucket) as a person fills it in.
  */
 export class Storage {
@@ -103,3 +153,54 @@ export class Storage {
         return new Storage($$parsedSource as Partial<Storage>);
     }
 }
+
+/**
+ * Workflow is a team's defaults or a project's overrides: nil is "not
+ * set" (R3V's default for a team, the team's for a project).
+ */
+export class Workflow {
+    /**
+     * Locks: a project's own file locking (R3V Cloud teams; the team's is
+     * LockSettings). Only in a project's record.
+     */
+    "locks"?: ProjectLocks | null;
+
+    /**
+     * Steps: agents' steps are recorded (docs/design/steps.md).
+     */
+    "steps"?: boolean | null;
+
+    /**
+     * Prompts: what was asked is kept with the steps.
+     */
+    "prompts"?: boolean | null;
+
+    /**
+     * AgentLocks: the workspaces of a project take turns on files that
+     * can't be merged (docs/design/agent-workspaces.md, "Locks").
+     */
+    "agentLocks"?: boolean | null;
+
+    /** Creates a new Workflow instance. */
+    constructor($$source: Partial<Workflow> = {}) {
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Workflow instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Workflow {
+        const $$createField0_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("locks" in $$parsedSource) {
+            $$parsedSource["locks"] = $$createField0_0($$parsedSource["locks"]);
+        }
+        return new Workflow($$parsedSource as Partial<Workflow>);
+    }
+}
+
+// Private type creation functions
+const $$createType0 = $Create.Array($Create.Any);
+const $$createType1 = ProjectLocks.createFrom;
+const $$createType2 = $Create.Nullable($$createType1);

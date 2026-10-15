@@ -3,7 +3,6 @@ package remote
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 )
 
@@ -39,6 +38,10 @@ type LockSettings struct {
 	// Kinds lock by themselves when they change (ids of profile.LockKinds;
 	// empty: manual locks only).
 	Kinds []string `json:"kinds"`
+	// Default: whether projects lock unless they say otherwise (their
+	// Workflow.Locks); nil is on. Off with On: the service keeps locks for
+	// the projects that turned locking on themselves (team-settings.md).
+	Default *bool `json:"default,omitempty"`
 }
 
 // LocksOf reads a team's lock settings from its info (off when it has none).
@@ -69,8 +72,12 @@ func SetLocks(b Backend, s LockSettings) error {
 		return err // never write the info back without what it holds
 	}
 	info.Locks = &s
-	if s.On && !slices.Contains(info.Features, FeatureLocks) {
-		info.Features = append(info.Features, FeatureLocks)
+	if s.On {
+		withFeature(&info, FeatureLocks)
+	}
+	if s.Default != nil {
+		// (an R3V without workflow settings would lock in every project)
+		withFeature(&info, FeatureWorkflow)
 	}
 	return b.SetInfo(info)
 }

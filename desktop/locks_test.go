@@ -9,6 +9,7 @@ import (
 
 	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/profile"
+	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/remote/cloudtest"
 	"github.com/nonlabhq/r3v/internal/teams"
 )
@@ -181,8 +182,16 @@ func TestAppFileLocks(t *testing.T) {
 		t.Errorf("told: %+v", h)
 	}
 
-	// The project's rules turn locks off: nothing shows.
+	// The project's settings turn locks off: nothing shows. (Its .r3v.yaml's
+	// file_locks are no longer read: team-settings.md.)
 	writeFile(t, root, ".r3v.yaml", "presets:\n  ./: ableton\nfile_locks:\n  enabled: false\n")
+	if v, _ := a.ProjectLocks(root); !v.On {
+		t.Error(".r3v.yaml's file_locks still read")
+	}
+	off := false
+	if err := a.SetProjectWorkflow(root, remote.Workflow{Locks: &remote.ProjectLocks{On: &off}}); err != nil {
+		t.Fatal(err)
+	}
 	if v, _ := a.ProjectLocks(root); v.On {
 		t.Error("locks shown with the project's off")
 	}

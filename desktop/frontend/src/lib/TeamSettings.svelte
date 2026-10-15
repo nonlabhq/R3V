@@ -16,6 +16,7 @@
   import LookPicker from "./LookPicker.svelte";
   import TeamMark from "$shared/TeamMark.svelte";
   import TeamMembers from "./TeamMembers.svelte";
+  import TeamWorkflow from "./TeamWorkflow.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
@@ -212,6 +213,7 @@
     try { localStorage.setItem(TAB_KEY, x); } catch { /* not remembered */ }
   }
   const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow" };
+  let locksStamp = $state(0); // (the team's locks changed: what projects set of their own, read again)
 </script>
 
 {#snippet body()}
@@ -235,13 +237,14 @@
 
 {#snippet workflow()}
   {#if team.hosted}
-    {#if !offline}<TeamLocks {team} />{/if}
+    {#if !offline}<TeamLocks {team} onchanged={() => locksStamp++} />{/if}
   {:else}
     <section>
       <h3>{t("File locking")}</h3>
       <p class="faint small">{t("File locking needs a team on R3V Cloud: it keeps who is changing which file.")}</p>
     </section>
   {/if}
+  {#if !offline}<TeamWorkflow {team} stamp={locksStamp} />{/if}
 {/snippet}
 
 {#snippet naming()}

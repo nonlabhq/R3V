@@ -110,18 +110,9 @@ They are copied file by file with the system's copy, a block clone on ReFS and D
 
 ## File locks
 
-On an R3V Cloud team that turned file locking on (Nightly; see [design/locks.md](design/locks.md)), files that can't be merged are locked while someone works on them: by hand (right-click › Lock), and by themselves for the kinds of file the team picked (auto-lock). A project can narrow the team's settings in `.r3v.yaml`, never widen them:
+File locking (R3V Cloud teams, Nightly; see [design/locks.md](design/locks.md)) is set in the team's settings and each project's (Workflow), not in `.r3v.yaml`: a project follows the team's unless an admin sets its own there (on or off, other kinds, paths of its own). See [design/team-settings.md](design/team-settings.md).
 
-```yaml
-file_locks:
-  enabled: false          # this project: no locks at all (even if the team has them on)
-  auto_lock:              # adds to / removes from the team's auto-lock kinds
-    add: ["Content/Maps/**"]
-    remove: ["*.uasset"]
-  # or: auto_lock: off    # this project: manual locks only
-```
-
-`add` and `remove` take patterns as rules do (folders too); `remove` wins. When the team's file locking is off, the project's settings do nothing (`enabled: true` doesn't turn it on), and the app's view of the file says so. R3V before 0.1.25 doesn't know `file_locks:` and refuses the file: set `requires: "0.1.25"` when you add it.
+R3V before 0.1.75 read a `file_locks:` section here, which could only narrow the team's settings. R3V no longer reads it: a project whose `.r3v.yaml` still has one shows a note, and an admin can move it into the project's settings (which takes the section out of the file: commit that).
 
 ## Checking the rules
 

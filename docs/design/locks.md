@@ -34,22 +34,13 @@ In team.json (admins write it): `"locks": {"on": bool, "kinds": [...]}`.
 `images`, `models`, `audio`, `video`; see `profile.LockKinds`). Turning it
 on adds the team feature `locks`.
 
-**A project's own**, in its `.r3v.yaml`, versioned with it. A project
-only narrows the team's settings, never widens them: with the team's
-locking off, `enabled: true` does nothing (the service reads only the
-team's switch), and the app says so.
-
-```yaml
-file_locks:
-  enabled: false          # this project: no locks at all
-  auto_lock:              # adds to / removes from the team's auto-lock kinds
-    add: ["Content/Maps/**"]
-    remove: ["*.uasset"]
-  # or: auto_lock: off    # this project: manual locks only
-```
-
-`add` and `remove` take patterns as rules do (folders allowed); `remove`
-wins.
+**A project's own**, in its record in the team's storage (since 0.1.75;
+docs/design/team-settings.md): the team's switch is a default, and a
+project can turn locking on or off for itself, pick other kinds, or add
+paths that lock by themselves or never do (patterns as rules take them,
+folders allowed; never-lock wins). Admins change both. Before, a project
+narrowed the team's in its `.r3v.yaml` (`file_locks:`); that is no longer
+read, and the app offers to move it.
 
 Auto-locked at first (when on): Unreal `.umap .uasset`; Unity `.unity
 .prefab .asset`; Godot `.scn .res` (binary); Blender `.blend`; source art
