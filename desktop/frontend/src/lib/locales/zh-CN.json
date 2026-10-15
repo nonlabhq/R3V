@@ -1818,5 +1818,9 @@
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "直接在这个文件夹（不是工作区）工作的 agent，在 R3V 的 hook 加进它的设置（.claude/settings.local.json，不纳入版本）后就会记录步骤。",
 "Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "已设置：Claude Code 从下一个提示起在这里记录步骤（若正在运行请重新启动）。",
 "{who} merged “{version}”": "{who} 合并了“{version}”",
-"{who} shared “{version}”": "{who} 上传了“{version}”"
+"{who} shared “{version}”": "{who} 上传了“{version}”",
+"Workflow": "工作流程",
+"No one has shared in this team yet.": "这个团队还没有人上传过。",
+"Anyone with the team's connection code is in it: there are no roles to manage on a team's own storage.": "有团队连接码的人都在团队里：团队自己的存储没有角色可以管理。",
+"File locking needs a team on R3V Cloud: it keeps who is changing which file.": "文件锁定需要 R3V Cloud 上的团队：它记录谁正在修改哪个文件。"
 }

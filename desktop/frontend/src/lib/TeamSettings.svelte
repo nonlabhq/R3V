@@ -15,13 +15,15 @@
   import TeamLocks from "./TeamLocks.svelte";
   import LookPicker from "./LookPicker.svelte";
   import TeamMark from "$shared/TeamMark.svelte";
+  import TeamMembers from "./TeamMembers.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
   // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false }: {
+  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs = false }: {
     team: TeamSummary;
     inline?: boolean;      // in the team's home, not a dialog
+    tabs?: boolean;        // in tabs down the left (Nightly: docs/design/team-settings.md)
     teams?: TeamSummary[]; // the teams here (where it can move to)
     canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
     offline?: boolean; // its storage can't be reached now
@@ -199,9 +201,50 @@
     }
   }
   let movingTeam = $state(false); // the move to R3V Cloud open
+
+  // The tabs (team-settings.md): General, then Workflow; the one picked is
+  // remembered.
+  type Tab = "general" | "workflow";
+  const TAB_KEY = "r3v.teamSettingsTab";
+  let tab = $state<Tab>((() => { try { return localStorage.getItem(TAB_KEY) === "workflow" ? "workflow" : "general"; } catch { return "general"; } })());
+  function pick(x: Tab) {
+    tab = x;
+    try { localStorage.setItem(TAB_KEY, x); } catch { /* not remembered */ }
+  }
+  const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow" };
 </script>
 
 {#snippet body()}
+  {@render naming()}
+  {#if team.hosted}
+    {@render myName()}
+    <CloudPeople {team} />
+    {#if !offline}<TeamLocks {team} />{/if}
+  {:else}
+    {@render myName()}
+  {/if}
+  {@render rest()}
+{/snippet}
+
+{#snippet general()}
+  {@render naming()}
+  {@render myName()}
+  {#if team.hosted}<CloudPeople {team} />{:else if !offline}<TeamMembers {team} />{/if}
+  {@render rest()}
+{/snippet}
+
+{#snippet workflow()}
+  {#if team.hosted}
+    {#if !offline}<TeamLocks {team} />{/if}
+  {:else}
+    <section>
+      <h3>{t("File locking")}</h3>
+      <p class="faint small">{t("File locking needs a team on R3V Cloud: it keeps who is changing which file.")}</p>
+    </section>
+  {/if}
+{/snippet}
+
+{#snippet naming()}
   <section>
     <h3>{t("Name")}</h3>
     <div class="name-line">
@@ -225,16 +268,15 @@
       </div>
     {/if}
   </section>
+{/snippet}
 
+{#snippet myName()}
   {#if team.hosted}
   <section>
     <h3>{t("Your name in this team")}</h3>
     <span class="myname">{team.memberName}</span>
     <p class="faint small">{t("Your name comes from your R3V-Cloud account.")}</p>
   </section>
-
-  <CloudPeople {team} />
-  {#if !offline}<TeamLocks {team} />{/if}
   {:else}
   <section>
     <h3>{t("Your name in this team")}</h3>
@@ -252,7 +294,9 @@
     {/if}
   </section>
   {/if}
+{/snippet}
 
+{#snippet rest()}
   {#if team.isStorage}
     <section>
       <h3>{t("Invite teammates")}</h3>
@@ -363,7 +407,23 @@
     }}>{team.hosted ? (team.noAccess ? t("Remove the team…") : t("Leave the team…")) : t("Disconnect…")}</button>
 {/snippet}
 
-{#if inline}
+{#if inline && tabs}
+  <div class="tabbed">
+    <nav class="tabs" aria-label={t("Team settings")}>
+      {#each ["general", "workflow"] as const as x (x)}
+        <button class:on={tab === x} aria-current={tab === x ? "page" : undefined} onclick={() => pick(x)}>{t(tabNames[x])}</button>
+      {/each}
+    </nav>
+    <div class="inline">
+      {#if tab === "workflow"}
+        {@render workflow()}
+      {:else}
+        {@render general()}
+        <div class="inline-foot">{@render leave()}</div>
+      {/if}
+    </div>
+  </div>
+{:else if inline}
   <div class="inline">
     {@render body()}
     <div class="inline-foot">{@render leave()}</div>
@@ -420,6 +480,13 @@
 
 <style>
   .inline { max-width: 720px; }
+  .tabbed { display: flex; align-items: flex-start; gap: var(--sp-28); }
+  .tabbed .inline { flex: 1; min-width: 0; }
+  .tabs { flex: none; width: 160px; display: flex; flex-direction: column; gap: var(--sp-2); position: sticky; top: 0; }
+  .tabs button { justify-content: flex-start; text-align: left; border: none; background: transparent; color: var(--muted);
+    padding: var(--sp-6) var(--sp-10); border-radius: var(--radius); font-size: var(--fs-base); }
+  .tabs button:hover:not(:disabled) { background: var(--hover-soft); color: var(--text); }
+  .tabs button.on { background: var(--panel-2); color: var(--text); font-weight: var(--fw-semibold); }
   .inline-foot { padding-top: var(--sp-12); border-top: var(--border-width) solid var(--line); }
   .move { display: flex; align-items: flex-start; gap: var(--sp-12); }
   .move p { flex: 1; margin: 0; }

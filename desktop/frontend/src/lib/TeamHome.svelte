@@ -102,7 +102,7 @@
     {/if}
   {:else}
     {#key team.id}
-      <TeamSettings {team} inline author={overview.author} {reload} onclose={() => (section = "projects")}
+      <TeamSettings {team} inline tabs={canMove} author={overview.author} {reload} onclose={() => (section = "projects")}
         teams={overview.teams} {canMove} offline={!!overview.teamError}
         roots={projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root)} />
     {/key}

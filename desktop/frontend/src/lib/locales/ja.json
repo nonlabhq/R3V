@@ -1818,5 +1818,9 @@
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "このフォルダー自体（ワークスペースではなく）で作業するエージェントは、R3V の hook が設定（.claude/settings.local.json、バージョン管理されない）に入るとステップを記録します。",
 "Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "設定しました：次のプロンプトから Claude Code がここでステップを記録します（起動中なら再起動してください）。",
 "{who} merged “{version}”": "{who} が「{version}」をマージ",
-"{who} shared “{version}”": "{who} が「{version}」を共有"
+"{who} shared “{version}”": "{who} が「{version}」を共有",
+"Workflow": "ワークフロー",
+"No one has shared in this team yet.": "このチームではまだ誰も共有していません。",
+"Anyone with the team's connection code is in it: there are no roles to manage on a team's own storage.": "チームの接続コードを持っている人は誰でもメンバーです。チーム独自のストレージでは管理する役割はありません。",
+"File locking needs a team on R3V Cloud: it keeps who is changing which file.": "ファイルロックには R3V Cloud のチームが必要です。誰がどのファイルを変更しているかを記録します。"
 }

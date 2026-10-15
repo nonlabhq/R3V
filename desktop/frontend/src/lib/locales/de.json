@@ -1818,5 +1818,9 @@
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "Ein Agent, der direkt in diesem Ordner arbeitet (nicht in einem Arbeitsbereich), macht Schritte, sobald die Hooks von R3V in seinen Einstellungen sind (.claude/settings.local.json, nie versioniert).",
 "Set up: Claude Code makes steps here from its next prompt (start it again if it's running).": "Eingerichtet: Claude Code macht hier ab dem nächsten Prompt Schritte (neu starten, wenn es läuft).",
 "{who} merged “{version}”": "{who} hat „{version}“ zusammengeführt",
-"{who} shared “{version}”": "{who} hat „{version}“ geteilt"
+"{who} shared “{version}”": "{who} hat „{version}“ geteilt",
+"Workflow": "Arbeitsablauf",
+"No one has shared in this team yet.": "In diesem Team hat noch niemand etwas geteilt.",
+"Anyone with the team's connection code is in it: there are no roles to manage on a team's own storage.": "Wer den Verbindungscode des Teams hat, gehört dazu: Auf eigenem Speicher gibt es keine Rollen zu verwalten.",
+"File locking needs a team on R3V Cloud: it keeps who is changing which file.": "Dateisperren brauchen ein Team auf R3V Cloud: Es merkt sich, wer welche Datei ändert."
 }
