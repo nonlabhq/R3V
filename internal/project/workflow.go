@@ -1,7 +1,10 @@
 package project
 
 import (
+	"errors"
+	"io/fs"
 	"path/filepath"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/remote"
@@ -45,7 +48,14 @@ func LockingFor(s remote.LockSettings, p *remote.ProjectLocks) profile.Locking {
 // here (Project), set on this computer.
 func (r *Repo) Workflow() TeamWorkflow {
 	var w TeamWorkflow
-	if readJSON(filepath.Join(r.AgentLockList().Dir(), workflowFile), &w) != nil {
+	path := filepath.Join(r.AgentLockList().Dir(), workflowFile)
+	err := readJSON(path, &w)
+	// (being replaced right now, by a refresh: Windows says so for a moment)
+	for try := 0; err != nil && !errors.Is(err, fs.ErrNotExist) && try < 5; try++ {
+		time.Sleep(20 * time.Millisecond)
+		w, err = TeamWorkflow{}, readJSON(path, &w)
+	}
+	if err != nil {
 		// (read by an R3V before workflow settings: the team's lock settings)
 		var s remote.LockSettings
 		if readJSON(filepath.Join(r.AgentLockList().Dir(), teamLocksFile), &s) == nil {
