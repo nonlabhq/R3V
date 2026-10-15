@@ -81,18 +81,39 @@ An older R3V ignores a project's overrides. For each setting:
 
 ## Workflow: what's in it
 
-### File locking (as today, plus the override)
+### File locking
 
-On or off, and which kinds of file lock by themselves. R3V Cloud teams
-only, as today: on a team on its own storage the section says it needs R3V
-Cloud.
+R3V Cloud teams only: the service keeps who holds what. On a team's own
+storage the section says it needs R3V Cloud.
+
+- **The team's:** on or off for projects, and the kinds of file that lock
+  by themselves (`team.json` `locks`: `on`, `kinds`, and `default`).
+- **A project's own** (its record, `workflow.locks`): on or off, other
+  kinds, manual locks only, and paths of its own that lock by themselves or
+  never do ("Content/Maps/", "*.uasset"). Anything it doesn't set follows
+  the team.
+- **Team off, a project on:** the service has to keep locks for that
+  project, so `on` stays true for the team's service and `default: false`
+  says projects don't lock unless they say so. In a project that doesn't,
+  nothing is ever locked, so the service's check never stops anyone.
+  `default` is new: an R3V that knows locks but not it would lock in every
+  project, so writing it turns the `workflow` feature on.
+- **"Apply the team's to every project"** clears what projects set for
+  locking (or for agents), in one go.
+- **`.r3v.yaml`'s `file_locks:`** (where a project narrowed locks before)
+  is no longer read: the settings are the team's, shared at once, changed
+  by admins, never a file a member commits. A project whose file still has
+  it shows a note, and an admin can move it into the project's settings,
+  which also takes the section out of the file (a change to commit). Older
+  R3Vs still read the file, and it only ever narrows, so that's safe.
 
 ### Agents
 
 | Setting | Team default | Project | Person |
 |---|---|---|---|
-| Record agents' steps | on | can override | — |
+| Record agents' steps | on | can override | can say "none here" |
 | Keep prompts with the steps | on | can override | can say "not mine" |
+| Agents take turns on files that can't be merged | on | can override | — |
 
 - **Record steps** off: agents' work still makes versions, but no steps
   between them (today's `StepSettings.Off`).
@@ -101,12 +122,20 @@ Cloud.
   the project says. That choice is per person on this computer: it can only
   keep more out, never less.
 
-Today both are this computer's choice per project (`StepSettings` in the
-copy's config). They become the team's, with these steps:
-1. The first time this R3V reads a project with the team's settings, a
-   choice this computer made that is stricter than the team's stays as the
-   person's own ("not mine"). One that is looser goes.
-2. Projects the team never set follow R3V's defaults (both on), as today.
+- **Take turns** (agent locks, docs/design/agent-workspaces.md): between a
+  project's workspaces on one computer, a file that can't be merged is
+  changed by one at a time. Every team has it, a team's own storage too:
+  it needs no service. Its kinds are the project's own, else the team's
+  file-locking kinds, else every kind that can't be merged.
+
+This computer's choices (`StepSettings` in the copy's config, as before)
+stay, as the person's own: they only ever keep more out. A project of no
+team keeps its settings on this computer.
+
+The agents' hooks run on every tool call and can't ask the team: the
+team's and the project's settings are kept beside the copy's agent lock
+list (`workflow.json`), read again when an agent's session starts and
+whenever the app shows or changes them.
 
 ## Activity
 
@@ -128,7 +157,7 @@ already, plus a small team log for what it doesn't.
   needed. What happened before the log existed isn't shown.
 
 Each line names the project and links to the version in its graph. Filters:
-a project, a person, agents or not. The page reads the last 30 days, and
+a project, each member, each agent (by tool), agents or people. The page reads the last 30 days, and
 more on request; the branch log is read per project, so a team of many
 projects reads them a few at a time.
 

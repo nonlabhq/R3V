@@ -8,6 +8,7 @@ export {
 
 export {
     Actor,
+    AgentWorkflow,
     AgentWorkspace,
     ArchivedBranch,
     BackupInfo,
@@ -47,6 +48,7 @@ export {
     Profile,
     ProjectFile,
     ProjectInfo,
+    ProjectWorkflowView,
     RestorePlan,
     RestoreSource,
     Result,
@@ -73,6 +75,7 @@ export {
     TeamProject,
     TeamProjects,
     TeamSummary,
+    TeamWorkflowView,
     TextChanges,
     TextContent,
     TrackWeight,
@@ -82,6 +85,7 @@ export {
     VerifyProblem,
     VerifyResult,
     Version,
+    WorkflowOverride,
     Workspace,
     WorkspaceAdded,
     WorkspaceLeft,

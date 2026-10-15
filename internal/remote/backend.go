@@ -75,6 +75,9 @@ type Project struct {
 	// Picture: its own picture's SHA-256 (see SetProjectPicture), shown
 	// instead of the icon; "" for none.
 	Picture string `json:"picture,omitempty"`
+	// Workflow: what the project sets for itself over the team's (see
+	// workflow.go); nil: as the team in everything.
+	Workflow *Workflow `json:"workflow,omitempty"`
 	// Extra: fields a newer R3V wrote, kept when this one rewrites the record.
 	Extra jsonx.Extra `json:"-"`
 }
@@ -155,6 +158,8 @@ type TeamInfo struct {
 	MovedTo string    `json:"movedTo,omitempty"`
 	// Locks: the team's file locks settings (hosted teams; see locks.go).
 	Locks *LockSettings `json:"locks,omitempty"`
+	// Workflow: the team's workflow defaults (see workflow.go).
+	Workflow *Workflow `json:"workflow,omitempty"`
 	// Icon, Color and Picture: how the team shows, as a project does (see
 	// SetTeamLook, SetTeamPicture); "" for the app's pick.
 	Icon    string `json:"icon,omitempty"`

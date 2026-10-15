@@ -122,8 +122,15 @@ func (r *Repo) stepSettings() StepSettings {
 	return *r.Config.Steps
 }
 
-// StepsOn: this copy makes steps.
-func (r *Repo) StepsOn() bool { return Steps && !r.stepSettings().Off }
+// StepsOn: this copy makes steps (the team's workflow says so, and this
+// copy didn't turn them off).
+func (r *Repo) StepsOn() bool { return Steps && !r.stepSettings().Off && r.Workflow().StepsByTeam() }
+
+// keepsPrompts: prompts are kept with the steps (by the team's workflow and
+// this copy's own choice).
+func (r *Repo) keepsPrompts() bool {
+	return !r.stepSettings().NoPrompts && r.Workflow().PromptsByTeam()
+}
 
 // SetStepSettings changes this copy's choices about steps.
 func (r *Repo) SetStepSettings(s StepSettings) error {
@@ -204,7 +211,7 @@ func (r *Repo) StepTurn(session, prompt, transcript string) error {
 	}
 	turn, _ := lastOf(lines)
 	l := stepLine{Turn: turn + 1, Time: time.Now().UTC().Format(time.RFC3339), Transcript: transcript}
-	if !r.stepSettings().NoPrompts {
+	if r.keepsPrompts() {
 		if len(prompt) > maxPrompt {
 			prompt = prompt[:maxPrompt] + "…"
 		}

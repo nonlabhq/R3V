@@ -60,6 +60,49 @@ export class Actor {
 }
 
 /**
+ * AgentWorkflow is what a team or a project says about agents.
+ */
+export class AgentWorkflow {
+    /**
+     * agents' steps are recorded
+     */
+    "steps": boolean;
+
+    /**
+     * with what was asked
+     */
+    "prompts": boolean;
+
+    /**
+     * workspaces take turns on files that can't be merged
+     */
+    "agentLocks": boolean;
+
+    /** Creates a new AgentWorkflow instance. */
+    constructor($$source: Partial<AgentWorkflow> = {}) {
+        if (!("steps" in $$source)) {
+            this["steps"] = false;
+        }
+        if (!("prompts" in $$source)) {
+            this["prompts"] = false;
+        }
+        if (!("agentLocks" in $$source)) {
+            this["agentLocks"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AgentWorkflow instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AgentWorkflow {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AgentWorkflow($$parsedSource as Partial<AgentWorkflow>);
+    }
+}
+
+/**
  * AgentWorkspace is a workspace of a project, as the Agents view shows it.
  */
 export class AgentWorkspace {
@@ -2203,6 +2246,123 @@ export class ProjectInfo {
 }
 
 /**
+ * ProjectWorkflowView is a project's Workflow section: the team's, the
+ * project's own (nil: as the team's), and this computer's choices.
+ */
+export class ProjectWorkflowView {
+    /**
+     * the project is a team's (else all is this computer's)
+     */
+    "team": boolean;
+    "canEdit": boolean;
+
+    /**
+     * file locking can be had
+     */
+    "locks": boolean;
+
+    /**
+     * The team's locks (on by default, kinds) and the project's own.
+     */
+    "teamLocksOn": boolean;
+    "teamKinds": string[];
+    "ownLocks": remote$0.ProjectLocks | null;
+    "all": profile$0.LockKind[];
+
+    /**
+     * The team's agents' settings and the project's own (nil: as the team).
+     */
+    "teamAgents": AgentWorkflow;
+    "steps": boolean | null;
+    "prompts": boolean | null;
+    "agentLocks": boolean | null;
+
+    /**
+     * Mine: this computer's own choices about steps (only ever stricter).
+     */
+    "mine": project$0.StepSettings;
+
+    /**
+     * RulesLocks: the project's .r3v.yaml still has file_locks: (no longer
+     * read: offered to move here).
+     */
+    "rulesLocks": boolean;
+
+    /** Creates a new ProjectWorkflowView instance. */
+    constructor($$source: Partial<ProjectWorkflowView> = {}) {
+        if (!("team" in $$source)) {
+            this["team"] = false;
+        }
+        if (!("canEdit" in $$source)) {
+            this["canEdit"] = false;
+        }
+        if (!("locks" in $$source)) {
+            this["locks"] = false;
+        }
+        if (!("teamLocksOn" in $$source)) {
+            this["teamLocksOn"] = false;
+        }
+        if (!("teamKinds" in $$source)) {
+            this["teamKinds"] = [];
+        }
+        if (!("ownLocks" in $$source)) {
+            this["ownLocks"] = null;
+        }
+        if (!("all" in $$source)) {
+            this["all"] = [];
+        }
+        if (!("teamAgents" in $$source)) {
+            this["teamAgents"] = (new AgentWorkflow());
+        }
+        if (!("steps" in $$source)) {
+            this["steps"] = null;
+        }
+        if (!("prompts" in $$source)) {
+            this["prompts"] = null;
+        }
+        if (!("agentLocks" in $$source)) {
+            this["agentLocks"] = null;
+        }
+        if (!("mine" in $$source)) {
+            this["mine"] = (new project$0.StepSettings());
+        }
+        if (!("rulesLocks" in $$source)) {
+            this["rulesLocks"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ProjectWorkflowView instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ProjectWorkflowView {
+        const $$createField4_0 = $$createType10;
+        const $$createField5_0 = $$createType42;
+        const $$createField6_0 = $$createType44;
+        const $$createField7_0 = $$createType45;
+        const $$createField11_0 = $$createType46;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("teamKinds" in $$parsedSource) {
+            $$parsedSource["teamKinds"] = $$createField4_0($$parsedSource["teamKinds"]);
+        }
+        if ("ownLocks" in $$parsedSource) {
+            $$parsedSource["ownLocks"] = $$createField5_0($$parsedSource["ownLocks"]);
+        }
+        if ("all" in $$parsedSource) {
+            $$parsedSource["all"] = $$createField6_0($$parsedSource["all"]);
+        }
+        if ("teamAgents" in $$parsedSource) {
+            $$parsedSource["teamAgents"] = $$createField7_0($$parsedSource["teamAgents"]);
+        }
+        if ("mine" in $$parsedSource) {
+            $$parsedSource["mine"] = $$createField11_0($$parsedSource["mine"]);
+        }
+        return new ProjectWorkflowView($$parsedSource as Partial<ProjectWorkflowView>);
+    }
+}
+
+/**
  * RestorePlan is what restoring a backup into the team's storage would
  * bring back (see backup.MakePlan).
  */
@@ -2266,7 +2426,7 @@ export class RestorePlan {
      */
     static createFrom($$source: any = {}): RestorePlan {
         const $$createField3_0 = $$createType10;
-        const $$createField4_0 = $$createType42;
+        const $$createField4_0 = $$createType48;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("runs" in $$parsedSource) {
             $$parsedSource["runs"] = $$createField3_0($$parsedSource["runs"]);
@@ -2304,7 +2464,7 @@ export class RestoreSource {
      * Creates a new RestoreSource instance from a string or object.
      */
     static createFrom($$source: any = {}): RestoreSource {
-        const $$createField1_0 = $$createType44;
+        const $$createField1_0 = $$createType50;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("storage" in $$parsedSource) {
             $$parsedSource["storage"] = $$createField1_0($$parsedSource["storage"]);
@@ -2422,9 +2582,9 @@ export class Result {
         const $$createField7_0 = $$createType35;
         const $$createField8_0 = $$createType5;
         const $$createField9_0 = $$createType5;
-        const $$createField10_0 = $$createType46;
+        const $$createField10_0 = $$createType52;
         const $$createField11_0 = $$createType26;
-        const $$createField12_0 = $$createType48;
+        const $$createField12_0 = $$createType54;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("log" in $$parsedSource) {
             $$parsedSource["log"] = $$createField1_0($$parsedSource["log"]);
@@ -2643,10 +2803,10 @@ export class RulesDetail {
      * Creates a new RulesDetail instance from a string or object.
      */
     static createFrom($$source: any = {}): RulesDetail {
-        const $$createField0_0 = $$createType50;
-        const $$createField1_0 = $$createType52;
-        const $$createField2_0 = $$createType54;
-        const $$createField3_0 = $$createType56;
+        const $$createField0_0 = $$createType56;
+        const $$createField1_0 = $$createType58;
+        const $$createField2_0 = $$createType60;
+        const $$createField3_0 = $$createType62;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("presets" in $$parsedSource) {
             $$parsedSource["presets"] = $$createField0_0($$parsedSource["presets"]);
@@ -2711,8 +2871,8 @@ export class RulesInfo {
      * Creates a new RulesInfo instance from a string or object.
      */
     static createFrom($$source: any = {}): RulesInfo {
-        const $$createField0_0 = $$createType58;
-        const $$createField3_0 = $$createType54;
+        const $$createField0_0 = $$createType64;
+        const $$createField3_0 = $$createType60;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("applied" in $$parsedSource) {
             $$parsedSource["applied"] = $$createField0_0($$parsedSource["applied"]);
@@ -2801,11 +2961,11 @@ export class RulesState {
      * Creates a new RulesState instance from a string or object.
      */
     static createFrom($$source: any = {}): RulesState {
-        const $$createField4_0 = $$createType50;
-        const $$createField5_0 = $$createType52;
-        const $$createField6_0 = $$createType56;
-        const $$createField7_0 = $$createType59;
-        const $$createField8_0 = $$createType61;
+        const $$createField4_0 = $$createType56;
+        const $$createField5_0 = $$createType58;
+        const $$createField6_0 = $$createType62;
+        const $$createField7_0 = $$createType65;
+        const $$createField8_0 = $$createType67;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("presets" in $$parsedSource) {
             $$parsedSource["presets"] = $$createField4_0($$parsedSource["presets"]);
@@ -3056,11 +3216,11 @@ export class SetView {
      * Creates a new SetView instance from a string or object.
      */
     static createFrom($$source: any = {}): SetView {
-        const $$createField0_0 = $$createType63;
-        const $$createField1_0 = $$createType63;
+        const $$createField0_0 = $$createType69;
+        const $$createField1_0 = $$createType69;
         const $$createField2_0 = $$createType10;
         const $$createField3_0 = $$createType10;
-        const $$createField6_0 = $$createType65;
+        const $$createField6_0 = $$createType71;
         const $$createField7_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("now" in $$parsedSource) {
@@ -3357,16 +3517,16 @@ export class State {
         const $$createField17_0 = $$createType10;
         const $$createField18_0 = $$createType5;
         const $$createField20_0 = $$createType5;
-        const $$createField22_0 = $$createType66;
+        const $$createField22_0 = $$createType72;
         const $$createField24_0 = $$createType37;
         const $$createField25_0 = $$createType10;
-        const $$createField26_0 = $$createType68;
+        const $$createField26_0 = $$createType74;
         const $$createField27_0 = $$createType35;
         const $$createField28_0 = $$createType35;
         const $$createField29_0 = $$createType35;
         const $$createField30_0 = $$createType9;
-        const $$createField32_0 = $$createType70;
-        const $$createField33_0 = $$createType72;
+        const $$createField32_0 = $$createType76;
+        const $$createField33_0 = $$createType78;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("rules" in $$parsedSource) {
             $$parsedSource["rules"] = $$createField0_0($$parsedSource["rules"]);
@@ -3464,9 +3624,9 @@ export class StepsInfo {
      * Creates a new StepsInfo instance from a string or object.
      */
     static createFrom($$source: any = {}): StepsInfo {
-        const $$createField2_0 = $$createType73;
-        const $$createField4_0 = $$createType75;
-        const $$createField5_0 = $$createType77;
+        const $$createField2_0 = $$createType46;
+        const $$createField4_0 = $$createType80;
+        const $$createField5_0 = $$createType82;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("settings" in $$parsedSource) {
             $$parsedSource["settings"] = $$createField2_0($$parsedSource["settings"]);
@@ -3653,7 +3813,7 @@ export class TeamConnection {
      * Creates a new TeamConnection instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamConnection {
-        const $$createField1_0 = $$createType43;
+        const $$createField1_0 = $$createType49;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("settings" in $$parsedSource) {
             $$parsedSource["settings"] = $$createField1_0($$parsedSource["settings"]);
@@ -3737,7 +3897,7 @@ export class TeamLocks {
      */
     static createFrom($$source: any = {}): TeamLocks {
         const $$createField2_0 = $$createType10;
-        const $$createField4_0 = $$createType79;
+        const $$createField4_0 = $$createType44;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kinds" in $$parsedSource) {
             $$parsedSource["kinds"] = $$createField2_0($$parsedSource["kinds"]);
@@ -3878,9 +4038,9 @@ export class TeamPart {
         const $$createField4_0 = $$createType35;
         const $$createField5_0 = $$createType35;
         const $$createField6_0 = $$createType5;
-        const $$createField8_0 = $$createType80;
-        const $$createField10_0 = $$createType70;
-        const $$createField11_0 = $$createType72;
+        const $$createField8_0 = $$createType83;
+        const $$createField10_0 = $$createType76;
+        const $$createField11_0 = $$createType78;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("branches" in $$parsedSource) {
             $$parsedSource["branches"] = $$createField2_0($$parsedSource["branches"]);
@@ -4194,6 +4354,80 @@ export class TeamSummary {
 }
 
 /**
+ * TeamWorkflowView is a team's Workflow tab.
+ */
+export class TeamWorkflowView {
+    "canEdit": boolean;
+
+    /**
+     * Locks: file locking can be had (an R3V Cloud team, a build with it);
+     * LocksOn: projects lock unless they say otherwise; Kinds: those that
+     * lock by themselves.
+     */
+    "locks": boolean;
+    "locksOn": boolean;
+    "kinds": string[];
+    "all": profile$0.LockKind[];
+    "agents": AgentWorkflow;
+
+    /**
+     * Overrides: the projects setting some of their own.
+     */
+    "overrides": WorkflowOverride[];
+
+    /** Creates a new TeamWorkflowView instance. */
+    constructor($$source: Partial<TeamWorkflowView> = {}) {
+        if (!("canEdit" in $$source)) {
+            this["canEdit"] = false;
+        }
+        if (!("locks" in $$source)) {
+            this["locks"] = false;
+        }
+        if (!("locksOn" in $$source)) {
+            this["locksOn"] = false;
+        }
+        if (!("kinds" in $$source)) {
+            this["kinds"] = [];
+        }
+        if (!("all" in $$source)) {
+            this["all"] = [];
+        }
+        if (!("agents" in $$source)) {
+            this["agents"] = (new AgentWorkflow());
+        }
+        if (!("overrides" in $$source)) {
+            this["overrides"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TeamWorkflowView instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TeamWorkflowView {
+        const $$createField3_0 = $$createType10;
+        const $$createField4_0 = $$createType44;
+        const $$createField5_0 = $$createType45;
+        const $$createField6_0 = $$createType85;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("kinds" in $$parsedSource) {
+            $$parsedSource["kinds"] = $$createField3_0($$parsedSource["kinds"]);
+        }
+        if ("all" in $$parsedSource) {
+            $$parsedSource["all"] = $$createField4_0($$parsedSource["all"]);
+        }
+        if ("agents" in $$parsedSource) {
+            $$parsedSource["agents"] = $$createField5_0($$parsedSource["agents"]);
+        }
+        if ("overrides" in $$parsedSource) {
+            $$parsedSource["overrides"] = $$createField6_0($$parsedSource["overrides"]);
+        }
+        return new TeamWorkflowView($$parsedSource as Partial<TeamWorkflowView>);
+    }
+}
+
+/**
  * TextChanges is how a text file changed, line by line.
  */
 export class TextChanges {
@@ -4255,7 +4489,7 @@ export class TextChanges {
      * Creates a new TextChanges instance from a string or object.
      */
     static createFrom($$source: any = {}): TextChanges {
-        const $$createField4_0 = $$createType82;
+        const $$createField4_0 = $$createType87;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("hunks" in $$parsedSource) {
             $$parsedSource["hunks"] = $$createField4_0($$parsedSource["hunks"]);
@@ -4395,7 +4629,7 @@ export class UndoPlan {
         const $$createField0_0 = $$createType10;
         const $$createField1_0 = $$createType10;
         const $$createField2_0 = $$createType39;
-        const $$createField4_0 = $$createType83;
+        const $$createField4_0 = $$createType88;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changed" in $$parsedSource) {
             $$parsedSource["changed"] = $$createField0_0($$parsedSource["changed"]);
@@ -4606,7 +4840,7 @@ export class VerifyResult {
      * Creates a new VerifyResult instance from a string or object.
      */
     static createFrom($$source: any = {}): VerifyResult {
-        const $$createField3_0 = $$createType85;
+        const $$createField3_0 = $$createType90;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("problems" in $$parsedSource) {
             $$parsedSource["problems"] = $$createField3_0($$parsedSource["problems"]);
@@ -4708,7 +4942,7 @@ export class Version {
     static createFrom($$source: any = {}): Version {
         const $$createField5_0 = $$createType10;
         const $$createField6_0 = $$createType10;
-        const $$createField11_0 = $$createType87;
+        const $$createField11_0 = $$createType92;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("parents" in $$parsedSource) {
             $$parsedSource["parents"] = $$createField5_0($$parsedSource["parents"]);
@@ -4720,6 +4954,42 @@ export class Version {
             $$parsedSource["actor"] = $$createField11_0($$parsedSource["actor"]);
         }
         return new Version($$parsedSource as Partial<Version>);
+    }
+}
+
+/**
+ * WorkflowOverride is a project setting its own.
+ */
+export class WorkflowOverride {
+    "projectId": string;
+    "name": string;
+    "locks": boolean;
+    "agents": boolean;
+
+    /** Creates a new WorkflowOverride instance. */
+    constructor($$source: Partial<WorkflowOverride> = {}) {
+        if (!("projectId" in $$source)) {
+            this["projectId"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("locks" in $$source)) {
+            this["locks"] = false;
+        }
+        if (!("agents" in $$source)) {
+            this["agents"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new WorkflowOverride instance from a string or object.
+     */
+    static createFrom($$source: any = {}): WorkflowOverride {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new WorkflowOverride($$parsedSource as Partial<WorkflowOverride>);
     }
 }
 
@@ -4918,7 +5188,7 @@ export class WorkspaceRemoval {
      * Creates a new WorkspaceRemoval instance from a string or object.
      */
     static createFrom($$source: any = {}): WorkspaceRemoval {
-        const $$createField1_0 = $$createType89;
+        const $$createField1_0 = $$createType94;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("left" in $$parsedSource) {
             $$parsedSource["left"] = $$createField1_0($$parsedSource["left"]);
@@ -5013,52 +5283,57 @@ const $$createType37 = $Create.Array($$createType36);
 const $$createType38 = Conflict.createFrom;
 const $$createType39 = $Create.Array($$createType38);
 const $$createType40 = RulesInfo.createFrom;
-const $$createType41 = backup$0.PlanProject.createFrom;
-const $$createType42 = $Create.Array($$createType41);
-const $$createType43 = remote$0.Storage.createFrom;
-const $$createType44 = $Create.Nullable($$createType43);
-const $$createType45 = Combined.createFrom;
-const $$createType46 = $Create.Array($$createType45);
-const $$createType47 = Parking.createFrom;
-const $$createType48 = $Create.Nullable($$createType47);
-const $$createType49 = profile$0.PresetEntry.createFrom;
-const $$createType50 = $Create.Array($$createType49);
-const $$createType51 = RuleItem.createFrom;
+const $$createType41 = remote$0.ProjectLocks.createFrom;
+const $$createType42 = $Create.Nullable($$createType41);
+const $$createType43 = profile$0.LockKind.createFrom;
+const $$createType44 = $Create.Array($$createType43);
+const $$createType45 = AgentWorkflow.createFrom;
+const $$createType46 = project$0.StepSettings.createFrom;
+const $$createType47 = backup$0.PlanProject.createFrom;
+const $$createType48 = $Create.Array($$createType47);
+const $$createType49 = remote$0.Storage.createFrom;
+const $$createType50 = $Create.Nullable($$createType49);
+const $$createType51 = Combined.createFrom;
 const $$createType52 = $Create.Array($$createType51);
-const $$createType53 = RuleSuggestion.createFrom;
-const $$createType54 = $Create.Array($$createType53);
-const $$createType55 = PresetOption.createFrom;
+const $$createType53 = Parking.createFrom;
+const $$createType54 = $Create.Nullable($$createType53);
+const $$createType55 = profile$0.PresetEntry.createFrom;
 const $$createType56 = $Create.Array($$createType55);
-const $$createType57 = profile$0.Applied.createFrom;
+const $$createType57 = RuleItem.createFrom;
 const $$createType58 = $Create.Array($$createType57);
-const $$createType59 = profile$0.FileLocks.createFrom;
-const $$createType60 = TeamLockSide.createFrom;
-const $$createType61 = $Create.Nullable($$createType60);
-const $$createType62 = als$0.Overview.createFrom;
-const $$createType63 = $Create.Nullable($$createType62);
-const $$createType64 = SetTrackChange.createFrom;
-const $$createType65 = $Create.Array($$createType64);
-const $$createType66 = $Create.Array($$createType31);
-const $$createType67 = project$0.TrackEdit.createFrom;
-const $$createType68 = $Create.Array($$createType67);
-const $$createType69 = ArchivedBranch.createFrom;
-const $$createType70 = $Create.Nullable($$createType69);
-const $$createType71 = Milestone.createFrom;
-const $$createType72 = $Create.Array($$createType71);
-const $$createType73 = project$0.StepSettings.createFrom;
-const $$createType74 = project$0.Session.createFrom;
-const $$createType75 = $Create.Nullable($$createType74);
-const $$createType76 = SessionSummary.createFrom;
-const $$createType77 = $Create.Array($$createType76);
-const $$createType78 = profile$0.LockKind.createFrom;
-const $$createType79 = $Create.Array($$createType78);
-const $$createType80 = remote$0.Capabilities.createFrom;
-const $$createType81 = textdiff$0.Hunk.createFrom;
+const $$createType59 = RuleSuggestion.createFrom;
+const $$createType60 = $Create.Array($$createType59);
+const $$createType61 = PresetOption.createFrom;
+const $$createType62 = $Create.Array($$createType61);
+const $$createType63 = profile$0.Applied.createFrom;
+const $$createType64 = $Create.Array($$createType63);
+const $$createType65 = profile$0.FileLocks.createFrom;
+const $$createType66 = TeamLockSide.createFrom;
+const $$createType67 = $Create.Nullable($$createType66);
+const $$createType68 = als$0.Overview.createFrom;
+const $$createType69 = $Create.Nullable($$createType68);
+const $$createType70 = SetTrackChange.createFrom;
+const $$createType71 = $Create.Array($$createType70);
+const $$createType72 = $Create.Array($$createType31);
+const $$createType73 = project$0.TrackEdit.createFrom;
+const $$createType74 = $Create.Array($$createType73);
+const $$createType75 = ArchivedBranch.createFrom;
+const $$createType76 = $Create.Nullable($$createType75);
+const $$createType77 = Milestone.createFrom;
+const $$createType78 = $Create.Array($$createType77);
+const $$createType79 = project$0.Session.createFrom;
+const $$createType80 = $Create.Nullable($$createType79);
+const $$createType81 = SessionSummary.createFrom;
 const $$createType82 = $Create.Array($$createType81);
-const $$createType83 = TakeBack.createFrom;
-const $$createType84 = VerifyProblem.createFrom;
+const $$createType83 = remote$0.Capabilities.createFrom;
+const $$createType84 = WorkflowOverride.createFrom;
 const $$createType85 = $Create.Array($$createType84);
-const $$createType86 = Actor.createFrom;
-const $$createType87 = $Create.Nullable($$createType86);
-const $$createType88 = WorkspaceLeft.createFrom;
-const $$createType89 = $Create.Nullable($$createType88);
+const $$createType86 = textdiff$0.Hunk.createFrom;
+const $$createType87 = $Create.Array($$createType86);
+const $$createType88 = TakeBack.createFrom;
+const $$createType89 = VerifyProblem.createFrom;
+const $$createType90 = $Create.Array($$createType89);
+const $$createType91 = Actor.createFrom;
+const $$createType92 = $Create.Nullable($$createType91);
+const $$createType93 = WorkspaceLeft.createFrom;
+const $$createType94 = $Create.Nullable($$createType93);

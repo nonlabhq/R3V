@@ -41,7 +41,8 @@ func teamLockSide(r *project.Repo) *TeamLockSide {
 	}
 	if t, err := r.Team(); err == nil {
 		if s, err := teamLockSettings(t, false); err == nil || s.On {
-			out.On, out.Kinds = s.On, s.Kinds
+			l := project.LockingFor(s, projectLocksOf(t, r.Config.ProjectID))
+			out.On, out.Kinds = l.On, s.Kinds
 		}
 	}
 	return out

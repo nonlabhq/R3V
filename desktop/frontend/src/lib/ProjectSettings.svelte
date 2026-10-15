@@ -12,6 +12,7 @@
   import ConfirmDialog from "./ConfirmDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
+  import ProjectWorkflow from "./ProjectWorkflow.svelte";
   import { branchLabel, branchLane } from "$shared/branches";
   import { ago, type BranchList, type ArchivedBranch, type StepsInfo } from "./api";
 
@@ -62,15 +63,6 @@
       hooking = false;
     }
   }
-  async function setSteps(off: boolean, noPrompts: boolean) {
-    try {
-      await api.SetStepSettings(p.root, { off, no_prompts: noPrompts });
-      steps = await api.Steps(p.root, "");
-    } catch (e) {
-      toast(errorText(e), "error");
-    }
-  }
-
   // svelte-ignore state_referenced_locally
   let name = $state(p.name); // the field starts with the name
   let renaming = $state(false);
@@ -248,30 +240,17 @@
     </section>
 
     {#if steps?.available}
-      <section>
-        <h3>{t("Agents' steps")}</h3>
-        <div class="action">
-          <div><strong>{t("Keep a step after each move")}</strong>
-            <p class="hint">{t("After each of an agent's tool calls that changes files, R3V keeps the files as they are, to go back to or compare. On this computer only.")}</p></div>
-          <input type="checkbox" class="switch" role="switch" aria-label={t("Keep a step after each move")} checked={!steps.settings.off}
-            onchange={(e) => setSteps(!(e.currentTarget as HTMLInputElement).checked, !!steps!.settings.no_prompts)} />
-        </div>
-        {#if !steps.settings.off && !steps.hooked}
+      <!-- (Nightly: the team's workflow, the project's own over it) -->
+      <ProjectWorkflow root={p.root} />
+      {#if !steps.settings.off && !steps.hooked}
+        <section>
           <div class="action">
             <div><strong>{t("Claude Code here doesn't make steps yet")}</strong>
               <p class="hint">{t("An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).")}</p></div>
             <button onclick={setUpSteps} disabled={hooking}>{t("Set up")}</button>
           </div>
-        {/if}
-        {#if !steps.settings.off}
-          <div class="action">
-            <div><strong>{t("Keep the prompts")}</strong>
-              <p class="hint">{t("Each step shows the prompt that asked for it. Keys and passwords in prompts are taken out first.")}</p></div>
-            <input type="checkbox" class="switch" role="switch" aria-label={t("Keep the prompts")} checked={!steps.settings.no_prompts}
-              onchange={(e) => setSteps(false, !(e.currentTarget as HTMLInputElement).checked)} />
-          </div>
-        {/if}
-      </section>
+        </section>
+      {/if}
     {/if}
 
     <section>

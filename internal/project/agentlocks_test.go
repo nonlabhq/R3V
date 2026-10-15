@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/agentlock"
+	"github.com/nonlabhq/r3v/internal/remote"
 )
 
 // agentProject is a project with files that lock (a texture, a model)
@@ -39,16 +40,22 @@ func TestAgentLocked(t *testing.T) {
 			t.Errorf("AgentLocked(%s) = %v", p, got)
 		}
 	}
-	// The project narrows it, as for the team's locks.
-	os.WriteFile(filepath.Join(r.Root, ".r3v.yaml"), []byte("file_locks:\n  auto_lock:\n    remove: [\"tex/\"]\n"), 0o644)
+	// The project's own settings narrow it (its workflow, never .r3v.yaml).
+	os.WriteFile(filepath.Join(r.Root, ".r3v.yaml"), []byte("file_locks:\n  enabled: false\n"), 0o644)
+	r1, _ := Open(r.Root)
+	if !r1.AgentLocked("models/ship.glb") {
+		t.Fatal(".r3v.yaml's file_locks are no longer read")
+	}
+	r1.KeepWorkflow(TeamWorkflow{Project: remote.Workflow{Locks: &remote.ProjectLocks{Remove: []string{"tex/"}}}})
 	r2, _ := Open(r.Root)
 	if r2.AgentLocked("tex/rock.png") || !r2.AgentLocked("models/ship.glb") {
-		t.Fatal("auto_lock remove")
+		t.Fatal("the project's paths not locking")
 	}
-	os.WriteFile(filepath.Join(r.Root, ".r3v.yaml"), []byte("file_locks:\n  enabled: false\n"), 0o644)
+	off := false
+	r2.KeepWorkflow(TeamWorkflow{Team: remote.Workflow{AgentLocks: &off}})
 	r3, _ := Open(r.Root)
 	if r3.AgentLocked("models/ship.glb") {
-		t.Fatal("enabled: false")
+		t.Fatal("the team turned agent locks off")
 	}
 }
 

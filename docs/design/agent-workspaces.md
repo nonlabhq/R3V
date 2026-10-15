@@ -142,7 +142,7 @@ freed and broken the same way. Underneath, two scopes:
 | Until | shared | merged into the base branch |
 
 What locks itself is the team's choice of kinds (`profile.LockKinds`;
-`.r3v.yaml`'s `file_locks` narrows it), the same for both: files that
+a project's own settings narrow it: team-settings.md), the same for both: files that
 can't be merged (`.glb`, textures, `.hdr`, `.exr`, sounds, `.blend`).
 **Code never locks**: it merges hunk by hunk. On R3V Cloud with team
 locks on, an agent's first change to such a file takes both.
@@ -180,7 +180,8 @@ check in `project.Snapshot`, `cli/agentlocks.go`):
   refreshed by `agent setup` and `locks`: the hook never asks the team),
   else every kind but Godot's text scenes (`profile.AgentLockKinds`:
   textures, models, sounds too, which the team's defaults leave out);
-  `.r3v.yaml`'s `file_locks` narrows them; ignored files and files a
+  the project's settings narrow them (team-settings.md; `.r3v.yaml`'s
+  `file_locks` before 0.1.75); ignored files and files a
   preset merges as text never lock.
 - The person's copy is the main copy (the folder of `CommonDir()`): a
   locking file there that differs from its version (size, then the

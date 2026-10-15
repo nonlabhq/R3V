@@ -183,3 +183,19 @@ func PresetEntries(text string) []PresetEntry {
 	}
 	return out
 }
+
+// RemoveFileLocks takes file_locks: out of a .r3v.yaml (moved to the
+// project's settings: docs/design/team-settings.md), with the comment
+// lines right above it.
+func RemoveFileLocks(text string) string {
+	t := splitText(text)
+	at, _, to := t.block("file_locks:")
+	if at < 0 {
+		return text
+	}
+	for at > 0 && strings.HasPrefix(t.lines[at-1], "#") {
+		at--
+	}
+	t.lines = append(t.lines[:at], t.lines[to:]...)
+	return t.String()
+}
