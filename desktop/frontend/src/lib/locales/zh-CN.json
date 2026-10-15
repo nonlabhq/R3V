@@ -1878,5 +1878,6 @@
 "Counted {when}: {versions} versions; the storage holds {stored} in all (files no version uses yet, until a cleanup, too).": "{when}计算：{versions} 个版本；存储空间共 {stored}（在清理之前，也包括没有版本使用的文件）。",
 "What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "R3V 保存的量（压缩后）。存储服务商的账单可能更多：bucket 里的其他东西、服务商自己保留的版本、请求费用等。",
 "By project": "按项目",
-"A file several projects use counts in each of them, and once in the total.": "多个项目共用的文件会算进每个项目，总计里只算一次。"
+"A file several projects use counts in each of them, and once in the total.": "多个项目共用的文件会算进每个项目，总计里只算一次。",
+"(removed)": "（已移除）"
 }

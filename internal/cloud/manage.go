@@ -175,10 +175,13 @@ type Usage struct {
 	Projects []ProjectUsage `json:"projects"`
 }
 
-// ProjectUsage is one project's part of it.
+// ProjectUsage is one project's part of it; DeletedAt is set for a project
+// removed whose files aren't gone yet.
 type ProjectUsage struct {
-	ID    string `json:"id"`
-	Bytes int64  `json:"bytes"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Bytes     int64  `json:"bytes"`
+	DeletedAt string `json:"deletedAt,omitempty"`
 }
 
 // TeamUsage asks the service what the team keeps.

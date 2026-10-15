@@ -69,7 +69,7 @@
       <ul>
         {#each v.projects as p (p.id)}
           <li>
-            <span class="name">{p.name}</span>
+            <span class="name">{p.name}{#if p.removed} <span class="faint">{t("(removed)")}</span>{/if}</span>
             <span class="pbar"><span style:width="{(p.bytes / top) * 100}%"></span></span>
             <span class="size">{formatBytes(p.bytes)}</span>
           </li>

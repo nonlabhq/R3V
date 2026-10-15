@@ -2192,12 +2192,14 @@ export class Profile {
 }
 
 /**
- * ProjectBytes is a project's part.
+ * ProjectBytes is a project's part. Removed: the project is gone, its
+ * files not yet.
  */
 export class ProjectBytes {
     "id": string;
     "name": string;
     "bytes": number;
+    "removed": boolean;
 
     /** Creates a new ProjectBytes instance. */
     constructor($$source: Partial<ProjectBytes> = {}) {
@@ -2209,6 +2211,9 @@ export class ProjectBytes {
         }
         if (!("bytes" in $$source)) {
             this["bytes"] = 0;
+        }
+        if (!("removed" in $$source)) {
+            this["removed"] = false;
         }
 
         Object.assign(this, $$source);

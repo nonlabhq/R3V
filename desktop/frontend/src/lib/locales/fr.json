@@ -1878,5 +1878,6 @@
 "Counted {when}: {versions} versions; the storage holds {stored} in all (files no version uses yet, until a cleanup, too).": "Compté {when} : {versions} versions ; le stockage contient {stored} au total (y compris les fichiers qu'aucune version n'utilise, jusqu'à un nettoyage).",
 "What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "Ce que R3V conserve, tel que stocké (compressé). La facture de votre fournisseur de stockage peut être plus élevée : autres éléments dans le bucket, versions qu'il garde lui-même, requêtes.",
 "By project": "Par projet",
-"A file several projects use counts in each of them, and once in the total.": "Un fichier utilisé par plusieurs projets compte dans chacun d'eux, et une fois dans le total."
+"A file several projects use counts in each of them, and once in the total.": "Un fichier utilisé par plusieurs projets compte dans chacun d'eux, et une fois dans le total.",
+"(removed)": "(retiré)"
 }

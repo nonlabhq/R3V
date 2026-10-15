@@ -16,11 +16,13 @@ import (
 // R3V's count, made on request and kept on this computer with its time; on
 // R3V Cloud, the service's numbers and the plan's.
 
-// ProjectBytes is a project's part.
+// ProjectBytes is a project's part. Removed: the project is gone, its
+// files not yet.
 type ProjectBytes struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Bytes int64  `json:"bytes"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Bytes   int64  `json:"bytes"`
+	Removed bool   `json:"removed"`
 }
 
 // TeamUsageView is a team's Usage tab.
@@ -61,12 +63,14 @@ func (a *App) TeamUsage(teamID string) (*TeamUsageView, error) {
 			}
 		}
 	}
-	add := func(id string, n int64) {
-		name := names[id]
-		if name == "" {
-			name = id[:min(8, len(id))] // (a project removed, its files not cleaned up yet)
+	add := func(id, name string, n int64, removed bool) {
+		if names[id] != "" {
+			name = names[id]
 		}
-		out.Projects = append(out.Projects, ProjectBytes{ID: id, Name: name, Bytes: n})
+		if name == "" {
+			name, removed = id[:min(8, len(id))], true // (a project removed, its files not cleaned up yet)
+		}
+		out.Projects = append(out.Projects, ProjectBytes{ID: id, Name: name, Bytes: n, Removed: removed})
 	}
 	if svc, ok := cloud.Hosted(*t); ok {
 		out.Hosted = true
@@ -77,7 +81,7 @@ func (a *App) TeamUsage(teamID string) (*TeamUsageView, error) {
 		out.Used, out.Stored, out.Quota, out.Plan = u.Used, u.Used, u.Quota, u.Plan
 		out.Counted = time.Now().UTC().Format(time.RFC3339)
 		for _, p := range u.Projects {
-			add(p.ID, p.Bytes)
+			add(p.ID, p.Name, p.Bytes, p.DeletedAt != "")
 		}
 	} else {
 		var k keptUsage
@@ -85,7 +89,7 @@ func (a *App) TeamUsage(teamID string) (*TeamUsageView, error) {
 			out.Counted = k.At.UTC().Format(time.RFC3339)
 			out.Used, out.Stored, out.Versions = k.Report.Used, k.Report.Stored, k.Report.Versions
 			for id, n := range k.Report.Projects {
-				add(id, n)
+				add(id, "", n, false)
 			}
 		}
 	}
