@@ -1,8 +1,6 @@
-//go:build nightly
-
 package remote
 
-// Hosted teams (R3V-Cloud) are on the Nightly channel while they're built.
+// Hosted teams (R3V Cloud), in every build since 0.2.
 func init() {
 	HostedTeams = true
 	Register("r3v-cloud+http://", openBroker)

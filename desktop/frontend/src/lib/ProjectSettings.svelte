@@ -239,9 +239,10 @@
       </div>
     </section>
 
+    <!-- (the team's workflow, the project's own over it: file locking on R3V
+         Cloud teams, agents' settings where this build has agents) -->
+    {#if steps?.available || team?.hosted}<ProjectWorkflow root={p.root} />{/if}
     {#if steps?.available}
-      <!-- (Nightly: the team's workflow, the project's own over it) -->
-      <ProjectWorkflow root={p.root} />
       {#if !steps.settings.off && !steps.hooked}
         <section>
           <div class="action">

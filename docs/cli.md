@@ -34,7 +34,7 @@ r3v teams                         # teams this computer is connected to
 
 `commit` and `update` merge Live Sets track by track. When you and a teammate changed the same track (or the same sample file) they stop and ask for `--strategy ours|theirs|both`. They refuse to rewrite sets while Ableton Live is running if the team's changes must be merged in.
 
-Text files (code, on Nightly) merge line by line; where both changed the same lines, each such place (a hunk) is a decision of its own. `commit`, `update`, `merge` and `parked bring` take decisions one by one, by the conflict's key, besides `--strategy` (which decides whatever is left):
+Text files (code) merge line by line; where both changed the same lines, each such place (a hunk) is a decision of its own. `commit`, `update`, `merge` and `parked bring` take decisions one by one, by the conflict's key, besides `--strategy` (which decides whatever is left):
 
 ```
 r3v commit -m "..." --resolve "text:src/app.ts#1=theirs" --resolve "Song.als#track:14=ours"
@@ -59,7 +59,7 @@ r3v branch unarchive yi-ideas # back where it was
 r3v branch delete yi-ideas    # an archived branch, for good
 ```
 
-On a team that keeps branch names (Nightly), a branch can be called anything
+On a team that keeps branch names, a branch can be called anything
 (`r3v branch new Mia's verse`, `r3v switch "Mia 的主歌"`); commands take its
 name or its key. `r3v branch new NAME --agent` marks it an AI agent's,
 working for you (`r3v branch` shows it so).
@@ -191,7 +191,7 @@ r3v step diff <a> [<b>] [--session ID] # what changed from step a to step b (or 
 
 A step is the project after one of an agent's moves: after each tool call that changed files (Edit, Write, a shell command, an MCP tool), R3V keeps the files as they are, under the prompt that asked for it. `agent setup` adds the hooks that make them (`UserPromptSubmit`: `r3v hook prompt`; `PostToolUse`: `r3v hook post-tool`); run it again in a copy set up before 0.1.44. Steps stay on this computer (`.r3v/steps/<session>.jsonl`, their files in the local store), never in the history or the team's storage; a session is kept while it has steps on the version the project is on, then 7 days, within 2 GB. Prompts are kept with keys and passwords taken out; the app's project settings turn prompts, or steps, off. `step back` is the person's: it changes the files of the copy it runs in. See [design/steps.md](design/steps.md).
 
-## What changed in a file (Nightly)
+## What changed in a file
 
 Each kind of file the way it reads: text line by line, a Live Set track by
 track, a picture its size, any other file its size (`--json`: `kind`,

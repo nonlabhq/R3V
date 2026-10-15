@@ -16,7 +16,7 @@ Version control and teamwork for creative projects: Ableton Live sets first, wit
 
 ## Limitations
 
-- **Windows only** for now (macOS is planned). Unity, Unreal and Godot projects are on the Nightly channel (Settings › Updates) while they're tested.
+- **Windows only** for now (macOS is planned).
 - **Plugins are not synced.** R3V doesn't copy plugins, and it can't collect samples a plugin loads from outside the project (e.g. inside Kontakt or Serum). If your teammates don't have the same plugins, freeze those tracks before you share, or use Live's own devices, which sync completely.
 - **Everyone with the connection code has full access.** The code contains the storage key: anyone who has it can read, change and delete all of the team's work. Share it privately, only with people you trust. If it leaks, make a new key and send the new code.
 

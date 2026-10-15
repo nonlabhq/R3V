@@ -12,7 +12,7 @@
   // projects (those on this computer, then those still only on the team; a
   // project's workspaces counted on it, not listed) or its settings. Not a
   // tab: the tabs show no tab picked.
-  let { overview, team, projects, open, onopen, onadd, adding = false, reload, canMove = false, section = $bindable("projects") }: {
+  let { overview, team, projects, open, onopen, onadd, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
     projects: TeamProject[];
@@ -22,6 +22,7 @@
     adding?: boolean;
     reload: () => Promise<void>;
     canMove?: boolean;
+    agents?: boolean; // this build has agents (Nightly: their Workflow settings)
     section?: "projects" | "settings";
   } = $props();
 
@@ -103,7 +104,7 @@
     {/if}
   {:else}
     {#key team.id}
-      <TeamSettings {team} inline tabs workflowTab={canMove} author={overview.author} {reload} onclose={() => (section = "projects")}
+      <TeamSettings {team} inline tabs workflowTab={agents || !!team.hosted} author={overview.author} {reload} onclose={() => (section = "projects")}
         onopenversion={(id, version) => { const p = mains.find((x) => x.id === id); if (p) { linkPick.project = id; linkPick.version = version; onopen(p); } }}
         teams={overview.teams} {canMove} offline={!!overview.teamError}
         roots={projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root)} />

@@ -987,7 +987,7 @@
       <div class="content-body">
       {#if current && (home || !selectedEntry)}
         <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
-          adding={busy === "add"} {reload} canMove={nightly} bind:section={homeSection} />
+          adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
@@ -1163,7 +1163,7 @@
 {/if}
 
 {#if kindAsk}
-  <KindDialog folder={kindAsk} code={nightly} busy={busy === "add"} onpick={(preset) => share(kindAsk!, preset)}
+  <KindDialog folder={kindAsk} code busy={busy === "add"} onpick={(preset) => share(kindAsk!, preset)}
     onclose={() => (kindAsk = null)} />
 {/if}
 
@@ -1196,7 +1196,7 @@
 {#if teamSettingsFor && overview}
   {@const tm = overview.teams.find((x) => x.id === teamSettingsFor!.id) ?? teamSettingsFor}
   <TeamSettings team={tm} author={overview.author} {reload} onclose={() => (teamSettingsFor = null)}
-    teams={overview.teams} canMove={nightly}
+    teams={overview.teams} canMove
     offline={tm.id === overview.currentTeam && !!overview.teamError}
     roots={tm.id === overview.currentTeam ? overview.projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root) : []} />
 {/if}

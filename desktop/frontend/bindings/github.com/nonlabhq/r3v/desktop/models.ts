@@ -2392,6 +2392,11 @@ export class ProjectWorkflowView {
      * the project is a team's (else all is this computer's)
      */
     "team": boolean;
+
+    /**
+     * this build has agents
+     */
+    "agentsHere": boolean;
     "canEdit": boolean;
 
     /**
@@ -2430,6 +2435,9 @@ export class ProjectWorkflowView {
     constructor($$source: Partial<ProjectWorkflowView> = {}) {
         if (!("team" in $$source)) {
             this["team"] = false;
+        }
+        if (!("agentsHere" in $$source)) {
+            this["agentsHere"] = false;
         }
         if (!("canEdit" in $$source)) {
             this["canEdit"] = false;
@@ -2475,26 +2483,26 @@ export class ProjectWorkflowView {
      * Creates a new ProjectWorkflowView instance from a string or object.
      */
     static createFrom($$source: any = {}): ProjectWorkflowView {
-        const $$createField4_0 = $$createType10;
-        const $$createField5_0 = $$createType42;
-        const $$createField6_0 = $$createType44;
-        const $$createField7_0 = $$createType45;
-        const $$createField11_0 = $$createType46;
+        const $$createField5_0 = $$createType10;
+        const $$createField6_0 = $$createType42;
+        const $$createField7_0 = $$createType44;
+        const $$createField8_0 = $$createType45;
+        const $$createField12_0 = $$createType46;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("teamKinds" in $$parsedSource) {
-            $$parsedSource["teamKinds"] = $$createField4_0($$parsedSource["teamKinds"]);
+            $$parsedSource["teamKinds"] = $$createField5_0($$parsedSource["teamKinds"]);
         }
         if ("ownLocks" in $$parsedSource) {
-            $$parsedSource["ownLocks"] = $$createField5_0($$parsedSource["ownLocks"]);
+            $$parsedSource["ownLocks"] = $$createField6_0($$parsedSource["ownLocks"]);
         }
         if ("all" in $$parsedSource) {
-            $$parsedSource["all"] = $$createField6_0($$parsedSource["all"]);
+            $$parsedSource["all"] = $$createField7_0($$parsedSource["all"]);
         }
         if ("teamAgents" in $$parsedSource) {
-            $$parsedSource["teamAgents"] = $$createField7_0($$parsedSource["teamAgents"]);
+            $$parsedSource["teamAgents"] = $$createField8_0($$parsedSource["teamAgents"]);
         }
         if ("mine" in $$parsedSource) {
-            $$parsedSource["mine"] = $$createField11_0($$parsedSource["mine"]);
+            $$parsedSource["mine"] = $$createField12_0($$parsedSource["mine"]);
         }
         return new ProjectWorkflowView($$parsedSource as Partial<ProjectWorkflowView>);
     }
@@ -4563,6 +4571,11 @@ export class TeamWorkflowView {
     "canEdit": boolean;
 
     /**
+     * AgentsHere: this build has agents (their settings mean something here).
+     */
+    "agentsHere": boolean;
+
+    /**
      * Locks: file locking can be had (an R3V Cloud team, a build with it);
      * LocksOn: projects lock unless they say otherwise; Kinds: those that
      * lock by themselves.
@@ -4582,6 +4595,9 @@ export class TeamWorkflowView {
     constructor($$source: Partial<TeamWorkflowView> = {}) {
         if (!("canEdit" in $$source)) {
             this["canEdit"] = false;
+        }
+        if (!("agentsHere" in $$source)) {
+            this["agentsHere"] = false;
         }
         if (!("locks" in $$source)) {
             this["locks"] = false;
@@ -4609,22 +4625,22 @@ export class TeamWorkflowView {
      * Creates a new TeamWorkflowView instance from a string or object.
      */
     static createFrom($$source: any = {}): TeamWorkflowView {
-        const $$createField3_0 = $$createType10;
-        const $$createField4_0 = $$createType44;
-        const $$createField5_0 = $$createType45;
-        const $$createField6_0 = $$createType87;
+        const $$createField4_0 = $$createType10;
+        const $$createField5_0 = $$createType44;
+        const $$createField6_0 = $$createType45;
+        const $$createField7_0 = $$createType87;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("kinds" in $$parsedSource) {
-            $$parsedSource["kinds"] = $$createField3_0($$parsedSource["kinds"]);
+            $$parsedSource["kinds"] = $$createField4_0($$parsedSource["kinds"]);
         }
         if ("all" in $$parsedSource) {
-            $$parsedSource["all"] = $$createField4_0($$parsedSource["all"]);
+            $$parsedSource["all"] = $$createField5_0($$parsedSource["all"]);
         }
         if ("agents" in $$parsedSource) {
-            $$parsedSource["agents"] = $$createField5_0($$parsedSource["agents"]);
+            $$parsedSource["agents"] = $$createField6_0($$parsedSource["agents"]);
         }
         if ("overrides" in $$parsedSource) {
-            $$parsedSource["overrides"] = $$createField6_0($$parsedSource["overrides"]);
+            $$parsedSource["overrides"] = $$createField7_0($$parsedSource["overrides"]);
         }
         return new TeamWorkflowView($$parsedSource as Partial<TeamWorkflowView>);
     }

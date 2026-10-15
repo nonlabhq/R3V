@@ -118,6 +118,7 @@
       {/if}
     {/if}
 
+    {#if v.agentsHere}
     <WorkflowChoice label={t("Record agents' steps")} hint={t("After each of an agent's tool calls that changes files, R3V keeps the files as they are, to go back to or compare.")}
       team={v.teamAgents.steps} own={own(v.steps)} disabled={ro} onchange={(b) => set("steps", b)} />
     <WorkflowChoice label={t("Keep the prompts")} hint={t("Each step shows the prompt that asked for it. Keys and passwords in prompts are taken out first.")}
@@ -131,6 +132,7 @@
     <label class="row"><input type="checkbox" checked={!!v.mine.no_prompts} onchange={(e) => setMine(!!v!.mine.off, e.currentTarget.checked)} />
       {t("Don't keep my prompts")}</label>
     <p class="hint">{t("Only ever keeps more out than the settings above.")}</p>
+    {/if}
   </section>
 {:else if error}
   <p class="error">{error}</p>
