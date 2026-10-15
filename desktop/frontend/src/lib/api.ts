@@ -79,13 +79,8 @@ export function progressFraction(p: Progress): number {
   return p.total ? p.done / p.total : 0;
 }
 
-export function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  const units = ["KB", "MB", "GB", "TB"];
-  let v = n / 1024, i = 0;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-  return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${units[i]}`;
-}
+import { formatBytes } from "$shared/text";
+export { formatBytes };
 
 function formatDuration(s: number): string {
   if (s < 60) return `${Math.max(1, Math.round(s))} s`;

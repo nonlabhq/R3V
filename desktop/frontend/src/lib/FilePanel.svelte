@@ -7,7 +7,7 @@
   import { branchGraph } from "$shared/branchGraph";
   import { branchLabel, branchLane } from "$shared/branches";
   import { initial } from "$shared/palette";
-  import { baseName, isChanged } from "./files";
+  import { baseName, isChanged } from "$shared/files";
   import FileIcon from "$shared/FileIcon.svelte";
   import LockBadge from "./LockBadge.svelte";
   import { lockText, type LockItem } from "./locks.svelte";

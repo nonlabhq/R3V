@@ -5,6 +5,15 @@ import { language } from "./i18n";
 /** A version's title: its message's first line. */
 export const titleOf = (message: string | undefined | null) => (message ?? "").split("\n", 1)[0].trimEnd();
 
+/** A size in words: 512 B, 1.5 MB, 20 GB. */
+export function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let v = n / 1024, i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v < 10 ? v.toFixed(1) : Math.round(v)} ${units[i]}`;
+}
+
 /** How long ago iso was, in the language in use ("5 min ago", "5 分鐘前"…);
  * a date and time after a day. */
 export function ago(iso: string): string {

@@ -2,7 +2,7 @@
 // changed files each holds), a folder's files, the look a folder starts
 // with, the program a file belongs to, and selecting several files the way
 // a file explorer does.
-import type { ProjectFile } from "./api";
+import type { BrowserFile } from "./types";
 
 export type Folder = {
   path: string; // "" the project folder
@@ -12,14 +12,14 @@ export type Folder = {
   files: number; // files right in it
 };
 
-export const isChanged = (f: ProjectFile) => f.status !== "unchanged" && f.status !== "ignored";
+export const isChanged = (f: { status: string }) => f.status !== "unchanged" && f.status !== "ignored";
 export const baseName = (p: string) => p.slice(p.lastIndexOf("/") + 1);
 export const dirOf = (p: string) => (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "");
 
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 
 /** The folders of the project (from its files), the project folder at the top. */
-export function folderTree(files: ProjectFile[], name = ""): Folder {
+export function folderTree(files: BrowserFile[], name = ""): Folder {
   const top: Folder = { path: "", name, folders: [], changed: 0, files: 0 };
   const index = new Map<string, Folder>([["", top]]);
   const get = (path: string): Folder => {
@@ -55,7 +55,7 @@ export function findFolder(top: Folder, path: string): Folder | null {
 }
 
 /** The files right in a folder. */
-export const filesIn = (files: ProjectFile[], dir: string) => files.filter((f) => dirOf(f.path) === dir);
+export const filesIn = <F extends BrowserFile>(files: F[], dir: string): F[] => files.filter((f) => dirOf(f.path) === dir);
 
 export type Selection = { picked: string[]; anchor: string };
 
