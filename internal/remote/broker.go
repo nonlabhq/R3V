@@ -346,7 +346,8 @@ func failed(resp *http.Response, what string) error {
 }
 
 // ErrStorageFull: the hosted team's storage is full (the service's
-// over_limit); nothing more goes up until it has room.
+// over_quota, over_limit before the beta); nothing more goes up until it
+// has room. Reading, downloading and deleting still work.
 var ErrStorageFull = errors.New("the team's storage is full")
 
 // ServiceError is an error R3V-Cloud explained: its code, and a message
@@ -360,7 +361,7 @@ func (e *ServiceError) Error() string { return "R3V-Cloud: " + e.Message }
 
 // Is lets errors.Is(err, ErrStorageFull) find a full team's.
 func (e *ServiceError) Is(target error) bool {
-	return target == ErrStorageFull && e.Code == "over_limit"
+	return target == ErrStorageFull && (e.Code == "over_quota" || e.Code == "over_limit")
 }
 
 var xmlCode = regexp.MustCompile(`<Code>([A-Za-z0-9.]+)</Code>`)

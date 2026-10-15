@@ -29,6 +29,8 @@
       counting = false;
     }
   }
+  // The beta's plans in words (R3V-Cloud docs/beta.md); another as it is.
+  const planName = (p: string) => ({ founding: t("Founding member"), early: t("Early access") } as Record<string, string>)[p] ?? p;
   let top = $derived(Math.max(1, ...(v?.projects ?? []).map((p) => p.bytes)));
 </script>
 
@@ -38,7 +40,7 @@
       <div class="total">
         <strong>{formatBytes(v.used)}</strong>
         {#if v.quota}<span class="muted">{t("of {quota}", { quota: formatBytes(v.quota) })}</span>{/if}
-        {#if v.plan}<span class="plan">{v.plan}</span>{/if}
+        {#if v.plan}<span class="plan">{planName(v.plan)}</span>{/if}
       </div>
       {#if v.quota}
         <div class="bar" role="meter" aria-valuemin={0} aria-valuemax={v.quota} aria-valuenow={v.used} aria-label={t("Used")}>

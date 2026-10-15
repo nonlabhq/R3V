@@ -290,6 +290,9 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |
 | 1 | `files_locked_by_agent` | another workspace on this computer holds files the commit or `lock` needs (`locks`: `path`, `holder` `agent`\|`person`, `workspace`, `branch`, `actor`); nothing was committed or locked: leave those files, or ask the user |
+| 1 | `cloud_quota` | the team's storage on R3V Cloud is full: the versions stay committed here; tell the user (they delete projects or versions, or get more room), `commit` again later |
+| 1 | `cloud_beta_only` | R3V Cloud is in a closed beta: making a team needs an invitation; tell the user (the waitlist: https://r3v.so/waitlist) |
+| 1 | `cloud_one_team` | the beta gives one team of the user's own, and it exists: use it |
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |

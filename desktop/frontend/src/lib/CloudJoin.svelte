@@ -11,6 +11,9 @@
   let status = $state<CloudStatus | null>(null);
   let waiting = $state(false); // for the browser
   let busy = $state(false);
+  // (desktop/cloud.go: the beta's refusal, as cloud.ErrBetaOnly says it)
+  const BETA_ONLY = "R3V Cloud is in a closed beta: teams are for invited people";
+  const WAITLIST = "https://r3v.so/waitlist";
   let error = $state("");
   let name = $state("");
   let link = $state("");
@@ -128,7 +131,13 @@
   </form>
   {/if}
 {/if}
-{#if error}<p class="error">{error}</p>{/if}
+{#if error === BETA_ONLY}
+  <!-- (the closed beta: teams are for invited people) -->
+  <div class="beta">
+    <p>{t("R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.")}</p>
+    <button onclick={() => api.OpenURL(WAITLIST).catch(() => {})}>{t("Join the waitlist")}</button>
+  </div>
+{:else if error}<p class="error">{error}</p>{/if}
 
 <style>
   .actions { margin-top: var(--sp-16); }
@@ -136,6 +145,9 @@
   form .row { gap: var(--sp-8); }
   form input { flex: 1; min-width: 0; }
   .error { color: var(--danger); user-select: text; }
+  .beta { display: flex; align-items: center; gap: var(--sp-12); margin-top: var(--sp-10); padding: var(--sp-10) var(--sp-12);
+    border-radius: var(--radius); background: var(--info-chip); }
+  .beta p { flex: 1; margin: 0; font-size: var(--fs-md); }
   .claim { margin-top: var(--sp-14); }
   .people { display: flex; flex-direction: column; gap: var(--sp-6); margin: var(--sp-10) 0; }
   .people label { display: flex; align-items: center; gap: var(--sp-8); }
