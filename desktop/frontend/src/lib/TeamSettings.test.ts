@@ -23,6 +23,8 @@ beforeEach(() => {
   for (const k of Object.keys(mocks.fns)) delete mocks.fns[k];
   localStorage.clear();
   api.TeamMembers.mockResolvedValue([{ id: "m1", name: "Yi" }, { id: "m2", name: "Mia" }]);
+  api.TeamWorkflow.mockResolvedValue({ canEdit: true, locks: false, locksOn: false, kinds: [], all: [],
+    agents: { steps: true, prompts: true, agentLocks: true }, overrides: [] });
 });
 afterEach(() => cleanup());
 
@@ -33,7 +35,7 @@ describe("TeamSettings", () => {
     expect(nav.textContent).toContain("General");
     expect(await screen.findByText("Mia")).toBeTruthy(); // (a team on its own storage: who has shared)
     await fireEvent.click(screen.getByRole("button", { name: "Workflow" }));
-    expect(screen.getByText(/File locking needs a team on R3V Cloud/)).toBeTruthy();
+    expect(await screen.findByText(/File locking needs a team on R3V Cloud/)).toBeTruthy();
     expect(screen.queryByText("Mia")).toBeNull();
     expect(localStorage.getItem("r3v.teamSettingsTab")).toBe("workflow");
   });

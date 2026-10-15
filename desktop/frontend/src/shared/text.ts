@@ -5,6 +5,13 @@ import { language } from "./i18n";
 /** A version's title: its message's first line. */
 export const titleOf = (message: string | undefined | null) => (message ?? "").split("\n", 1)[0].trimEnd();
 
+/** What went wrong, in words (an Error's message, else the thing itself). */
+export function errorText(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === "object" && e && "message" in e) return String((e as { message: unknown }).message);
+  return String(e);
+}
+
 /** A size in words: 512 B, 1.5 MB, 20 GB. */
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;

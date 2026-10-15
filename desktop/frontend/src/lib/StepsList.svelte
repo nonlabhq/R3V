@@ -2,8 +2,8 @@
   import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, type Session, type Step, type StepChange, type TalkEntry } from "./api";
   import { toast } from "./notify.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
-  import Modal from "./Modal.svelte";
+  import ConfirmDialog from "$shared/ConfirmDialog.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // A session as it went: each prompt (the latest first), folded to its
   // time and words, its toggle opening what the agent said and the steps it

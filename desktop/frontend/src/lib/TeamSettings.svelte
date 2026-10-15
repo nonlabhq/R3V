@@ -5,25 +5,26 @@
   import { untrack } from "svelte";
   import { api, errorText, type TeamSummary } from "./api";
   import { toast } from "./notify.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import KeptSamples from "./KeptSamples.svelte";
   import CodeBox from "./CodeBox.svelte";
   import IdentityForm from "./IdentityForm.svelte";
   import BackupSection from "./BackupSection.svelte";
   import Fold from "./Fold.svelte";
-  import CloudPeople from "./CloudPeople.svelte";
-  import TeamLocks from "./TeamLocks.svelte";
-  import LookPicker from "./LookPicker.svelte";
+  import TeamPeople from "$shared/team/TeamPeople.svelte";
+  import LookPicker from "$shared/LookPicker.svelte";
   import TeamMark from "$shared/TeamMark.svelte";
   import TeamMembers from "./TeamMembers.svelte";
-  import TeamWorkflow from "./TeamWorkflow.svelte";
-  import TeamActivity from "./TeamActivity.svelte";
-  import TeamUsage from "./TeamUsage.svelte";
+  import TeamWorkflowTab from "$shared/team/TeamWorkflowTab.svelte";
+  import TeamActivity from "$shared/team/TeamActivity.svelte";
+  import TeamUsage from "$shared/team/TeamUsage.svelte";
+  import SettingsTabs from "$shared/team/SettingsTabs.svelte";
+  import { appTeamSource } from "./teamSource";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
   // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs = false, onopenversion }: {
+  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs: tabsOn = false, onopenversion }: {
     team: TeamSummary;
     onopenversion?: (project: string, version: string) => void; // (Activity: a version, in its project)
     inline?: boolean;      // in the team's home, not a dialog
@@ -209,23 +210,17 @@
   // The tabs (team-settings.md): General, then Workflow; the one picked is
   // remembered.
   type Tab = "general" | "workflow" | "activity" | "usage";
-  const TABS: Tab[] = ["general", "workflow", "activity", "usage"];
-  const TAB_KEY = "r3v.teamSettingsTab";
-  let tab = $state<Tab>((() => { try { const v = localStorage.getItem(TAB_KEY) as Tab; return TABS.includes(v) ? v : "general"; } catch { return "general"; } })());
-  function pick(x: Tab) {
-    tab = x;
-    try { localStorage.setItem(TAB_KEY, x); } catch { /* not remembered */ }
-  }
-  const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow", activity: "Activity", usage: "Usage" };
-  let locksStamp = $state(0); // (the team's locks changed: what projects set of their own, read again)
+  let tabs = $derived<{ id: Tab; label: string }[]>([{ id: "general", label: t("General") }, { id: "workflow", label: t("Workflow") },
+    { id: "activity", label: t("Activity") }, { id: "usage", label: t("Usage") }]);
+  // What the shared pages read and change (the team's, through the bindings).
+  let source = $derived(appTeamSource(team.id, !!team.hosted));
 </script>
 
 {#snippet body()}
   {@render naming()}
   {#if team.hosted}
     {@render myName()}
-    <CloudPeople {team} />
-    {#if !offline}<TeamLocks {team} />{/if}
+    <TeamPeople {source} />
   {:else}
     {@render myName()}
   {/if}
@@ -235,20 +230,12 @@
 {#snippet general()}
   {@render naming()}
   {@render myName()}
-  {#if team.hosted}<CloudPeople {team} />{:else if !offline}<TeamMembers {team} />{/if}
+  {#if team.hosted}<TeamPeople {source} />{:else if !offline}<TeamMembers {team} />{/if}
   {@render rest()}
 {/snippet}
 
 {#snippet workflow()}
-  {#if team.hosted}
-    {#if !offline}<TeamLocks {team} onchanged={() => locksStamp++} />{/if}
-  {:else}
-    <section>
-      <h3>{t("File locking")}</h3>
-      <p class="faint small">{t("File locking needs a team on R3V Cloud: it keeps who is changing which file.")}</p>
-    </section>
-  {/if}
-  {#if !offline}<TeamWorkflow {team} stamp={locksStamp} />{/if}
+  {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamWorkflowTab {source} />{/if}
 {/snippet}
 
 {#snippet naming()}
@@ -414,26 +401,21 @@
     }}>{team.hosted ? (team.noAccess ? t("Remove the team…") : t("Leave the team…")) : t("Disconnect…")}</button>
 {/snippet}
 
-{#if inline && tabs}
-  <div class="tabbed">
-    <nav class="tabs" aria-label={t("Team settings")}>
-      {#each TABS as x (x)}
-        <button class:on={tab === x} aria-current={tab === x ? "page" : undefined} onclick={() => pick(x)}>{t(tabNames[x])}</button>
-      {/each}
-    </nav>
-    <div class="inline">
+{#if inline && tabsOn}
+  <SettingsTabs {tabs} label={t("Team settings")} remember="r3v.teamSettingsTab">
+    {#snippet content(tab)}
       {#if tab === "workflow"}
         {@render workflow()}
       {:else if tab === "activity"}
-        {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamActivity {team} onopen={onopenversion} />{/if}
+        {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamActivity {source} onopen={onopenversion} />{/if}
       {:else if tab === "usage"}
-        {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamUsage {team} />{/if}
+        {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamUsage {source} />{/if}
       {:else}
         {@render general()}
         <div class="inline-foot">{@render leave()}</div>
       {/if}
-    </div>
-  </div>
+    {/snippet}
+  </SettingsTabs>
 {:else if inline}
   <div class="inline">
     {@render body()}
@@ -491,13 +473,6 @@
 
 <style>
   .inline { max-width: 720px; }
-  .tabbed { display: flex; align-items: flex-start; gap: var(--sp-28); }
-  .tabbed .inline { flex: 1; min-width: 0; }
-  .tabs { flex: none; width: 160px; display: flex; flex-direction: column; gap: var(--sp-2); position: sticky; top: 0; }
-  .tabs button { justify-content: flex-start; text-align: left; border: none; background: transparent; color: var(--muted);
-    padding: var(--sp-6) var(--sp-10); border-radius: var(--radius); font-size: var(--fs-base); }
-  .tabs button:hover:not(:disabled) { background: var(--hover-soft); color: var(--text); }
-  .tabs button.on { background: var(--panel-2); color: var(--text); font-weight: var(--fw-semibold); }
   .inline-foot { padding-top: var(--sp-12); border-top: var(--border-width) solid var(--line); }
   .move { display: flex; align-items: flex-start; gap: var(--sp-12); }
   .move p { flex: 1; margin: 0; }

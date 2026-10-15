@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // R3V is about to change the project's files while its tool has it
   // open: close it first, then go on. set: the Live set open ("" when Live

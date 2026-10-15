@@ -2,7 +2,7 @@
   import { untrack } from "svelte";
   import { t, tn } from "./i18n.svelte";
   import { api, errorText, titleOf, type Version } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // Undo commit. Your latest version, while no one else has it, is taken
   // back: gone from the history, its changes uncommitted again. Otherwise a

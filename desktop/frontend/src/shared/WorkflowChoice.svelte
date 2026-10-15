@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t } from "./i18n";
 
   // A project's say on one workflow setting (docs/design/team-settings.md):
   // as the team's (it shows which), on, or off for this project.

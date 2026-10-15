@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import type { Snippet } from "svelte";
 
   // Asks for a name or a description before doing something (children:

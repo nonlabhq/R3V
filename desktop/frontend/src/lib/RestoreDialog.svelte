@@ -2,7 +2,7 @@
   import { t, tn, language } from "./i18n.svelte";
   import { Events } from "@wailsio/runtime";
   import { api, errorText, formatBytes } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import StorageFields, { type StorageValue } from "./StorageFields.svelte";
   import { toast } from "./notify.svelte";
 

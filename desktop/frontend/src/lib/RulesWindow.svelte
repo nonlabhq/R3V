@@ -2,7 +2,7 @@
   import { t } from "./i18n.svelte";
   import Tx from "./Tx.svelte";
   import { api } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import RulesEditor from "./RulesEditor.svelte";
   import { editRulesText } from "./rules";
 

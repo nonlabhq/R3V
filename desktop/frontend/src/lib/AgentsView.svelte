@@ -8,8 +8,8 @@
   import { branchLabel } from "$shared/branches";
   import AgentBadge from "$shared/AgentBadge.svelte";
   import LockBadge from "./LockBadge.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
-  import Modal from "./Modal.svelte";
+  import ConfirmDialog from "$shared/ConfirmDialog.svelte";
+  import Modal from "$shared/Modal.svelte";
   import NewWorkspaceDialog from "./NewWorkspaceDialog.svelte";
 
   // The Agents view (Nightly; docs/design/agent-workspaces.md, "The

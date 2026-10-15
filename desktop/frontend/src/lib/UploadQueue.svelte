@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { formatBytes } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import FileIcon from "$shared/FileIcon.svelte";
   import { preuploads, transfers, cancelling, cancelSave } from "./preupload.svelte";

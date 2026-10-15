@@ -29,5 +29,10 @@ The rules (`contract.test.ts` checks the first):
   show, closed when done; a file more than the source shows is `TooBig`.
   The App's source reads its local file server (and text in Go); the web
   app's reads the team's storage in the browser.
-- Libraries the viewers load when needed: highlight.js, three (at the
+- A team's settings pages (`team/`: the tabs, people, Workflow,
+  Activity, Usage) get their data and make their changes through the
+  source they are given (`team/source.ts`), as the viewers do; notices go
+  through `setNotifier` (`notify.ts`).
+- Libraries the viewers and the look picker load when needed: highlight.js, three,
+  emoji-picker-element and its data (at the
   App's versions, `desktop/frontend/package.json`).

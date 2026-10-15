@@ -1,8 +1,8 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { api, errorText, type Branch, type Version } from "./api";
-  import Modal from "./Modal.svelte";
-  import Swatches from "./Swatches.svelte";
+  import Modal from "$shared/Modal.svelte";
+  import Swatches from "$shared/Swatches.svelte";
   import { toast } from "./notify.svelte";
   import { MAIN, branchColor, branchLabel } from "$shared/branches";
   import { cssColor } from "$shared/palette";

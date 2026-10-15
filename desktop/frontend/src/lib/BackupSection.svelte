@@ -2,7 +2,7 @@
   import { t, tn } from "./i18n.svelte";
   import { Events } from "@wailsio/runtime";
   import { api, ago, errorText, formatBytes } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import BackupBucket from "./BackupBucket.svelte";
   import Fold from "./Fold.svelte";
   import RestoreDialog from "./RestoreDialog.svelte";

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import { palette, cssColor } from "$shared/palette";
+  import { t } from "./i18n";
+  import { palette, cssColor } from "./palette";
 
   // The palette to pick a colour from (tokens.css --palette-*). Disabled
   // (a pick being saved), the swatches keep the focus but take no pick.

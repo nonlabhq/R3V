@@ -1880,5 +1880,7 @@
 "By project": "Por proyecto",
 "A file several projects use counts in each of them, and once in the total.": "Un archivo que usan varios proyectos cuenta en cada uno y una sola vez en el total.",
 "(removed)": "(eliminado)",
-"No files in this folder.": "No hay archivos en esta carpeta."
+"No files in this folder.": "No hay archivos en esta carpeta.",
+"Activity": "Actividad",
+"Usage": "Uso"
 }

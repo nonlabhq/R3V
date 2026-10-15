@@ -12,9 +12,10 @@ const mocks = vi.hoisted(() => {
 const { api, toast } = mocks;
 vi.mock("./api", async (orig) => ({ ...(await orig<typeof import("./api")>()), api: mocks.api }));
 vi.mock("./notify.svelte", () => ({ toast: mocks.toast }));
-vi.mock("./picture", () => ({ squarePicture: mocks.square, SIDE: 128 }));
+vi.mock("$shared/picture", () => ({ squarePicture: mocks.square, SIDE: 128 }));
 
 import UserSettings from "./UserSettings.svelte";
+import { setNotifier } from "$shared/notify";
 import ProjectSettings from "./ProjectSettings.svelte";
 import TeamSettings from "./TeamSettings.svelte";
 import HistoryGraph from "$shared/VersionGraph.svelte";
@@ -31,6 +32,7 @@ beforeEach(() => {
   for (const k of Object.keys(mocks.fns)) delete mocks.fns[k];
   toast.mockClear();
   mocks.square.mockReset();
+  setNotifier((text, kind, ms) => (ms === undefined ? toast(text, kind) : toast(text, kind, ms)));
 });
 afterEach(() => cleanup());
 

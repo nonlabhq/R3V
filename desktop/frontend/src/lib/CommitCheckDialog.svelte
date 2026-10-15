@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // Before a commit: missing samples R3V has copies of (restore them
   // first?), what the project's checks warn about (a Unity asset without its

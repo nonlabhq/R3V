@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { api, errorText } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // Before projects leave R3V (unlinked, deleted from the team, the team
   // left): samples that came from teammates' computers are only in each

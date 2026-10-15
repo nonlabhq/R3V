@@ -3,7 +3,7 @@
   import { t, tn } from "./i18n.svelte";
   import { api, errorText, formatBytes, type TeamSummary, type TeamMoveEstimate, type TeamMoveState } from "./api";
   import { Events } from "@wailsio/runtime";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // Moving a team from its own storage to R3V Cloud (docs/design/moving.md):
   // what it means (sizes, people), where to, which projects, a read-only

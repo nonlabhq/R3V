@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import type { State } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
 
   // A project just added, with no versions yet: commit (and share) a first

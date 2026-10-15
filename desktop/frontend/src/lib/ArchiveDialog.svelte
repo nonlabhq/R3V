@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import { api, ago, errorText, type Branch, type Version, type Workspace } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import { toast } from "./notify.svelte";
   import { branchGraph } from "$shared/branchGraph";
   import { MAIN, branchLabel } from "$shared/branches";

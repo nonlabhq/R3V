@@ -39,11 +39,8 @@ export function detailsOf(message: string | undefined | null): string {
 
 export { toolName } from "$shared/tools";
 
-export function errorText(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  if (typeof e === "object" && e && "message" in e) return String((e as any).message);
-  return String(e);
-}
+import { errorText } from "$shared/text";
+export { errorText };
 
 // A folder R3V finds nothing of a kind it knows in (project.ErrUnknownKind):
 // asked how to keep it (KindDialog).

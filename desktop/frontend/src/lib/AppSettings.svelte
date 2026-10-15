@@ -1,6 +1,6 @@
 <script lang="ts">
   import { api } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import { languages, chosenLanguage, setLanguage, t } from "./i18n.svelte";
 
   // R3V's own settings (not a project's or a team's): language, starting

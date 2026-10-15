@@ -3,7 +3,7 @@
   import { api, errorText } from "./api";
   import { toast } from "./notify.svelte";
   import { lockKindName } from "./lockKinds";
-  import WorkflowChoice from "./WorkflowChoice.svelte";
+  import WorkflowChoice from "$shared/WorkflowChoice.svelte";
   import type { ProjectWorkflowView } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import type { ProjectLocks, Workflow } from "../../bindings/github.com/nonlabhq/r3v/internal/remote/models";
 

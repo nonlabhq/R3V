@@ -15,7 +15,9 @@ vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wa
   Events: { On: () => () => {} } }));
 
 import CloudJoin from "./CloudJoin.svelte";
-import CloudPeople from "./CloudPeople.svelte";
+import CloudPeople from "$shared/team/TeamPeople.svelte";
+import { appTeamSource } from "./teamSource";
+import { setNotifier } from "$shared/notify";
 import JoinOrCreate from "./JoinOrCreate.svelte";
 import TeamSettings from "./TeamSettings.svelte";
 import type { TeamSummary } from "./api";
@@ -23,6 +25,7 @@ import type { TeamSummary } from "./api";
 beforeEach(() => {
   for (const k of Object.keys(mocks.fns)) delete mocks.fns[k];
   toast.mockClear();
+  setNotifier((text, kind, ms) => (ms === undefined ? toast(text, kind) : toast(text, kind, ms)));
 });
 afterEach(() => cleanup());
 
@@ -134,7 +137,7 @@ const people = (myRole: string) => ({
 describe("CloudPeople", () => {
   it("lets an owner change roles, project access and invitations", async () => {
     api.CloudPeople.mockResolvedValue(people("owner"));
-    render(CloudPeople, { team: band });
+    render(CloudPeople, { source: appTeamSource(band.id, true) });
     await screen.findByText("Alex");
     const sam = screen.getByText("sam@example.test").closest("li")!;
     await fireEvent.change(within(sam).getByLabelText("Access to Album"), { target: { value: "read" } });
@@ -151,7 +154,7 @@ describe("CloudPeople", () => {
 
   it("invites a collaborator to the chosen projects only", async () => {
     api.CloudPeople.mockResolvedValue(people("admin"));
-    render(CloudPeople, { team: band });
+    render(CloudPeople, { source: appTeamSource(band.id, true) });
     await screen.findByText("Invite someone");
     const form = screen.getByText("Send invitation").closest("form")!;
     await fireEvent.input(within(form).getByLabelText("Their email"), { target: { value: "lee@example.test" } });
@@ -168,7 +171,7 @@ describe("CloudPeople", () => {
 
   it("only shows a member who is in it", async () => {
     api.CloudPeople.mockResolvedValue(people("member"));
-    render(CloudPeople, { team: band });
+    render(CloudPeople, { source: appTeamSource(band.id, true) });
     await screen.findByText("Alex");
     expect(screen.queryByRole("combobox")).toBeNull();
     expect(screen.queryByText("Invite someone")).toBeNull();
