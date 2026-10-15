@@ -26,6 +26,7 @@ func TestAddProjectAs(t *testing.T) {
 		t.Fatal(err)
 	}
 	root := filepath.Join(t.TempDir(), "Plans")
+	t.Cleanup(waitTidy) // (before the folder goes: cleanups run last first)
 	os.MkdirAll(filepath.Join(root, "notes"), 0o755)
 	os.WriteFile(filepath.Join(root, "notes", "plan.md"), []byte("# Plan\n"), 0o644)
 	if _, err := a.AddProjectToTeam(team.ID, root); !errors.Is(err, project.ErrUnknownKind) {
