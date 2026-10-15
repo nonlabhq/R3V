@@ -30,8 +30,8 @@
   import BranchSettings from "./BranchSettings.svelte";
   import MilestoneDialog from "./MilestoneDialog.svelte";
   import { branchLabel, freeColor } from "$shared/branches";
-  import Splitter from "./Splitter.svelte";
-  import { splitPx } from "./splits.svelte";
+  import Splitter from "$shared/Splitter.svelte";
+  import { splitPx } from "$shared/splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";
   import ActionIcon from "./ActionIcon.svelte";
   import Modal from "./Modal.svelte";

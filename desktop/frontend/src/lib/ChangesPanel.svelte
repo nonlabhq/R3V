@@ -7,8 +7,8 @@
   import type { IgnoreOption } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import { toast } from "./notify.svelte";
   import FileIcon from "$shared/FileIcon.svelte";
-  import Splitter from "./Splitter.svelte";
-  import { splitPx } from "./splits.svelte";
+  import Splitter from "$shared/Splitter.svelte";
+  import { splitPx } from "$shared/splits.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { fileView, setFileMode, type FileMode } from "./viewmode.svelte";
   import { viewerFor, type Side } from "./viewers";

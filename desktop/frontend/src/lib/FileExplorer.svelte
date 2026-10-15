@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { clamp, dragWidth } from "$shared/drag";
   import ChangeMark, { changeLetter } from "$shared/ChangeMark.svelte";
   import { t, tn } from "./i18n.svelte";
   import { Events } from "@wailsio/runtime";
@@ -149,23 +150,6 @@
   $effect(() => keep("r3v.fileColumnsHidden", hidden));
   let shownCols = $derived(COLS.filter((c) => !hidden[c.key]));
   let template = $derived(`30px minmax(120px, 1fr) ${shownCols.map((c) => `${cols[c.key]}px`).join(" ")}`);
-  // A drag that sets a width: dx is how far the pointer went.
-  function dragWidth(e: PointerEvent, set: (dx: number) => void) {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const x0 = e.clientX;
-    const move = (m: PointerEvent) => { if (!(m.buttons & 1)) return up(); set(m.clientX - x0); };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
-  }
-  const clamp = (n: number, lo: number, hi: number) => Math.round(Math.min(hi, Math.max(lo, n)));
   function resizeTree(e: PointerEvent) { const w0 = widths.tree; dragWidth(e, (dx) => (widths.tree = clamp(w0 + dx, 160, 440))); }
   // The file panel: as set, as wide as leaves the files LIST_MIN (they keep
   // room on a narrow window).
