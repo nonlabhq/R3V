@@ -13,7 +13,7 @@
   import FilePanel from "./FilePanel.svelte";
   import ConvertDialog from "./ConvertDialog.svelte";
   import { portal } from "$shared/portal";
-  import { gridKey, navKey, ownKey, type NavRow } from "./keynav";
+  import { gridKey, navKey, ownKey, type NavRow } from "$shared/keynav";
   import { baseName, clickPick, dirOf, filesIn, findFolder, folderTree, isChanged, marqueePick,
     type Folder, type Selection } from "./files";
   import LockBadge from "./LockBadge.svelte";

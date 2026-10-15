@@ -40,6 +40,16 @@ export class TooBig extends Error {
   }
 }
 
+/** A changed file's two sides: in the version (a; none when deleted)
+ * against the one before it (b; none when added, or with no parent). */
+export function changeSides(f: { path: string; status: string; from?: string }, version: string, parent: string,
+  labels: { now: string; before: string }): { a: Side | null; b: Side | null } {
+  return {
+    a: f.status === "deleted" ? null : { path: f.path, version, label: labels.now },
+    b: f.status === "added" || !parent ? null : { path: f.status === "renamed" && f.from ? f.from : f.path, version: parent, label: labels.before },
+  };
+}
+
 /** The folder of a path ("" at the top), with its slash. */
 export const dirOf = (path: string) => (path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "");
 

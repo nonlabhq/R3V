@@ -12,8 +12,8 @@
   import ConvertDialog from "./ConvertDialog.svelte";
   import { fileView, setFileMode, type FileMode } from "./viewmode.svelte";
   import { viewerFor, type Side } from "./viewers";
-  import { navKey, ownKey, type NavRow } from "./keynav";
-  import { changesView, pickChangesView } from "./changesview.svelte";
+  import { navKey, ownKey, type NavRow } from "$shared/keynav";
+  import { changesView, pickChangesView } from "$shared/changesview.svelte";
   import { portal } from "$shared/portal";
   import LockBadge from "./LockBadge.svelte";
   import { lockAt, locksOf } from "./locks.svelte";
