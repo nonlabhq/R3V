@@ -17,12 +17,14 @@
   import TeamMark from "$shared/TeamMark.svelte";
   import TeamMembers from "./TeamMembers.svelte";
   import TeamWorkflow from "./TeamWorkflow.svelte";
+  import TeamActivity from "./TeamActivity.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
   // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs = false }: {
+  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs = false, onopenversion }: {
     team: TeamSummary;
+    onopenversion?: (project: string, version: string) => void; // (Activity: a version, in its project)
     inline?: boolean;      // in the team's home, not a dialog
     tabs?: boolean;        // in tabs down the left (Nightly: docs/design/team-settings.md)
     teams?: TeamSummary[]; // the teams here (where it can move to)
@@ -205,14 +207,15 @@
 
   // The tabs (team-settings.md): General, then Workflow; the one picked is
   // remembered.
-  type Tab = "general" | "workflow";
+  type Tab = "general" | "workflow" | "activity";
+  const TABS: Tab[] = ["general", "workflow", "activity"];
   const TAB_KEY = "r3v.teamSettingsTab";
-  let tab = $state<Tab>((() => { try { return localStorage.getItem(TAB_KEY) === "workflow" ? "workflow" : "general"; } catch { return "general"; } })());
+  let tab = $state<Tab>((() => { try { const v = localStorage.getItem(TAB_KEY) as Tab; return TABS.includes(v) ? v : "general"; } catch { return "general"; } })());
   function pick(x: Tab) {
     tab = x;
     try { localStorage.setItem(TAB_KEY, x); } catch { /* not remembered */ }
   }
-  const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow" };
+  const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow", activity: "Activity" };
   let locksStamp = $state(0); // (the team's locks changed: what projects set of their own, read again)
 </script>
 
@@ -413,13 +416,15 @@
 {#if inline && tabs}
   <div class="tabbed">
     <nav class="tabs" aria-label={t("Team settings")}>
-      {#each ["general", "workflow"] as const as x (x)}
+      {#each TABS as x (x)}
         <button class:on={tab === x} aria-current={tab === x ? "page" : undefined} onclick={() => pick(x)}>{t(tabNames[x])}</button>
       {/each}
     </nav>
     <div class="inline">
       {#if tab === "workflow"}
         {@render workflow()}
+      {:else if tab === "activity"}
+        {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamActivity {team} onopen={onopenversion} />{/if}
       {:else}
         {@render general()}
         <div class="inline-foot">{@render leave()}</div>

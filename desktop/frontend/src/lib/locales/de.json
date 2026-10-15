@@ -1857,5 +1857,15 @@
 "As the team: off": "Wie das Team: aus",
 "On for this project": "An für dieses Projekt",
 "Off for this project": "Aus für dieses Projekt",
-"Use the team's": "Wie das Team"
+"Use the team's": "Wie das Team",
+"{agent} (for {who})": "{agent} (für {who})",
+"{who} made the branch {branch}": "{who} hat den Branch {branch} angelegt",
+"{who} deleted the branch {branch}": "{who} hat den Branch {branch} gelöscht",
+"{who} added the project {project}": "{who} hat das Projekt {project} hinzugefügt",
+"{who} removed the project {project}": "{who} hat das Projekt {project} entfernt",
+"{who} joined the team": "{who} ist dem Team beigetreten",
+"All projects": "Alle Projekte",
+"Who": "Wer",
+"Nothing happened in this time.": "In dieser Zeit ist nichts passiert.",
+"The team can't be reached right now.": "Das Team ist gerade nicht erreichbar."
 }

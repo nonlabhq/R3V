@@ -6,6 +6,7 @@
   import Avatar from "$shared/Avatar.svelte";
   import TeamSettings from "./TeamSettings.svelte";
   import { storageKind } from "./teamText";
+  import { linkPick } from "./links.svelte";
 
   // A team's home (a click on the team in the sidebar): who's in it, and its
   // projects (those on this computer, then those still only on the team; a
@@ -103,6 +104,7 @@
   {:else}
     {#key team.id}
       <TeamSettings {team} inline tabs={canMove} author={overview.author} {reload} onclose={() => (section = "projects")}
+        onopenversion={(id, version) => { const p = mains.find((x) => x.id === id); if (p) { linkPick.project = id; linkPick.version = version; onopen(p); } }}
         teams={overview.teams} {canMove} offline={!!overview.teamError}
         roots={projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root)} />
     {/key}

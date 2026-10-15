@@ -31,6 +31,107 @@ import * as teammove$0 from "../internal/teammove/models.js";
 import * as textdiff$0 from "../internal/textdiff/models.js";
 
 /**
+ * ActivityItem is one thing that happened.
+ */
+export class ActivityItem {
+    "time": string;
+
+    /**
+     * Kind: share, merge, branch-made, branch-deleted, project-added,
+     * project-removed, member-joined.
+     */
+    "kind": string;
+
+    /**
+     * its id ("" for a member joining)
+     */
+    "project": string;
+
+    /**
+     * as it is now, else as it was
+     */
+    "projectName": string;
+
+    /**
+     * the branch's name
+     */
+    "branch": string;
+
+    /**
+     * the version the branch went to
+     */
+    "version": string;
+
+    /**
+     * its title
+     */
+    "title": string;
+
+    /**
+     * the member's id
+     */
+    "by": string;
+
+    /**
+     * their name ("" unknown)
+     */
+    "byName": string;
+
+    /**
+     * Tool and Model: the AI agent that made the version, for its member.
+     */
+    "tool": string;
+    "model": string;
+
+    /** Creates a new ActivityItem instance. */
+    constructor($$source: Partial<ActivityItem> = {}) {
+        if (!("time" in $$source)) {
+            this["time"] = "";
+        }
+        if (!("kind" in $$source)) {
+            this["kind"] = "";
+        }
+        if (!("project" in $$source)) {
+            this["project"] = "";
+        }
+        if (!("projectName" in $$source)) {
+            this["projectName"] = "";
+        }
+        if (!("branch" in $$source)) {
+            this["branch"] = "";
+        }
+        if (!("version" in $$source)) {
+            this["version"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("by" in $$source)) {
+            this["by"] = "";
+        }
+        if (!("byName" in $$source)) {
+            this["byName"] = "";
+        }
+        if (!("tool" in $$source)) {
+            this["tool"] = "";
+        }
+        if (!("model" in $$source)) {
+            this["model"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ActivityItem instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ActivityItem {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ActivityItem($$parsedSource as Partial<ActivityItem>);
+    }
+}
+
+/**
  * Actor is the agent tool that made a version ("claude-code") and its
  * model, when it said.
  */

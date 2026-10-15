@@ -1857,5 +1857,15 @@
 "As the team: off": "チームと同じ：オフ",
 "On for this project": "このプロジェクトではオン",
 "Off for this project": "このプロジェクトではオフ",
-"Use the team's": "チームの設定に戻す"
+"Use the team's": "チームの設定に戻す",
+"{agent} (for {who})": "{agent}（{who} の代わりに）",
+"{who} made the branch {branch}": "{who} がブランチ {branch} を作成",
+"{who} deleted the branch {branch}": "{who} がブランチ {branch} を削除",
+"{who} added the project {project}": "{who} がプロジェクト {project} を追加",
+"{who} removed the project {project}": "{who} がプロジェクト {project} を削除",
+"{who} joined the team": "{who} がチームに参加",
+"All projects": "すべてのプロジェクト",
+"Who": "誰",
+"Nothing happened in this time.": "この期間には何もありませんでした。",
+"The team can't be reached right now.": "今はチームに接続できません。"
 }

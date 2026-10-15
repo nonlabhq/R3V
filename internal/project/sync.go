@@ -475,6 +475,7 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 				if err := c.PutProject(remote.Project{ID: r.Config.ProjectID, Name: r.Config.Name}); err != nil {
 					return err
 				}
+				remote.LogTeamEvent(c, remote.TeamEvent{Kind: remote.EventProjectAdded, Project: r.Config.ProjectID, Name: r.Config.Name})
 			}
 		}
 	}

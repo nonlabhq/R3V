@@ -1857,5 +1857,15 @@
 "As the team: off": "팀과 같음: 끔",
 "On for this project": "이 프로젝트는 켬",
 "Off for this project": "이 프로젝트는 끔",
-"Use the team's": "팀 설정 사용"
+"Use the team's": "팀 설정 사용",
+"{agent} (for {who})": "{agent}({who} 대신)",
+"{who} made the branch {branch}": "{who}님이 브랜치 {branch}를 만들었습니다",
+"{who} deleted the branch {branch}": "{who}님이 브랜치 {branch}를 삭제했습니다",
+"{who} added the project {project}": "{who}님이 프로젝트 {project}를 추가했습니다",
+"{who} removed the project {project}": "{who}님이 프로젝트 {project}를 삭제했습니다",
+"{who} joined the team": "{who}님이 팀에 합류했습니다",
+"All projects": "모든 프로젝트",
+"Who": "누구",
+"Nothing happened in this time.": "이 기간에는 아무 일도 없었습니다.",
+"The team can't be reached right now.": "지금은 팀에 연결할 수 없습니다."
 }

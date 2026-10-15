@@ -1857,5 +1857,15 @@
 "As the team: off": "跟团队一样：关",
 "On for this project": "这个项目开启",
 "Off for this project": "这个项目关闭",
-"Use the team's": "改回团队设置"
+"Use the team's": "改回团队设置",
+"{agent} (for {who})": "{agent}（代 {who}）",
+"{who} made the branch {branch}": "{who} 建立了分支 {branch}",
+"{who} deleted the branch {branch}": "{who} 删除了分支 {branch}",
+"{who} added the project {project}": "{who} 新增了项目 {project}",
+"{who} removed the project {project}": "{who} 移除了项目 {project}",
+"{who} joined the team": "{who} 加入了团队",
+"All projects": "所有项目",
+"Who": "谁",
+"Nothing happened in this time.": "这段时间没有动态。",
+"The team can't be reached right now.": "现在无法连接团队。"
 }
