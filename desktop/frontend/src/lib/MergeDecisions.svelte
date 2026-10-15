@@ -11,7 +11,7 @@
   import { branchLabel, branchLane, type BranchLook } from "$shared/branches";
   import Avatar from "$shared/Avatar.svelte";
   import FileIcon from "$shared/FileIcon.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import Tx from "./Tx.svelte";
   import MergeSetPreview from "./MergeSetPreview.svelte";
 

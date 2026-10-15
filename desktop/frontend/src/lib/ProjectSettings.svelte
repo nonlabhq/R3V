@@ -1,15 +1,15 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { api, errorText, type ProjectInfo, type Progress, type TeamProject, type TeamSummary } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import RulesWindow from "./RulesWindow.svelte";
   import Tx from "./Tx.svelte";
   import { toast } from "./notify.svelte";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
-  import LookPicker from "./LookPicker.svelte";
+  import LookPicker from "$shared/LookPicker.svelte";
   import { portal } from "$shared/portal";
   import BranchSettings from "./BranchSettings.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
+  import ConfirmDialog from "$shared/ConfirmDialog.svelte";
   import ProjectCheck from "./ProjectCheck.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import ProjectWorkflow from "./ProjectWorkflow.svelte";

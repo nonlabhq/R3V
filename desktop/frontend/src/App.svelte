@@ -21,7 +21,7 @@
   import TeamMenu from "./lib/TeamMenu.svelte";
   import TeamSettings from "./lib/TeamSettings.svelte";
   import VerifyDialog from "./lib/VerifyDialog.svelte";
-  import Modal from "./lib/Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import Toasts from "./lib/Toasts.svelte";
   import StyleLab from "./lib/StyleLab.svelte";
   import ProjectSettings from "./lib/ProjectSettings.svelte";
@@ -35,7 +35,7 @@
   import Avatar from "$shared/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
   import KindDialog from "./lib/KindDialog.svelte";
-  import ConfirmDialog from "./lib/ConfirmDialog.svelte";
+  import ConfirmDialog from "$shared/ConfirmDialog.svelte";
 
 
   let overview = $state<Overview | null>(null);

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { api, errorText } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import StorageFields, { type StorageValue } from "./StorageFields.svelte";
 
   // Back the team up into S3-compatible storage: another bucket (another

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // The keyboard shortcuts, listed (Ctrl+/).
   let { onclose }: { onclose: () => void } = $props();

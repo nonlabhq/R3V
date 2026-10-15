@@ -1,22 +1,23 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import { api, ago, errorText, toolName, type TeamSummary } from "./api";
-  import type { ActivityItem } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
+  import { t } from "../i18n";
+  import { ago, errorText } from "../text";
+  import { toolName } from "../tools";
+  import type { ActivityEntry as ActivityItem, TeamSource } from "./source";
 
   // A team's Activity tab (docs/design/team-settings.md): what happened,
   // newest first, by day; filtered by project, by each member or each agent,
   // and how far back. A version's line opens it in its project's graph.
-  let { team, onopen }: { team: TeamSummary; onopen?: (project: string, version: string) => void } = $props();
+  let { source, onopen }: { source: TeamSource; onopen?: (project: string, version: string) => void } = $props();
 
   let days = $state(30);
   let items = $state<ActivityItem[] | null>(null);
   let error = $state("");
   $effect(() => {
-    const id = team.id, d = days;
+    const src = source, d = days;
     items = null;
     error = "";
-    api.TeamActivity(id, d).then((v) => { if (team.id === id && days === d) items = v ?? []; })
-      .catch((e) => { if (team.id === id) error = errorText(e); });
+    src.activity(d).then((v) => { if (source === src && days === d) items = v ?? []; })
+      .catch((e) => { if (source === src) error = errorText(e); });
   });
 
   // Who: everyone, people, agents, a member (m:<id>), an agent (a:<tool>).

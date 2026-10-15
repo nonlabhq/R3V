@@ -1880,5 +1880,7 @@
 "By project": "プロジェクト別",
 "A file several projects use counts in each of them, and once in the total.": "複数のプロジェクトが使うファイルは各プロジェクトで数え、合計では 1 回だけ数えます。",
 "(removed)": "（削除済み）",
-"No files in this folder.": "このフォルダーにファイルはありません。"
+"No files in this folder.": "このフォルダーにファイルはありません。",
+"Activity": "アクティビティ",
+"Usage": "使用量"
 }

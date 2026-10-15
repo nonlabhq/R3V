@@ -1880,5 +1880,7 @@
 "By project": "依專案",
 "A file several projects use counts in each of them, and once in the total.": "多個專案共用的檔案會算進每個專案，總計裡只算一次。",
 "(removed)": "（已移除）",
-"No files in this folder.": "這個資料夾裡沒有檔案。"
+"No files in this folder.": "這個資料夾裡沒有檔案。",
+"Activity": "動態",
+"Usage": "用量"
 }

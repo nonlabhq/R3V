@@ -2,11 +2,11 @@
   import { t } from "./i18n.svelte";
   import { api, errorText, type TeamSummary, type Profile, type CloudStatus } from "./api";
 
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import Avatar from "$shared/Avatar.svelte";
-  import Swatches from "./Swatches.svelte";
+  import Swatches from "$shared/Swatches.svelte";
   import { colorOf, randomColor } from "$shared/palette";
-  import { squarePicture } from "./picture";
+  import { squarePicture } from "$shared/picture";
   import { toast } from "./notify.svelte";
 
   // The user: their name in the team, and how they show to their teams (a

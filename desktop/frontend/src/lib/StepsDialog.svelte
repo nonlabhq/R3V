@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
   import type { Session } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import StepsList from "./StepsList.svelte";
 
   // Steps to look back at (a version's, a workspace's): each session's

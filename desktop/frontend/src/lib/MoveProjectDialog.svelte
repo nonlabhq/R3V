@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { api, errorText, type Progress, type TeamSummary } from "./api";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import ProgressBar from "./ProgressBar.svelte";
 
   // Moving a project to another team (or copying it there): its whole

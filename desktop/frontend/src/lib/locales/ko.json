@@ -1880,5 +1880,7 @@
 "By project": "프로젝트별",
 "A file several projects use counts in each of them, and once in the total.": "여러 프로젝트가 쓰는 파일은 각 프로젝트에서 세고, 합계에는 한 번만 셉니다.",
 "(removed)": "(삭제됨)",
-"No files in this folder.": "이 폴더에 파일이 없습니다."
+"No files in this folder.": "이 폴더에 파일이 없습니다.",
+"Activity": "활동",
+"Usage": "사용량"
 }

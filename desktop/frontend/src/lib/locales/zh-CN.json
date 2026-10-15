@@ -1880,5 +1880,7 @@
 "By project": "按项目",
 "A file several projects use counts in each of them, and once in the total.": "多个项目共用的文件会算进每个项目，总计里只算一次。",
 "(removed)": "（已移除）",
-"No files in this folder.": "这个文件夹里没有文件。"
+"No files in this folder.": "这个文件夹里没有文件。",
+"Activity": "动态",
+"Usage": "用量"
 }

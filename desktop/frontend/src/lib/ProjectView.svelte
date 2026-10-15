@@ -34,11 +34,11 @@
   import { splitPx } from "$shared/splits.svelte";
   import VersionDetail from "./VersionDetail.svelte";
   import ActionIcon from "./ActionIcon.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import PreviewDialog from "./PreviewDialog.svelte";
   import ProjectCheck, { hasCheck } from "./ProjectCheck.svelte";
   import MergeDecisions, { type MergeKind } from "./MergeDecisions.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
+  import ConfirmDialog from "$shared/ConfirmDialog.svelte";
   import ArchiveDialog from "./ArchiveDialog.svelte";
   import LiveBlockedDialog from "./LiveBlockedDialog.svelte";
   import CommitCheckDialog from "./CommitCheckDialog.svelte";

@@ -1,3 +1,5 @@
+import { setNotifier } from "$shared/notify";
+
 // Small in-app notifications (the tray app also sends Windows notifications).
 export type Toast = { id: number; text: string; kind: "info" | "ok" | "warn" | "error" };
 
@@ -14,3 +16,6 @@ export function dismiss(id: number) {
   const i = toasts.findIndex((t) => t.id === id);
   if (i >= 0) toasts.splice(i, 1);
 }
+
+// The shared components' notices are toasts too.
+setNotifier((text, kind, ms) => toast(text, kind, ms));

@@ -11,7 +11,7 @@
   import FileBrowser from "$shared/FileBrowser.svelte";
   import { baseName, dirOf, type Selection } from "$shared/files";
   import LockBadge from "./LockBadge.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
+  import ConfirmDialog from "$shared/ConfirmDialog.svelte";
   import { breakLock, holderName, lockAt, locksOf, lockPaths, unlockPaths, type LockItem } from "./locks.svelte";
   import { branchLabel } from "$shared/branches";
 

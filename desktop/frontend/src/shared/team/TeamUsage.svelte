@@ -1,28 +1,28 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import { api, ago, errorText, formatBytes, type TeamSummary } from "./api";
-  import type { TeamUsageView } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
+  import { t } from "../i18n";
+  import { ago, errorText, formatBytes } from "../text";
+  import type { TeamSource, TeamUsageData as TeamUsageView } from "./source";
 
   // A team's Usage tab (docs/design/team-settings.md): how much it keeps,
   // by project. On its own storage R3V counts on request (every version's
   // folder lists read once), the count kept with its time; on R3V Cloud,
   // the service's numbers and the plan's.
-  let { team }: { team: TeamSummary } = $props();
+  let { source }: { source: TeamSource } = $props();
 
   let v = $state<TeamUsageView | null>(null);
   let error = $state("");
   let counting = $state(false);
   $effect(() => {
-    const id = team.id;
+    const src = source;
     v = null;
     error = "";
-    api.TeamUsage(id).then((u) => { if (team.id === id) v = u; }).catch((e) => { if (team.id === id) error = errorText(e); });
+    src.usage().then((u) => { if (source === src) v = u; }).catch((e) => { if (source === src) error = errorText(e); });
   });
   async function count() {
     counting = true;
     error = "";
     try {
-      v = await api.CountTeamUsage(team.id);
+      if (source.countUsage) v = await source.countUsage();
     } catch (e) {
       error = errorText(e);
     } finally {
@@ -55,7 +55,7 @@
           <span class="muted">{t("Not counted yet.")}</span>
         {/if}
         <span class="spacer"></span>
-        <button onclick={count} disabled={counting}>{counting ? t("Counting…") : t("Count now")}</button>
+        {#if source.countUsage}<button onclick={count} disabled={counting}>{counting ? t("Counting…") : t("Count now")}</button>{/if}
       </div>
       {#if v.counted}
         <p class="hint">{t("Counted {when}: {versions} versions; the storage holds {stored} in all (files no version uses yet, until a cleanup, too).",

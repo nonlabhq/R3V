@@ -1,28 +1,29 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
-  import { api, errorText, type TeamSummary, type CloudPeople, type CloudMember } from "./api";
-  import { toast } from "./notify.svelte";
-  import ConfirmDialog from "./ConfirmDialog.svelte";
+  import { t } from "../i18n";
+  import { errorText } from "../text";
+  import { notify as toast } from "../notify";
+  import ConfirmDialog from "../ConfirmDialog.svelte";
+  import type { TeamPeopleData, TeamPerson, TeamSource } from "./source";
 
-  // A hosted team's people (R3V-Cloud): who is in it and with what role,
-  // inviting someone by email, pending invitations, and which projects a
+  // An R3V Cloud team's people: who is in it and with what role, inviting
+  // someone by email, pending invitations, and which projects a
   // collaborator reaches. Owners and admins change things; everyone sees.
-  let { team }: { team: TeamSummary } = $props();
+  let { source }: { source: TeamSource } = $props();
 
-  let people = $state<CloudPeople | null>(null);
+  let people = $state<TeamPeopleData | null>(null);
   let loadError = $state("");
   let busy = $state(false);
 
   async function load() {
     try {
-      people = await api.CloudPeople(team.id);
+      people = await source.people();
       loadError = "";
     } catch (e) {
       loadError = errorText(e);
     }
   }
   $effect(() => {
-    team.id;
+    void source;
     load();
   });
 
@@ -56,7 +57,7 @@
     const projects = Object.fromEntries(Object.entries(access).filter(([, a]) => a));
     busy = true;
     try {
-      await api.CloudInvite(team.id, email.trim(), role, projects);
+      await source.invite(email.trim(), role, projects);
       toast(t("Invitation sent to {email}", { email: email.trim() }), "ok");
       email = "";
       access = {};
@@ -68,9 +69,9 @@
     }
   }
 
-  let removing = $state<CloudMember | null>(null);
-  const me = (m: CloudMember) => m.userId === people?.myUserId;
-  const mayChange = (m: CloudMember) => canManage && !me(m) && (people?.myRole === "owner" || m.role !== "owner");
+  let removing = $state<TeamPerson | null>(null);
+  const me = (m: TeamPerson) => m.userId === people?.myUserId;
+  const mayChange = (m: TeamPerson) => canManage && !me(m) && (people?.myRole === "owner" || m.role !== "owner");
 </script>
 
 <section>
@@ -89,7 +90,7 @@
             <span class="spacer"></span>
             {#if mayChange(m)}
               <select aria-label={t("Role")} value={m.role} disabled={busy}
-                onchange={(e) => act(() => api.CloudSetRole(team.id, m.userId, e.currentTarget.value))}>
+                onchange={(e) => act(() => source.setRole(m.userId, e.currentTarget.value))}>
                 {#each roles as r}<option value={r}>{roleName(r)}</option>{/each}
               </select>
               <button class="ghost small danger-text" disabled={busy} onclick={() => (removing = m)}>{t("Remove")}</button>
@@ -105,7 +106,7 @@
                   <label class="row proj">
                     <span>{p.name}</span><span class="spacer"></span>
                     <select value={a} disabled={busy} aria-label={t("Access to {project}", { project: p.name })}
-                      onchange={(e) => act(() => api.CloudSetAccess(team.id, p.id, m.userId, e.currentTarget.value))}>
+                      onchange={(e) => act(() => source.setAccess(p.id, m.userId, e.currentTarget.value))}>
                       <option value="">{t("No access")}</option>
                       <option value="read">{t("Can view")}</option>
                       <option value="write">{t("Can edit")}</option>
@@ -129,7 +130,7 @@
             <li class="row who">
               <span>{i.email}</span><span class="faint small">{roleName(i.role)}</span><span class="spacer"></span>
               <button class="ghost small" disabled={busy}
-                onclick={() => act(() => api.CloudWithdraw(team.id, i.id), t("Invitation withdrawn"))}>{t("Withdraw")}</button>
+                onclick={() => act(() => source.withdraw(i.id), t("Invitation withdrawn"))}>{t("Withdraw")}</button>
             </li>
           {/each}
         </ul>
@@ -173,7 +174,7 @@
   <ConfirmDialog title={t("Remove {name}?", { name: m.name || m.email })}
     text={t("They can't reach the team or its projects any more. What they downloaded stays on their computer.")}
     confirm={t("Remove")} danger
-    onconfirm={() => { removing = null; act(() => api.CloudRemoveMember(team.id, m.userId), t("Removed {name}", { name: m.name || m.email })); }}
+    onconfirm={() => { removing = null; act(() => source.remove(m.userId), t("Removed {name}", { name: m.name || m.email })); }}
     onclose={() => (removing = null)} />
 {/if}
 

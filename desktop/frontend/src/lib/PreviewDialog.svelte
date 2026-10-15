@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import IncomingChanges from "./IncomingChanges.svelte";
   import { type Preview } from "./api";
 

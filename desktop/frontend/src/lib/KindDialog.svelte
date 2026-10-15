@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // A folder R3V finds nothing of a kind it knows in (only documents, a new
   // project): the person says how to track it. code: text merged line by

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t } from "./i18n";
   import Modal from "./Modal.svelte";
 
   // Asks before doing something: what happens, and a warning when there is

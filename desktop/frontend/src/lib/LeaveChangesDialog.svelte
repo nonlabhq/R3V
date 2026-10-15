@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t, tn } from "./i18n.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // Going to another version replaces the files: uncommitted changes are
   // committed first (described here), or discarded. On an older version

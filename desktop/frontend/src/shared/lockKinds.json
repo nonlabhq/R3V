@@ -1,0 +1,105 @@
+[
+  {
+    "id": "unreal",
+    "patterns": [
+      "*.umap",
+      "*.uasset"
+    ],
+    "default": true
+  },
+  {
+    "id": "unity",
+    "patterns": [
+      "*.unity",
+      "*.prefab",
+      "*.asset"
+    ],
+    "default": true
+  },
+  {
+    "id": "godot",
+    "patterns": [
+      "*.scn",
+      "*.res"
+    ],
+    "default": true
+  },
+  {
+    "id": "blender",
+    "patterns": [
+      "*.blend"
+    ],
+    "default": true
+  },
+  {
+    "id": "source-art",
+    "patterns": [
+      "*.psd",
+      "*.psb",
+      "*.kra",
+      "*.spp",
+      "*.ma",
+      "*.mb",
+      "*.max",
+      "*.c4d"
+    ],
+    "default": true
+  },
+  {
+    "id": "godot-text",
+    "patterns": [
+      "*.tscn",
+      "*.tres"
+    ],
+    "default": false
+  },
+  {
+    "id": "images",
+    "patterns": [
+      "*.png",
+      "*.jpg",
+      "*.jpeg",
+      "*.tga",
+      "*.tif",
+      "*.tiff",
+      "*.exr",
+      "*.hdr"
+    ],
+    "default": false
+  },
+  {
+    "id": "models",
+    "patterns": [
+      "*.fbx",
+      "*.obj",
+      "*.gltf",
+      "*.glb",
+      "*.usd",
+      "*.usdc",
+      "*.abc"
+    ],
+    "default": false
+  },
+  {
+    "id": "audio",
+    "patterns": [
+      "*.wav",
+      "*.aif",
+      "*.aiff",
+      "*.flac",
+      "*.mp3",
+      "*.ogg"
+    ],
+    "default": false
+  },
+  {
+    "id": "video",
+    "patterns": [
+      "*.mp4",
+      "*.mov",
+      "*.mkv",
+      "*.avi"
+    ],
+    "default": false
+  }
+]

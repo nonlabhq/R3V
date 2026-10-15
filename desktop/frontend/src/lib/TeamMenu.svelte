@@ -3,7 +3,7 @@
   import { t as tr, tn } from "./i18n.svelte"; // t is a team here
   import { api, errorText, type Overview, type TeamSummary } from "./api";
   import { toast } from "./notify.svelte";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
   import JoinOrCreate from "./JoinOrCreate.svelte";
   import IdentityForm from "./IdentityForm.svelte";
   import { storageKind } from "./teamText";

@@ -3,7 +3,7 @@
   import { t } from "./i18n.svelte";
   import { api, errorText, formatBytes, type Branch } from "./api";
   import { branchLabel } from "$shared/branches";
-  import Modal from "./Modal.svelte";
+  import Modal from "$shared/Modal.svelte";
 
   // A new workspace, for you or an AI agent: its branch's name, its folder
   // (beside the project's, named after it and the branch, until one is

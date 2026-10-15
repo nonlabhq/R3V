@@ -2,16 +2,8 @@
 // profile.LockKinds), and what a project's .r3v.yaml makes of the team's
 // settings (file_locks:), now and between two states of the file.
 import { t } from "./i18n.svelte";
-
-/** A kind of file that can lock by itself, in words. */
-export function lockKindName(id: string): string {
-  return ({
-    unreal: t("Unreal levels and assets"), unity: t("Unity scenes, prefabs and assets"),
-    godot: t("Godot binary scenes and resources"), blender: t("Blender files"),
-    "source-art": t("Source art (Photoshop, Krita, Substance, Maya, 3ds Max, Cinema 4D)"),
-    "godot-text": t("Godot text scenes and resources"), images: t("Images"), models: t("3D models"), audio: t("Audio"), video: t("Video"),
-  } as Record<string, string>)[id] ?? id;
-}
+import { lockKindName } from "$shared/lockKinds";
+export { lockKindName };
 
 /** A pattern in words: "everything under Content/Maps/", ".uasset files". */
 export function patternText(p: string): string {

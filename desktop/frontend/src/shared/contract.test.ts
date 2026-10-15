@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 // src/shared is used by R3V Cloud's web app too (README.md): what is here
 // imports only what is here, Svelte, the test tools and the libraries the
-// viewers load when needed (highlight.js, three), never the App (../lib,
+// viewers and the look picker load when needed (highlight.js, three,
+// emoji-picker-element and its data), never the App (../lib,
 // its bindings, Wails).
 
 const sources = import.meta.glob<string>("./**/*.{ts,svelte,css}", { query: "?raw", import: "default", eager: true });
-const allowed = /^(\.\.?\/|svelte($|\/)|vitest$|@testing-library\/|highlight\.js($|\/)|three($|\/))/;
+const allowed = /^(\.\.?\/|svelte($|\/)|vitest$|@testing-library\/|highlight\.js($|\/)|three($|\/)|emoji-picker-element(-data)?($|\/))/;
 
 describe("shared", () => {
   it("finds its files", () => expect(Object.keys(sources).length).toBeGreaterThan(15));

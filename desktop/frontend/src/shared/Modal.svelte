@@ -4,7 +4,7 @@
 </script>
 
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t } from "./i18n";
   import type { Snippet } from "svelte";
 
   let { title, onclose, width = 560, backdropCloses = true, escCloses = true, children, footer }: {
