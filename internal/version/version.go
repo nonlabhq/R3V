@@ -1,9 +1,9 @@
-// Package version holds the R3V release number. The build script reads it
+﻿// Package version holds the R3V release number. The build script reads it
 // from here too (installer, Windows file properties).
 package version
 
 // Version is the release this build is (Stable) or leads up to (Nightly).
-const Version = "0.1.79"
+const Version = "0.1.80"
 
 // Build marks a Nightly build: "nightly.<UTC time>" (the build script sets
 // it with -ldflags -X), "" for a Stable one.
