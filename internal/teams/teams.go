@@ -21,6 +21,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/flock"
 	"github.com/nonlabhq/r3v/internal/jsonx"
 	"github.com/nonlabhq/r3v/internal/remote"
+	"github.com/nonlabhq/r3v/internal/store"
 	"github.com/nonlabhq/r3v/internal/version"
 )
 
@@ -313,7 +314,9 @@ func (s *Store) Save() error {
 	if err := os.WriteFile(tmp, append(data, '\n'), 0o600); err != nil {
 		return err
 	}
-	return os.Rename(tmp, s.path)
+	// On Windows the rename fails while anyone reads teams.json (Load
+	// takes no lock): Replace tries again for a moment.
+	return store.Replace(tmp, s.path)
 }
 
 // NormalizeURL makes team addresses comparable.

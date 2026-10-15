@@ -42,7 +42,11 @@ func (a *App) StartTeamMove(teamID, toID string, projects []string, accessKey, s
 	if !remote.HostedTeams {
 		return cloud.ErrNotInBuild
 	}
+	if _, busy := moving.LoadOrStore(teamID, true); busy {
+		return errors.New("this team's move is under way")
+	}
 	if err := teammove.Start(moves, teamID, toID, projects, accessKey, secretKey, region); err != nil {
+		moving.Delete(teamID)
 		return err
 	}
 	go a.runMove(teamID, false)
@@ -62,7 +66,9 @@ func (a *App) FinishTeamMove(teamID string) error {
 	if s.Moves[teamID] == nil {
 		return errors.New("this team isn't moving")
 	}
-	go a.runMove(teamID, true)
+	if _, busy := moving.LoadOrStore(teamID, true); !busy {
+		go a.runMove(teamID, true)
+	}
 	return nil
 }
 
@@ -98,17 +104,17 @@ func (a *App) resumeTeamMoves() {
 	}
 	for id, m := range s.Moves {
 		if m.Phase == "finishing" {
-			go a.runMove(id, true)
+			if _, busy := moving.LoadOrStore(id, true); !busy {
+				go a.runMove(id, true)
+			}
 		}
 	}
 }
 
 // runMove does a move's step in the background: the plans and copy, or
-// (finish) the rest.
+// (finish) the rest. The caller marks teamID busy in moving before it
+// returns, so TeamMoveState never shows the phase from before the step.
 func (a *App) runMove(teamID string, finish bool) {
-	if _, busy := moving.LoadOrStore(teamID, true); busy {
-		return
-	}
 	defer moving.Delete(teamID)
 	defer a.emitMove(teamID)
 	a.emitMove(teamID)
