@@ -70,6 +70,27 @@ export interface ChangedFile {
   kind?: string;
 }
 
+/** A file as the Files explorer lists it. status: unchanged, added,
+ * modified, deleted, renamed, ignored…; kind: what R3V knows it as;
+ * preview: it can be shown as a picture; modified: when it last changed
+ * (a thumbnail's address changes with it). */
+export interface BrowserFile {
+  path: string;
+  status: string;
+  size: number;
+  kind?: string;
+  preview?: boolean;
+  modified?: string;
+}
+
+/** The version that last changed a file. */
+export interface LastChange {
+  message: string;
+  author: string;
+  authorId: string;
+  time: string;
+}
+
 /** A preset in use for a folder ("" is the project folder). */
 export interface AppliedPreset {
   folder: string;

@@ -1879,5 +1879,6 @@
 "What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "R3V が保存している量（圧縮後）。ストレージ会社の請求はこれより多くなることがあります（バケット内の他のもの、独自に保持するバージョン、リクエストなど）。",
 "By project": "プロジェクト別",
 "A file several projects use counts in each of them, and once in the total.": "複数のプロジェクトが使うファイルは各プロジェクトで数え、合計では 1 回だけ数えます。",
-"(removed)": "（削除済み）"
+"(removed)": "（削除済み）",
+"No files in this folder.": "このフォルダーにファイルはありません。"
 }

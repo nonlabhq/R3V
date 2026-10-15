@@ -1879,5 +1879,6 @@
 "What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "O que o R3V guarda, como armazenado (comprimido). A conta do seu provedor de armazenamento pode ser maior: outras coisas no bucket, versões que ele guarda por conta própria, requisições.",
 "By project": "Por projeto",
 "A file several projects use counts in each of them, and once in the total.": "Um arquivo usado por vários projetos conta em cada um deles, e uma vez no total.",
-"(removed)": "(removido)"
+"(removed)": "(removido)",
+"No files in this folder.": "Nenhum arquivo nesta pasta."
 }

@@ -1879,5 +1879,6 @@
 "What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "R3V 保存的量（压缩后）。存储服务商的账单可能更多：bucket 里的其他东西、服务商自己保留的版本、请求费用等。",
 "By project": "按项目",
 "A file several projects use counts in each of them, and once in the total.": "多个项目共用的文件会算进每个项目，总计里只算一次。",
-"(removed)": "（已移除）"
+"(removed)": "（已移除）",
+"No files in this folder.": "这个文件夹里没有文件。"
 }

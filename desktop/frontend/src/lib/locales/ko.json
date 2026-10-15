@@ -1879,5 +1879,6 @@
 "What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "R3V가 저장한 양(압축 기준)입니다. 저장소 업체의 청구액은 더 많을 수 있습니다: 버킷의 다른 항목, 업체가 따로 보관하는 버전, 요청 등.",
 "By project": "프로젝트별",
 "A file several projects use counts in each of them, and once in the total.": "여러 프로젝트가 쓰는 파일은 각 프로젝트에서 세고, 합계에는 한 번만 셉니다.",
-"(removed)": "(삭제됨)"
+"(removed)": "(삭제됨)",
+"No files in this folder.": "이 폴더에 파일이 없습니다."
 }
