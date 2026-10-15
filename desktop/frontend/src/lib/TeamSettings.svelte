@@ -18,6 +18,7 @@
   import TeamMembers from "./TeamMembers.svelte";
   import TeamWorkflow from "./TeamWorkflow.svelte";
   import TeamActivity from "./TeamActivity.svelte";
+  import TeamUsage from "./TeamUsage.svelte";
 
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
@@ -207,15 +208,15 @@
 
   // The tabs (team-settings.md): General, then Workflow; the one picked is
   // remembered.
-  type Tab = "general" | "workflow" | "activity";
-  const TABS: Tab[] = ["general", "workflow", "activity"];
+  type Tab = "general" | "workflow" | "activity" | "usage";
+  const TABS: Tab[] = ["general", "workflow", "activity", "usage"];
   const TAB_KEY = "r3v.teamSettingsTab";
   let tab = $state<Tab>((() => { try { const v = localStorage.getItem(TAB_KEY) as Tab; return TABS.includes(v) ? v : "general"; } catch { return "general"; } })());
   function pick(x: Tab) {
     tab = x;
     try { localStorage.setItem(TAB_KEY, x); } catch { /* not remembered */ }
   }
-  const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow", activity: "Activity" };
+  const tabNames: Record<Tab, string> = { general: "General", workflow: "Workflow", activity: "Activity", usage: "Usage" };
   let locksStamp = $state(0); // (the team's locks changed: what projects set of their own, read again)
 </script>
 
@@ -425,6 +426,8 @@
         {@render workflow()}
       {:else if tab === "activity"}
         {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamActivity {team} onopen={onopenversion} />{/if}
+      {:else if tab === "usage"}
+        {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamUsage {team} />{/if}
       {:else}
         {@render general()}
         <div class="inline-foot">{@render leave()}</div>

@@ -165,3 +165,31 @@ func Accept(service, token string) (string, error) {
 	}
 	return TeamAddress(service, out.TeamID), nil
 }
+
+// Usage is what an R3V Cloud team keeps, as the service counts it, and
+// what its plan allows (Quota 0: no limit).
+type Usage struct {
+	Used     int64          `json:"used"`
+	Quota    int64          `json:"quota"`
+	Plan     string         `json:"plan"`
+	Projects []ProjectUsage `json:"projects"`
+}
+
+// ProjectUsage is one project's part of it.
+type ProjectUsage struct {
+	ID    string `json:"id"`
+	Bytes int64  `json:"bytes"`
+}
+
+// TeamUsage asks the service what the team keeps.
+func TeamUsage(service, team string) (*Usage, error) {
+	tok, err := authed(service)
+	if err != nil {
+		return nil, err
+	}
+	var out Usage
+	if err := call(service, tok, "GET", teamPath(team)+"/usage", nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

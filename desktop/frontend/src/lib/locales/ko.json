@@ -1867,5 +1867,16 @@
 "All projects": "모든 프로젝트",
 "Who": "누구",
 "Nothing happened in this time.": "이 기간에는 아무 일도 없었습니다.",
-"The team can't be reached right now.": "지금은 팀에 연결할 수 없습니다."
+"The team can't be reached right now.": "지금은 팀에 연결할 수 없습니다.",
+"of {quota}": "/ {quota}",
+"Used": "사용량",
+"As R3V Cloud counts it for the team's plan.": "R3V Cloud가 팀 요금제 기준으로 센 양입니다.",
+"used by the projects' versions": "프로젝트 버전이 사용 중",
+"Not counted yet.": "아직 세지 않았습니다.",
+"Counting…": "세는 중…",
+"Count now": "지금 세기",
+"Counted {when}: {versions} versions; the storage holds {stored} in all (files no version uses yet, until a cleanup, too).": "{when}에 계산: 버전 {versions}개. 저장소 전체는 {stored}입니다(정리 전까지는 어떤 버전도 쓰지 않는 파일도 포함).",
+"What R3V keeps, as stored (compressed). Your storage company's bill can be more: other things in the bucket, versions it keeps of its own, requests.": "R3V가 저장한 양(압축 기준)입니다. 저장소 업체의 청구액은 더 많을 수 있습니다: 버킷의 다른 항목, 업체가 따로 보관하는 버전, 요청 등.",
+"By project": "프로젝트별",
+"A file several projects use counts in each of them, and once in the total.": "여러 프로젝트가 쓰는 파일은 각 프로젝트에서 세고, 합계에는 한 번만 셉니다."
 }
