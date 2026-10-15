@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/blob"
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/project"
@@ -147,6 +148,9 @@ var codes = []struct {
 	{project.ErrInWorkspace, "in_workspace", exitError, "run it in the project's main copy"},
 	{project.ErrWorkspaceOrphaned, "workspace_orphaned", exitError, "the project's main copy was moved or deleted: make the workspace again"},
 	{project.ErrWorkspacesNotInBuild, "needs_nightly", exitUpgrade, "the user must switch R3V to the Nightly channel (Settings → Updates)"},
+	{remote.ErrStorageFull, "cloud_quota", exitError, "the team's storage on R3V Cloud is full: delete projects or versions to make room (reading still works); the version stays here, shared once there is room"},
+	{cloud.ErrBetaOnly, "cloud_beta_only", exitError, "R3V Cloud is in a closed beta: ask for an invitation, or join the waitlist at " + cloud.Waitlist},
+	{cloud.ErrOneTeam, "cloud_one_team", exitError, "the beta includes one team of your own: use it, or delete it to make another"},
 }
 
 // classify gives err its code.

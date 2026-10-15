@@ -139,6 +139,30 @@ type serviceError struct{ Code, Message string }
 
 func (e *serviceError) Error() string { return "R3V-Cloud: " + e.Message }
 
+// The closed beta (R3V-Cloud docs/beta.md): making a team is for invited
+// people (ErrBetaOnly), one free team each (ErrOneTeam); a full team's
+// shares are refused (remote.ErrStorageFull).
+var (
+	ErrBetaOnly = errors.New("R3V Cloud is in a closed beta: teams are for invited people")
+	ErrOneTeam  = errors.New("your beta includes one team of your own")
+)
+
+// Is lets errors.Is find the beta's refusals and a full team.
+func (e *serviceError) Is(target error) bool {
+	switch e.Code {
+	case "beta_only", "not_invited":
+		return target == ErrBetaOnly
+	case "one_team":
+		return target == ErrOneTeam
+	case "over_quota", "over_limit":
+		return target == remote.ErrStorageFull
+	}
+	return false
+}
+
+// Waitlist is where people not invited yet ask to be.
+const Waitlist = "https://r3v.so/waitlist"
+
 // Me is the signed-in person and their teams.
 type Me struct {
 	User struct {

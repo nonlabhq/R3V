@@ -154,6 +154,9 @@ func (a *App) CloudCreateTeam(name string) (TeamSummary, error) {
 		return TeamSummary{}, errors.New("a team name needs 1 to 100 characters")
 	}
 	addr, err := cloud.CreateTeam(cloud.Service(), name)
+	if errors.Is(err, cloud.ErrBetaOnly) {
+		return TeamSummary{}, cloud.ErrBetaOnly // (the page says it in words of its own, with the waitlist)
+	}
 	if err != nil {
 		return TeamSummary{}, err
 	}

@@ -218,3 +218,22 @@ func TestTeamAddressIsTheBrokers(t *testing.T) {
 		t.Errorf("service %q %v", svc, ok)
 	}
 }
+
+// The closed beta's refusals and a full team, as the service names them,
+// are told apart (the CLI's codes and the App's words follow them).
+func TestBetaRefusals(t *testing.T) {
+	for code, want := range map[string]error{"beta_only": ErrBetaOnly, "not_invited": ErrBetaOnly, "one_team": ErrOneTeam,
+		"over_quota": remote.ErrStorageFull, "over_limit": remote.ErrStorageFull} {
+		var err error = &serviceError{Code: code, Message: "…"}
+		if !errors.Is(err, want) {
+			t.Errorf("%s isn't %v", code, want)
+		}
+	}
+	if errors.Is(&serviceError{Code: "forbidden"}, ErrBetaOnly) {
+		t.Error("any refusal taken for the beta's")
+	}
+	var full error = &remote.ServiceError{Status: 409, Code: "over_quota", Message: "full"}
+	if !errors.Is(full, remote.ErrStorageFull) {
+		t.Error("a share over quota not told")
+	}
+}
