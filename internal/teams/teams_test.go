@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/remote"
 )
@@ -163,5 +164,28 @@ func TestUpdateKeepsEveryChange(t *testing.T) {
 	s, _ := Load()
 	if len(s.Local) != 20 {
 		t.Fatalf("%d of 20 changes kept", len(s.Local))
+	}
+}
+
+// Saving while someone reads teams.json (Load takes no lock; on Windows an
+// open file can't be replaced) waits for the reader instead of failing.
+func TestSaveWhileRead(t *testing.T) {
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	if _, err := Update(func(s *Store) error { s.Upsert(remote.Config{URL: "s3+https://a.example.com/b"}, "A"); return nil }); err != nil {
+		t.Fatal(err)
+	}
+	held, err := os.Open(filepath.Join(Dir(), "teams.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(150 * time.Millisecond)
+		held.Close()
+	}()
+	if _, err := Update(func(s *Store) error { s.Upsert(remote.Config{URL: "s3+https://b.example.com/b"}, "B"); return nil }); err != nil {
+		t.Fatalf("saving while read: %v", err)
+	}
+	if s, _ := Load(); len(s.Teams) != 2 {
+		t.Fatalf("teams = %+v", s.Teams)
 	}
 }
