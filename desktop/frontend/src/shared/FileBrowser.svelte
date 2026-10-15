@@ -21,7 +21,7 @@
   // comes in through the props: opening a file, its menu, renaming,
   // dragging files out to other programs and in from them, locks' badges.
   let { files, loaded, slow = false, name, remember, last = {}, looks, dir = $bindable(""), sel = $bindable({ picked: [], anchor: "" }),
-    renameAsk = $bindable(null), panel, badge, thumb, onopen, onmenu, onrename, ondragout, dropRoot, emptyText: emptyHint }: {
+    renameAsk = $bindable(null), panel, badge, thumb, onopen, onmenu, onrename, ondragout, dropRoot, emptyText: emptyHint, treeNote }: {
     files: F[];
     loaded: boolean;            // the files were read (else "Reading the files…")
     slow?: boolean;             // reading takes a while: say why it may
@@ -41,6 +41,7 @@
     ondragout?: (paths: string[], fromTree: boolean) => Promise<void>; // dragged out of the page
     dropRoot?: string;          // folders take files dropped on them (data-file-drop-target, data-root, data-dir)
     emptyText?: string;         // a folder with no files
+    treeNote?: string;          // under the folders ("": none; by default, what their numbers are)
   } = $props();
 
   // Remembered per project: the folder shown, the look (list or grid).
@@ -401,7 +402,7 @@
         </li>
       {/each}
     </ul>
-    <p class="note faint">{t("Numbers: changed files inside. The files of the folder you pick are listed in the middle.")}</p>
+    {#if treeNote !== ""}<p class="note faint">{treeNote ?? t("Numbers: changed files inside. The files of the folder you pick are listed in the middle.")}</p>{/if}
   </nav>
 
   <!-- the folder's files, and the file picked -->
