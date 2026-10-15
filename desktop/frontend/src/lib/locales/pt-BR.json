@@ -1857,5 +1857,15 @@
 "As the team: off": "Como a equipe: desligado",
 "On for this project": "Ligado para este projeto",
 "Off for this project": "Desligado para este projeto",
-"Use the team's": "Usar o da equipe"
+"Use the team's": "Usar o da equipe",
+"{agent} (for {who})": "{agent} (para {who})",
+"{who} made the branch {branch}": "{who} criou o branch {branch}",
+"{who} deleted the branch {branch}": "{who} excluiu o branch {branch}",
+"{who} added the project {project}": "{who} adicionou o projeto {project}",
+"{who} removed the project {project}": "{who} removeu o projeto {project}",
+"{who} joined the team": "{who} entrou na equipe",
+"All projects": "Todos os projetos",
+"Who": "Quem",
+"Nothing happened in this time.": "Nada aconteceu neste período.",
+"The team can't be reached right now.": "Não é possível acessar a equipe agora."
 }

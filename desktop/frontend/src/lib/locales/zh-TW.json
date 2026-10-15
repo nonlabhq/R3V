@@ -1857,5 +1857,15 @@
 "As the team: off": "跟團隊一樣：關",
 "On for this project": "這個專案開啟",
 "Off for this project": "這個專案關閉",
-"Use the team's": "改回團隊設定"
+"Use the team's": "改回團隊設定",
+"{agent} (for {who})": "{agent}（代 {who}）",
+"{who} made the branch {branch}": "{who} 建立了分支 {branch}",
+"{who} deleted the branch {branch}": "{who} 刪除了分支 {branch}",
+"{who} added the project {project}": "{who} 新增了專案 {project}",
+"{who} removed the project {project}": "{who} 移除了專案 {project}",
+"{who} joined the team": "{who} 加入了團隊",
+"All projects": "所有專案",
+"Who": "誰",
+"Nothing happened in this time.": "這段時間沒有動態。",
+"The team can't be reached right now.": "現在無法連線到團隊。"
 }

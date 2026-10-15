@@ -7,6 +7,7 @@ export {
 };
 
 export {
+    ActivityItem,
     Actor,
     AgentWorkflow,
     AgentWorkspace,

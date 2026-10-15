@@ -228,9 +228,14 @@ func (s *BucketBackend) DeleteProject(pid string) error {
 	if !validHex(pid, 32) {
 		return errors.New("invalid project id")
 	}
+	var was Project
+	if data, err := s.get(projectDir(pid) + "project.json"); err == nil {
+		json.Unmarshal(data, &was)
+	}
 	if err := s.delete(projectDir(pid) + "project.json"); err != nil {
 		return err
 	}
+	s.logTeam(TeamEvent{Kind: EventProjectRemoved, Project: pid, Name: was.Name})
 	keys, err := s.list(projectDir(pid))
 	if err != nil {
 		return err
@@ -587,8 +592,16 @@ func (s *BucketBackend) PutMember(m Member) error {
 	if !ValidMemberID(m.ID) {
 		return errors.New("invalid member id")
 	}
+	_, err := s.get(memberKey(m.ID))
+	joined := errors.Is(err, ErrNotFound)
 	data, _ := json.Marshal(m)
-	return s.put(memberKey(m.ID), data)
+	if err := s.put(memberKey(m.ID), data); err != nil {
+		return err
+	}
+	if joined {
+		s.logTeam(TeamEvent{Kind: EventMemberJoined, Member: m.ID, Name: m.Name, By: m.ID})
+	}
+	return nil
 }
 
 func (s *BucketBackend) Workspaces(pid string, out any) error {
