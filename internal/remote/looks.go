@@ -41,9 +41,9 @@ const FeatureLooks = "looks"
 
 func init() { RegisterFeature(FeatureLooks) }
 
-// Looks: looks are on in this build (the Nightly channel). Off, nothing
-// reads or writes them.
-var Looks = false
+// Looks: looks are on in this build (every build since 0.1.81; tests
+// turn them off to play an older R3V). Off, nothing reads or writes them.
+var Looks = true
 
 const (
 	// MaxPictureSize is the most bytes a stored picture has.

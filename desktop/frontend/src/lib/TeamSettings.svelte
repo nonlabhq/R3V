@@ -24,11 +24,12 @@
   // One team's settings: its name, your name in it, the connection code for
   // teammates, how this computer reaches it (storage keys), and
   // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs: tabsOn = false, onopenversion }: {
+  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs: tabsOn = false, workflowTab = false, onopenversion }: {
     team: TeamSummary;
     onopenversion?: (project: string, version: string) => void; // (Activity: a version, in its project)
     inline?: boolean;      // in the team's home, not a dialog
-    tabs?: boolean;        // in tabs down the left (Nightly: docs/design/team-settings.md)
+    tabs?: boolean;        // in tabs down the left (docs/design/team-settings.md)
+    workflowTab?: boolean; // with the Workflow tab (Nightly: its settings are agents' and R3V Cloud's file locks)
     teams?: TeamSummary[]; // the teams here (where it can move to)
     canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
     offline?: boolean; // its storage can't be reached now
@@ -210,7 +211,8 @@
   // The tabs (team-settings.md): General, then Workflow; the one picked is
   // remembered.
   type Tab = "general" | "workflow" | "activity" | "usage";
-  let tabs = $derived<{ id: Tab; label: string }[]>([{ id: "general", label: t("General") }, { id: "workflow", label: t("Workflow") },
+  let tabs = $derived<{ id: Tab; label: string }[]>([{ id: "general", label: t("General") },
+    ...(workflowTab ? [{ id: "workflow" as Tab, label: t("Workflow") }] : []),
     { id: "activity", label: t("Activity") }, { id: "usage", label: t("Usage") }]);
   // What the shared pages read and change (the team's, through the bindings).
   let source = $derived(appTeamSource(team.id, !!team.hosted));
