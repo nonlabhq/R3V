@@ -60,6 +60,16 @@ export interface GraphMilestone {
   name: string;
 }
 
+/** A file a version changed. status: added, modified, deleted, renamed
+ * (from: where it was), untracked; kind: what R3V knows it as ("set",
+ * "audio"…; "" when nothing special). */
+export interface ChangedFile {
+  path: string;
+  status: string;
+  from?: string;
+  kind?: string;
+}
+
 /** A preset in use for a folder ("" is the project folder). */
 export interface AppliedPreset {
   folder: string;

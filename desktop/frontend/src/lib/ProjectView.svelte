@@ -9,7 +9,7 @@
   import { holderName, loadLocks, watchLocks } from "./locks.svelte";
   import { watchProject } from "./projectWatch.svelte";
   import { queue, cancelling, cancelSave } from "./preupload.svelte";
-  import { resetChangesView } from "./changesview.svelte";
+  import { resetChangesView } from "$shared/changesview.svelte";
   import { cachedState, rememberState } from "./stateCache";
   import ChangesPanel from "./ChangesPanel.svelte";
   import FileExplorer from "./FileExplorer.svelte";
