@@ -1,6 +1,6 @@
 # Team and project settings
 
-Status: design, for review (2026-10-15). The App first; R3V Cloud's web
+Status: agreed (2026-10-15), being built. The App first; R3V Cloud's web
 app follows with the same pages.
 
 ## What changes
@@ -110,8 +110,8 @@ copy's config). They become the team's, with these steps:
 
 ## Activity
 
-The team's recent events, newest first, from what the storage keeps already.
-No new records are needed.
+The team's recent events, newest first: mostly from what the storage keeps
+already, plus a small team log for what it doesn't.
 
 - **Shares and merges:** the branch log (`projects/<pid>/branchlog`): who
   moved which branch, when, from which version to which. A move to a version
@@ -119,9 +119,13 @@ No new records are needed.
 - **Agents:** a version made by an agent has its actor (tool, model), so its
   share reads "Claude Code (for Robin) shared 3 versions on agent/fix".
 - **Branches made and deleted:** the branch log too.
-- **Projects added and removed, and members joining:** not kept today.
-  Members joining could come from the members list later; shown only once
-  there is a record of them.
+- **Projects added and removed, members joining:** a new team log, kept
+  the branch log's way: one record per event, never changed
+  (`teamlog/<time>-<random>.json`: `{kind, project?, member?, by, time}`;
+  kinds `project-added`, `project-removed`, `member-joined`). Written by
+  this R3V after the step succeeded, as well as it can. An older R3V
+  doesn't write them; that's data it never reads, so no team feature is
+  needed. What happened before the log existed isn't shown.
 
 Each line names the project and links to the version in its graph. Filters:
 a project, a person, agents or not. The page reads the last 30 days, and
@@ -175,7 +179,7 @@ section after Rules, its rows as above.
    row component, file locking per project (the `locks` feature when one
    turns it on). Agents' steps move to the team (the `workflow` feature), with
    the person's "not mine".
-3. Activity from the branch log.
+3. Activity from the branch log, and the team log.
 4. Usage: R3V's count, and R3V Cloud's from the service (the Cloud lane
    adds the call).
 5. R3V Cloud's web app: the same tabs with the shared components, once the
