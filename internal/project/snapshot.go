@@ -36,8 +36,10 @@ func (r *Repo) Head() string {
 	return strings.TrimSpace(string(b))
 }
 
+// setHead writes HEAD whole, then in place of the old (store.Replace waits
+// out a reader without the lock holding it): a reader never sees it empty.
 func (r *Repo) setHead(id string) error {
-	return os.WriteFile(filepath.Join(r.Dir, "HEAD"), []byte(id+"\n"), 0o644)
+	return store.WriteAtomic(filepath.Join(r.Dir, "HEAD"), strings.NewReader(id+"\n"))
 }
 
 // Resolve expands a unique id prefix, "HEAD" or "HEAD~N" to a full snapshot id.
