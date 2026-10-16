@@ -16,6 +16,7 @@ export {
     BackupOthers,
     Branch,
     BranchList,
+    BuiltFolder,
     Change,
     ChannelInfo,
     CloudInvitation,

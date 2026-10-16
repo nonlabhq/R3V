@@ -167,6 +167,16 @@ type RulesInfo struct {
 	Suggestions []RuleSuggestion `json:"suggestions"`
 }
 
+// BuiltFolder is a folder new in the changes that looks like a build's
+// output (see project.BuiltFolder): Rule, an ignore pattern, leaves it out.
+type BuiltFolder struct {
+	Folder string `json:"folder"`
+	Reason string `json:"reason"`
+	Files  int    `json:"files"`
+	Bytes  int64  `json:"bytes"`
+	Rule   string `json:"rule"`
+}
+
 type State struct {
 	Rules     RulesInfo `json:"rules"`
 	Root      string    `json:"root"`
@@ -211,6 +221,9 @@ type State struct {
 	CloudFolder string `json:"cloudFolder"`
 
 	Changes []Change `json:"changes"`
+	// Built: folders new in the changes that look like a build's output,
+	// worth leaving out before committing (Rule does).
+	Built []BuiltFolder `json:"built"`
 	// InUse: files another program holds (Live writing a Freeze), read once
 	// they are free; until then they count as in the version you are on.
 	InUse    []string            `json:"inUse"`
