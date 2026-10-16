@@ -299,6 +299,8 @@ type versionJSON struct {
 	MadeOn   string   `json:"made_on,omitempty"`  // the branch it was made on (its key; older versions: none)
 	// Actor: the agent that made it for the author (none: the author did).
 	Actor *project.Actor `json:"actor,omitempty"`
+	// WIP: its title says it isn't finished (merge and update previews).
+	WIP bool `json:"wip,omitempty"`
 }
 
 func versionOf(m *project.Manifest, names map[string]string) versionJSON {

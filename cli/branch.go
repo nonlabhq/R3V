@@ -201,14 +201,19 @@ type previewJSON struct {
 	Versions  []versionJSON  `json:"versions"` // incoming, newest first
 	Changes   []changeJSON   `json:"changes"`
 	Conflicts []conflictJSON `json:"conflicts"` // need --strategy
+	// Message: a merge's description written for you (what merge says
+	// without -m).
+	Message string `json:"message,omitempty"`
 }
 
 func previewOf(r *project.Repo, p *project.Preview) previewJSON {
 	names := r.MemberNames()
 	out := previewJSON{Action: p.Action, Versions: []versionJSON{}, Changes: []changeJSON{},
-		Conflicts: conflictsJSON(p.Conflicts)}
+		Conflicts: conflictsJSON(p.Conflicts), Message: p.Message}
 	for _, m := range p.Versions {
-		out.Versions = append(out.Versions, versionOf(m, names))
+		v := versionOf(m, names)
+		v.WIP = project.LooksWIP(m.Message)
+		out.Versions = append(out.Versions, v)
 	}
 	for _, c := range p.Changes {
 		ch := changeJSON{Path: c.Path, Status: c.Status, From: c.From, Edited: c.Edited}
@@ -259,7 +264,7 @@ func cmdMergeBranch(args []string) error {
 	strategy := strategyFlag(fs)
 	decided := decisionFlags(fs, strategy)
 	force := fs.Bool("force", false, "merge even while Ableton Live is running")
-	message := fs.String("m", "", `describe the merge version (default "Merge branch <branch>")`)
+	message := fs.String("m", "", "describe the merge version (default: what comes in, the versions' titles)")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
