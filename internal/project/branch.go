@@ -168,7 +168,7 @@ func (r *Repo) SwitchBranch(name string, force bool) (*SyncResult, error) {
 
 // MergeBranch merges another branch's latest version into the workspace and
 // shares the result on the current branch. message describes the merge
-// version ("" for "Merge branch <name>").
+// version ("" for a summary of what comes in: see mergeSummary).
 func (r *Repo) MergeBranch(name, message string, opts MergeOptions) (*SyncResult, error) {
 	if err := r.guardLatest(); err != nil {
 		return nil, err
@@ -189,7 +189,9 @@ func (r *Repo) MergeBranch(name, message string, opts MergeOptions) (*SyncResult
 		return nil, errors.New("that is the branch you are on; use `r3v update`")
 	}
 	if message == "" {
-		message = "Merge branch " + r.BranchLabel(name)
+		if message, err = r.summaryOf(c, target, r.BranchLabel(name), r.PlainMergeMessage(name)); err != nil {
+			return nil, err
+		}
 	}
 	res, err := r.mergeVersion(c, target, message, opts)
 	if err == nil {
@@ -200,7 +202,8 @@ func (r *Repo) MergeBranch(name, message string, opts MergeOptions) (*SyncResult
 
 // MergeVersion merges any version (e.g. one on another branch, not only its
 // latest) into the workspace and shares the result on the current branch.
-// message describes the merge version ("" for MergeMessage's).
+// message describes the merge version ("" for a summary of what comes in,
+// MergeMessage's when there's nothing to list).
 func (r *Repo) MergeVersion(ref, message string, opts MergeOptions) (*SyncResult, error) {
 	if err := r.guardLatest(); err != nil {
 		return nil, err
@@ -214,11 +217,27 @@ func (r *Repo) MergeVersion(ref, message string, opts MergeOptions) (*SyncResult
 		return nil, err
 	}
 	if message == "" {
-		if message, err = r.MergeMessage(id); err != nil {
+		plain, err := r.MergeMessage(id)
+		if err != nil {
+			return nil, err
+		}
+		if message, err = r.summaryOf(c, id, r.mergeLabel(id), plain); err != nil {
 			return nil, err
 		}
 	}
 	return r.mergeVersion(c, id, message, opts)
+}
+
+// summaryOf is mergeSummary for merging target into the version here.
+func (r *Repo) summaryOf(c remote.Backend, target, label, plain string) (string, error) {
+	if err := r.fetchSnapshots(c, target); err != nil {
+		return "", err
+	}
+	in, err := r.incoming(r.Head(), target)
+	if err != nil {
+		return "", err
+	}
+	return mergeSummary(label, plain, in), nil
 }
 
 // MergeMessage is the default description of merging a version: "Merge
@@ -367,6 +386,9 @@ type Preview struct {
 	// Changes compare Base (where the two sides parted, "" for none) with
 	// Target (the version that comes in).
 	Base, Target string
+	// Message: a merge's description written for you (what MergeBranch or
+	// MergeVersion say when given none); "" for an update.
+	Message string
 }
 
 // PreviewUpdate previews `update` on the current branch.
@@ -376,7 +398,12 @@ func (r *Repo) PreviewUpdate() (*Preview, error) {
 
 // PreviewMerge previews merging another branch.
 func (r *Repo) PreviewMerge(name string) (*Preview, error) {
-	return r.previewBranch(name)
+	p, err := r.previewBranch(name)
+	if err != nil {
+		return nil, err
+	}
+	p.Message = mergeSummary(r.BranchLabel(name), r.PlainMergeMessage(name), p.Versions)
+	return p, nil
 }
 
 // PreviewVersion previews MergeVersion.
@@ -389,7 +416,16 @@ func (r *Repo) PreviewVersion(ref string) (*Preview, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.previewTarget(c, id)
+	p, err := r.previewTarget(c, id)
+	if err != nil {
+		return nil, err
+	}
+	plain, err := r.MergeMessage(id)
+	if err != nil {
+		return nil, err
+	}
+	p.Message = mergeSummary(r.mergeLabel(id), plain, p.Versions)
+	return p, nil
 }
 
 func (r *Repo) previewBranch(name string) (*Preview, error) {

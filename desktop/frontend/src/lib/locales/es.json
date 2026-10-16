@@ -1896,5 +1896,7 @@
 "Each of an agent's versions on its own, not grouped": "Cada versión de un agente por separado, sin agrupar",
 "“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "«{folder}» parece la salida de una compilación ({files}, {size}). Si se hace commit, se queda para siempre en el almacenamiento del equipo.",
 "Adds the rule ignore “{rule}” to .r3v.yaml": "Añade la regla ignore «{rule}» a .r3v.yaml",
-"Leave it out": "Dejarlo fuera"
+"Leave it out": "Dejarlo fuera",
+"unfinished": "sin terminar",
+"Its title says it isn't finished: left out of the merge's description": "Su título dice que no está terminado: queda fuera de la descripción del merge"
 }

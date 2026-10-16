@@ -28,7 +28,9 @@ everyday (run inside a project folder):
   status                                 what changed since your last version
   watch                                  keep running: tell you about new versions (never changes
                                          your files)
-  log [BRANCH] [-n N]                    list versions (of your branch, or another branch's)
+  log [BRANCH] [-n N] [--first-parent]   list versions (of your branch, or another branch's);
+                                         --first-parent: only the main line, merges with how
+                                         many versions each brought in
 
 setup:
   init [--author NAME] [--preset code|none]
@@ -50,7 +52,8 @@ branches (advanced):
   branch delete NAME                     delete an archived branch for good
   branch log [NAME]                      who moved the team's branches, when, from which version
   switch NAME                            work on another branch
-  merge NAME [--preview]                 merge another branch into yours (or just look)
+  merge NAME [--preview] [-m MESSAGE]    merge another branch into yours (or just look); without
+                                         -m, the merge says what came in (the versions' titles)
 
 advanced:
   commit --local -m MESSAGE              commit on this computer only (your next commit shares it)

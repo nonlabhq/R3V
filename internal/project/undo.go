@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
@@ -226,4 +227,86 @@ func (r *Repo) UndoCommit(id, message string, opts MergeOptions) (*Manifest, *Sy
 		return m, nil, err
 	}
 	return r.Save(message, opts)
+}
+
+// ErrNotAMerge: UndoMerge was given a version that isn't a merge.
+var ErrNotAMerge = errors.New("that version isn't a merge (undo it as a commit instead)")
+
+// UndoMerge makes a version that takes back what merge version ref brought
+// into its branch (what it changed compared with its first parent), keeping
+// the history as it is; what was changed after it is merged as UndoCommit
+// does (a conflict comes back as *MergeConflictError). Uncommitted changes
+// stop it, unless they are this undo left half-way (R3V stopped after
+// putting its files in place): those are committed. Committed and not
+// shared (stopped while sharing): shared.
+func (r *Repo) UndoMerge(ref, message string, opts MergeOptions) (*Manifest, *SyncResult, error) {
+	id, err := r.Resolve(ref)
+	if err != nil {
+		return nil, nil, err
+	}
+	m, err := r.Header(id)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(m.Parents) < 2 {
+		return nil, nil, ErrNotAMerge
+	}
+	if strings.TrimSpace(message) == "" {
+		message = fmt.Sprintf("Undo merge %s (%q)", short(id), manifest.Title(m.Message))
+	}
+	c, _ := r.Client()
+	changes, err := r.Status()
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(changes) > 0 {
+		paths, ok, err := r.undoLeftHalfway(c, id, opts)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !ok {
+			return nil, nil, fmt.Errorf("%w (%d file(s)); commit or discard them first", ErrDirty, len(changes))
+		}
+		only := r.Only
+		r.Only = paths
+		defer func() { r.Only = only }()
+		if c == nil {
+			s, err := r.Snapshot(message)
+			return s, nil, err
+		}
+		return r.Save(message, opts)
+	}
+	s, res, err := r.UndoCommit(id, message, opts)
+	if errors.Is(err, ErrNothingToUndo) && c != nil {
+		if shared, serr := r.shared(c); serr == nil && !shared {
+			res, err := r.Share(opts)
+			return nil, res, err
+		}
+	}
+	return s, res, err
+}
+
+// undoLeftHalfway reports whether the uncommitted changes are exactly
+// undoing merge id (its files put in place, not committed), and the paths.
+func (r *Repo) undoLeftHalfway(c remote.Backend, id string, opts MergeOptions) ([]string, bool, error) {
+	head, undone, _, err := r.undoTarget(c, id, opts)
+	var mc *MergeConflictError
+	if errors.As(err, &mc) || errors.Is(err, ErrNothingToUndo) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	only := r.Only
+	r.Only = nil
+	work, _, err := r.workingManifest("")
+	r.Only = only
+	if err != nil {
+		return nil, false, err
+	}
+	paths := changedPaths(head, undone)
+	if len(paths) == 0 || len(changedPaths(work, undone)) > 0 {
+		return nil, false, nil
+	}
+	return paths, true, nil
 }

@@ -8,7 +8,8 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
 - `r3v commit -m "Title" -m "Details" --json` commits a version and shares it with the team
   (no separate push). One commit per piece of work; the title says what, the details why. Other
   changes in the folder that aren't this work: list the work's files and folders after the flags
-  (`r3v commit -m "…" src/menu`), the rest stays uncommitted.
+  (`r3v commit -m "…" src/menu`), the rest stays uncommitted. Unfinished work isn't committed to
+  be merged later ("WIP" versions): it stays uncommitted (switching parks it) until it's done.
 - Commands never prompt: on `merge_conflict` (exit 3) read `error.conflicts`; code conflicts come
   hunk by hunk (`text:<path>#<n>`): decide each with `--resolve <key>=ours|theirs|both`, or give the
   file as it should be with `--resolved <path>=<file>`; ask the user when unsure. A lockfile that

@@ -1896,5 +1896,7 @@
 "Each of an agent's versions on its own, not grouped": "エージェントのバージョンをまとめずに 1 つずつ表示",
 "“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "「{folder}」はビルドの出力のようです（{files}、{size}）。コミットするとチームのストレージにずっと残ります。",
 "Adds the rule ignore “{rule}” to .r3v.yaml": ".r3v.yaml に ignore「{rule}」のルールを追加します",
-"Leave it out": "除外する"
+"Leave it out": "除外する",
+"unfinished": "未完成",
+"Its title says it isn't finished: left out of the merge's description": "タイトルが未完成を示しています：マージの説明には含めません"
 }

@@ -1896,5 +1896,7 @@
 "Each of an agent's versions on its own, not grouped": "Agent 的每個版本各自顯示，不合併成一組",
 "“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "「{folder}」看起來是建置輸出（{files}，{size}）。一旦提交，它會永久留在團隊的儲存空間裡。",
 "Adds the rule ignore “{rule}” to .r3v.yaml": "在 .r3v.yaml 加入規則 ignore「{rule}」",
-"Leave it out": "排除它"
+"Leave it out": "排除它",
+"unfinished": "未完成",
+"Its title says it isn't finished: left out of the merge's description": "標題表示它還沒完成：不寫進合併的說明"
 }

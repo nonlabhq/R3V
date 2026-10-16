@@ -28,7 +28,7 @@ import (
 // project to clone, R3V_KILL_STAGE a stage to die at (os.Exit, as a crash)
 // once R3V_KILL_DONE items of it are done, R3V_KILL_WRITES the number of
 // files a switch puts in place before dying, R3V_KILL_TO the version to
-// switch to (op "checkout"), R3V_KILL_WS the workspace to add or remove
+// switch to (op "checkout") or the merge to undo ("undo-merge"), R3V_KILL_WS the workspace to add or remove
 // and R3V_KILL_STEP a step of it to die at.
 func killedChild(op string) int {
 	dir, stage := os.Getenv("R3V_KILL_DIR"), os.Getenv("R3V_KILL_STAGE")
@@ -66,6 +66,8 @@ func killedChild(op string) int {
 			_, err = r.Update(Strategy("fail"))
 		case "checkout":
 			_, _, err = r.Checkout(os.Getenv("R3V_KILL_TO"), false)
+		case "undo-merge":
+			_, _, err = r.UndoMerge(os.Getenv("R3V_KILL_TO"), "", Strategy("fail"))
 		case "goto-parking":
 			Parking = true
 			_, _, err = r.GoTo(os.Getenv("R3V_KILL_TO"), false)

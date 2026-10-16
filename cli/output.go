@@ -183,6 +183,8 @@ var codes = []struct {
 	{project.ErrDirty, "unsaved_changes", exitError, "commit them first: r3v commit -m \"...\" (it also brings in the team's versions)"},
 	{project.ErrOlderVersion, "on_older_version", exitError, "go back to the latest version: r3v goto latest"},
 	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v commit -m ..."},
+	{project.ErrNotAMerge, "not_a_merge", exitError, "pick a merge version: r3v log --first-parent lists them"},
+	{project.ErrNothingToUndo, "nothing_to_undo", exitError, "nothing to do: the branch already is without those changes"},
 	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
@@ -299,6 +301,10 @@ type versionJSON struct {
 	MadeOn   string   `json:"made_on,omitempty"`  // the branch it was made on (its key; older versions: none)
 	// Actor: the agent that made it for the author (none: the author did).
 	Actor *project.Actor `json:"actor,omitempty"`
+	// WIP: its title says it isn't finished (merge and update previews).
+	WIP bool `json:"wip,omitempty"`
+	// MergedCount: how many versions a merge brought in (log --first-parent).
+	MergedCount int `json:"merged_count,omitempty"`
 }
 
 func versionOf(m *project.Manifest, names map[string]string) versionJSON {

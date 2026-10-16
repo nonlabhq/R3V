@@ -4,7 +4,7 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `discard`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
 While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
 
@@ -29,6 +29,7 @@ r3v update [--preview]            # get the team's latest versions of your branc
 r3v status                        # what changed since your last version
 r3v log                           # versions
 r3v log lane-design               # another branch's versions (its key or name)
+r3v log --first-parent            # only the main line: each merge once, "(+N versions)" it brought in
 r3v clone <connection code> "Song" [folder]   # download a team project
 r3v teams                         # teams this computer is connected to
 ```
@@ -55,6 +56,8 @@ r3v branch new yi-ideas       # start a branch from your current version
 r3v switch main
 r3v merge yi-ideas --preview  # what would come in and what conflicts
 r3v merge yi-ideas            # merge into your branch and share
+r3v merge yi-ideas -m "..."   # with your own description (else it lists what came in)
+r3v undo-merge <version>      # Nightly: a new version without what that merge brought in
 r3v branch log main           # who moved the branch, when, from which version to which
 r3v branch archive yi-ideas   # put it away: its versions stay
 r3v branch archived           # what was archived, by whom, when
@@ -71,6 +74,17 @@ Versions an AI agent commits through the CLI record it (`r3v log` shows
 "yi (claude-code)"): R3V reads `R3V_ACTOR` (the tool; `R3V_ACTOR_MODEL`
 and `R3V_ACTOR_SESSION` too; `none` for a person), else the variables
 tools set themselves (Claude Code's `CLAUDECODE`).
+
+A merge without `-m` describes what came in: `Merge yi-ideas: 3 versions`,
+then each version's title (oldest first, at most 10; titles saying `WIP`,
+`draft`, `do not merge` or `not for merge` left out). The app's merge
+preview starts with the same text, yours to change.
+
+`r3v undo-merge <version>` (Nightly) takes back a merge without rewriting
+the history: a new version on your branch without what it brought in.
+What changed since the merge stays; where the same thing changed again it
+asks as a merge does (`--strategy ours` keeps it as it is now, `theirs`
+as before the merge). It refuses with uncommitted changes.
 
 Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and commit from there.
 

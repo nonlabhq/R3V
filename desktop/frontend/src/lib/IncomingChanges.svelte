@@ -57,7 +57,8 @@
   {#each versions as v (v.id)}
     <li><button class="v" class:on={picked === v.id || versions.length === 1} onclick={() => (picked = versions.length > 1 ? v.id : "")}>
       <span class="line">
-        <span class="msg">{titleOf(v.message) || t("(no description)")}</span>
+        <span class="msg">{titleOf(v.message) || t("(no description)")}{#if v.wip}<span class="tag"
+          title={t("Its title says it isn't finished: left out of the merge's description")}>{t("unfinished")}</span>{/if}</span>
         <span class="faint">{v.author} · {ago(v.time)}</span>
       </span>
       <span class="what">
@@ -105,6 +106,8 @@
   .v.on { background: var(--panel-2); border-color: var(--line); }
   .line { display: flex; gap: var(--sp-10); width: 100%; }
   .msg { flex: 1; }
+  .tag { margin-left: var(--sp-8); padding: 0 var(--sp-6); border-radius: var(--radius-pill); border: var(--border-width) solid var(--line);
+    font-size: var(--fs-xs); color: var(--muted); vertical-align: 1px; }
   .what { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-12); align-items: center; }
   .small { font-size: var(--fs-sm); }
   .set { margin: 0 0 var(--sp-10); }

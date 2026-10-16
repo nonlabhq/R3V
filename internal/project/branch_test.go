@@ -64,7 +64,7 @@ func TestBranchWorkflow(t *testing.T) {
 		t.Error("merge did not bring the group")
 	}
 	m, _ := b.Load(b.Head())
-	if m.Message != "Merge branch yi-ideas" {
+	if m.Message != "Merge yi-ideas: 1 version\n- group audio" {
 		t.Errorf("merge message = %q", m.Message)
 	}
 
@@ -122,6 +122,9 @@ func TestMergeVersionFromTheMiddleOfABranch(t *testing.T) {
 	p, err := b.PreviewVersion(i1.ID)
 	if err != nil || p.Action != "merge" || len(p.Versions) != 1 || p.Versions[0].ID != i1.ID {
 		t.Fatalf("preview: %v %+v", err, p)
+	}
+	if want := "Merge version " + i1.ID[:10] + ": 1 version\n- group audio"; p.Message != want {
+		t.Fatalf("suggested message: %q", p.Message)
 	}
 	if msg, err := b.MergeMessage(i1.ID); err != nil || !strings.HasPrefix(msg, "Merge version ") {
 		t.Fatalf("default merge message: %q %v", msg, err)

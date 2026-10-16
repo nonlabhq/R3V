@@ -14,7 +14,7 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `discard`, `parked`, `backup`, `lock` and `locks`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `backup`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -40,6 +40,12 @@ words: [glossary.md](glossary.md).
   calls, under the person's prompt, so the person can go back to any of
   them. Nothing to do on your side; don't run `r3v step back` yourself
   (it changes the files of the copy, the person's edits included).
+- **Don't commit unfinished work to merge it later.** A branch is merged
+  whole: what isn't finished stays uncommitted (switching away parks it,
+  Nightly: `r3v parked`), or is finished before the branch is merged.
+  A version whose title says `WIP`, `draft`, `do not merge` or `not for
+  merge` is left out of the merge's description and marked `wip` in
+  `merge --preview`: don't merge such a branch without asking the user.
 - Version ids are long hex strings; any unique prefix (10 characters, as
   the text output shows) works where a command takes one.
 
@@ -188,6 +194,11 @@ made: `kind` (`agent`), `tool`, `model`, `session`, each when known).
 `message` is the title, then a blank line and the details, if any.
 Merging another branch always makes a version.
 
+`log --first-parent` lists only the main line (from the newest version back
+through first parents: a branch's own versions, each merge once); a merge
+on it has `merged_count`, how many versions it brought in (text: "(+N
+versions)"). With `log BRANCH` too.
+
 `branch new NAME --agent` starts an agent's branch (its kind is `agent`,
 its owner the member you work for; Nightly, on a team that keeps branch
 names): `r3v branch` shows them marked.
@@ -206,9 +217,33 @@ took from each side), `relinked` (sample paths rewritten for this computer),
 version just took (a commit is never refused for one).
 
 `update --preview` and `merge <branch> --preview`: `action`, `versions`
-(incoming), `changes`, `conflicts` (`key`, `file`, `unit`, `description`,
+(incoming; `wip`: true on one whose title says it isn't finished),
+`changes`, `conflicts` (`key`, `file`, `unit`, `description`,
 `can_keep_both`; a text file's hunk also `hunk`, `base`, `ours`,
-`theirs`).
+`theirs`). `merge --preview` also has `message`: the merge version's
+description `merge` writes without `-m`, from what comes in:
+
+```
+Merge lane/vfx: 12 versions
+- Add bloom pass
+- Tune shadow cascades
+… and 4 more
+```
+
+(each incoming version's title, oldest first, merges and unfinished ones
+left out, at most 10; nothing to list: `Merge branch lane/vfx`). `-m`
+gives your own, used as it is.
+
+`undo-merge VERSION` (Nightly) takes back what a merge brought in: a new
+version on the current branch without it, the history kept (the merge
+stays in it; don't rewrite anything). What changed since the merge stays;
+where the same thing changed again it stops with `merge_conflict` as a
+merge does (`ours`: keep it as it is now, `theirs`: as before the merge).
+Uncommitted changes stop it (`unsaved_changes`), and so does a tool with
+the project open; a version that isn't a merge is `not_a_merge`, one
+already undone `nothing_to_undo`. Stopped half-way (R3V closed), running
+it again finishes it. Result as `commit`'s. Ask the user before undoing a
+teammate's merge.
 
 `switch <branch>` and `goto <version|latest>`: `branch`, `to` (the version
 the files are on), `older` (an older version), `relinked`. On the Nightly
@@ -318,6 +353,8 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `cloud_quota` | the team's storage on R3V Cloud is full: the versions stay committed here; tell the user (they delete projects or versions, or get more room), `commit` again later |
 | 1 | `cloud_beta_only` | R3V Cloud is in a closed beta: making a team needs an invitation; tell the user (the waitlist: https://r3v.so/waitlist) |
 | 1 | `cloud_one_team` | the beta gives one team of the user's own, and it exists: use it |
+| 1 | `not_a_merge` | `undo-merge` takes a merge version: `r3v log --first-parent` lists them |
+| 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
