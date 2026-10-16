@@ -17,15 +17,28 @@ import (
 // output.
 type BuiltFolder struct {
 	Folder string // slash separated
-	Reason string // why, for people
+	Kind   string // why, for programs: BuiltByName, BuiltByFiles or BuiltBySize
+	Like   string // BuiltByName: the ignored folder it is named like ("Backup/")
+	Reason string // why, for people (English)
 	Files  int    // its new files
 	Bytes  int64
 	Rule   string // an ignore pattern for .r3v.yaml that leaves it out
 }
 
+// A BuiltFolder's Kind: stable, so the app can word each in the user's
+// language.
+const (
+	BuiltByName  = "name"  // named like a folder the rules leave out
+	BuiltByFiles = "built" // holds many built files
+	BuiltBySize  = "size"  // holds many new bytes
+)
+
 const (
 	builtFilesAtLeast = 50        // files of a compiler's (builtExts)
 	builtBytesAtLeast = 200 << 20 // or this much, whatever it is
+	// The folder named is the deepest holding this share of them: the
+	// build's out/, not the new tools/ that holds its sources too.
+	builtShare = 0.8
 )
 
 // builtExts are what compilers and linkers write.
@@ -103,8 +116,10 @@ type folderStat struct {
 
 // looksBuilt finds, among the folders of added files that hold nothing of
 // head, the topmost ones named like a folder the rules leave out (names,
-// lower case) or holding many built files or bytes. A folder named so is
-// found first; what it holds doesn't count for the folders above it again.
+// lower case), and the places holding many built files or bytes: in the
+// topmost folder holding that many, the deepest one holding most of them.
+// A folder named so is found first; what it holds doesn't count for the
+// folders above it again.
 func looksBuilt(added []FileEntry, head map[string]FileEntry, names []string) []BuiltFolder {
 	old := map[string]bool{} // folders holding files of head
 	for p := range head {
@@ -138,7 +153,7 @@ func looksBuilt(added []FileEntry, head map[string]FileEntry, names []string) []
 				break
 			}
 			if like, rule := namedLike(path.Base(d), names); like != "" {
-				in = &BuiltFolder{Folder: d, Rule: rule,
+				in = &BuiltFolder{Folder: d, Kind: BuiltByName, Like: like + "/", Rule: rule,
 					Reason: fmt.Sprintf("named like %s/, which the rules leave out", like)}
 				named[d] = in
 				break
@@ -178,23 +193,46 @@ func looksBuilt(added []FileEntry, head map[string]FileEntry, names []string) []
 		}
 		return dirs[i] < dirs[j]
 	})
+	children := map[string][]string{}
+	for _, d := range dirs {
+		if p := path.Dir(d); stats[p] != nil {
+			children[p] = append(children[p], d)
+		}
+	}
 	found := map[string]bool{}
 	for _, d := range dirs {
 		if insideFound(d, found) {
 			continue
 		}
 		s := stats[d]
-		var why string
+		var kind string
+		var measure func(*folderStat) int64
 		switch {
 		case s.built >= builtFilesAtLeast:
-			why = fmt.Sprintf("holds %d built files (.obj, .pdb, .dll and the like)", s.built)
+			kind, measure = BuiltByFiles, func(s *folderStat) int64 { return int64(s.built) }
 		case s.bytes >= builtBytesAtLeast:
-			why = fmt.Sprintf("holds %d MB of new files", s.bytes>>20)
+			kind, measure = BuiltBySize, func(s *folderStat) int64 { return s.bytes }
 		default:
 			continue
 		}
-		found[d] = true
-		out = append(out, BuiltFolder{Folder: d, Reason: why, Files: s.files, Bytes: s.bytes, Rule: folderRule(d)})
+		found[d] = true // (one warning for all within)
+		at, need := d, int64(float64(measure(s))*builtShare)
+	deeper:
+		for {
+			for _, c := range children[at] {
+				if measure(stats[c]) >= need {
+					at = c
+					continue deeper
+				}
+			}
+			break
+		}
+		s = stats[at]
+		why := fmt.Sprintf("holds %d built files (.obj, .pdb, .dll and the like)", s.built)
+		if kind == BuiltBySize {
+			why = fmt.Sprintf("holds %d MB of new files", s.bytes>>20)
+		}
+		out = append(out, BuiltFolder{Folder: at, Kind: kind, Reason: why, Files: s.files, Bytes: s.bytes, Rule: folderRule(at)})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Folder < out[j].Folder })
 	return out
