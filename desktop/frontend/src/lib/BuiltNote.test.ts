@@ -11,7 +11,7 @@ import BuiltNote from "./BuiltNote.svelte";
 import type { State } from "./api";
 
 const st = (built: State["built"]) => ({ built }) as unknown as State;
-const folder = { folder: "game/target-dx12", reason: "named like target/", files: 120, bytes: 3 << 20, rule: "target-*/" };
+const folder = { folder: "game/target-dx12", kind: "built", like: "", reason: "holds 120 built files", files: 120, bytes: 3 << 20, rule: "target-*/" };
 
 describe("BuiltNote", () => {
   afterEach(() => { cleanup(); vi.clearAllMocks(); });
@@ -32,6 +32,21 @@ describe("BuiltNote", () => {
     await fireEvent.click(button);
     expect(mocks.AddIgnoreRule).toHaveBeenCalledWith("C:/Game", "target-*/");
     await waitFor(() => expect(onrules).toHaveBeenCalled());
+  });
+
+  it("says why by its kind", () => {
+    render(BuiltNote, { root: "C:/Song", st: st([
+      { folder: "Backup-2024", kind: "name", like: "Backup/", reason: "named like Backup/", files: 3, bytes: 2 << 20, rule: "Backup-*/" },
+      { folder: "Renders", kind: "size", like: "", reason: "holds 300 MB of new files", files: 4, bytes: 300 << 20, rule: "/Renders/" },
+      folder,
+    ]) });
+    const [named, big, built] = screen.getAllByRole("note").map((n) => n.textContent ?? "");
+    expect(named).toContain("“Backup-2024/” is named like “Backup/”, which the rules leave out (3 files,");
+    expect(named).not.toContain("build");
+    expect(big).toContain("“Renders/” is big (");
+    expect(big).toContain("and new (4 files)");
+    expect(built).toContain("looks like a build's output");
+    for (const text of [named, big, built]) expect(text).toContain("stays in the team's storage for good");
   });
 
   it("says so when the rule can't be added", async () => {

@@ -1898,5 +1898,7 @@
 "Adds the rule ignore “{rule}” to .r3v.yaml": ".r3v.yaml に ignore「{rule}」のルールを追加します",
 "Leave it out": "除外する",
 "unfinished": "未完成",
-"Its title says it isn't finished: left out of the merge's description": "タイトルが未完成を示しています：マージの説明には含めません"
+"Its title says it isn't finished: left out of the merge's description": "タイトルが未完成を示しています：マージの説明には含めません",
+"“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "「{folder}」は、ルールで除外される「{like}」に似た名前です（{files}、{size}）。コミットするとチームのストレージにずっと残ります。",
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "「{folder}」は大きく（{size}）、新しいフォルダーです（{files}）。コミットするとチームのストレージにずっと残ります。"
 }

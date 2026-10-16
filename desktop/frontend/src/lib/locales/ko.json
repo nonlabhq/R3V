@@ -1898,5 +1898,7 @@
 "Adds the rule ignore “{rule}” to .r3v.yaml": ".r3v.yaml에 ignore “{rule}” 규칙을 추가합니다",
 "Leave it out": "제외하기",
 "unfinished": "미완성",
-"Its title says it isn't finished: left out of the merge's description": "제목이 아직 끝나지 않았다고 말합니다: 병합 설명에서 빠집니다"
+"Its title says it isn't finished: left out of the merge's description": "제목이 아직 끝나지 않았다고 말합니다: 병합 설명에서 빠집니다",
+"“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "“{folder}”은(는) 규칙에서 제외하는 “{like}”와(과) 이름이 비슷합니다({files}, {size}). 커밋하면 팀 저장소에 영구히 남습니다.",
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "“{folder}”은(는) 크고({size}) 새로 생겼습니다({files}). 커밋하면 팀 저장소에 영구히 남습니다."
 }

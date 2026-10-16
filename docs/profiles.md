@@ -116,7 +116,7 @@ R3V before 0.1.75 read a `file_locks:` section here, which could only narrow the
 
 ## Folders that look like a build's output
 
-A folder new in your changes that looks like a build's output, but that no rule leaves out, gets a note before you commit (in the app over the commit box, in `r3v status`): one named like a folder the rules leave out (`target-dx12/` or `build_win/` when `target/` and `build/` are), or one holding 50 or more built files (`.obj`, `.pdb`, `.dll`, `.rlib`…) or 200 MB of new files. Committed, it stays in the team's storage for good. **Leave it out** adds the rule shown (`ignore: "target-*/"`, or the folder itself) to `.r3v.yaml`; or commit it as it is: it's only a note.
+A folder new in your changes that looks like a build's output, but that no rule leaves out, gets a note before you commit (in the app over the commit box, in `r3v status`): one named like a folder the rules leave out (`target-dx12/` or `build_win/` when `target/` and `build/` are; in a Live project, `Backup-2024/` beside the `Backup/` the rules leave out), or one holding 50 or more built files (`.obj`, `.pdb`, `.dll`, `.rlib`…) or 200 MB of new files. For those two, the note names the folder where most of them are: a new `tools/` with its sources and its build in `tools/out/` gets `tools/out/`, so the sources stay. Committed, it stays in the team's storage for good. **Leave it out** (or `r3v rules ignore "<pattern>"`) adds the rule shown (`ignore: "target-*/"`, or the folder itself) to `.r3v.yaml`; or commit it as it is: it's only a note.
 
 ## Checking the rules
 
@@ -126,9 +126,10 @@ A folder new in your changes that looks like a build's output, but that no rule 
   ```
   r3v rules                       # the rules in use, and whether they work
   r3v rules explain Exports/mix.wav Backup
+  r3v rules ignore "Renders/"     # adds - ignore: "Renders/" at the end of rules:
   ```
 
-  `explain` says whether each file is tracked and which rule or preset decided it.
+  `explain` says whether each file is tracked and which rule or preset decided it. `ignore` adds the rule as the app's **Leave it out** does (the last rule wins; already the last one, nothing changes); commit `.r3v.yaml` to share it.
 
 ## Older R3V versions
 

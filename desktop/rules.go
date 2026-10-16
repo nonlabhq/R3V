@@ -131,33 +131,15 @@ func (a *App) SetPreset(root, folder, preset string) error {
 // AddIgnoreRule adds `- ignore: pattern` at the end of the rules in the
 // project's .r3v.yaml (creating the file): the last rule wins. The file
 // is committed with the project, so the rule is the team's once shared.
+// (`r3v rules ignore` does the same: project.AddIgnoreRule.)
 func (a *App) AddIgnoreRule(root, pattern string) error {
 	if !knownProject(root) {
 		return errors.New("unknown project")
 	}
 	unlock := a.lock(root)
 	defer unlock()
-	p := filepath.Join(root, profile.FileName)
-	data, err := os.ReadFile(p)
-	if errors.Is(err, os.ErrNotExist) {
-		data, err = []byte(profile.Generate(root)), nil
-	}
-	if err != nil {
-		return err
-	}
-	text, err := withIgnoreRule(string(data), pattern)
-	if err != nil {
-		return err
-	}
-	if _, err := profile.Parse([]byte(text), root); err != nil {
-		return fmt.Errorf("the rule would break %s: %w", profile.FileName, err)
-	}
-	return os.WriteFile(p, []byte(text), 0o644)
-}
-
-// withIgnoreRule adds `- ignore: pattern` at the end of the rules.
-func withIgnoreRule(text, pattern string) (string, error) {
-	return profile.AddRule(text, "ignore", pattern)
+	_, err := project.AddIgnoreRule(root, pattern)
+	return err
 }
 
 // globQuote makes a name match itself in a rule: *, ?, [ and \ are taken

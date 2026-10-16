@@ -1898,5 +1898,7 @@
 "Adds the rule ignore “{rule}” to .r3v.yaml": "在 .r3v.yaml 中加入规则 ignore “{rule}”",
 "Leave it out": "排除它",
 "unfinished": "未完成",
-"Its title says it isn't finished: left out of the merge's description": "标题表明它还没完成：不写进合并的说明"
+"Its title says it isn't finished: left out of the merge's description": "标题表明它还没完成：不写进合并的说明",
+"“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "“{folder}”的名称和规则排除的“{like}”相似（{files}，{size}）。一旦提交，它会永久留在团队的存储空间里。",
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "“{folder}”很大（{size}），而且是新的（{files}）。一旦提交，它会永久留在团队的存储空间里。"
 }

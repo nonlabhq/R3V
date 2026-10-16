@@ -4,7 +4,7 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
 While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
 
@@ -33,6 +33,8 @@ r3v log --first-parent            # only the main line: each merge once, "(+N ve
 r3v clone <connection code> "Song" [folder]   # download a team project
 r3v teams                         # teams this computer is connected to
 ```
+
+When `status` says a new folder looks like a build's output (or is named like one the rules leave out, or is big and new), committed it would stay in the team's storage for good: `r3v rules ignore "<pattern>"` adds the rule the note shows to `.r3v.yaml` (as the app's **Leave it out**; once only), then `status` again. `--json`: `rule` (the line added under `rules:`) and `added` (false: it was the last rule already).
 
 `r3v watch` keeps running while you work and tells you when someone commits a new version on your branch. It never changes your files. The desktop app does the same in the background.
 

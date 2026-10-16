@@ -172,8 +172,12 @@ type RulesInfo struct {
 
 // BuiltFolder is a folder new in the changes that looks like a build's
 // output (see project.BuiltFolder): Rule, an ignore pattern, leaves it out.
+// Kind says why ("name": named like Like, "built", "size"), for the app to
+// word in the user's language; Reason is English.
 type BuiltFolder struct {
 	Folder string `json:"folder"`
+	Kind   string `json:"kind"`
+	Like   string `json:"like"`
 	Reason string `json:"reason"`
 	Files  int    `json:"files"`
 	Bytes  int64  `json:"bytes"`

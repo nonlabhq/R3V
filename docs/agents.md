@@ -14,7 +14,7 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `backup`, `lock` and `locks`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -167,12 +167,16 @@ when a field changes meaning; new fields may appear any time.
 | `base` | in a workspace, when the branch it was made from has versions this branch hasn't: `branch` (its name) and `behind` (how many); `r3v merge <branch>` brings them in (`update` gets this branch's only). Also in `update --json` |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v rules preset <folder> <preset>` |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
-| `warnings` | worth a look before committing (never a refusal): `code`, and its fields. Code `looks_built`: a folder new in the changes looks like a build's output, named like a folder the rules leave out (`target-dx12/` beside `target/`) or holding 50 built files (`.obj`, `.pdb`, `.rlib`…) or 200 MB; `folder`, `reason`, `files`, `bytes`, `rule` (the line for `.r3v.yaml`'s `rules:`, e.g. `ignore: "target-*/"`) and `pattern` (its pattern) |
+| `warnings` | worth a look before committing (never a refusal): `code`, and its fields. Code `looks_built`: a folder new in the changes looks like a build's output, named like a folder the rules leave out (`target-dx12/` beside `target/`) or holding 50 built files (`.obj`, `.pdb`, `.rlib`…) or 200 MB (then `folder` is where most of those are: `tools/out/`, not all of a new `tools/`); `folder`, `kind` (why: `name`, named like `like`, the ignored folder, e.g. `"Backup/"`; `built`, built files; `size`, new bytes), `reason` (the same in English, for people), `files`, `bytes`, `rule` (the line for `.r3v.yaml`'s `rules:`, e.g. `ignore: "target-*/"`) and `pattern` (its pattern) |
 
 Committed, a folder stays in the team's storage for good (ignoring it
-later only helps later versions). On a `looks_built` warning, add its
-`rule` under `rules:` in `.r3v.yaml` and run `status` again before
-committing, unless the user wants the folder kept.
+later only helps later versions). On a `looks_built` warning, run `r3v
+rules ignore "<pattern>" --json` (its `pattern` field) before committing,
+then `status` again, unless the user wants the folder kept. It adds the
+warning's `rule` under `rules:` in `.r3v.yaml`, as the app's "Leave it
+out" does; result `rule` (the line) and `added` (false: it was the last
+rule already, nothing changed). It waits for the project as other writing
+commands do (`--wait`).
 
 Reading commands (`status`, `log`, `diff`, `results`, `merge --preview`,
 `branch`, `workspace list`, `rules check`/`explain`) don't wait for the app

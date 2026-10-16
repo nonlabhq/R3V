@@ -153,6 +153,48 @@ func (r *Repo) SetPreset(folder, preset string) error {
 	return nil
 }
 
+// AddIgnoreRule adds `- ignore: pattern` at the end of the rules in the
+// .r3v.yaml of the project at root (creating the file): the last rule
+// wins. The app's "Leave it out" and `r3v rules ignore` both use it; the
+// caller holds the project. added is false when it is the last rule
+// already. The file is committed with the project, so the rule is the
+// team's once shared.
+func AddIgnoreRule(root, pattern string) (added bool, err error) {
+	p := filepath.Join(root, profile.FileName)
+	data, err := os.ReadFile(p)
+	if errors.Is(err, os.ErrNotExist) {
+		data, err = []byte(profile.Generate(root)), nil
+		added = true
+	}
+	if err != nil {
+		return false, err
+	}
+	text, err := profile.AddRule(string(data), "ignore", pattern)
+	if err != nil {
+		return false, err
+	}
+	if !added && text == string(data) {
+		return false, nil
+	}
+	if _, err := profile.Parse([]byte(text), root); err != nil {
+		return false, fmt.Errorf("the rule would break %s: %w", profile.FileName, err)
+	}
+	if err := store.WriteAtomic(p, strings.NewReader(text)); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// AddIgnoreRule is the package's AddIgnoreRule for this project: its
+// files are read with the rule from then on.
+func (r *Repo) AddIgnoreRule(pattern string) (bool, error) {
+	added, err := AddIgnoreRule(r.Root, pattern)
+	if added {
+		r.forgetProfile()
+	}
+	return added, err
+}
+
 // ChooseKind says how a folder R3V finds nothing of a kind it knows in is
 // kept (ErrUnknownKind), before Init: preset "code" (text merged line by
 // line, its .gitignore followed) or "none" (every file as it is), written

@@ -509,7 +509,7 @@ func (a *App) State(root string) (*State, error) {
 		return nil, err
 	}
 	for _, b := range built {
-		st.Built = append(st.Built, BuiltFolder{Folder: b.Folder, Reason: b.Reason, Files: b.Files, Bytes: b.Bytes, Rule: b.Rule})
+		st.Built = append(st.Built, BuiltFolder{Folder: b.Folder, Kind: b.Kind, Like: b.Like, Reason: b.Reason, Files: b.Files, Bytes: b.Bytes, Rule: b.Rule})
 	}
 	sw.lap("status")
 	var changed []string
