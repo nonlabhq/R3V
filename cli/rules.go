@@ -16,7 +16,11 @@ func cmdRules(args []string) error {
 	if len(args) == 0 {
 		args = []string{"check"}
 	}
-	r, err := openRepo()
+	open := openRepo
+	if args[0] == "check" || args[0] == "explain" { // (only read)
+		open = openRead
+	}
+	r, err := open()
 	if err != nil {
 		return err
 	}

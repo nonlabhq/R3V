@@ -110,7 +110,7 @@ func cmdFileDiff(args []string) error {
 	if !fileCommands {
 		return usageError("usage: r3v diff <a.als> <b.als> (a project's files: R3V's Nightly channel)")
 	}
-	r, err := openRepo()
+	r, err := openRead()
 	if err != nil {
 		return err
 	}

@@ -122,7 +122,7 @@ func (r *Repo) SwitchBranch(name string, force bool) (*SyncResult, error) {
 	}
 	target, ok := heads[name]
 	if !ok {
-		return nil, fmt.Errorf("no branch %q in the team (create it with `r3v branch new %s`)", name, name)
+		return nil, r.noBranch(c, heads, name, "create it with `r3v branch new "+name+"`")
 	}
 	if !force {
 		if ok, err := r.shared(c); err != nil {
@@ -183,7 +183,7 @@ func (r *Repo) MergeBranch(name, message string, opts MergeOptions) (*SyncResult
 	}
 	target, ok := heads[name]
 	if !ok {
-		return nil, fmt.Errorf("no branch %q in the team", name)
+		return nil, r.noBranch(c, heads, name, "")
 	}
 	if name == r.BranchName() {
 		return nil, errors.New("that is the branch you are on; use `r3v update`")
@@ -403,7 +403,7 @@ func (r *Repo) previewBranch(name string) (*Preview, error) {
 	}
 	target, ok := heads[name]
 	if !ok && name != r.BranchName() {
-		return nil, fmt.Errorf("no branch %q in the team", name)
+		return nil, r.noBranch(c, heads, name, "")
 	}
 	return r.previewTarget(c, target)
 }

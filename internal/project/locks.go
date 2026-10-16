@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/nonlabhq/r3v/internal/remote"
+	"github.com/nonlabhq/r3v/internal/store"
 )
 
 // File locks (docs/design/locks.md): a share tells a hosted team which
@@ -137,7 +138,7 @@ func (r *Repo) SetWaitingLocks(paths []string) error {
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
 		return err
 	}
-	return os.Rename(tmp, file)
+	return store.Replace(tmp, file) // (a reader without the project's lock may hold it a moment)
 }
 
 // ErrLocked is a share refused because someone else holds paths it changes

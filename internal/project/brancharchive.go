@@ -82,7 +82,7 @@ func (r *Repo) ArchiveBranch(key string) error {
 	}
 	head := heads[key]
 	if head == "" {
-		return fmt.Errorf("no branch %q on the team", key)
+		return r.noBranch(c, heads, key, "")
 	}
 	// Where it is, kept first: stopped before the branch log is written, it
 	// still comes back.

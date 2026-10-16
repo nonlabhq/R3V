@@ -14,6 +14,7 @@ import (
 
 	"github.com/nonlabhq/r3v/internal/als"
 	"github.com/nonlabhq/r3v/internal/manifest"
+	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/store"
 )
 
@@ -36,8 +37,10 @@ func (r *Repo) Head() string {
 	return strings.TrimSpace(string(b))
 }
 
+// setHead writes HEAD whole, then in place of the old (store.Replace waits
+// out a reader without the lock holding it): a reader never sees it empty.
 func (r *Repo) setHead(id string) error {
-	return os.WriteFile(filepath.Join(r.Dir, "HEAD"), []byte(id+"\n"), 0o644)
+	return store.WriteAtomic(filepath.Join(r.Dir, "HEAD"), strings.NewReader(id+"\n"))
 }
 
 // Resolve expands a unique id prefix, "HEAD" or "HEAD~N" to a full snapshot id.
@@ -505,8 +508,52 @@ func (r *Repo) Log() ([]*Manifest, error) {
 // (e.g. the latest version of each branch). Heads not on this computer are
 // skipped. Versions come as headers (see Header): Load one for its files.
 func (r *Repo) LogAll(heads []string) ([]*Manifest, error) {
+	return r.logFrom(append([]string{r.Latest(), r.Head()}, heads...))
+}
+
+// BranchVersions is Log for the team's branch name (its key or its name):
+// its versions from its latest one, fetched when not on this computer.
+// The branch you are on lists as Log does, with the team's newer ones.
+func (r *Repo) BranchVersions(name string) ([]*Manifest, error) {
+	if r.Config.Remote == nil { // (one branch: this one)
+		if b := r.BranchName(); remote.SameBranchName(b, name) {
+			return r.Log()
+		}
+		return nil, &NoBranchError{Name: name, Suggestion: closestName(name, map[string]string{r.BranchName(): r.BranchName()})}
+	}
+	key, err := r.ResolveBranch(name)
+	if err != nil {
+		return nil, err
+	}
+	c, err := r.Client()
+	if err != nil {
+		return nil, err
+	}
+	heads, err := c.Branches(r.Config.ProjectID)
+	if err != nil && !errors.Is(err, remote.ErrNotFound) {
+		return nil, err
+	}
+	head, ok := heads[key]
+	switch {
+	case !ok && key == r.BranchName(): // (not shared yet)
+		return r.Log()
+	case !ok:
+		return nil, r.noBranch(c, heads, name, "")
+	}
+	if err := r.fetchSnapshots(c, head); err != nil && !r.HasSnapshot(head) {
+		return nil, fmt.Errorf("the versions of branch %s aren't on this computer, and getting them failed: %w", name, err)
+	}
+	if key == r.BranchName() {
+		return r.LogAll([]string{head})
+	}
+	return r.logFrom([]string{head})
+}
+
+// logFrom lists the versions leading to heads (those on this computer),
+// newest first, each before its parents.
+func (r *Repo) logFrom(heads []string) ([]*Manifest, error) {
 	all := map[string]*Manifest{}
-	for _, h := range append([]string{r.Latest(), r.Head()}, heads...) {
+	for _, h := range heads {
 		if h == "" || all[h] != nil {
 			continue
 		}

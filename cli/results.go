@@ -56,7 +56,7 @@ func cmdResults(args []string) error {
 	if err != nil || len(pos) > 1 {
 		return usageError("usage: r3v results [VERSION]")
 	}
-	r, err := openRepo()
+	r, err := openRead()
 	if err != nil {
 		return err
 	}

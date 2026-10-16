@@ -14,6 +14,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/als"
 	"github.com/nonlabhq/r3v/internal/diff"
 	"github.com/nonlabhq/r3v/internal/merge"
+	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/version"
 )
 
@@ -27,7 +28,7 @@ everyday (run inside a project folder):
   status                                 what changed since your last version
   watch                                  keep running: tell you about new versions (never changes
                                          your files)
-  log                                    list versions
+  log [BRANCH] [-n N]                    list versions (of your branch, or another branch's)
 
 setup:
   init [--author NAME] [--preset code|none]
@@ -84,6 +85,9 @@ set commands:
 for programs and AI agents:
   --json                                 status, log, save, update, merge, backup, version: one
                                          JSON object on stdout; errors with fixed codes
+  --wait SECONDS                         how long a command waits for the app or another command
+                                         working on the project (default 10); reading commands
+                                         (status, log...) read without waiting
   help agents [--snippet]                how AI agents use R3V (or lines for a project's
                                          AGENTS.md)
   help rules                             the project's rules (.r3v.yaml): what is tracked,
@@ -125,6 +129,12 @@ func Main() { os.Exit(Run(os.Args[1:])) }
 // Run runs one r3v command and returns its exit status (see output.go).
 func Run(args []string) int {
 	args, jsonMode = stripJSON(args)
+	readBusy = nil
+	var waitErr error
+	args, lockWait, waitGiven, waitErr = stripWait(args)
+	if waitErr != nil {
+		return fail("", waitErr)
+	}
 	if len(args) < 1 {
 		if jsonMode {
 			return fail("", usageError("usage: r3v <command> [args] (r3v help)"))
@@ -142,6 +152,7 @@ func Run(args []string) int {
 			return 0
 		}
 	}
+	project.LockProgram, project.LockCommand = "cli", command
 	defer releaseHeld()
 	var err error
 	code := 0
