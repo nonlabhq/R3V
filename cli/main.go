@@ -58,8 +58,10 @@ branches (advanced):
 advanced:
   commit --local -m MESSAGE              commit on this computer only (your next commit shares it)
   goto <id|HEAD~N|latest> [--force]      go to a version (files and samples); latest goes back
-  discard                                throw your changes away: the files as in the version
-                                         you're on (ask the user first)
+  discard [<path>...] [--preview]        throw your changes away: the files as in the version
+                                         you're on; with paths, only those files and folders
+                                         (--preview: list them, change nothing; ask the user
+                                         first)
   parked [list]                          changes kept while you're on another branch or version
   parked bring|discard BRANCH[@VERSION]  bring parked changes here, or drop them
   export <id> <folder>                   write a version as a separate project folder

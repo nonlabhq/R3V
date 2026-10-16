@@ -20,7 +20,11 @@ words: [glossary.md](glossary.md).
   an error code (below). Never pipe answers into R3V.
 - **Don't use `--force` or `r3v discard` on your own.** `--force` makes
   R3V rewrite sets while Ableton Live may have them open, or discard
-  changes; `discard` throws the changes away. Ask the user.
+  changes; `discard` throws the changes away. Ask the user. To show them
+  what would go, `r3v discard [<path>...] --preview --json` changes
+  nothing; with paths, `discard` drops only the changes in those files
+  and folders (as `commit` takes paths), the rest stays. Its result
+  lists them: `discarded: [{path, status, from}]`.
 - **Never print connection codes** (`r3v connection-code`, `r3v
   remote <code>`, `r3v clone <code>`): they contain the team's storage
   keys. Don't put them in files, logs or messages, and don't ask the user
@@ -354,6 +358,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `cloud_beta_only` | R3V Cloud is in a closed beta: making a team needs an invitation; tell the user (the waitlist: https://r3v.so/waitlist) |
 | 1 | `cloud_one_team` | the beta gives one team of the user's own, and it exists: use it |
 | 1 | `not_a_merge` | `undo-merge` takes a merge version: `r3v log --first-parent` lists them |
+| 1 | `nothing_to_discard` | `discard <path>...`: nothing changed in those paths |
 | 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |

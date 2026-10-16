@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -500,26 +501,85 @@ func cmdLog(args []string) error {
 // cmdDiscard: r3v discard, the app's "Discard changes": your changes
 // thrown away, the files as in the version you're on (goto HEAD --force,
 // without the Git word).
+// With paths, only the changes in those files or folders go (as commit
+// takes paths); --preview lists what would go, changing nothing.
 func cmdDiscard(args []string) error {
-	if len(args) != 0 {
-		return usageError("usage: r3v discard")
+	fs := flag.NewFlagSet("discard", flag.ContinueOnError)
+	preview := fs.Bool("preview", false, "only list the changes that would be thrown away")
+	paths, err := parseArgs(fs, args)
+	if err != nil {
+		return err
 	}
 	r, err := openRepo()
 	if err != nil {
 		return err
 	}
+	changes, err := r.Status()
+	if err != nil {
+		return err
+	}
+	if len(paths) > 0 {
+		if changes, err = changesUnder(r, paths, changes); err != nil {
+			return err
+		}
+		if len(changes) == 0 {
+			return &cliError{Code: "nothing_to_discard", Exit: exitUsage, Err: fmt.Errorf("nothing changed in %s", strings.Join(paths, ", "))}
+		}
+	}
+	changes = slices.DeleteFunc(changes, func(c project.Change) bool { return c.Status == "untracked" }) // (not a change: left as it is)
+	out := discardJSON{Discarded: []changeJSON{}, Preview: *preview}
+	for _, c := range changes {
+		out.Discarded = append(out.Discarded, changeJSON{Path: c.Path, Status: c.Status, From: c.From})
+	}
+	printList := func() {
+		for _, c := range out.Discarded {
+			fmt.Printf("  %-9s %s\n", c.Status, c.Path)
+		}
+	}
+	if *preview {
+		out.moveJSON = moveOf(r, nil, nil)
+		result("discard", out, func() {
+			if len(changes) == 0 {
+				fmt.Println("nothing to discard")
+				return
+			}
+			fmt.Println("would discard (r3v discard without --preview to do it):")
+			printList()
+		})
+		return nil
+	}
 	if err := guardLiveAlways(r, false); err != nil {
 		return err
 	}
 	defer tidy(r)
+	if len(paths) > 0 {
+		if err := r.DiscardChanges(changes); err != nil {
+			return err
+		}
+		out.moveJSON = moveOf(r, nil, nil)
+		result("discard", out, func() {
+			fmt.Printf("discarded (the files are as in version %s):\n", short(r.Head()))
+			printList()
+		})
+		return nil
+	}
 	m, notes, err := r.GoTo(r.Head(), true)
 	if err != nil {
 		return err
 	}
-	result("discard", moveOf(r, nil, notes), func() {
+	out.moveJSON = moveOf(r, nil, notes)
+	result("discard", out, func() {
 		fmt.Printf("your changes are discarded: the files are as in version %s  %s\n", short(m.ID), m.Message)
 	})
 	return nil
+}
+
+// discardJSON is discard's result: where the project is, and the changes
+// thrown away (or, with --preview, that would be).
+type discardJSON struct {
+	moveJSON
+	Discarded []changeJSON `json:"discarded"`
+	Preview   bool         `json:"preview,omitempty"`
 }
 
 func cmdGoto(args []string) error {

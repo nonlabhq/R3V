@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -416,9 +417,11 @@ func (a *App) DiscardFiles(root string, files []string, force bool) (*Result, er
 	if err != nil {
 		return nil, err
 	}
-	from := map[string]string{}
+	var discard []project.Change
 	for _, c := range changes {
-		from[c.Path] = c.From
+		if slices.Contains(files, c.Path) {
+			discard = append(discard, c)
+		}
 	}
 	for _, f := range files {
 		if fileKind(r, f) == "set" {
@@ -427,15 +430,8 @@ func (a *App) DiscardFiles(root string, files []string, force bool) (*Result, er
 			}
 		}
 	}
-	for _, f := range files {
-		if err := r.RestoreFile(f, ""); err != nil {
-			return nil, err
-		}
-		if from[f] != "" {
-			if err := r.RestoreFile(from[f], ""); err != nil {
-				return nil, err
-			}
-		}
+	if err := r.DiscardChanges(discard); err != nil {
+		return nil, err
 	}
 	a.dropWaiting(r, files)
 	go a.unlockDiscarded(root, files)
