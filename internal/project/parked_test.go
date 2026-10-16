@@ -301,6 +301,9 @@ func TestParkedSwitchKilled(t *testing.T) {
 		if r.UnfinishedSwitch() == "" {
 			t.Fatalf("%s: the switch isn't known to have stopped", what)
 		}
+		if changed, err := r.ChangedSinceSwitch(); err != nil || len(changed) != 0 {
+			t.Fatalf("%s: changed since: %v %v", what, changed, err)
+		}
 		if _, err := r.RecoverSwitch(); err != nil {
 			t.Fatalf("%s: putting the files back: %v", what, err)
 		}

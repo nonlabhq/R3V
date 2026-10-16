@@ -154,6 +154,9 @@ func TestUndoMergeKilled(t *testing.T) {
 			t.Fatal(err)
 		}
 		if r.UnfinishedSwitch() != "" { // (the app puts the files back first)
+			if changed, err := r.ChangedSinceSwitch(); err != nil || len(changed) != 0 {
+				t.Fatalf("%s: changed since: %v %v", what, changed, err)
+			}
 			if _, err := r.RecoverSwitch(); err != nil {
 				t.Fatalf("%s: recovering: %v", what, err)
 			}

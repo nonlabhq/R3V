@@ -284,6 +284,63 @@ func (r *Repo) RecoverSwitch() ([]string, error) {
 	return notes, err
 }
 
+// ChangedSinceSwitch lists the files that changed after a switch stopped
+// halfway (nil when none, or no switch did): content that is neither as
+// the switch found it or was putting in place, nor anything R3V keeps. Put
+// back without asking (the command line does it before a command), such a
+// file would be lost; the person decides instead (the app, goto --force).
+func (r *Repo) ChangedSinceSwitch() ([]string, error) {
+	id := r.UnfinishedSwitch()
+	if id == "" {
+		return nil, nil
+	}
+	known := map[string]map[string]bool{} // path -> content hashes it had or was getting
+	add := func(ref string) error {
+		if ref == "" {
+			return nil
+		}
+		m, err := r.Load(ref)
+		if err != nil {
+			return err
+		}
+		for _, f := range m.Files {
+			if known[f.Path] == nil {
+				known[f.Path] = map[string]bool{}
+			}
+			known[f.Path][f.Hash] = true
+		}
+		return nil
+	}
+	if work, ok := strings.CutPrefix(id, "work "); ok {
+		// (what came in merged into the work is in .r3v: putFiles takes it from there)
+		if err := add(work); err != nil {
+			return nil, err
+		}
+	} else if err := add(id); err != nil {
+		return nil, err
+	}
+	if err := add(r.Head()); err != nil {
+		return nil, err
+	}
+	working, err := r.workingFiles(r.loadIndex())
+	if err != nil {
+		return nil, err
+	}
+	var changed []string
+	for _, f := range working {
+		if f.Hash == "" || known[f.Path][f.Hash] || r.Store.Has(f.Hash) {
+			continue // (one in use: RecoverSwitch refuses it)
+		}
+		changed = append(changed, f.Path)
+	}
+	return changed, nil
+}
+
+// OnFileWritten sets what hears of each file a switch puts in place (nil:
+// nothing), for other packages' tests to stop a switch there as a crash
+// would (cli's killed tests).
+func OnFileWritten(f func(path string)) { fileWritten = f }
+
 // leftover: a temporary file R3V writes beside a file it puts in place
 // (store.WriteAtomic, os.CreateTemp's ".r3v-" and digits), left when it
 // stopped mid-copy.
