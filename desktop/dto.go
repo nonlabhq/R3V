@@ -34,6 +34,13 @@ type Version struct {
 	// WIP: its title says it isn't finished (set in previews only: such a
 	// version is left out of a merge's description).
 	WIP bool `json:"wip,omitempty"`
+	// For the history graph's runs of an agent's versions (State.History
+	// only): Files, how many files it changed against its first parent (0:
+	// none, or not counted yet); Check, its checks' result ("pass", "fail";
+	// none: not checked); Step, the agent's session it was made in.
+	Files int    `json:"files,omitempty"`
+	Check string `json:"check,omitempty"`
+	Step  string `json:"step,omitempty"`
 }
 
 // Actor is the agent tool that made a version ("claude-code") and its

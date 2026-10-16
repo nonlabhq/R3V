@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/store"
@@ -93,6 +94,39 @@ func (r *Repo) SetResult(version, name, state, note string) (string, *Result, er
 		return "", nil, err
 	}
 	return id, &res, nil
+}
+
+// Checked sums up each version's results, for the history graph: "fail"
+// when a check failed, "pass" when every one passed; a version with a
+// check still running and none failed is left out, as is one without
+// results. One read of the folder, not one per version.
+func (r *Repo) Checked() map[string]string {
+	out := map[string]string{}
+	entries, err := os.ReadDir(filepath.Join(r.CommonDir(), resultsDir))
+	if err != nil {
+		return out
+	}
+	for _, e := range entries {
+		id, ok := strings.CutSuffix(e.Name(), ".json")
+		if !ok || e.IsDir() {
+			continue
+		}
+		state := ""
+		for _, res := range r.Results(id) {
+			switch {
+			case res.State == "fail":
+				state = "fail"
+			case res.State == "pass" && state == "":
+				state = "pass"
+			case res.State != "pass" && state != "fail":
+				state = "running"
+			}
+		}
+		if state == "pass" || state == "fail" {
+			out[id] = state
+		}
+	}
+	return out
 }
 
 // ResultNames are a results map's checks, in order.

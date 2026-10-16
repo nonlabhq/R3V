@@ -45,3 +45,26 @@ func TestResults(t *testing.T) {
 		t.Fatal("results kept for a version no longer here, or dropped for one that is")
 	}
 }
+
+// What each version's checks said, summed up: a failed check fails it,
+// every check passed passes it, one still running leaves it out.
+func TestChecked(t *testing.T) {
+	r, _ := Init(newProject(t), "yi")
+	a := mustSnapshot(t, r, "a")
+	r.SetResult(a.ID, "tests", "pass", "")
+	r.SetResult(a.ID, "build", "fail", "")
+	write(t, r.Root, "notes.txt", "b")
+	b := mustSnapshot(t, r, "b")
+	r.SetResult(b.ID, "tests", "pass", "")
+	r.SetResult(b.ID, "build", "pass", "")
+	write(t, r.Root, "notes.txt", "c")
+	c := mustSnapshot(t, r, "c")
+	r.SetResult(c.ID, "tests", "pass", "")
+	r.SetResult(c.ID, "build", "running", "")
+	write(t, r.Root, "notes.txt", "d")
+	mustSnapshot(t, r, "d")
+	got := r.Checked()
+	if len(got) != 2 || got[a.ID] != "fail" || got[b.ID] != "pass" {
+		t.Fatalf("checked: %v", got)
+	}
+}

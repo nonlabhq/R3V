@@ -5183,6 +5183,16 @@ export class Version {
      */
     "wip"?: boolean;
 
+    /**
+     * For the history graph's runs of an agent's versions (State.History
+     * only): Files, how many files it changed against its first parent (0:
+     * none, or not counted yet); Check, its checks' result ("pass", "fail";
+     * none: not checked); Step, the agent's session it was made in.
+     */
+    "files"?: number;
+    "check"?: string;
+    "step"?: string;
+
     /** Creates a new Version instance. */
     constructor($$source: Partial<Version> = {}) {
         if (!("id" in $$source)) {
