@@ -1886,5 +1886,8 @@
 "R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.": "R3V Cloud 正在封闭测试：建立团队需要邀请。你仍然可以加入邀请你的团队。",
 "Join the waitlist": "加入候补名单",
 "Founding member": "创始会员",
-"Early access": "抢先体验"
+"Early access": "抢先体验",
+"“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "“{folder}”看起来是构建输出（{files}，{size}）。一旦提交，它会永久留在团队的存储空间里。",
+"Adds the rule ignore “{rule}” to .r3v.yaml": "在 .r3v.yaml 中加入规则 ignore “{rule}”",
+"Leave it out": "排除它"
 }

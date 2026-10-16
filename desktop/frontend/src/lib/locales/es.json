@@ -1886,5 +1886,8 @@
 "R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.": "R3V Cloud está en beta cerrada: crear un equipo requiere una invitación. Aun así puedes unirte a los equipos a los que te inviten.",
 "Join the waitlist": "Unirse a la lista de espera",
 "Founding member": "Miembro fundador",
-"Early access": "Acceso anticipado"
+"Early access": "Acceso anticipado",
+"“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "«{folder}» parece la salida de una compilación ({files}, {size}). Si se hace commit, se queda para siempre en el almacenamiento del equipo.",
+"Adds the rule ignore “{rule}” to .r3v.yaml": "Añade la regla ignore «{rule}» a .r3v.yaml",
+"Leave it out": "Dejarlo fuera"
 }

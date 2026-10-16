@@ -14,6 +14,7 @@
   import ChangesPanel from "./ChangesPanel.svelte";
   import FileExplorer from "./FileExplorer.svelte";
   import CommitBox from "./CommitBox.svelte";
+  import BuiltNote from "./BuiltNote.svelte";
   import EditsSummary from "./EditsSummary.svelte";
   import ProjectHeader from "./ProjectHeader.svelte";
   import ProjectBanners from "./ProjectBanners.svelte";
@@ -1044,7 +1045,7 @@
 
     {#snippet changesPanel(scope: "changes" | "all" | undefined, footer = false)}
       {#snippet summary()}<EditsSummary st={st!} />{/snippet}
-      {#snippet commitBox()}<CommitBox st={st!} bind:message {busy} {leftOut} oncommit={() => commit()} />{/snippet}
+      {#snippet commitBox()}<BuiltNote {root} st={st!} onrules={() => load()} /><CommitBox st={st!} bind:message {busy} {leftOut} oncommit={() => commit()} />{/snippet}
       <ChangesPanel {root} st={st!} {summary} commitBox={scope === "all" || footer ? undefined : commitBox} {scope} bind:excluded
         onrules={() => load()} ondiscard={(p) => (discardFile = p)}
         ondiscardall={() => (discardAllOpen = true)} ondiscardsome={(paths) => (discardSome = paths)}
@@ -1125,7 +1126,7 @@
                 <span class="pending-steps"><StepsTimeline {root} version={`${st.head} ${refreshKey} ${st.changes.length}`} busy={!!busy} right onback={stepBack} /></span>
               </div>
               <div class="pending-body">{@render changesPanel("changes", true)}</div>
-              <div class="panel-foot"><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
+              <div class="panel-foot"><BuiltNote {root} {st} onrules={() => load()} /><CommitBox st={st} bind:message {busy} {leftOut} oncommit={() => commit()} inline /></div>
             {:else if shownParked}
               {@const p = shownParked}
               {@const gone = !st.branches.some((b) => b.name === p.branch)}
