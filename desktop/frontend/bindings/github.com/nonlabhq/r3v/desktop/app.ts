@@ -50,6 +50,7 @@ export function AddAgentGuide(root: string): $CancellablePromise<string[]> {
  * AddIgnoreRule adds `- ignore: pattern` at the end of the rules in the
  * project's .r3v.yaml (creating the file): the last rule wins. The file
  * is committed with the project, so the rule is the team's once shared.
+ * (`r3v rules ignore` does the same: project.AddIgnoreRule.)
  */
 export function AddIgnoreRule(root: string, pattern: string): $CancellablePromise<void> {
     return $Call.ByID(871931324, root, pattern);
@@ -1090,10 +1091,12 @@ export function ReconnectProjects(teamID: string, roots: string[]): $Cancellable
 
 /**
  * RecoverSwitch puts the files back as the version the project is on, after
- * a switch that stopped halfway (State.Unfinished).
+ * a switch that stopped halfway (State.Unfinished). Files changed since
+ * would be replaced or deleted: without replace it lists them instead
+ * (action "changed-since") and changes nothing, so the user decides.
  */
-export function RecoverSwitch(root: string, force: boolean): $CancellablePromise<$models.Result | null> {
-    return $Call.ByID(1111973759, root, force).then(($result: any) => {
+export function RecoverSwitch(root: string, force: boolean, replace: boolean): $CancellablePromise<$models.Result | null> {
+    return $Call.ByID(1111973759, root, force, replace).then(($result: any) => {
         return $$createType23($result);
     });
 }

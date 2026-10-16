@@ -775,6 +775,9 @@ func blocked(set string) *Result {
 // sides (their authors' current names as the team last told them) and
 // what was combined on its own.
 func conflictResult(r *project.Repo, err error) (*Result, error) {
+	if errors.Is(err, project.ErrSwitchUnfinished) { // (nothing committed: the files to put back first)
+		return &Result{Action: "switch-unfinished", Log: []string{}, Relinked: []string{}, Conflicts: []Conflict{}}, nil
+	}
 	if out, ok := lockedResult(r, err); ok {
 		return out, nil
 	}
@@ -863,7 +866,7 @@ func (a *App) Save(root, message string, combine bool, resolutions map[string]st
 	var older *project.Manifest
 	if r.OnOlderVersion() && r.Config.Remote != nil {
 		if older, err = r.CommitOnOlderVersion(message); err != nil {
-			return nil, err
+			return conflictResult(r, err)
 		}
 	}
 	m, res, err := r.Save(message, opts(resolutions))
@@ -984,8 +987,10 @@ func (a *App) GoToVersion(root, id string, discard, force bool) (*Result, error)
 }
 
 // RecoverSwitch puts the files back as the version the project is on, after
-// a switch that stopped halfway (State.Unfinished).
-func (a *App) RecoverSwitch(root string, force bool) (*Result, error) {
+// a switch that stopped halfway (State.Unfinished). Files changed since
+// would be replaced or deleted: without replace it lists them instead
+// (action "changed-since") and changes nothing, so the user decides.
+func (a *App) RecoverSwitch(root string, force, replace bool) (*Result, error) {
 	defer a.tidyLater(root)
 	r, unlock, err := a.open(root)
 	if err != nil {
@@ -994,6 +999,15 @@ func (a *App) RecoverSwitch(root string, force bool) (*Result, error) {
 	defer unlock()
 	if set := liveGuard(r, force); set != "" {
 		return blocked(set), nil
+	}
+	if !replace {
+		changed, err := r.ChangedSinceSwitch()
+		if err != nil {
+			return nil, err
+		}
+		if len(changed) > 0 {
+			return &Result{Action: "changed-since", ChangedSince: changed, Log: []string{}, Relinked: []string{}, Conflicts: []Conflict{}}, nil
+		}
 	}
 	notes, err := r.RecoverSwitch()
 	if err != nil {
@@ -1014,7 +1028,7 @@ func (a *App) KeepThisVersion(root, message string, resolutions map[string]strin
 		return nil, errors.New("describe the version")
 	}
 	if _, err := r.KeepThisVersion(message); err != nil {
-		return nil, err
+		return conflictResult(r, err)
 	}
 	if r.Config.Remote == nil {
 		out := syncResult(nil)

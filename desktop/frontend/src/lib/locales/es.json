@@ -1900,5 +1900,11 @@
 "unfinished": "sin terminar",
 "Its title says it isn't finished: left out of the merge's description": "Su título dice que no está terminado: queda fuera de la descripción del merge",
 "“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "«{folder}» se llama como «{like}», que las reglas dejan fuera ({files}, {size}). Si se hace commit, se queda para siempre en el almacenamiento del equipo.",
-"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "«{folder}» es grande ({size}) y nuevo ({files}). Si se hace commit, se queda para siempre en el almacenamiento del equipo."
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "«{folder}» es grande ({size}) y nuevo ({files}). Si se hace commit, se queda para siempre en el almacenamiento del equipo.",
+"Not committed: a switch didn't finish, and some files are from another version. Put the files back first (above), then commit.": "No se hizo commit: un cambio de versión no terminó y algunos archivos son de otra versión. Restaura los archivos primero (arriba) y luego haz commit.",
+"Put the files back?": "¿Restaurar los archivos?",
+"This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Este archivo cambió después de que R3V se detuviera: restaurar los archivos lo reemplaza (o lo elimina, si la versión no lo tiene).",
+"These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Estos {n} archivos cambiaron después de que R3V se detuviera: restaurar los archivos los reemplaza (o elimina los que la versión no tiene).",
+"Copy what you want to keep of them somewhere else first. This can't be undone.": "Copia antes en otro lugar lo que quieras conservar. Esto no se puede deshacer.",
+"Replace them and put files back": "Reemplazarlos y restaurar archivos"
 }
