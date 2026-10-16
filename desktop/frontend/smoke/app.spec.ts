@@ -91,7 +91,7 @@ test("makes a workspace in the Workspaces tab, and removes it", async () => {
   await page.getByRole("button", { name: /New workspace/ }).click();
   const dialog = page.getByRole("dialog", { name: "New workspace" });
   await dialog.getByLabel("Branch name").fill("smoke-agent");
-  await expect(dialog.getByLabel("Folder")).toHaveValue(/Night Drive \(smoke-agent\)$/);
+  await expect(dialog.getByLabel("Folder")).toHaveValue(/Night Drive Project\.workspaces[\\/]smoke-agent$/);
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(page.getByText(/The workspace “smoke-agent” is ready/).first()).toBeVisible({ timeout: 30_000 });
   const item = page.locator(".agents li").filter({ hasText: "smoke-agent" });
