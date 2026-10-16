@@ -202,7 +202,8 @@ first). Tell the user what was parked and brought back.
 `workspace` (Nightly; several agents on one project, each in a folder of
 its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on-one-project-nightly)):
 
-- `workspace add <folder> --branch NAME [--from BRANCH|VERSION] [--agent claude-code]`:
+- `workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent claude-code]`
+  (no folder: `<project>.workspaces/<branch>` beside the project):
   `workspace` (`folder`, `branch` its key, `branch_name`, `base` the
   branch it was made from, `created`). Made from the files on this
   computer; what the rules leave out (`node_modules/`, `target/`) isn't
@@ -248,7 +249,7 @@ project, on its own branch). Files that can't be merged (textures,
 models, sounds, `.blend`, Unity and Unreal assets) are changed by one
 workspace at a time; code is never locked (it merges hunk by hunk).
 
-- `r3v workspace add <folder> --branch NAME --agent claude-code` makes
+- `r3v workspace add --branch NAME --agent claude-code` makes
   a workspace set up for Claude Code (or `r3v agent setup` in one): its
   hook and `R3V_ACTOR` go in `.claude/settings.local.json` (that copy's,
   never tracked). The hook: the

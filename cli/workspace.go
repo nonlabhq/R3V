@@ -37,7 +37,7 @@ func workspaceOf(e project.WorkspaceEntry) workspaceJSON {
 }
 
 func cmdWorkspace(args []string) error {
-	usage := errors.New("usage: r3v workspace add <folder> --branch NAME [--from BRANCH|VERSION] [--agent claude-code] | list | remove <folder> [--force]")
+	usage := errors.New("usage: r3v workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent claude-code] | list | remove <folder> [--force]")
 	if len(args) == 0 {
 		return usage
 	}
@@ -56,13 +56,17 @@ func cmdWorkspace(args []string) error {
 	}
 	switch args[0] {
 	case "add":
-		if len(pos) != 1 || *branch == "" {
+		if len(pos) > 1 || *branch == "" {
 			return usage
+		}
+		folder := r.DefaultWorkspaceFolder(*branch) // (Song.workspaces beside the project)
+		if len(pos) == 1 {
+			folder = pos[0]
 		}
 		if *agent != "" && *agent != "claude-code" {
 			return usageError("agent tools set up for now: claude-code")
 		}
-		e, err := r.AddWorkspace(pos[0], project.WorkspaceOptions{Branch: *branch, From: *from, Agent: *agent != ""})
+		e, err := r.AddWorkspace(folder, project.WorkspaceOptions{Branch: *branch, From: *from, Agent: *agent != ""})
 		if err != nil {
 			return err
 		}
@@ -98,7 +102,7 @@ func cmdWorkspace(args []string) error {
 		}
 		result("workspace", map[string]any{"main": r.MainRoot(), "workspaces": out}, func() {
 			if len(out) == 0 {
-				fmt.Println("no workspaces (r3v workspace add <folder> --branch NAME)")
+				fmt.Println("no workspaces (r3v workspace add --branch NAME)")
 			}
 			for _, w := range out {
 				if w.Missing {

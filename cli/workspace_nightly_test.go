@@ -141,3 +141,41 @@ func TestWorkspaceForAnAgent(t *testing.T) {
 		t.Fatalf("archived: %+v", gone)
 	}
 }
+
+// Without a folder, a workspace goes in the project's own holder beside it
+// (Song Project.workspaces), named after its branch; the holder goes with
+// its last workspace.
+func TestWorkspaceDefaultFolder(t *testing.T) {
+	fake := s3test.New("team")
+	defer fake.Close()
+	code := remote.EncodeConnectionCode(remote.Config{URL: "s3+" + fake.URL + "/team/r3v",
+		AccessKey: "key", SecretKey: "secret"})
+	a := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "notes.txt": "one\n"})
+	ra, err := project.Init(a, "yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ra.SetRemote(code); err != nil {
+		t.Fatal(err)
+	}
+	if exit, rep := run(t, a, "commit", "-m", "first"); exit != 0 {
+		t.Fatalf("commit: %+v", rep.Error)
+	}
+	exit, rep := run(t, a, "workspace", "add", "--branch", "try/mix")
+	var added struct{ Workspace workspaceJSON }
+	json.Unmarshal(rep.Result, &added)
+	holder := filepath.Join(filepath.Dir(a), "Song Project.workspaces")
+	want := filepath.Join(holder, "try-mix")
+	if exit != 0 || !strings.EqualFold(added.Workspace.Folder, want) {
+		t.Fatalf("add: %s %+v (want %s)", rep.Result, rep.Error, want)
+	}
+	if _, err := os.Stat(filepath.Join(want, "notes.txt")); err != nil {
+		t.Fatal(err)
+	}
+	if exit, rep := run(t, a, "workspace", "remove", want, "--force"); exit != 0 {
+		t.Fatalf("remove: %+v", rep.Error)
+	}
+	if _, err := os.Stat(holder); !os.IsNotExist(err) {
+		t.Errorf("the holder is still there: %v", err)
+	}
+}

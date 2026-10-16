@@ -6,9 +6,10 @@
   import Modal from "$shared/Modal.svelte";
 
   // A new workspace, for you or an AI agent: its branch's name, its folder
-  // (beside the project's, named after it and the branch, until one is
-  // typed or chosen), the branch it starts from, whether it is an agent's
-  // (its branch marked so, Claude Code set up in it), and the room it takes.
+  // (in Song.workspaces beside the project, named after the branch, until
+  // one is typed or chosen), the branch it starts from, whether it is an
+  // agent's (its branch marked so, Claude Code set up in it), and the room
+  // it takes.
   let { root, name, branch, branches, oncreated, onclose }: {
     root: string; name: string; // the project's folder and name
     branch: string; // the branch the project is on (where the workspace starts by default)
@@ -26,11 +27,15 @@
   let error = $state("");
 
   const sep = $derived(root.includes("\\") ? "\\" : "/");
-  const parentOf = (p: string) => p.replace(/[\\/]+$/, "").replace(/[\\/][^\\/]*$/, "");
-  // A folder name from the branch's: what Windows doesn't take in one, left out.
-  const safe = (s: string) => s.replace(/[<>:"/\\|?*]+/g, "-").trim().replace(/[. ]+$/, "");
-  let parent = $state(untrack(() => parentOf(root)));
-  let suggested = $derived(`${parent}${sep}${safe(name)} (${safe(label) || "…"})`);
+  // A folder name from the branch's: what Windows doesn't take in one, left
+  // out (as the CLI's default folder does).
+  const safe = (s: string) => s.replace(/[<>:"/\\|?*\x00-\x1f]+/g, "-").trim().replace(/[. ]+$/, "");
+  // Where workspaces go: one folder beside the project, named after its own
+  // (Song.workspaces beside Song), so they don't spread over its parent.
+  const holder = $derived(`${root.replace(/[\\/]+$/, "")}.workspaces`);
+  let parent = $state(""); // a folder chosen for it ("": the holder)
+  let suggested = $derived(parent ? `${parent}${sep}${safe(name)} (${safe(label) || "…"})`
+    : `${holder}${sep}${safe(label) || "…"}`);
   $effect(() => { if (!folderTyped) folder = suggested; });
 
   // The room it takes (its drive may clone: none until files change).
