@@ -16,6 +16,9 @@ import (
 
 // Tests must not touch the user's real team store.
 func TestMain(m *testing.M) {
+	if os.Getenv("R3V_CLI_KILL_ARGS") != "" {
+		os.Exit(killedChild())
+	}
 	dir, err := os.MkdirTemp("", "r3v-cli-")
 	if err != nil {
 		panic(err)

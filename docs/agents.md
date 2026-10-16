@@ -187,6 +187,22 @@ wait for it up to 10 seconds; `--wait SECONDS` (any command) waits longer
 or less, and with a reading command waits that long for the lock before
 reading without it.
 
+A switch that stopped half-way (R3V closed or killed while `goto`,
+`switch`, `update`, `merge` or `undo-merge` rewrote the files) leaves them
+partly one version, partly another. The next command that gets the
+project's lock (reading ones too; not one reading it busy) finishes or
+rolls it back itself first, as the app's "put the files back" does, and
+adds `recovered` to its result (or its `error`): `action` `restored` (the
+files back as `version`, the version the project is on; `changes`: true
+when your uncommitted changes are back too) or `completed` (a project with
+no version yet got `version`), and `relinked`. The step that stopped isn't
+redone: run it again. When it can't, the files stay as they are and the result
+has `unfinished` instead: `version`, `code`, `message`, `hint`.
+`set_open_in_live` or `files_open_in_tool`: ask the user to close it,
+then any command puts them back. `changed_since_switch`: `paths` changed
+after it stopped (putting the files back would replace them): ask the
+user. Don't commit files that are `unfinished`.
+
 `log BRANCH` lists another branch's versions (its key or name, as `r3v
 branch` shows it; fetched from the team when they aren't here yet), in the
 same shape. A branch name that isn't one fails with code `error` and, when
@@ -246,7 +262,10 @@ gives your own, used as it is.
 version on the current branch without it, the history kept (the merge
 stays in it; don't rewrite anything). What changed since the merge stays;
 where the same thing changed again it stops with `merge_conflict` as a
-merge does (`ours`: keep it as it is now, `theirs`: as before the merge).
+merge does, its choices named for what they do: `keep` (keep it as it is
+now) and `undo` (as before the merge), in `--strategy keep|undo|both` and
+`--resolve <key>=keep|undo|both`; each conflict lists them in `choices`
+(`ours` and `theirs` still work: `keep` is `ours`, `undo` is `theirs`).
 Uncommitted changes stop it (`unsaved_changes`), and so does a tool with
 the project open; a version that isn't a merge is `not_a_merge`, one
 already undone `nothing_to_undo`. Stopped half-way (R3V closed), running

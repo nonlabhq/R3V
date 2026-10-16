@@ -21,22 +21,40 @@ type decisions struct {
 	resolve  stringList
 	file     *string
 	resolved stringList
+	// choices: the words the command names the choices with; aliases: its
+	// own words for ours and theirs (undo-merge's keep and undo).
+	choices string
+	aliases map[string]string
 }
 
 // decisionFlags adds --resolve, --decisions and --resolved next to a
 // command's --strategy.
 func decisionFlags(fs *flag.FlagSet, strategy *string) *decisions {
-	d := &decisions{strategy: strategy}
-	fs.Var(&d.resolve, "resolve", "decide one conflict by its key: <key>=ours|theirs|both (again for more)")
-	d.file = fs.String("decisions", "", `decisions in a JSON file, {"<key>": "ours|theirs|both"} ("-": from stdin)`)
+	return decisionFlagsAs(fs, strategy, "ours|theirs|both", nil)
+}
+
+// decisionFlagsAs is decisionFlags for a command with words of its own for
+// the choices (aliases: each word, and the choice it is).
+func decisionFlagsAs(fs *flag.FlagSet, strategy *string, choices string, aliases map[string]string) *decisions {
+	d := &decisions{strategy: strategy, choices: choices, aliases: aliases}
+	fs.Var(&d.resolve, "resolve", "decide one conflict by its key: <key>="+choices+" (again for more)")
+	d.file = fs.String("decisions", "", `decisions in a JSON file, {"<key>": "`+choices+`"} ("-": from stdin)`)
 	fs.Var(&d.resolved, "resolved", "give a file as it should be: <path>=<file with its content> (again for more)")
 	return d
+}
+
+// choice is the merge's word for a choice given in the command's own.
+func (d *decisions) choice(c string) string {
+	if a, ok := d.aliases[c]; ok {
+		return a
+	}
+	return c
 }
 
 // options reads the decisions; a key, choice or path that can't be is a
 // usage error.
 func (d *decisions) options(r *project.Repo) (project.MergeOptions, error) {
-	opts := project.MergeOptions{Strategy: *d.strategy}
+	opts := project.MergeOptions{Strategy: d.choice(*d.strategy)}
 	if *d.file != "" {
 		var data []byte
 		var err error
@@ -53,7 +71,7 @@ func (d *decisions) options(r *project.Repo) (project.MergeOptions, error) {
 			return opts, usageError(`--decisions: not {"<key>": "<choice>"}: %v`, err)
 		}
 		for k, c := range m {
-			if err := decide(&opts, k, c); err != nil {
+			if err := d.decide(&opts, k, c); err != nil {
 				return opts, err
 			}
 		}
@@ -61,9 +79,9 @@ func (d *decisions) options(r *project.Repo) (project.MergeOptions, error) {
 	for _, v := range d.resolve {
 		i := strings.LastIndex(v, "=")
 		if i < 0 {
-			return opts, usageError("--resolve %q: want <key>=ours|theirs|both", v)
+			return opts, usageError("--resolve %q: want <key>=%s", v, d.choices)
 		}
-		if err := decide(&opts, v[:i], v[i+1:]); err != nil {
+		if err := d.decide(&opts, v[:i], v[i+1:]); err != nil {
 			return opts, err
 		}
 	}
@@ -88,14 +106,17 @@ func (d *decisions) options(r *project.Repo) (project.MergeOptions, error) {
 	return opts, nil
 }
 
-func decide(opts *project.MergeOptions, key, choice string) error {
+func (d *decisions) decide(opts *project.MergeOptions, key, given string) error {
 	if !validKey(key) {
 		return usageError("%q is not a conflict key (file:<path>, text:<path>#<n>, <set>#<key>: see the conflicts' key)", key)
 	}
+	choice := d.choice(given)
 	switch choice {
 	case "ours", "theirs", "both":
 	default:
-		return usageError("%s: %q is not a choice: ours, theirs or both", key, choice)
+		words := strings.Split(d.choices, "|")
+		return usageError("%s: %q is not a choice: %s or %s", key, given,
+			strings.Join(words[:len(words)-1], ", "), words[len(words)-1])
 	}
 	if opts.Resolutions == nil {
 		opts.Resolutions = map[string]string{}

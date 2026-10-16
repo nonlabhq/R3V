@@ -92,7 +92,7 @@ in `src/shared/tokens.css`.
 The connection can drop and R3V can be closed or crash at any moment. Every step that writes to the team's storage or to the project (commit, share, update, clone, switch, background upload) is tested both ways, failing (a lost connection: every request fails from some point) and killed (the process ends: nothing after runs), at the start, the end and points between. After each, a test checks that:
 
 1. the team's data is whole: a teammate gets a whole version, the one before or the new one;
-2. the project's files are as they were, or complete (a switch that stopped half-way says so and can be put back);
+2. the project's files are as they were, or complete (a switch that stopped half-way says so and can be put back: the app offers it, and the next command line command that gets the lock does it itself, unless a tool has the project open or a file changed since; `cli/recover.go`);
 3. what the app offers next is safe and finishes the job (no commit offered on a download that didn't finish, say), and doing it again works;
 4. doing it again doesn't send again what already went up (a few small records aside);
 5. nothing is left behind for good: temporary copies, registrations, locks.

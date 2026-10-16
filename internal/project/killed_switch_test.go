@@ -123,6 +123,17 @@ func TestSwitchKilled(t *testing.T) {
 		if got := r.UnfinishedSwitch(); got != b.ID {
 			t.Fatalf("%s: unfinished %q, want b", what, got)
 		}
+		// Each file as it was or was to be: nothing to lose putting them back.
+		if changed, err := r.ChangedSinceSwitch(); err != nil || len(changed) != 0 {
+			t.Fatalf("%s: changed since: %v %v", what, changed, err)
+		}
+		if n == 1 {
+			write(t, r.Root, "Samples/mine.wav", "recorded after")
+			if changed, _ := r.ChangedSinceSwitch(); len(changed) != 1 || changed[0] != "Samples/mine.wav" {
+				t.Fatalf("%s: a file new since: %v", what, changed)
+			}
+			os.Remove(filepath.Join(r.Root, "Samples", "mine.wav"))
+		}
 		if _, err := r.RecoverSwitch(); err != nil {
 			t.Fatalf("%s: putting the files back: %v", what, err)
 		}
@@ -173,6 +184,9 @@ func TestUpdateWithWorkKilled(t *testing.T) {
 		eitherOf(t, what, files(t, r.Root), before, after)
 		if r.UnfinishedSwitch() == "" {
 			t.Fatalf("%s: the update isn't known to have stopped", what)
+		}
+		if changed, err := r.ChangedSinceSwitch(); err != nil || len(changed) != 0 {
+			t.Fatalf("%s: changed since: %v %v", what, changed, err)
 		}
 		if _, err := r.RecoverSwitch(); err != nil {
 			t.Fatalf("%s: putting the files back: %v", what, err)
