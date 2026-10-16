@@ -42,6 +42,7 @@
   import ConfirmDialog from "$shared/ConfirmDialog.svelte";
   import ArchiveDialog from "./ArchiveDialog.svelte";
   import LiveBlockedDialog from "./LiveBlockedDialog.svelte";
+  import RecoverDialog from "./RecoverDialog.svelte";
   import CommitCheckDialog from "./CommitCheckDialog.svelte";
   import PromptDialog from "./PromptDialog.svelte";
   import StepsTimeline from "./StepsTimeline.svelte";
@@ -126,6 +127,9 @@
   let archiving = $state<{ branch: string; merged: boolean } | null>(null);
   let conflicts = $state<{ result: Result; run: Action; force: boolean } | null>(null);
   let liveBlocked = $state<{ run: Action; resolutions: Record<string, string>; set: string } | null>(null);
+  // Files changed after a switch stopped halfway: putting the files back
+  // would replace them, so it asks first (RecoverDialog).
+  let recoverAsk = $state<string[] | null>(null);
   let newBranch = $state<string | null>(null);
   let branchSwitch = $state(true); // go on with the new branch (most do: it's why they made it)
   $effect(() => { if (newBranch === null) branchSwitch = true; }); // (asked anew each time)
@@ -373,6 +377,10 @@
         openCombine(a.message ?? message); // nothing changed yet: let the user decide
       } else if (r.liveRunning) {
         liveBlocked = { run: a, resolutions, set: r.openSet };
+      } else if (r.action === "changed-since") {
+        recoverAsk = r.changedSince ?? []; // (nothing put back yet: asked first)
+      } else if (r.action === "switch-unfinished") {
+        toast(t("Not committed: a switch didn't finish, and some files are from another version. Put the files back first (above), then commit."), "warn", 12000);
       } else if (r.conflicts.length) {
         conflicts = { result: r, run: a, force }; // keep a "Live is closed" confirmation
       } else {
@@ -539,6 +547,15 @@
     branchThenCommit = msg.trim();
     newBranch = "";
   }
+
+  // Puts the files back after a switch that stopped halfway; replace: also
+  // those changed since (the user agreed).
+  const recoverAction = (replace: boolean): Action => ({
+    name: "goto",
+    message: "",
+    call: (_res, force) => api.RecoverSwitch(root, force, replace),
+    done: () => toast(t("Files put back as they were"), "ok"),
+  });
 
   function discardEverything() {
     discardAllOpen = false;
@@ -1006,9 +1023,7 @@
     {#snippet issue(mode: "lead" | "panel", keys: string[])}
     <ProjectBanners {mode} {keys} st={st!} {busy} {restorable} {missingSamples} onshare={shareVersions}
       onswitchmain={() => switchTo("main")} onrestorebranch={restoreGoneBranch}
-      onrecover={() => run({ name: "goto", message: "",
-        call: (_res, force) => api.RecoverSwitch(root, force),
-        done: () => toast(t("Files put back as they were"), "ok") })}
+      onrecover={() => run(recoverAction(false))}
       onpreset={setPreset} onbranchhere={() => putOnBranch(message || "")} onlatest={() => goTo(null)}
       oncombine={() => openCombine(message)} onnewbranch={() => (newBranch = "")}
       onkeep={() => (keepOpen = t("Back to “{version}”", { version: titleOf(st!.olderVersion!.message) || st!.olderVersion!.short }))}
@@ -1207,6 +1222,11 @@
     <ConfirmDialog title={tn(p.files, "Discard {n} parked change?", "Discard {n} parked changes?")} danger confirm={t("Discard")}
       text={t("The changes parked on {place} will be lost. This can't be undone.", { place: placeOf(p) })}
       onconfirm={discardParked} onclose={() => (discardingParked = null)} />
+  {/if}
+
+  {#if recoverAsk}
+    <RecoverDialog paths={recoverAsk} onclose={() => (recoverAsk = null)}
+      onconfirm={() => { recoverAsk = null; run(recoverAction(true)); }} />
   {/if}
 
   {#if discardAllOpen}

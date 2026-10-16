@@ -1900,5 +1900,11 @@
 "unfinished": "未完成",
 "Its title says it isn't finished: left out of the merge's description": "標題表示它還沒完成：不寫進合併的說明",
 "“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "「{folder}」的名稱和規則排除的「{like}」相似（{files}，{size}）。一旦提交，它會永久留在團隊的儲存空間裡。",
-"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "「{folder}」很大（{size}），而且是新的（{files}）。一旦提交，它會永久留在團隊的儲存空間裡。"
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "「{folder}」很大（{size}），而且是新的（{files}）。一旦提交，它會永久留在團隊的儲存空間裡。",
+"Not committed: a switch didn't finish, and some files are from another version. Put the files back first (above), then commit.": "未提交：切換沒有完成，有些檔案來自另一個版本。請先還原檔案（上方），再提交。",
+"Put the files back?": "還原檔案？",
+"This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "這個檔案在 R3V 停止後有變動：還原檔案會取代它（版本裡沒有它的話會刪除）。",
+"These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "這 {n} 個檔案在 R3V 停止後有變動：還原檔案會取代它們（版本裡沒有的會刪除）。",
+"Copy what you want to keep of them somewhere else first. This can't be undone.": "想保留的內容請先複製到別處。這個動作無法復原。",
+"Replace them and put files back": "取代它們並還原檔案"
 }

@@ -273,6 +273,41 @@ describe("ProjectView: committing", () => {
     await toasted("Version committed and shared with the team");
   });
 
+  it("says a commit waits for a switch that didn't finish", async () => {
+    await show({ changes: [change("Song.als")] });
+    api.Save.mockResolvedValue(result("switch-unfinished"));
+    await typeMessage("Mix");
+    await fireEvent.click(commitButton());
+    await toasted(/^Not committed: a switch didn't finish/);
+    expect(toast.mock.calls.some(([t]) => /Version committed/.test(t))).toBe(false);
+  });
+
+  it("asks about files changed since a switch stopped before putting the files back", async () => {
+    await show({ unfinished: version("h2", "v2") });
+    api.RecoverSwitch.mockResolvedValueOnce(result("changed-since", { changedSince: ["Samples/take 3.wav", "notes.txt"] }))
+      .mockResolvedValueOnce(result("moved"));
+    await fireEvent.click(screen.getAllByRole("button", { name: "Put files back" })[0]);
+    const dialog = await screen.findByRole("dialog", { name: "Put the files back?" });
+    expect(api.RecoverSwitch).toHaveBeenCalledWith(ROOT, false, false);
+    expect(within(dialog).getByText("Samples/take 3.wav")).toBeTruthy();
+    expect(within(dialog).getByText("notes.txt")).toBeTruthy();
+    expect(within(dialog).getByText(/These 2 files changed after R3V stopped/)).toBeTruthy();
+    expect(toast.mock.calls.some(([t]) => t === "Files put back as they were")).toBe(false);
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Replace them and put files back" }));
+    await waitFor(() => expect(api.RecoverSwitch).toHaveBeenLastCalledWith(ROOT, false, true));
+    await toasted("Files put back as they were");
+    expect(screen.queryByRole("dialog", { name: "Put the files back?" })).toBeNull();
+  });
+
+  it("puts nothing back when the files changed since are kept", async () => {
+    await show({ unfinished: version("h2", "v2") });
+    api.RecoverSwitch.mockResolvedValue(result("changed-since", { changedSince: ["notes.txt"] }));
+    await fireEvent.click(screen.getAllByRole("button", { name: "Put files back" })[0]);
+    const dialog = await screen.findByRole("dialog", { name: "Put the files back?" });
+    await fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(api.RecoverSwitch).toHaveBeenCalledTimes(1);
+  });
+
   it("asks about conflicts and tries again with the decisions", async () => {
     await show({ changes: [change("Song.als")] });
     api.Save.mockResolvedValueOnce(result("", {

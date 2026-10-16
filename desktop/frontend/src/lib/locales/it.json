@@ -1900,5 +1900,11 @@
 "unfinished": "incompiuto",
 "Its title says it isn't finished: left out of the merge's description": "Il suo titolo dice che non è finito: escluso dalla descrizione del merge",
 "“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "«{folder}» ha un nome come «{like}», che le regole lasciano fuori ({files}, {size}). Una volta fatto il commit, resta per sempre nello spazio del team.",
-"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "«{folder}» è grande ({size}) e nuovo ({files}). Una volta fatto il commit, resta per sempre nello spazio del team."
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "«{folder}» è grande ({size}) e nuovo ({files}). Una volta fatto il commit, resta per sempre nello spazio del team.",
+"Not committed: a switch didn't finish, and some files are from another version. Put the files back first (above), then commit.": "Commit non fatto: un cambio di versione non è finito e alcuni file sono di un'altra versione. Prima rimetti i file (sopra), poi fai il commit.",
+"Put the files back?": "Rimettere i file?",
+"This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Questo file è cambiato dopo che R3V si è fermato: rimettere i file lo sostituisce (o lo elimina, se la versione non lo ha).",
+"These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Questi {n} file sono cambiati dopo che R3V si è fermato: rimettere i file li sostituisce (o elimina quelli che la versione non ha).",
+"Copy what you want to keep of them somewhere else first. This can't be undone.": "Copia prima altrove ciò che vuoi tenere. Non si può annullare.",
+"Replace them and put files back": "Sostituiscili e rimetti i file"
 }

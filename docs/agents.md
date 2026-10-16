@@ -201,7 +201,7 @@ has `unfinished` instead: `version`, `code`, `message`, `hint`.
 `set_open_in_live` or `files_open_in_tool`: ask the user to close it,
 then any command puts them back. `changed_since_switch`: `paths` changed
 after it stopped (putting the files back would replace them): ask the
-user. Don't commit files that are `unfinished`.
+user. Meanwhile `commit` refuses them (`switch_unfinished`).
 
 `log BRANCH` lists another branch's versions (its key or name, as `r3v
 branch` shows it; fetched from the team when they aren't here yet), in the
@@ -373,6 +373,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 6 | `team_needs_features` | the team turned on features this R3V lacks: update, or switch to Nightly |
 | 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared |
 | 1 | `on_older_version` | on an older version: `r3v goto latest` |
+| 1 | `switch_unfinished` | a switch stopped half-way and its files aren't put back (see `unfinished`): nothing was committed. Run any command to let R3V finish or roll back the step; if it reports `changed_since_switch`, ask the user, then `r3v goto <version> --force` (replacing those files) or the app's offer |
 | 1 | `unshared_versions` | `r3v commit -m ...` shares them |
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |

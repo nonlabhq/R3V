@@ -298,6 +298,10 @@ type Result struct {
 	Locks []HeldLock `json:"locks"`
 	// Park: a switch kept uncommitted changes (Parking).
 	Park *Parking `json:"park"`
+	// ChangedSince: action "changed-since": files changed after a switch
+	// stopped halfway, which putting the files back would replace; nothing
+	// was done. Call again with replace once the user agrees.
+	ChangedSince []string `json:"changedSince"`
 }
 
 // ParkedSet is uncommitted changes kept on this computer while the project

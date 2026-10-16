@@ -195,6 +195,8 @@ var codes = []struct {
 	{project.ErrNoRemote, "not_connected", exitError, "connect the project to a team: r3v remote <connection-code>"},
 	{project.ErrDirty, "unsaved_changes", exitError, "commit them first: r3v commit -m \"...\" (it also brings in the team's versions)"},
 	{project.ErrOlderVersion, "on_older_version", exitError, "go back to the latest version: r3v goto latest"},
+	{project.ErrSwitchUnfinished, "switch_unfinished", exitError,
+		"run any r3v command to let R3V finish or roll back the step; if it reports changed_since_switch, ask the user, then r3v goto <version> --force (or the R3V app's offer)"},
 	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v commit -m ..."},
 	{project.ErrNotAMerge, "not_a_merge", exitError, "pick a merge version: r3v log --first-parent lists them"},
 	{project.ErrNothingToUndo, "nothing_to_undo", exitError, "nothing to do: the branch already is without those changes"},

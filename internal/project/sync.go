@@ -1059,6 +1059,9 @@ func (r *Repo) updateKeepingWork(c remote.Backend, head, target string, opts Mer
 // update keeping the work does), so the new version comes after them: no
 // merge version. Versions committed here and not shared yet are merged.
 func (r *Repo) Save(message string, opts MergeOptions) (*Manifest, *SyncResult, error) {
+	if err := r.guardSwitch(); err != nil { // (before the team's versions come into the files)
+		return nil, nil, err
+	}
 	var first *SyncResult
 	if c, err := r.Client(); err == nil {
 		r.report(StageChecking, 0, 0) // (the team's branch, before looking at the files)

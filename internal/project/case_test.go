@@ -117,3 +117,45 @@ func TestUnfinishedSwitch(t *testing.T) {
 	}
 	assertClean(t, r)
 }
+
+// While a switch is unfinished, the files are partly another version: no
+// commit takes them as they are. Put back (or the record stale), it does.
+func TestCommitWhileSwitchUnfinished(t *testing.T) {
+	root := newProject(t)
+	r, _ := Init(root, "yi")
+	a := mustSnapshot(t, r, "a")
+	os.WriteFile(filepath.Join(root, "x.wav"), []byte("x"), 0o644)
+	b := mustSnapshot(t, r, "b")
+	if _, _, err := r.Checkout(a.ID, false); err != nil { // (on a, as its latest)
+		t.Fatal(err)
+	}
+	os.MkdirAll(filepath.Join(root, "x.wav", "in the way"), 0o755)
+	if _, _, err := r.Checkout(b.ID, true); err == nil {
+		t.Fatal("expected the switch to fail")
+	}
+	write(t, root, "mine.txt", "made after")
+	if _, err := r.Snapshot("half"); !errors.Is(err, ErrSwitchUnfinished) {
+		t.Fatalf("snapshot: %v, want ErrSwitchUnfinished", err)
+	}
+	if _, _, err := r.Save("half", Strategy("fail")); !errors.Is(err, ErrSwitchUnfinished) {
+		t.Fatalf("save: %v, want ErrSwitchUnfinished", err)
+	}
+	if r.Head() != a.ID || r.UnfinishedSwitch() != b.ID {
+		t.Fatal("a refused commit changed the project")
+	}
+	os.RemoveAll(filepath.Join(root, "x.wav"))
+	os.Remove(filepath.Join(root, "mine.txt"))
+	if _, err := r.RecoverSwitch(); err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, "mine.txt", "made after")
+	if m, err := r.Snapshot("mine"); err != nil || r.Head() != m.ID {
+		t.Fatalf("after putting the files back: %v", err)
+	}
+	// A record left for the version the project is on is stale: dropped.
+	os.WriteFile(filepath.Join(r.Dir, switchingFile), []byte(r.Head()+"\n"), 0o644)
+	write(t, root, "mine.txt", "again")
+	if _, err := r.Snapshot("again"); err != nil {
+		t.Fatalf("with a stale record: %v", err)
+	}
+}

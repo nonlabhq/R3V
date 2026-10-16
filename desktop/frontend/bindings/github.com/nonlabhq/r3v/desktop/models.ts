@@ -2724,6 +2724,13 @@ export class Result {
      */
     "park": Parking | null;
 
+    /**
+     * ChangedSince: action "changed-since": files changed after a switch
+     * stopped halfway, which putting the files back would replace; nothing
+     * was done. Call again with replace once the user agrees.
+     */
+    "changedSince": string[];
+
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
         if (!("action" in $$source)) {
@@ -2765,6 +2772,9 @@ export class Result {
         if (!("park" in $$source)) {
             this["park"] = null;
         }
+        if (!("changedSince" in $$source)) {
+            this["changedSince"] = [];
+        }
 
         Object.assign(this, $$source);
     }
@@ -2782,6 +2792,7 @@ export class Result {
         const $$createField10_0 = $$createType52;
         const $$createField11_0 = $$createType26;
         const $$createField12_0 = $$createType54;
+        const $$createField13_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("log" in $$parsedSource) {
             $$parsedSource["log"] = $$createField1_0($$parsedSource["log"]);
@@ -2809,6 +2820,9 @@ export class Result {
         }
         if ("park" in $$parsedSource) {
             $$parsedSource["park"] = $$createField12_0($$parsedSource["park"]);
+        }
+        if ("changedSince" in $$parsedSource) {
+            $$parsedSource["changedSince"] = $$createField13_0($$parsedSource["changedSince"]);
         }
         return new Result($$parsedSource as Partial<Result>);
     }

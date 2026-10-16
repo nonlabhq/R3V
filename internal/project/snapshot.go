@@ -322,6 +322,9 @@ var ErrNothingToSnapshot = errors.New("nothing changed since the last snapshot")
 
 // Snapshot records the working files as a new snapshot on top of HEAD.
 func (r *Repo) Snapshot(message string) (*Manifest, error) {
+	if err := r.guardSwitch(); err != nil {
+		return nil, err
+	}
 	if err := r.guardLatest(); err != nil {
 		return nil, err
 	}

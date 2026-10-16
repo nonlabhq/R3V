@@ -1900,5 +1900,11 @@
 "unfinished": "inachevé",
 "Its title says it isn't finished: left out of the merge's description": "Son titre dit qu'il n'est pas terminé : laissé hors de la description du merge",
 "“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "« {folder} » porte un nom comme « {like} », que les règles laissent de côté ({files}, {size}). Une fois commité, il reste pour toujours dans le stockage de l'équipe.",
-"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "« {folder} » est volumineux ({size}) et nouveau ({files}). Une fois commité, il reste pour toujours dans le stockage de l'équipe."
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "« {folder} » est volumineux ({size}) et nouveau ({files}). Une fois commité, il reste pour toujours dans le stockage de l'équipe.",
+"Not committed: a switch didn't finish, and some files are from another version. Put the files back first (above), then commit.": "Pas de commit : un changement de version n'a pas abouti, certains fichiers sont d'une autre version. Remettez d'abord les fichiers (ci-dessus), puis faites le commit.",
+"Put the files back?": "Remettre les fichiers ?",
+"This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Ce fichier a changé après l'arrêt de R3V : remettre les fichiers le remplace (ou le supprime, si la version ne l'a pas).",
+"These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Ces {n} fichiers ont changé après l'arrêt de R3V : remettre les fichiers les remplace (ou supprime ceux que la version n'a pas).",
+"Copy what you want to keep of them somewhere else first. This can't be undone.": "Copiez d'abord ailleurs ce que vous voulez en garder. C'est irréversible.",
+"Replace them and put files back": "Les remplacer et remettre les fichiers"
 }

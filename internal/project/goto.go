@@ -142,6 +142,9 @@ func (r *Repo) KeepThisVersion(message string) (*Manifest, error) {
 	if !r.OnOlderVersion() {
 		return nil, errors.New("the project is already on its latest version")
 	}
+	if err := r.guardSwitch(); err != nil { // (before it moves the project)
+		return nil, err
+	}
 	if err := r.setHead(r.Config.Tip); err != nil {
 		return nil, err
 	}
