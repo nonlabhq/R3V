@@ -148,6 +148,53 @@ func TestStatusCheckedWarnsOfNewBuildFolders(t *testing.T) {
 	}
 }
 
+// A folder's rule leaves it out at once; adding it again changes nothing;
+// a project without a .r3v.yaml gets one.
+func TestAddIgnoreRuleLooksBuilt(t *testing.T) {
+	root := t.TempDir()
+	os.WriteFile(filepath.Join(root, profile.FileName), []byte("presets:\n  ./: none\n"), 0o644)
+	r, err := Init(root, "Yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.MkdirAll(filepath.Join(root, "tools", "out"), 0o755)
+	for i := range 60 {
+		os.WriteFile(filepath.Join(root, "tools", "out", fmt.Sprintf("f%d.obj", i)), []byte("o"), 0o644)
+	}
+	os.WriteFile(filepath.Join(root, "tools", "main.cpp"), []byte("int main() {}"), 0o644)
+	_, warned, err := r.StatusChecked()
+	if err != nil || len(warned) != 1 || warned[0].Folder != "tools/out" || warned[0].Kind != BuiltByFiles {
+		t.Fatalf("warnings %+v %v", warned, err)
+	}
+	if added, err := r.AddIgnoreRule(warned[0].Rule); err != nil || !added {
+		t.Fatalf("added %v, %v", added, err)
+	}
+	if added, err := r.AddIgnoreRule(warned[0].Rule); err != nil || added {
+		t.Errorf("added again %v, %v", added, err)
+	}
+	changes, warned, _ := r.StatusChecked()
+	if len(warned) != 0 {
+		t.Errorf("warnings after %+v", warned)
+	}
+	for _, c := range changes {
+		if strings.HasPrefix(c.Path, "tools/out/") {
+			t.Errorf("still a change: %s", c.Path)
+		}
+	}
+	if _, err := AddIgnoreRule(root, ""); err == nil {
+		t.Error("an empty rule added")
+	}
+
+	set := t.TempDir() // (a Live project, no .r3v.yaml yet)
+	os.MkdirAll(filepath.Join(set, "Ableton Project Info"), 0o755)
+	if added, err := AddIgnoreRule(set, "Backup-*/"); err != nil || !added {
+		t.Fatalf("no .r3v.yaml: added %v, %v", added, err)
+	}
+	if data, _ := os.ReadFile(filepath.Join(set, profile.FileName)); !strings.Contains(string(data), `- ignore: "Backup-*/"`) {
+		t.Errorf("written:\n%s", data)
+	}
+}
+
 // treeState: every file under root, with its size and time.
 func treeState(t *testing.T, root string) string {
 	t.Helper()

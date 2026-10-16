@@ -66,6 +66,8 @@ advanced:
   rules [check]                          the project's rules (.r3v.yaml) and whether they work
   rules explain <file>...                why a file is tracked or ignored
   rules preset <folder> <preset|none>    a folder's project type (presets: in .r3v.yaml)
+  rules ignore <pattern>                 leave files out: adds the rule ignore: <pattern> to
+                                         .r3v.yaml (as the app's "Leave it out")
   gc                                     free space in .r3v (files the team's storage has,
                                          leftovers no version uses)
   verify [--repair]                      check the history: every version and stored file;

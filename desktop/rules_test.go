@@ -46,7 +46,7 @@ func TestWithIgnoreRule(t *testing.T) {
 		"crlf":       {"rules:\r\n  - ignore: \"a/\"\r\n", "rules:\r\n  - ignore: \"a/\"\r\n  - ignore: \"*.tmp\"\r\n"},
 		"there":      {"rules:\n  - ignore: \"*.tmp\"\n", "rules:\n  - ignore: \"*.tmp\"\n"},
 	} {
-		got, err := withIgnoreRule(c.in, "*.tmp")
+		got, err := profile.AddRule(c.in, "ignore", "*.tmp")
 		if err != nil || got != c.want {
 			t.Errorf("%s: got\n%q\nwant\n%q (%v)", name, got, c.want, err)
 		}
@@ -67,7 +67,7 @@ func TestIgnoreOptions(t *testing.T) {
 	if len(dir) != 2 || dir[0].Pattern != "/Renders/Final/" || dir[1].Pattern != "Final/" {
 		t.Fatalf("folder options: %+v", dir)
 	}
-	text, _ := withIgnoreRule("", file[0].Pattern)
+	text, _ := profile.AddRule("", "ignore", file[0].Pattern)
 	p, err := profile.Parse([]byte(text), t.TempDir())
 	if err != nil {
 		t.Fatal(err)

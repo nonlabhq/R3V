@@ -70,3 +70,75 @@ func TestLooksBuiltWarnings(t *testing.T) {
 		t.Errorf("commit after: %s", rep.Result)
 	}
 }
+
+// What a looks_built warning's pattern is for: `r3v rules ignore` adds it
+// to .r3v.yaml (once), the folder is out of the changes, and it waits for
+// the project as other writing commands do.
+func TestRulesIgnore(t *testing.T) {
+	a := newFolder(t, map[string]string{"notes.txt": "one",
+		profile.FileName: "rules:\n  - ignore: \"**/Backup/\"\n"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	os.MkdirAll(filepath.Join(a, "Backup-2024"), 0o755)
+	os.WriteFile(filepath.Join(a, "Backup-2024", "Song.als"), []byte("set"), 0o644)
+	_, rep := run(t, a, "status")
+	var st statusJSON
+	json.Unmarshal(rep.Result, &st)
+	if len(st.Warnings) != 1 || st.Warnings[0].Pattern != "Backup-*/" {
+		t.Fatalf("warnings %+v", st.Warnings)
+	}
+	if _, text := runText(t, a, "status"); !strings.Contains(text, `r3v rules ignore "Backup-*/"`) {
+		t.Errorf("the note doesn't say the command:\n%s", text)
+	}
+
+	ignore := func() rulesIgnoreJSON {
+		t.Helper()
+		exit, rep := run(t, a, "rules", "ignore", st.Warnings[0].Pattern)
+		var got rulesIgnoreJSON
+		json.Unmarshal(rep.Result, &got)
+		if exit != 0 || got.Rule != `ignore: "Backup-*/"` {
+			t.Fatalf("rules ignore: %d %s %+v", exit, rep.Result, rep.Error)
+		}
+		return got
+	}
+	if !ignore().Added {
+		t.Error("not added")
+	}
+	before, _ := os.ReadFile(filepath.Join(a, profile.FileName))
+	if ignore().Added {
+		t.Error("added twice")
+	}
+	if after, _ := os.ReadFile(filepath.Join(a, profile.FileName)); string(after) != string(before) ||
+		strings.Count(string(after), `"Backup-*/"`) != 1 {
+		t.Errorf(".r3v.yaml:\n%s", after)
+	}
+	_, rep = run(t, a, "status")
+	st = statusJSON{}
+	json.Unmarshal(rep.Result, &st)
+	if len(st.Warnings) != 0 {
+		t.Errorf("warnings after the rule: %+v", st.Warnings)
+	}
+	for _, c := range st.Changes {
+		if strings.HasPrefix(c.Path, "Backup-2024/") {
+			t.Errorf("still a change: %s", c.Path)
+		}
+	}
+
+	if exit, rep := run(t, a, "rules", "check"); exit != exitUsage {
+		t.Errorf("rules check --json: %d %+v", exit, rep.Error)
+	}
+	if exit, _ := run(t, a, "rules", "ignore"); exit != exitUsage {
+		t.Errorf("rules ignore without a pattern: %d", exit)
+	}
+	held, _ := project.Open(a)
+	release, err := held.Lock(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	if exit, rep := run(t, a, "rules", "ignore", "*.tmp", "--wait", "0.2"); exit != exitLater || rep.Error.Code != "project_busy" {
+		t.Errorf("rules ignore while busy: %d %+v", exit, rep.Error)
+	}
+}

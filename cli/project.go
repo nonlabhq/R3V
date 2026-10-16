@@ -302,9 +302,9 @@ func printWarnings(ws []warningJSON, committed bool) {
 			fmt.Printf("note: %s/ looks like a build's output (%s; %s, %s)\n", w.Folder, w.Reason, files, humanSize(w.Bytes))
 		}
 		if committed {
-			fmt.Printf("  it is in this version now; to leave it out of the next ones, add to %s under rules:  - %s\n", profile.FileName, w.Rule)
+			fmt.Printf("  it is in this version now; to leave it out of the next ones: r3v rules ignore %q  (adds  - %s  to %s)\n", w.Pattern, w.Rule, profile.FileName)
 		} else {
-			fmt.Printf("  committed, it stays in the team's storage for good; to leave it out, add to %s under rules:  - %s\n", profile.FileName, w.Rule)
+			fmt.Printf("  committed, it stays in the team's storage for good; to leave it out: r3v rules ignore %q  (adds  - %s  to %s)\n", w.Pattern, w.Rule, profile.FileName)
 		}
 	}
 }
