@@ -74,10 +74,10 @@ Teams on storage keep a log of every branch move (each move is its own record, n
 ## Workspaces: several agents on one project (Nightly)
 
 ```
-r3v workspace add ../game.wt/renderer --branch renderer   # another copy, on a branch of its own
-r3v workspace add ../game.wt/tauri --branch tauri --from main
+r3v workspace add --branch renderer                       # another copy, on a branch of its own (../game.workspaces/renderer)
+r3v workspace add ../elsewhere/tauri --branch tauri --from main   # or in a folder you choose
 r3v workspace list [--json]                               # each one: branch, ahead/behind, changes
-r3v workspace remove ../game.wt/renderer [--force]        # once its branch is merged
+r3v workspace remove ../game.workspaces/renderer [--force]        # once its branch is merged
 ```
 
 A workspace is another folder with the same project, on this computer, for

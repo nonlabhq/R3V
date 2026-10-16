@@ -19,11 +19,17 @@ person merges what's done.
 A workspace is another folder with the same project, on this computer:
 
 ```
-r3v workspace add <folder> --branch <name> [--from <version|branch>] [--agent claude-code]
+r3v workspace add [<folder>] --branch <name> [--from <version|branch>] [--agent claude-code]
 r3v workspace list [--json]
 r3v workspace remove <folder>        # when merged; asks (fails) if not
 ```
 
+- **Where**: unless a folder is given, in one folder beside the project,
+  named after it: `Song.workspaces/<branch>` beside `Song/`, so
+  workspaces don't spread over the folder the project is in; removed
+  with its last workspace. Never inside the project: git, Godot or an
+  agent reading `CLAUDE.md` upwards would take a workspace for part of
+  it (a workspace has no `.git`: git there would work on the project's).
 - **Made from what's here**: the files come from the store on this
   computer, never downloaded again. Copied with block cloning where the
   drive has it (ReFS, Dev Drive: no space taken until changed), else
@@ -101,7 +107,8 @@ project is on another), with the archive offer after as for any branch.
 **Open** shows the workspace in the sidebar under its project (the app's
 `teams.json` `workspaces`; nothing runs in the background there).
 **Remove** asks; refused, it says what's left and offers removing anyway.
-**New workspace** makes one beside the project ("Song (renderer)"), set up
+**New workspace** makes one in `Song.workspaces` (`Song.workspacesenderer`;
+  a folder chosen instead gets "Song (renderer)" in it), set up
 for Claude Code by default (`internal/agentsetup`, shared with the CLI;
 the hook runs the `bin\r3v.exe` installed with the app).
 

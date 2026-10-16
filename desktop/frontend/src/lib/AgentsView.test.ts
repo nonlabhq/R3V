@@ -128,17 +128,17 @@ describe("The Agents view", () => {
     expect(api.OpenWorkspace).toHaveBeenCalledWith(ROOT, "C:\\Projects\\Song (renderer)");
   });
 
-  it("makes a new workspace beside the project, for an agent when ticked, saying the room it takes", async () => {
+  it("makes a new workspace in the project's holder beside it (Song Project.workspaces), for an agent when ticked, saying the room it takes", async () => {
     api.WorkspaceRoom.mockResolvedValue({ files: 3 << 20, copies: 0, clones: true });
     api.AgentWorkspaces.mockResolvedValue([]);
-    api.AddWorkspace.mockResolvedValue({ folder: "C:\\Projects\\Song (shell)", branch: "b-s", label: "shell", agent: "claude-code", setupError: "" });
+    api.AddWorkspace.mockResolvedValue({ folder: "C:\\Projects\\Song Project.workspaces\\shell", branch: "b-s", label: "shell", agent: "claude-code", setupError: "" });
     const props = show();
     await fireEvent.click(await screen.findByRole("button", { name: /New workspace/ }));
     const dialog = screen.getByRole("dialog", { name: "New workspace" });
     const d = within(dialog);
     expect(d.getByRole("button", { name: "Create" }).hasAttribute("disabled")).toBe(true);
     await fireEvent.input(d.getByLabelText("Branch name"), { target: { value: "shell" } });
-    expect((d.getByLabelText("Folder") as HTMLInputElement).value).toBe("C:\\Projects\\Song (shell)");
+    expect((d.getByLabelText("Folder") as HTMLInputElement).value).toBe("C:\\Projects\\Song Project.workspaces\\shell");
     const forAgent = d.getByLabelText("For an AI agent (Claude Code)") as HTMLInputElement;
     expect(forAgent.checked).toBe(false); // (a person's, unless ticked)
     await fireEvent.click(forAgent);
@@ -146,7 +146,7 @@ describe("The Agents view", () => {
     expect((d.getByLabelText("Start from") as HTMLSelectElement).value).toBe("main");
     expect(d.getAllByRole("option").map((o) => o.textContent)).toEqual(["main (you are here)", "idea"]); // (not agents' branches)
     await fireEvent.click(d.getByRole("button", { name: "Create" }));
-    await waitFor(() => expect(api.AddWorkspace).toHaveBeenCalledWith(ROOT, "C:\\Projects\\Song (shell)", "shell", "", "claude-code"));
+    await waitFor(() => expect(api.AddWorkspace).toHaveBeenCalledWith(ROOT, "C:\\Projects\\Song Project.workspaces\\shell", "shell", "", "claude-code"));
     await toasted(/The workspace “shell” is ready/);
     expect(props.onchanged).toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();

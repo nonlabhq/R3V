@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"sort"
@@ -594,7 +595,11 @@ func (r *Repo) RemoveWorkspace(folder string, force bool) error {
 		if l, err := readLink(filepath.Join(root, metaDir)); err != nil || l == nil || !samePath(l.Common, r.CommonDir()) {
 			return fmt.Errorf("%s is not a workspace of this project", root)
 		}
-		return removeFolder(root)
+		if err := removeFolder(root); err != nil {
+			return err
+		}
+		r.dropWorkspacesHolder(root)
+		return nil
 	}
 	entry := list[i]
 	ws, err := openAt(root)
@@ -641,6 +646,7 @@ func (r *Repo) RemoveWorkspace(folder string, force bool) error {
 	if err := removeFolder(root); err != nil {
 		return err
 	}
+	r.dropWorkspacesHolder(root)
 	// Its agent locks go with it; its branch, all merged, is archived (its
 	// versions stay; as well as can be: it may be someone's now).
 	if wsID != "" {
@@ -650,6 +656,42 @@ func (r *Repo) RemoveWorkspace(folder string, force bool) error {
 		r.ArchiveBranch(entry.Branch)
 	}
 	return nil
+}
+
+// WorkspacesHolder is where a project's workspaces go unless one is put
+// elsewhere: one folder beside it, named after it (Song.workspaces beside
+// Song), so they don't spread over the folder the project is in. Not in the
+// project: tools there (git, Godot, an agent reading CLAUDE.md upwards)
+// would take a workspace for part of it.
+func WorkspacesHolder(main string) string {
+	main = filepath.Clean(main)
+	return filepath.Join(filepath.Dir(main), filepath.Base(main)+".workspaces")
+}
+
+// DefaultWorkspaceFolder is the folder a workspace on branch gets unless
+// one is chosen: in the project's WorkspacesHolder, named after the branch.
+func (r *Repo) DefaultWorkspaceFolder(branch string) string {
+	return filepath.Join(WorkspacesHolder(r.MainRoot()), folderName(branch))
+}
+
+// folderName is a branch's name as a folder's: what Windows doesn't take in
+// one left out (the app's new workspace suggests the same).
+func folderName(s string) string {
+	s = strings.TrimSpace(notInFolderName.ReplaceAllString(s, "-"))
+	if s = strings.TrimRight(s, ". "); s == "" {
+		s = "workspace"
+	}
+	return s
+}
+
+var notInFolderName = regexp.MustCompile(`[<>:"/\\|?*\x00-\x1f]+`)
+
+// dropWorkspacesHolder removes the project's WorkspacesHolder once the last
+// workspace in it is gone (only when empty: anything else in it stays).
+func (r *Repo) dropWorkspacesHolder(removed string) {
+	if holder := WorkspacesHolder(r.MainRoot()); samePath(filepath.Dir(removed), holder) {
+		os.Remove(holder)
+	}
 }
 
 func (r *Repo) unregister(root string) error {
