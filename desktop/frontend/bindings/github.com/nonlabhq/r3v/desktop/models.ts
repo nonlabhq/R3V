@@ -666,9 +666,13 @@ export class BranchList {
 /**
  * BuiltFolder is a folder new in the changes that looks like a build's
  * output (see project.BuiltFolder): Rule, an ignore pattern, leaves it out.
+ * Kind says why ("name": named like Like, "built", "size"), for the app to
+ * word in the user's language; Reason is English.
  */
 export class BuiltFolder {
     "folder": string;
+    "kind": string;
+    "like": string;
     "reason": string;
     "files": number;
     "bytes": number;
@@ -678,6 +682,12 @@ export class BuiltFolder {
     constructor($$source: Partial<BuiltFolder> = {}) {
         if (!("folder" in $$source)) {
             this["folder"] = "";
+        }
+        if (!("kind" in $$source)) {
+            this["kind"] = "";
+        }
+        if (!("like" in $$source)) {
+            this["like"] = "";
         }
         if (!("reason" in $$source)) {
             this["reason"] = "";

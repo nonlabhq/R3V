@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/profile"
@@ -23,7 +24,7 @@ func TestLooksBuiltWarnings(t *testing.T) {
 	os.WriteFile(filepath.Join(a, "build-win", "x64", "app.exe"), []byte("built"), 0o644)
 	os.WriteFile(filepath.Join(a, "build-win", "log.txt"), []byte("log"), 0o644)
 
-	want := warningJSON{Code: "looks_built", Folder: "build-win", Files: 2, Bytes: 8,
+	want := warningJSON{Code: "looks_built", Folder: "build-win", Kind: "name", Like: "build/", Files: 2, Bytes: 8,
 		Rule: `ignore: "build-*/"`, Pattern: "build-*/"}
 	check := func(what string, ws []warningJSON) {
 		t.Helper()
@@ -43,6 +44,9 @@ func TestLooksBuiltWarnings(t *testing.T) {
 		t.Fatalf("status: %+v", rep.Error)
 	}
 	check("status", st.Warnings)
+	if _, text := runText(t, a, "status"); !strings.Contains(text, "note: build-win/ is named like build/, which the rules leave out (2 files,") {
+		t.Errorf("status text:\n%s", text)
+	}
 
 	exit, rep = run(t, a, "commit", "-m", "a build")
 	var cm commitJSON

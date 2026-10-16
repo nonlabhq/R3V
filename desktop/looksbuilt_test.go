@@ -19,7 +19,8 @@ func TestStateBuiltFolders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(st.Built) != 1 || st.Built[0].Folder != "Renders-old" || st.Built[0].Rule != "Renders-*/" || st.Built[0].Files != 1 {
+	if len(st.Built) != 1 || st.Built[0].Folder != "Renders-old" || st.Built[0].Rule != "Renders-*/" || st.Built[0].Files != 1 ||
+		st.Built[0].Kind != "name" || st.Built[0].Like != "Renders/" {
 		t.Fatalf("built: %+v", st.Built)
 	}
 	if err := a.AddIgnoreRule(root, st.Built[0].Rule); err != nil {

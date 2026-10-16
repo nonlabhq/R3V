@@ -1898,5 +1898,7 @@
 "Adds the rule ignore “{rule}” to .r3v.yaml": "Ajoute la règle ignore « {rule} » à .r3v.yaml",
 "Leave it out": "Le laisser de côté",
 "unfinished": "inachevé",
-"Its title says it isn't finished: left out of the merge's description": "Son titre dit qu'il n'est pas terminé : laissé hors de la description du merge"
+"Its title says it isn't finished: left out of the merge's description": "Son titre dit qu'il n'est pas terminé : laissé hors de la description du merge",
+"“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.": "« {folder} » porte un nom comme « {like} », que les règles laissent de côté ({files}, {size}). Une fois commité, il reste pour toujours dans le stockage de l'équipe.",
+"“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.": "« {folder} » est volumineux ({size}) et nouveau ({files}). Une fois commité, il reste pour toujours dans le stockage de l'équipe."
 }

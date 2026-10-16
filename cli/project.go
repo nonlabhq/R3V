@@ -260,11 +260,16 @@ type statusJSON struct {
 // warningJSON is a word before committing, never a refusal. Code
 // "looks_built": a folder new in the changes looks like a build's output
 // (named like a folder the rules leave out, or full of built files or
-// bytes); committed, it stays in the team's storage for good. Rule is the
-// line for .r3v.yaml's rules: that leaves it out (Pattern, its pattern).
+// bytes); committed, it stays in the team's storage for good. Kind says
+// why, for programs: "name" (named like Like, a folder the rules leave
+// out), "built" (many built files) or "size" (many new bytes); Reason, in
+// English. Rule is the line for .r3v.yaml's rules: that leaves it out
+// (Pattern, its pattern).
 type warningJSON struct {
 	Code    string `json:"code"`
 	Folder  string `json:"folder"`
+	Kind    string `json:"kind"`
+	Like    string `json:"like,omitempty"`
 	Reason  string `json:"reason"`
 	Files   int    `json:"files"`
 	Bytes   int64  `json:"bytes"`
@@ -275,8 +280,8 @@ type warningJSON struct {
 func builtWarnings(found []project.BuiltFolder) []warningJSON {
 	out := []warningJSON{}
 	for _, b := range found {
-		out = append(out, warningJSON{Code: "looks_built", Folder: b.Folder, Reason: b.Reason, Files: b.Files,
-			Bytes: b.Bytes, Rule: "ignore: " + strconv.Quote(b.Rule), Pattern: b.Rule})
+		out = append(out, warningJSON{Code: "looks_built", Folder: b.Folder, Kind: b.Kind, Like: b.Like, Reason: b.Reason,
+			Files: b.Files, Bytes: b.Bytes, Rule: "ignore: " + strconv.Quote(b.Rule), Pattern: b.Rule})
 	}
 	return out
 }
@@ -288,7 +293,14 @@ func printWarnings(ws []warningJSON, committed bool) {
 		if w.Files == 1 {
 			files = "1 file"
 		}
-		fmt.Printf("note: %s/ looks like a build's output (%s; %s, %s)\n", w.Folder, w.Reason, files, humanSize(w.Bytes))
+		switch w.Kind {
+		case project.BuiltByName:
+			fmt.Printf("note: %s/ is named like %s, which the rules leave out (%s, %s)\n", w.Folder, w.Like, files, humanSize(w.Bytes))
+		case project.BuiltBySize:
+			fmt.Printf("note: %s/ is big (%s) and new (%s)\n", w.Folder, humanSize(w.Bytes), files)
+		default:
+			fmt.Printf("note: %s/ looks like a build's output (%s; %s, %s)\n", w.Folder, w.Reason, files, humanSize(w.Bytes))
+		}
 		if committed {
 			fmt.Printf("  it is in this version now; to leave it out of the next ones, add to %s under rules:  - %s\n", profile.FileName, w.Rule)
 		} else {

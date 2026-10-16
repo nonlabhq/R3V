@@ -29,9 +29,14 @@
 </script>
 
 {#each st.built ?? [] as b (b.folder)}
+  {@const vars = { folder: b.folder + "/", like: b.like, files: tn(b.files, "{n} file", "{n} files"), size: formatBytes(b.bytes) }}
+  <!-- (said by kind: a Live set's Backup-2024/ is no build's output) -->
   <div class="built" role="note">
-    <p>{t("“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.",
-      { folder: b.folder + "/", files: tn(b.files, "{n} file", "{n} files"), size: formatBytes(b.bytes) })}</p>
+    <p>{b.kind === "name"
+      ? t("“{folder}” is named like “{like}”, which the rules leave out ({files}, {size}). Committed, it stays in the team's storage for good.", vars)
+      : b.kind === "size"
+        ? t("“{folder}” is big ({size}) and new ({files}). Committed, it stays in the team's storage for good.", vars)
+        : t("“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.", vars)}</p>
     <button disabled={!!adding} onclick={() => leaveOut(b.rule)}
       title={t("Adds the rule ignore “{rule}” to .r3v.yaml", { rule: b.rule })}>{t("Leave it out")}</button>
   </div>
