@@ -246,6 +246,20 @@ func (r *Repo) UnfinishedSwitch() string {
 	return id
 }
 
+// ErrSwitchUnfinished is returned by a commit while a switch that stopped
+// halfway is not put back (UnfinishedSwitch): the files are partly one
+// version, partly another, and a version of them would keep that mix.
+var ErrSwitchUnfinished = errors.New("a switch stopped half-way: the project's files are partly another version; put them back first")
+
+// guardSwitch refuses a commit while a switch is unfinished (a record left
+// for a version gone or already in place is dropped, and the commit goes on).
+func (r *Repo) guardSwitch() error {
+	if r.UnfinishedSwitch() != "" {
+		return ErrSwitchUnfinished
+	}
+	return nil
+}
+
 // RecoverSwitch puts the files back as the version the project is on,
 // after a switch that stopped halfway: what was switching (going to a
 // version, another branch, the team's latest) changes the project's state

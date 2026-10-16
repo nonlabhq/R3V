@@ -195,6 +195,39 @@ func TestKilledGotoRecovered(t *testing.T) {
 	}
 }
 
+// A commit after a goto killed half-way, nothing changed since: the files
+// are put back first (recovered), then it commits as ever; nothing of the
+// half-written files is committed.
+func TestKilledGotoThenCommit(t *testing.T) {
+	dir, _, one, two, _, before := switchedProject(t)
+	if exit, rep := run(t, dir, "goto", "latest"); exit != 0 { // (commits go on the latest)
+		t.Fatalf("goto latest: %+v", rep.Error)
+	}
+	if !runKilledCLI(t, dir, 2, "goto", one) {
+		t.Fatal("it finished")
+	}
+	exit, rep := run(t, dir, "commit", "-m", "x")
+	var out struct {
+		Action    string
+		Saved     *versionJSON
+		Recovered *recoveredJSON
+	}
+	json.Unmarshal(rep.Result, &out)
+	if exit != 0 || out.Recovered == nil || out.Recovered.Version != two || out.Saved != nil || out.Action != "nothing-changed" {
+		t.Fatalf("commit: %d %+v %s", exit, rep.Error, rep.Result)
+	}
+	if !maps.Equal(folderFiles(t, dir), before) {
+		t.Fatal("the files aren't back as they were")
+	}
+	os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("three"), 0o644)
+	exit, rep = run(t, dir, "commit", "-m", "three")
+	out.Saved, out.Recovered = nil, nil
+	json.Unmarshal(rep.Result, &out)
+	if exit != 0 || out.Saved == nil || out.Recovered != nil {
+		t.Fatalf("commit after: %d %+v %s", exit, rep.Error, rep.Result)
+	}
+}
+
 // What stops the next command putting the files back: the app holding the
 // project (a reading command reads it as it is, a writing one waits), a
 // tool with it open, a file changed since. Each leaves the files and the
@@ -254,11 +287,17 @@ func TestKilledGotoNotRecovered(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("edited after"), 0o644)
 	half = folderFiles(t, dir)
 	exit, rep := run(t, dir, "commit", "-m", "x")
-	if exit == 0 || rep.Error.Unfinished == nil || rep.Error.Unfinished.Code != "changed_since_switch" ||
+	if exit == 0 || rep.Error.Code != "switch_unfinished" || rep.Error.Unfinished == nil || rep.Error.Unfinished.Code != "changed_since_switch" ||
 		!slices.Equal(slices.Sorted(slices.Values(rep.Error.Unfinished.Paths)), []string{"mine.txt", "notes.txt"}) {
 		t.Fatalf("commit with files changed since: %d %+v", exit, rep.Error)
 	}
+	if exit, rep := run(t, dir, "commit", "-m", "x", "--local"); exit == 0 || rep.Error.Code != "switch_unfinished" {
+		t.Fatalf("commit --local with files changed since: %d %+v", exit, rep.Error)
+	}
 	untouched("files changed since")
+	if r, err := project.Open(dir); err != nil || r.Head() != one {
+		t.Fatalf("a refused commit moved the project: %v", err)
+	}
 
 	// Taken away: put back.
 	os.Remove(filepath.Join(dir, "mine.txt"))
