@@ -88,6 +88,13 @@ puts it back as before the merge (or one by one: `--resolve
 <key>=keep|undo|both`; `ours` and `theirs` still mean the same). It
 refuses with uncommitted changes.
 
+A switch that stopped half-way (R3V closed while `goto`, `switch`,
+`update`, `merge` or `undo-merge` rewrote the files) is put back by the
+next command, as the app offers to: the files as they were before it (a
+note says so; `--json`: `recovered`). Not while a tool has the project
+open, nor over a file changed since: the command says so and leaves the
+files as they are (`--json`: `unfinished`).
+
 Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and commit from there.
 
 ## Workspaces: several agents on one project (Nightly)

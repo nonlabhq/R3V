@@ -69,28 +69,37 @@ func printJSON(v any) {
 // result prints a command's result: as JSON with --json, else with text.
 func result(command string, v any, text func()) {
 	if jsonMode {
-		printJSON(envelope{Schema: jsonSchema, OK: true, Command: command, Result: withBusy(v)})
+		v = withFields(v, readBusy)
+		v = withFields(v, openedJSON{Recovered: recovered, Unfinished: unfinished})
+		printJSON(envelope{Schema: jsonSchema, OK: true, Command: command, Result: v})
 		return
 	}
 	text()
 }
 
-// withBusy adds "busy" and "holder" (readBusy) to a result object read
-// without the project's lock, after its own fields.
-func withBusy(v any) any {
-	if readBusy == nil {
+// openedJSON is what opening the project found, in any command's result:
+// a switch left halfway put back first (recovered), or not (unfinished).
+type openedJSON struct {
+	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
+	Unfinished *unfinishedJSON `json:"unfinished,omitempty"`
+}
+
+// withFields adds extra's fields to a result object, after its own: "busy"
+// and "holder" (readBusy) to one read without the project's lock, say.
+func withFields(v, extra any) any {
+	more, err := json.Marshal(extra)
+	if err != nil || len(more) <= 2 || more[0] != '{' { // (nil, or nothing to add)
 		return v
 	}
 	data, err := json.Marshal(v)
 	if err != nil || len(data) < 2 || data[0] != '{' {
 		return v
 	}
-	extra, _ := json.Marshal(readBusy)
 	out := append([]byte{}, data[:len(data)-1]...)
 	if len(data) > 2 { // (not {})
 		out = append(out, ',')
 	}
-	return json.RawMessage(append(out, extra[1:]...))
+	return json.RawMessage(append(out, more[1:]...))
 }
 
 // Exit statuses.
@@ -162,6 +171,10 @@ type errorJSON struct {
 	Holder    *holderJSON    `json:"holder,omitempty"`
 	// Suggestion: the closest branch to one asked for that isn't there.
 	Suggestion string `json:"suggestion,omitempty"`
+	// Recovered, Unfinished: as in a result (openedJSON), the command
+	// having failed after.
+	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
+	Unfinished *unfinishedJSON `json:"unfinished,omitempty"`
 }
 
 func usageError(format string, a ...any) error {
@@ -278,7 +291,7 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())

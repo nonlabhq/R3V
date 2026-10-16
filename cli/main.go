@@ -132,7 +132,7 @@ func Main() { os.Exit(Run(os.Args[1:])) }
 // Run runs one r3v command and returns its exit status (see output.go).
 func Run(args []string) int {
 	args, jsonMode = stripJSON(args)
-	readBusy = nil
+	readBusy, recovered, unfinished = nil, nil, nil
 	var waitErr error
 	args, lockWait, waitGiven, waitErr = stripWait(args)
 	if waitErr != nil {

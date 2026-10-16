@@ -18,7 +18,8 @@ import (
 )
 
 // openRepo opens the project here, kept from other programs (the app) until
-// the command ends: waiting up to lockWait for one that has it.
+// the command ends: waiting up to lockWait for one that has it. A switch
+// left halfway is put back first (recoverSwitch).
 func openRepo() (*project.Repo, error) {
 	r, err := project.Open(".")
 	if err != nil {
@@ -30,6 +31,7 @@ func openRepo() (*project.Repo, error) {
 	}
 	held = append(held, release)
 	r.Actor = actor.Detect() // (the app never sets it: its versions are a person's)
+	recoverSwitch(r)
 	ensureRules(r)
 	return r, nil
 }
@@ -66,6 +68,7 @@ func openRead() (*project.Repo, error) {
 	}
 	held = append(held, release)
 	r.Actor = actor.Detect()
+	recoverSwitch(r) // (with the lock: reading half-written files would mislead)
 	ensureRules(r)
 	return r, nil
 }
