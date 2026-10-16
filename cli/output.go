@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/nonlabhq/r3v/internal/blob"
 	"github.com/nonlabhq/r3v/internal/cloud"
@@ -68,10 +69,28 @@ func printJSON(v any) {
 // result prints a command's result: as JSON with --json, else with text.
 func result(command string, v any, text func()) {
 	if jsonMode {
-		printJSON(envelope{Schema: jsonSchema, OK: true, Command: command, Result: v})
+		printJSON(envelope{Schema: jsonSchema, OK: true, Command: command, Result: withBusy(v)})
 		return
 	}
 	text()
+}
+
+// withBusy adds "busy" and "holder" (readBusy) to a result object read
+// without the project's lock, after its own fields.
+func withBusy(v any) any {
+	if readBusy == nil {
+		return v
+	}
+	data, err := json.Marshal(v)
+	if err != nil || len(data) < 2 || data[0] != '{' {
+		return v
+	}
+	extra, _ := json.Marshal(readBusy)
+	out := append([]byte{}, data[:len(data)-1]...)
+	if len(data) > 2 { // (not {})
+		out = append(out, ',')
+	}
+	return json.RawMessage(append(out, extra[1:]...))
 }
 
 // Exit statuses.
@@ -93,6 +112,27 @@ type cliError struct {
 	Conflicts []conflictJSON
 	Set       string // the set open in Live
 	Locks     []lockJSON
+	Holder    *holderJSON // project_busy: who holds the project
+	// Suggestion: the branch meant, when one asked for isn't there.
+	Suggestion string
+}
+
+// holderJSON is who holds a project's lock, as it recorded itself (Running
+// false: that process has ended, and whoever holds it now didn't say).
+type holderJSON struct {
+	Program string `json:"program"` // "app" or "cli"
+	Command string `json:"command,omitempty"`
+	PID     int    `json:"pid"`
+	Since   string `json:"since"`
+	Running bool   `json:"running"`
+}
+
+func holderOf(h *project.Holder) *holderJSON {
+	if h == nil {
+		return nil
+	}
+	return &holderJSON{Program: h.Program, Command: h.Command, PID: h.PID, Since: h.Since.UTC().Format(time.RFC3339),
+		Running: h.Running}
 }
 
 // lockJSON is a path someone else holds: a member of the team (a share
@@ -119,6 +159,9 @@ type errorJSON struct {
 	Conflicts []conflictJSON `json:"conflicts,omitempty"`
 	Set       string         `json:"set,omitempty"`
 	Locks     []lockJSON     `json:"locks,omitempty"`
+	Holder    *holderJSON    `json:"holder,omitempty"`
+	// Suggestion: the closest branch to one asked for that isn't there.
+	Suggestion string `json:"suggestion,omitempty"`
 }
 
 func usageError(format string, a ...any) error {
@@ -187,6 +230,15 @@ func classify(err error) *cliError {
 		}
 		return ce
 	}
+	var busy *project.BusyError
+	if errors.As(err, &busy) {
+		return &cliError{Code: "project_busy", Exit: exitLater, Err: err, Holder: holderOf(busy.Holder),
+			Hint: "the app or another command is working on the project: try again in a moment (or wait longer: --wait SECONDS)"}
+	}
+	var noBranch *project.NoBranchError
+	if errors.As(err, &noBranch) {
+		return &cliError{Code: "error", Exit: exitError, Err: err, Suggestion: noBranch.Suggestion}
+	}
 	if errors.Is(err, remote.ErrUpdateR3V) {
 		return &cliError{Code: "newer_version_needed", Exit: exitUpgrade, Err: err, Hint: "install the current R3V"}
 	}
@@ -223,7 +275,8 @@ func fail(command string, err error) int {
 	ce := classify(err)
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
-			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks}})
+			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
+			Holder: ce.Holder, Suggestion: ce.Suggestion}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())

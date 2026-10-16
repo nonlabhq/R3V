@@ -20,7 +20,11 @@ func when(m *project.Manifest) string {
 }
 
 func cmdBranch(args []string) error {
-	r, err := openRepo()
+	open := openRepo
+	if len(args) == 0 || args[0] == "archived" || args[0] == "log" { // (only read)
+		open = openRead
+	}
+	r, err := open()
 	if err != nil {
 		return err
 	}
@@ -263,7 +267,11 @@ func cmdMergeBranch(args []string) error {
 	if len(pos) != 1 {
 		return errors.New("usage: r3v merge <branch> [-m message] [--preview] [--strategy ...] [--resolve <key>=<choice>]")
 	}
-	r, err := openRepo()
+	open := openRepo
+	if *preview {
+		open = openRead
+	}
+	r, err := open()
 	if err != nil {
 		return err
 	}

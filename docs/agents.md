@@ -158,6 +158,22 @@ when a field changes meaning; new fields may appear any time.
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v rules preset <folder> <preset>` |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
 
+Reading commands (`status`, `log`, `diff`, `results`, `merge --preview`,
+`branch`, `workspace list`, `rules check`/`explain`) don't wait for the app
+or another command working on the project: they read it as it is, write
+nothing, and add `"busy": true` and `holder` (who has it, as in
+`project_busy` below) to their result. Commands that change the project
+wait for it up to 10 seconds; `--wait SECONDS` (any command) waits longer
+or less, and with a reading command waits that long for the lock before
+reading without it.
+
+`log BRANCH` lists another branch's versions (its key or name, as `r3v
+branch` shows it; fetched from the team when they aren't here yet), in the
+same shape. A branch name that isn't one fails with code `error` and, when
+one is close, `suggestion` (its name: `lane/design` → `lane-design`); the
+message says "did you mean ...?". The same goes for `switch`, `merge` and
+`branch archive`.
+
 `log` (`-n N` for the newest N): `versions`, newest first: `id`, `time`
 (RFC 3339), `author`, `message`, `parents`, `branches` (team branches at
 that version), `made_on` (the branch it was made on, for good; none on
@@ -280,7 +296,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 4 | `set_open_in_live` | ask the user to save and close `set` in Live, then run again |
 | 4 | `files_open_in_tool` | another tool (the Unity, Unreal or Godot editor, a design app) has the project open: ask the user to save and close it there, then run again |
 | 5 | `team_unreachable` | network or storage down: try again later |
-| 5 | `project_busy` | the R3V app or another command is using the project: try again in a moment |
+| 5 | `project_busy` | the R3V app or another command is using the project: try again in a moment, or with `--wait SECONDS`. `holder`, when it said: `program` (`app`\|`cli`), `command`, `pid`, `since` (RFC 3339), `running` (false: that process ended, and whatever holds it now didn't say: an older R3V) |
 | 6 | `not_a_project` | not in a tracked folder: `r3v init`, or `cd` into the project |
 | 6 | `newer_version_needed` | the team uses a newer R3V: the user must update |
 | 6 | `needs_nightly` | a Unity/Unreal/Godot (…) project: the user must switch R3V to the Nightly channel |
@@ -305,7 +321,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `not_a_backup` | the folder holds no R3V backup |
 | 1 | `no_such_run` | `--run` names no run of that backup (`--preview` lists them) |
 | 1 | `backup_folder_taken` | the folder holds another team's backup |
-| 1 | `error` | anything else: show `message` to the user |
+| 1 | `error` | anything else: show `message` to the user. A branch that isn't one: `suggestion`, the closest branch's name, when one is close |
 
 Codes are stable; messages are for people and may change.
 

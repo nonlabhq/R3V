@@ -6,6 +6,8 @@ Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.m
 
 **Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `switch`, `goto`, `discard`, `parked`, `workspace` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
+While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
+
 ## Team storage (S3-compatible)
 
 ```
@@ -26,6 +28,7 @@ r3v commit -m "fix the menu" src/menu   # only the changes in those files and fo
 r3v update [--preview]            # get the team's latest versions of your branch (or just look)
 r3v status                        # what changed since your last version
 r3v log                           # versions
+r3v log lane-design               # another branch's versions (its key or name)
 r3v clone <connection code> "Song" [folder]   # download a team project
 r3v teams                         # teams this computer is connected to
 ```

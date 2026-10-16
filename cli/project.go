@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,13 +18,13 @@ import (
 )
 
 // openRepo opens the project here, kept from other programs (the app) until
-// the command ends.
+// the command ends: waiting up to lockWait for one that has it.
 func openRepo() (*project.Repo, error) {
 	r, err := project.Open(".")
 	if err != nil {
 		return nil, err
 	}
-	release, err := r.Lock(10 * time.Second)
+	release, err := r.Lock(lockWait)
 	if err != nil {
 		return nil, err
 	}
@@ -32,6 +33,96 @@ func openRepo() (*project.Repo, error) {
 	ensureRules(r)
 	return r, nil
 }
+
+// openRead opens the project here for a command that only reads it: as
+// openRepo when the lock is free soon, else as it is, writing nothing (as
+// the app reads one: desktop openRead). An agent's status or log then
+// doesn't fail while another commits; readBusy says who has it.
+func openRead() (*project.Repo, error) {
+	r, err := project.Open(".")
+	if err != nil {
+		return nil, err
+	}
+	wait := readLockWait
+	if waitGiven {
+		wait = lockWait
+	}
+	release, err := r.Lock(wait)
+	var busy *project.BusyError
+	if errors.As(err, &busy) {
+		r.ReadOnly = true
+		readBusy = &busyJSON{Busy: true, Holder: holderOf(busy.Holder)}
+		if !jsonMode {
+			who := "another R3V window or command"
+			if busy.Holder != nil {
+				who = busy.Holder.String()
+			}
+			fmt.Fprintf(os.Stderr, "note: %s is working on this project: read as it is, nothing kept here\n", who)
+		}
+		return r, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	held = append(held, release)
+	r.Actor = actor.Detect()
+	ensureRules(r)
+	return r, nil
+}
+
+// readLockWait is how long a reading command waits for the project's lock
+// before reading without it (unless --wait says).
+const readLockWait = 300 * time.Millisecond
+
+// defaultLockWait is how long a command waits for the project's lock
+// without --wait.
+const defaultLockWait = 10 * time.Second
+
+// lockWait is how long this command waits for the project's lock
+// (--wait SECONDS); waitGiven: --wait was given.
+var (
+	lockWait  = defaultLockWait
+	waitGiven bool
+)
+
+// stripWait takes --wait SECONDS (or --wait=SECONDS) out of args, as
+// stripJSON does --json: every command that takes the project's lock
+// follows it.
+func stripWait(args []string) ([]string, time.Duration, bool, error) {
+	var out []string
+	wait, given := defaultLockWait, false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		name, value, hasValue := strings.Cut(a, "=")
+		if name != "--wait" && name != "-wait" {
+			out = append(out, a)
+			continue
+		}
+		if !hasValue {
+			if i+1 >= len(args) {
+				return nil, 0, false, usageError("--wait needs a number of seconds")
+			}
+			i++
+			value = args[i]
+		}
+		s, err := strconv.ParseFloat(value, 64)
+		if err != nil || s < 0 || s > 24*3600 {
+			return nil, 0, false, usageError("--wait %q: a number of seconds (0 to 86400)", value)
+		}
+		wait, given = time.Duration(s*float64(time.Second)), true
+	}
+	return out, wait, given, nil
+}
+
+// busyJSON goes into a reading command's result when it read the project
+// without its lock (readBusy): another program was working on it.
+type busyJSON struct {
+	Busy   bool        `json:"busy"`
+	Holder *holderJSON `json:"holder,omitempty"`
+}
+
+// readBusy: this command read the project without its lock (openRead).
+var readBusy *busyJSON
 
 // held are the locks the command took: released when it ends (Run).
 var held []func()
@@ -119,7 +210,11 @@ func cmdInit(args []string) error {
 	ensureRules(r)
 	fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
 	if team != nil {
-		release, err := r.Lock(30 * time.Second)
+		wait := 30 * time.Second
+		if waitGiven {
+			wait = lockWait
+		}
+		release, err := r.Lock(wait)
 		if err != nil {
 			return err
 		}
@@ -199,7 +294,7 @@ func cmdStatus(args []string) error {
 	if len(args) > 0 {
 		return usageError("usage: r3v status [--json]")
 	}
-	r, err := openRepo()
+	r, err := openRead()
 	if err != nil {
 		return err
 	}
@@ -294,16 +389,20 @@ func printStatus(r *project.Repo, s statusJSON) {
 func cmdLog(args []string) error {
 	fs := flag.NewFlagSet("log", flag.ContinueOnError)
 	limit := fs.Int("n", 0, "show only the newest N versions")
-	if pos, err := parseArgs(fs, args); err != nil {
-		return err
-	} else if len(pos) > 0 {
-		return usageError("usage: r3v log [-n N] [--json]")
-	}
-	r, err := openRepo()
+	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
 	}
-	log, err := r.Log()
+	r, err := openRead()
+	if err != nil {
+		return err
+	}
+	var log []*project.Manifest
+	if len(pos) > 0 { // a branch (its name may be several words)
+		log, err = r.BranchVersions(strings.Join(pos, " "))
+	} else {
+		log, err = r.Log()
+	}
 	if err != nil {
 		return err
 	}

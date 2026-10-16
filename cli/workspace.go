@@ -50,7 +50,11 @@ func cmdWorkspace(args []string) error {
 	if err != nil {
 		return err
 	}
-	r, err := openRepo()
+	open := openRepo
+	if args[0] == "list" { // (only reads)
+		open = openRead
+	}
+	r, err := open()
 	if err != nil {
 		return err
 	}
