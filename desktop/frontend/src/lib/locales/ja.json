@@ -1893,5 +1893,8 @@
 "Group {n} versions again": "{n} 個のバージョンをまとめ直す",
 "Show every version in it": "中のバージョンをすべて表示",
 "Every version": "すべてのバージョン",
-"Each of an agent's versions on its own, not grouped": "エージェントのバージョンをまとめずに 1 つずつ表示"
+"Each of an agent's versions on its own, not grouped": "エージェントのバージョンをまとめずに 1 つずつ表示",
+"“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "「{folder}」はビルドの出力のようです（{files}、{size}）。コミットするとチームのストレージにずっと残ります。",
+"Adds the rule ignore “{rule}” to .r3v.yaml": ".r3v.yaml に ignore「{rule}」のルールを追加します",
+"Leave it out": "除外する"
 }

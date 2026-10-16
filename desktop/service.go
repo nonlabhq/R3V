@@ -456,7 +456,7 @@ func (a *App) State(root string) (*State, error) {
 	}
 	st := &State{Root: r.Root, Name: r.Config.Name, Author: r.Config.Author, Branch: r.BranchName(),
 		Head: r.Head(), LiveRunning: toolOpen(r) != "",
-		Changes: []Change{}, MyEdits: []project.TrackEdit{}, Incoming: []Version{}, TakenBack: []Version{}, History: []Version{},
+		Changes: []Change{}, Built: []BuiltFolder{}, MyEdits: []project.TrackEdit{}, Incoming: []Version{}, TakenBack: []Version{}, History: []Version{},
 		Branches: []Branch{}}
 	if st.Name == "" {
 		st.Name = filepath.Base(r.Root)
@@ -504,9 +504,12 @@ func (a *App) State(root string) (*State, error) {
 	}
 
 	sw.lap("head")
-	changes, err := r.Status()
+	changes, built, err := r.StatusChecked()
 	if err != nil {
 		return nil, err
+	}
+	for _, b := range built {
+		st.Built = append(st.Built, BuiltFolder{Folder: b.Folder, Reason: b.Reason, Files: b.Files, Bytes: b.Bytes, Rule: b.Rule})
 	}
 	sw.lap("status")
 	var changed []string

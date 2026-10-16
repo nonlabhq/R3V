@@ -157,6 +157,12 @@ when a field changes meaning; new fields may appear any time.
 | `base` | in a workspace, when the branch it was made from has versions this branch hasn't: `branch` (its name) and `behind` (how many); `r3v merge <branch>` brings them in (`update` gets this branch's only). Also in `update --json` |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v rules preset <folder> <preset>` |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
+| `warnings` | worth a look before committing (never a refusal): `code`, and its fields. Code `looks_built`: a folder new in the changes looks like a build's output, named like a folder the rules leave out (`target-dx12/` beside `target/`) or holding 50 built files (`.obj`, `.pdb`, `.rlib`…) or 200 MB; `folder`, `reason`, `files`, `bytes`, `rule` (the line for `.r3v.yaml`'s `rules:`, e.g. `ignore: "target-*/"`) and `pattern` (its pattern) |
+
+Committed, a folder stays in the team's storage for good (ignoring it
+later only helps later versions). On a `looks_built` warning, add its
+`rule` under `rules:` in `.r3v.yaml` and run `status` again before
+committing, unless the user wants the folder kept.
 
 Reading commands (`status`, `log`, `diff`, `results`, `merge --preview`,
 `branch`, `workspace list`, `rules check`/`explain`) don't wait for the app
@@ -196,6 +202,8 @@ user first).
 `saved` (the version committed, or null), `from`, `to`, `merged` (what a merge
 took from each side), `relinked` (sample paths rewritten for this computer),
 `reopen_sets` (sets changed under Live: the user must reopen them).
+`commit` also has `warnings`, as `status` has them, about what the
+version just took (a commit is never refused for one).
 
 `update --preview` and `merge <branch> --preview`: `action`, `versions`
 (incoming), `changes`, `conflicts` (`key`, `file`, `unit`, `description`,

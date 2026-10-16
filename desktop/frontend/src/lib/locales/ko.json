@@ -1893,5 +1893,8 @@
 "Group {n} versions again": "버전 {n}개 다시 묶기",
 "Show every version in it": "안의 버전 모두 보기",
 "Every version": "모든 버전",
-"Each of an agent's versions on its own, not grouped": "에이전트의 버전을 묶지 않고 하나씩 보기"
+"Each of an agent's versions on its own, not grouped": "에이전트의 버전을 묶지 않고 하나씩 보기",
+"“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "“{folder}”은(는) 빌드 결과물로 보입니다({files}, {size}). 커밋하면 팀 저장소에 영구히 남습니다.",
+"Adds the rule ignore “{rule}” to .r3v.yaml": ".r3v.yaml에 ignore “{rule}” 규칙을 추가합니다",
+"Leave it out": "제외하기"
 }

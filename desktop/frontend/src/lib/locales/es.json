@@ -1893,5 +1893,8 @@
 "Group {n} versions again": "Agrupar de nuevo {n} versiones",
 "Show every version in it": "Mostrar cada versión que contiene",
 "Every version": "Cada versión",
-"Each of an agent's versions on its own, not grouped": "Cada versión de un agente por separado, sin agrupar"
+"Each of an agent's versions on its own, not grouped": "Cada versión de un agente por separado, sin agrupar",
+"“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "«{folder}» parece la salida de una compilación ({files}, {size}). Si se hace commit, se queda para siempre en el almacenamiento del equipo.",
+"Adds the rule ignore “{rule}” to .r3v.yaml": "Añade la regla ignore «{rule}» a .r3v.yaml",
+"Leave it out": "Dejarlo fuera"
 }

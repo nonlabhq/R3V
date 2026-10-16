@@ -1893,5 +1893,8 @@
 "Group {n} versions again": "重新收合 {n} 个版本",
 "Show every version in it": "显示其中每个版本",
 "Every version": "每个版本",
-"Each of an agent's versions on its own, not grouped": "Agent 的每个版本各自显示，不合并成一组"
+"Each of an agent's versions on its own, not grouped": "Agent 的每个版本各自显示，不合并成一组",
+"“{folder}” looks like a build's output ({files}, {size}). Committed, it stays in the team's storage for good.": "“{folder}”看起来是构建输出（{files}，{size}）。一旦提交，它会永久留在团队的存储空间里。",
+"Adds the rule ignore “{rule}” to .r3v.yaml": "在 .r3v.yaml 中加入规则 ignore “{rule}”",
+"Leave it out": "排除它"
 }

@@ -36,11 +36,17 @@ func (r *Repo) Status() ([]Change, error) {
 
 // statusOf compares hashed working files with HEAD.
 func (r *Repo) statusOf(files []FileEntry) ([]Change, error) {
+	changes, _, err := r.compare(files)
+	return changes, err
+}
+
+// compare is statusOf, with HEAD's files.
+func (r *Repo) compare(files []FileEntry) ([]Change, map[string]FileEntry, error) {
 	var head map[string]FileEntry
 	if id := r.Head(); id != "" {
 		m, err := r.Load(id)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		head = m.FileMap()
 	}
@@ -73,7 +79,7 @@ func (r *Repo) statusOf(files []FileEntry) ([]Change, error) {
 	}
 	out = r.pairMoves(out, head, files)
 	sortChanges(out)
-	return out, nil
+	return out, head, nil
 }
 
 // pairMoves turns a deleted file and an added one that are the same file

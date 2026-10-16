@@ -114,6 +114,10 @@ File locking (R3V Cloud teams; see [design/locks.md](design/locks.md)) is set in
 
 R3V before 0.1.75 read a `file_locks:` section here, which could only narrow the team's settings. R3V no longer reads it: a project whose `.r3v.yaml` still has one shows a note, and an admin can move it into the project's settings (which takes the section out of the file: commit that).
 
+## Folders that look like a build's output
+
+A folder new in your changes that looks like a build's output, but that no rule leaves out, gets a note before you commit (in the app over the commit box, in `r3v status`): one named like a folder the rules leave out (`target-dx12/` or `build_win/` when `target/` and `build/` are), or one holding 50 or more built files (`.obj`, `.pdb`, `.dll`, `.rlib`…) or 200 MB of new files. Committed, it stays in the team's storage for good. **Leave it out** adds the rule shown (`ignore: "target-*/"`, or the folder itself) to `.r3v.yaml`; or commit it as it is: it's only a note.
+
 ## Checking the rules
 
 - The **Rules** dialog in the app shows the preset in use and any problem with `.r3v.yaml`. While the file has a mistake (e.g. a misspelt field), R3V shows the problem and won't commit until it's fixed. Looking at changes still works.
