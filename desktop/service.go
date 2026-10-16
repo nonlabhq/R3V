@@ -667,6 +667,7 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 		return nil, err
 	}
 	part.History = toVersions(all, tips)
+	graphData(r, all, part.History)
 	if notHere := r.MissingHere(all); len(notHere) > 0 {
 		for i := range part.History {
 			part.History[i].NotHere = notHere[part.History[i].ID]
@@ -707,6 +708,30 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 	}
 	return part, nil
 }
+
+// graphData fills in what the history graph's segments use, in vs (ms as
+// versions). Counting a version's files reads its trees, so a call counts
+// for at most countBudget (the newest first) and the next refresh goes on;
+// counts are kept for good (project.ChangeCounts). Step is the agent's
+// session: what versions record (its steps stay on the computer that made
+// them).
+func graphData(r *project.Repo, ms []*project.Manifest, vs []Version) {
+	ids := make([]string, len(ms))
+	for i, m := range ms {
+		ids[i] = m.ID
+	}
+	files := r.ChangeCounts(ids, countBudget)
+	checked := r.Checked()
+	for i, m := range ms {
+		vs[i].Files, vs[i].Check = files[m.ID], checked[m.ID]
+		if m.Actor != nil {
+			vs[i].Step = m.Actor.Session
+		}
+	}
+}
+
+// countBudget is how long one State may spend counting versions' files.
+var countBudget = 200 * time.Millisecond
 
 // teamCache keeps each project's last TeamState fetch, so State (and
 // switching back to a project) shows the team's side without waiting.
