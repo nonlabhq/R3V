@@ -50,6 +50,7 @@ export function AddAgentGuide(root: string): $CancellablePromise<string[]> {
  * AddIgnoreRule adds `- ignore: pattern` at the end of the rules in the
  * project's .r3v.yaml (creating the file): the last rule wins. The file
  * is committed with the project, so the rule is the team's once shared.
+ * (`r3v rules ignore` does the same: project.AddIgnoreRule.)
  */
 export function AddIgnoreRule(root: string, pattern: string): $CancellablePromise<void> {
     return $Call.ByID(871931324, root, pattern);
