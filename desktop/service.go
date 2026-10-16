@@ -53,6 +53,7 @@ type App struct {
 }
 
 func NewApp() *App {
+	project.LockProgram = "app" // (a command refused names the app)
 	a := &App{locks: map[string]*sync.Mutex{}, teamWatches: map[string]context.CancelFunc{}, watches: map[string]*folderWatch{},
 		preuploadNow: make(chan string, 8), live: cloud.NewHub()}
 	// People, roles or projects changed on the service: the team list
