@@ -238,7 +238,10 @@ gives your own, used as it is.
 version on the current branch without it, the history kept (the merge
 stays in it; don't rewrite anything). What changed since the merge stays;
 where the same thing changed again it stops with `merge_conflict` as a
-merge does (`ours`: keep it as it is now, `theirs`: as before the merge).
+merge does, its choices named for what they do: `keep` (keep it as it is
+now) and `undo` (as before the merge), in `--strategy keep|undo|both` and
+`--resolve <key>=keep|undo|both`; each conflict lists them in `choices`
+(`ours` and `theirs` still work: `keep` is `ours`, `undo` is `theirs`).
 Uncommitted changes stop it (`unsaved_changes`), and so does a tool with
 the project open; a version that isn't a merge is `not_a_merge`, one
 already undone `nothing_to_undo`. Stopped half-way (R3V closed), running

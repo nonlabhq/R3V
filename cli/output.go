@@ -354,6 +354,9 @@ type conflictJSON struct {
 	Base   *project.HunkSide `json:"base,omitempty"`
 	Ours   *project.HunkSide `json:"ours,omitempty"`
 	Theirs *project.HunkSide `json:"theirs,omitempty"`
+	// Choices: the words --resolve takes for it, where the command has its
+	// own (undo-merge: keep, undo, both); else ours, theirs, both.
+	Choices []string `json:"choices,omitempty"`
 }
 
 func conflictsJSON(cs []project.ConflictItem) []conflictJSON {
