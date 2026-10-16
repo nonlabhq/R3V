@@ -1886,5 +1886,12 @@
 "R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.": "R3V Cloud はクローズドベータ中です。チームを作るには招待が必要です。招待されたチームには参加できます。",
 "Join the waitlist": "ウェイトリストに登録",
 "Founding member": "ファウンディングメンバー",
-"Early access": "アーリーアクセス"
+"Early access": "アーリーアクセス",
+"{n} file change": "{n} 件のファイル変更",
+"{n} file changes": "{n} 件のファイル変更",
+"Group {n} version again": "{n} 個のバージョンをまとめ直す",
+"Group {n} versions again": "{n} 個のバージョンをまとめ直す",
+"Show every version in it": "中のバージョンをすべて表示",
+"Every version": "すべてのバージョン",
+"Each of an agent's versions on its own, not grouped": "エージェントのバージョンをまとめずに 1 つずつ表示"
 }
