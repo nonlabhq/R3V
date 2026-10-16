@@ -286,6 +286,52 @@ func TestDiscard(t *testing.T) {
 	}
 }
 
+// discard with paths throws away only the changes in those files and
+// folders (an added one removed, a moved one back where it was); --preview
+// lists them and changes nothing; the others stay.
+func TestDiscardPaths(t *testing.T) {
+	a := newFolder(t, map[string]string{"keep.txt": "one", "scenes/a.txt": "a", "scenes/b.txt": "b"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	os.WriteFile(filepath.Join(a, "keep.txt"), []byte("mine"), 0o644)
+	os.WriteFile(filepath.Join(a, "scenes", "a.txt"), []byte("oops"), 0o644)
+	os.Rename(filepath.Join(a, "scenes", "b.txt"), filepath.Join(a, "scenes", "c.txt"))
+	os.WriteFile(filepath.Join(a, "scenes", "new.txt"), []byte("new"), 0o644)
+
+	exit, rep := run(t, a, "discard", "--preview", "scenes")
+	var out discardJSON
+	json.Unmarshal(rep.Result, &out)
+	if exit != 0 || !out.Preview || len(out.Discarded) != 3 {
+		t.Fatalf("preview: %s %+v", rep.Result, rep.Error)
+	}
+	if data, _ := os.ReadFile(filepath.Join(a, "scenes", "a.txt")); string(data) != "oops" {
+		t.Fatal("the preview changed a file")
+	}
+
+	exit, rep = run(t, a, "discard", "scenes")
+	out = discardJSON{}
+	json.Unmarshal(rep.Result, &out)
+	if exit != 0 || out.Preview || len(out.Discarded) != 3 {
+		t.Fatalf("discard: %s %+v", rep.Result, rep.Error)
+	}
+	for p, want := range map[string]string{"keep.txt": "mine", "scenes/a.txt": "a", "scenes/b.txt": "b"} {
+		if data, _ := os.ReadFile(filepath.Join(a, p)); string(data) != want {
+			t.Errorf("%s: %q, want %q", p, data, want)
+		}
+	}
+	for _, p := range []string{"scenes/c.txt", "scenes/new.txt"} {
+		if _, err := os.Stat(filepath.Join(a, p)); err == nil {
+			t.Errorf("%s left", p)
+		}
+	}
+
+	if exit, rep := run(t, a, "discard", "scenes"); exit == 0 || rep.Error == nil || rep.Error.Code != "nothing_to_discard" {
+		t.Fatalf("nothing left there: %d %+v", exit, rep.Error)
+	}
+}
+
 // commit with paths commits only the changes in those files and folders;
 // the others stay uncommitted.
 func TestCommitPaths(t *testing.T) {

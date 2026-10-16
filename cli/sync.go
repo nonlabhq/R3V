@@ -518,6 +518,30 @@ func cmdConnectionCode(args []string) error {
 // and folders given (relative to the current folder): a rename counts in
 // either place, both its paths then.
 func changesIn(r *project.Repo, args []string) ([]string, error) {
+	changes, err := r.Status()
+	if err != nil {
+		return nil, err
+	}
+	if changes, err = changesUnder(r, args, changes); err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, c := range changes {
+		out = append(out, c.Path)
+		if c.From != "" {
+			out = append(out, c.From)
+		}
+	}
+	if len(out) == 0 {
+		return nil, &cliError{Code: "nothing_to_commit", Exit: exitUsage, Err: fmt.Errorf("nothing changed in %s", strings.Join(args, ", "))}
+	}
+	return out, nil
+}
+
+// changesUnder is the changes in the files or folders args name (paths from
+// here, or absolute; a moved file by either of its places), as commit and
+// discard take them.
+func changesUnder(r *project.Repo, args []string, changes []project.Change) ([]project.Change, error) {
 	cwd, _ := os.Getwd()
 	var under []string
 	for _, a := range args {
@@ -539,21 +563,11 @@ func changesIn(r *project.Repo, args []string) ([]string, error) {
 		}
 		return false
 	}
-	changes, err := r.Status()
-	if err != nil {
-		return nil, err
-	}
-	var out []string
+	var out []project.Change
 	for _, c := range changes {
 		if in(c.Path) || (c.From != "" && in(c.From)) {
-			out = append(out, c.Path)
-			if c.From != "" {
-				out = append(out, c.From)
-			}
+			out = append(out, c)
 		}
-	}
-	if len(out) == 0 {
-		return nil, &cliError{Code: "nothing_to_commit", Exit: exitUsage, Err: fmt.Errorf("nothing changed in %s", strings.Join(args, ", "))}
 	}
 	return out, nil
 }

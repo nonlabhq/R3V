@@ -268,6 +268,23 @@ func (r *Repo) OpenFile(path, version string) (io.ReadSeekCloser, error) {
 // is removed. Samples in a restored set are relinked for this computer.
 func (r *Repo) RestoreFile(path, version string) error { return r.RestoreFileFrom(path, path, version) }
 
+// DiscardChanges puts the files of changes back as they are in the version
+// the project is on: an added file is removed, a moved one goes back where
+// it was. The rest of the project stays as it is.
+func (r *Repo) DiscardChanges(changes []Change) error {
+	for _, c := range changes {
+		if err := r.RestoreFile(c.Path, ""); err != nil {
+			return err
+		}
+		if c.From != "" {
+			if err := r.RestoreFile(c.From, ""); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // RestoreFileFrom puts the file source of a version at path (the file had
 // another name or place then).
 func (r *Repo) RestoreFileFrom(path, source, version string) error {

@@ -144,6 +144,7 @@ What a build, the tests or any check said about a version, recorded by whoever r
 r3v goto <id|HEAD~N> [--force]       # put the project in the state of a version (samples relinked)
 r3v goto latest                      # back to the latest version
 r3v discard                          # throw your changes away: the files as in the version you're on
+r3v discard scenes/a.scn tmp/        # only those files and folders (--preview: list them first)
 r3v export <id|HEAD~N> <folder>      # write a version as a separate project folder
 r3v commit --local -m "message"      # commit a version on this computer only
 ```
