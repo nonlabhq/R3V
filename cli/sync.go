@@ -300,6 +300,13 @@ type syncJSON struct {
 	KeptWork bool `json:"kept_work,omitempty"`
 }
 
+// commitJSON is r3v commit's result: Warnings as status has them, of what
+// the version took.
+type commitJSON struct {
+	syncJSON
+	Warnings []warningJSON `json:"warnings"`
+}
+
 func syncOf(res *project.SyncResult) syncJSON {
 	return syncJSON{Action: res.Action, From: res.From, To: res.To, Merged: nonNil(res.MergeLog),
 		Relink: nonNil(res.Relinked), ReopenSets: len(res.MergeLog) > 0, KeptWork: res.KeptWork}
@@ -376,7 +383,13 @@ func cmdCommit(args []string) error {
 		v := versionOf(m, nil)
 		out.Saved = &v
 	}
-	result("commit", out, func() {
+	// (after the fact: a commit isn't refused for it; status warned before)
+	warned := commitJSON{syncJSON: out, Warnings: []warningJSON{}}
+	if m != nil {
+		warned.Warnings = builtWarnings(r.BuiltFoldersIn(m))
+	}
+	result("commit", warned, func() {
+		defer printWarnings(warned.Warnings, true)
 		switch out.Action {
 		case "local":
 			if *local && r.Config.Remote != nil {

@@ -253,6 +253,48 @@ type statusJSON struct {
 	// Base: in a workspace, the branch it was made from when that has
 	// versions this branch hasn't (r3v merge brings them in).
 	Base *baseJSON `json:"base,omitempty"`
+	// Warnings: what is worth a look before committing (see warningJSON).
+	Warnings []warningJSON `json:"warnings"`
+}
+
+// warningJSON is a word before committing, never a refusal. Code
+// "looks_built": a folder new in the changes looks like a build's output
+// (named like a folder the rules leave out, or full of built files or
+// bytes); committed, it stays in the team's storage for good. Rule is the
+// line for .r3v.yaml's rules: that leaves it out (Pattern, its pattern).
+type warningJSON struct {
+	Code    string `json:"code"`
+	Folder  string `json:"folder"`
+	Reason  string `json:"reason"`
+	Files   int    `json:"files"`
+	Bytes   int64  `json:"bytes"`
+	Rule    string `json:"rule"`
+	Pattern string `json:"pattern"`
+}
+
+func builtWarnings(found []project.BuiltFolder) []warningJSON {
+	out := []warningJSON{}
+	for _, b := range found {
+		out = append(out, warningJSON{Code: "looks_built", Folder: b.Folder, Reason: b.Reason, Files: b.Files,
+			Bytes: b.Bytes, Rule: "ignore: " + strconv.Quote(b.Rule), Pattern: b.Rule})
+	}
+	return out
+}
+
+// printWarnings says what each warning is about, and the rule to add.
+func printWarnings(ws []warningJSON, committed bool) {
+	for _, w := range ws {
+		files := fmt.Sprintf("%d files", w.Files)
+		if w.Files == 1 {
+			files = "1 file"
+		}
+		fmt.Printf("note: %s/ looks like a build's output (%s; %s, %s)\n", w.Folder, w.Reason, files, humanSize(w.Bytes))
+		if committed {
+			fmt.Printf("  it is in this version now; to leave it out of the next ones, add to %s under rules:  - %s\n", profile.FileName, w.Rule)
+		} else {
+			fmt.Printf("  committed, it stays in the team's storage for good; to leave it out, add to %s under rules:  - %s\n", profile.FileName, w.Rule)
+		}
+	}
 }
 
 type baseJSON struct {
@@ -324,10 +366,11 @@ func cmdStatus(args []string) error {
 				LeftOut: nonNil(s.LeftOut)})
 		}
 	}
-	changes, err := r.Status()
+	changes, built, err := r.StatusChecked()
 	if err != nil {
 		return err
 	}
+	out.Warnings = builtWarnings(built)
 	for _, c := range changes {
 		ch := changeJSON{Path: c.Path, Status: c.Status, From: c.From, Edited: c.Edited}
 		if c.SetDiff != nil {
@@ -369,6 +412,7 @@ func printStatus(r *project.Repo, s statusJSON) {
 		fmt.Println("nothing changed")
 		return
 	}
+	defer printWarnings(s.Warnings, false)
 	sym := map[string]string{"added": "+", "modified": "~", "deleted": "-", "renamed": "M", "untracked": "o"}
 	for _, c := range s.Changes {
 		if c.Status == "renamed" {
