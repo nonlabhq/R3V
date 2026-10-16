@@ -1886,5 +1886,12 @@
 "R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.": "R3V Cloud 正在封闭测试：建立团队需要邀请。你仍然可以加入邀请你的团队。",
 "Join the waitlist": "加入候补名单",
 "Founding member": "创始会员",
-"Early access": "抢先体验"
+"Early access": "抢先体验",
+"{n} file change": "{n} 处文件变更",
+"{n} file changes": "{n} 处文件变更",
+"Group {n} version again": "重新收合 {n} 个版本",
+"Group {n} versions again": "重新收合 {n} 个版本",
+"Show every version in it": "显示其中每个版本",
+"Every version": "每个版本",
+"Each of an agent's versions on its own, not grouped": "Agent 的每个版本各自显示，不合并成一组"
 }

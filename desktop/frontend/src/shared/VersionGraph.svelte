@@ -1,15 +1,16 @@
 <script lang="ts" generics="V extends GraphVersion">
-  import { t, tn } from "./i18n";
+  import { language, t, tn } from "./i18n";
   import { ago, titleOf } from "./text";
   import { toolName } from "./tools";
   import type { GraphBranch, GraphMilestone, GraphVersion, MemberLook } from "./types";
   import AgentBadge from "./AgentBadge.svelte";
   import { colorOf, cssColor } from "./palette";
   import Avatar from "./Avatar.svelte";
-  import { branchGraph } from "./branchGraph";
+  import { memoBranchGraph } from "./branchGraph";
+  import { collapse, segmentRuns, spanText, type Segment } from "./graphSegments";
   import { branchLabel, branchLane } from "./branches";
   import { portal } from "./portal";
-  import type { Snippet } from "svelte";
+  import { tick, type Snippet } from "svelte";
 
   // The project's version graph (the App's Overview, R3V Cloud's project
   // page): the branch graph (see branchGraph.ts), main
@@ -25,9 +26,12 @@
   // top right (kept on this computer) hides branches merged into main and
   // agents' branches (never the one you're on), versions out of a date
   // range, and dims those not by the authors picked. An agent's version has
-  // a spark on its dot. What only the App has (your changes, parked ones,
-  // what a card's buttons do) comes in through pending, parked and the
-  // snippets: without them, the graph only shows and picks.
+  // a spark on its dot. A run of an agent's versions is one node, opened
+  // by a click (graphSegments.ts; the filter's Every version shows them
+  // all). Only the rows in and near the view are drawn, so a history of
+  // thousands moves as one of ten. What only the App has (your changes,
+  // parked ones, what a card's buttons do) comes in through pending,
+  // parked and the snippets: without them, the graph only shows and picks.
   let { versions: allVersions, branches: allBranches, branch, head, incoming = new Set(), pending = 0, parked = [], selected, onselect, actions, parkedActions, reserve = 0, panelInset = 0, top: covered = 0, looks, milestones, onsettings, remember = "" }: {
     versions: V[];
     branches: GraphBranch[];
@@ -54,8 +58,9 @@
   // newest version is in main's history; agents': an AI agent's. The branch
   // you're on, main and the version you're on always show.
   type Range = "all" | "7" | "30" | "90" | "custom";
-  type Filter = { merged: boolean; agents: boolean; range: Range; from: string; to: string; authors: string[] };
-  const DEFAULT: Filter = { merged: false, agents: true, range: "all", from: "", to: "", authors: [] };
+  // every: each version its own node (no segments).
+  type Filter = { merged: boolean; agents: boolean; range: Range; from: string; to: string; authors: string[]; every: boolean };
+  const DEFAULT: Filter = { merged: false, agents: true, range: "all", from: "", to: "", authors: [], every: false };
   const filterKey = $derived(`r3v.graph.filter:${remember}`);
   let filter = $state<Filter>({ ...DEFAULT });
   $effect(() => {
@@ -114,6 +119,26 @@
   }
   let hiddenCount = $derived(folded.size);
 
+  // Segments opened (by their key), kept per project on this computer as
+  // the filter is.
+  const openKey = $derived(`r3v.graph.open:${remember}`);
+  let opened = $state(new Set<string>());
+  $effect(() => {
+    const key = openKey;
+    try {
+      opened = new Set(remember ? JSON.parse(localStorage.getItem(key) ?? "[]") : []);
+    } catch {
+      opened = new Set();
+    }
+  });
+  function setOpen(key: string, open: boolean) {
+    const next = new Set(opened);
+    if (open) next.add(key); else next.delete(key);
+    opened = next;
+    // (the newest few hundred: segments long gone needn't be kept)
+    try { if (remember) localStorage.setItem(openKey, JSON.stringify([...next].slice(-200))); } catch { /* (not kept) */ }
+  }
+
   // A row per version, a column per line of work (at 100%). Zoom spreads
   // them out or packs them in; the dots, lines and labels keep their size.
   const ROW = 56, COL = 64, PAD = 24, LABEL_W = 180, LABEL_H = 36;
@@ -121,8 +146,43 @@
   let panX = $state(0), panY = $state(0), zoom = $state(1);
   const ZOOM_MIN = 0.5, ZOOM_MAX = 2.5;
   let rowH = $derived(ROW * zoom), colW = $derived(COL * zoom);
-  let g = $derived(branchGraph(versions, branches, branch, "main", head, (name) => branchLane(branches, name)));
+  let flags = $derived.by(() => {
+    const m = new Map<string, string[]>();
+    for (const ms of milestones ?? []) m.set(ms.version, [...(m.get(ms.version) ?? []), ms.name]);
+    return m;
+  });
+  // The lines of every version (what segments are cut from), then the
+  // graph drawn: closed segments one row each. Each laid out again only
+  // when what it is drawn from changed.
+  const layoutAll = memoBranchGraph(), layout = memoBranchGraph();
+  const laneOf = (name: string) => branchLane(branches, name);
+  let keep = $derived(new Set([...branches.map((b) => b.latest), ...flags.keys(), ...parked.map((p) => p.base)]));
+  let segments = $derived.by(() => {
+    if (filter.every) return [];
+    const all = layoutAll(versions, branches, branch, "main", head, laneOf);
+    const runs = segmentRuns(versions, all, keep);
+    // The version picked and the one you are on come out of a closed
+    // segment; in an open one they're shown already (picking one there
+    // mustn't close what is around it).
+    const inside = [selected, head].filter((id) => runs.some((s) => !opened.has(s.key) && s.ids.includes(id)));
+    return inside.length ? segmentRuns(versions, all, new Set([...keep, ...inside])) : runs;
+  });
+  let laid = $derived(collapse(versions, segments, opened));
+  let rowItems = $derived(laid.rows);
+  let segs = $derived(laid.segs);
+  // (nothing closed: the graph of every version, already laid out)
+  let g = $derived((rowItems === versions ? layoutAll : layout)(rowItems, branches, branch, "main", head, laneOf));
+  // Segments opened, in the graph now: a bracket beside them groups them again.
+  let openRuns = $derived(segments.filter((s) => opened.has(s.key) && g.row.has(s.ids[0]) && g.row.has(s.key)));
   const labelOf = (name: string) => branchLabel(branches, name);
+  const segText = (s: Segment) => {
+    const name = g.chainOf.get(s.id)?.name || g.chainOf.get(s.ids[0])?.name;
+    return [name ? labelOf(name) : "", tn(s.ids.length, "{n} version", "{n} versions"), spanText(s.from, s.to, language()),
+      s.files !== undefined ? tn(s.files, "{n} file change", "{n} file changes") : ""].filter(Boolean).join(" · ");
+  };
+  const countText = (n: number) => {
+    try { return new Intl.NumberFormat(language(), { notation: "compact" }).format(n); } catch { return String(n); }
+  };
   // A label's text width, as drawn (its font measured; estimated where
   // there's no canvas).
   let measure: CanvasRenderingContext2D | null | undefined;
@@ -136,11 +196,6 @@
     return measure ? measure.measureText(text).width
       : [...text].reduce((n, ch) => n + (ch.codePointAt(0)! >= 0x2e80 ? 11 : 6), 0);
   }
-  let flags = $derived.by(() => {
-    const m = new Map<string, string[]>();
-    for (const ms of milestones ?? []) m.set(ms.version, [...(m.get(ms.version) ?? []), ms.name]);
-    return m;
-  });
   let byID = $derived(new Map(versions.map((v) => [v.id, v])));
   let off = $derived(pending ? 1 : 0); // the pending dot takes the first row
   // Where your changes go: the branch you are on (its own column even when it
@@ -154,7 +209,7 @@
   let stubs = $derived(g.chains.filter((c) => c.empty && !(pending && c === headChain))
     .map((c) => ({ c, from: g.chainOf.get(c.tip)!, row: g.row.get(c.tip)! + off - 0.8 })));
   // Parked changes: a tag up beside their version (to the outside of the graph), a dashed line to it.
-  let parks = $derived(parked.filter((p) => byID.has(p.base)).map((p) => {
+  let parks = $derived(parked.filter((p) => g.row.has(p.base)).map((p) => {
     const c = g.chainOf.get(p.base)!;
     return { ...p, col: c.col, color: c.color, side: c.col < 0 ? -1 : 1 };
   }));
@@ -202,11 +257,22 @@
   type Label = { id: string; name: string; color: number; dx: number; y: number; w: number; h: number };
   let labels = $derived.by(() => {
     const out: Label[] = [];
-    const dots = [...versions.map((v) => ({ col: g.chainOf.get(v.id)!.col, row: g.row.get(v.id)! + off })),
-      ...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
-    const clear = (dx: number, y: number, w: number, h: number) =>
-      dots.every((d) => d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h) &&
-      out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
+    // The dots by row (a label is checked against the few rows it covers,
+    // not every version); your changes' and the stubs' (between rows) apart.
+    const cols = new Map<number, number[]>();
+    for (const [id, r] of g.row) {
+      const at = cols.get(r + off);
+      if (at) at.push(g.chainOf.get(id)!.col); else cols.set(r + off, [g.chainOf.get(id)!.col]);
+    }
+    const loose = [...(pending ? [{ col: pendAt.col, row: 0 }] : []), ...stubs.map((st) => ({ col: st.c.col, row: st.row }))];
+    const apart = (d: { col: number; row: number }, dx: number, y: number, w: number, h: number) =>
+      d.col * colW + 12 < dx || d.col * colW - 12 > dx + w || d.row * rowH + rowH / 2 + 12 < y || d.row * rowH + rowH / 2 - 12 > y + h;
+    const clear = (dx: number, y: number, w: number, h: number) => {
+      for (let r = Math.floor((y - 12) / rowH - 0.5); r <= Math.ceil((y + h + 12) / rowH - 0.5); r++)
+        for (const col of cols.get(r) ?? []) if (!apart({ col, row: r }, dx, y, w, h)) return false;
+      return loose.every((d) => apart(d, dx, y, w, h)) &&
+        out.every((l) => l.dx + l.w + 4 < dx || l.dx > dx + w + 4 || l.y + l.h + 4 < y || l.y > y + h + 4);
+    };
     // (before the first version: your branch's name over your changes)
     const first = pending && !headChain ? [{ name: branch, tip: "", col: 0, color: branchLane(branches, branch), empty: true }] : [];
     for (const c of [...g.chains, ...first]) {
@@ -235,7 +301,26 @@
   let top = $derived(Math.max(LABEL_H, -Math.min(0, ...labels.map((l) => l.y))) + 20);
   const yRow = (r: number) => top + r * rowH + rowH / 2;
   const y = (id: string) => yRow(g.row.get(id)! + off);
-  let height = $derived(yRow(versions.length + off - 1) + rowH / 2 + 16);
+  let height = $derived(yRow(rowItems.length + off - 1) + rowH / 2 + 16);
+
+  // What is drawn: the rows in the view and a screen's worth around it
+  // (with thousands of versions, the DOM holds a few dozen of them).
+  const VIEW_GUESS = 1200; // px of view before the column is measured
+  let viewH = $derived(boxHeight || VIEW_GUESS);
+  let near = $derived(Math.max(300, viewH / 2));
+  let rowFrom = $derived(Math.floor((-panY - near - top) / rowH) - off);
+  let rowTo = $derived(Math.ceil((viewH - panY + near - top) / rowH) - off);
+  let drawn = $derived.by(() => {
+    const out = rowItems.slice(Math.max(0, rowFrom), Math.max(0, rowTo + 1));
+    // (and what is picked and where you are, out of the view: the keyboard's focus stays on them)
+    for (const id of new Set([selected, head])) {
+      const r = g.row.get(id);
+      if (r !== undefined && (r < rowFrom || r > rowTo)) out.push(rowItems[r]);
+    }
+    return out;
+  });
+  const inView = (a: number, b: number) => Math.min(a, b) <= rowTo && Math.max(a, b) >= rowFrom;
+  let drawnEdges = $derived(g.edges.filter((e) => inView(g.row.get(e.from)!, g.row.get(e.to)!)));
 
   function path(e: { from: string; to: string; kind: string }) {
     const a = g.chainOf.get(e.from)!, b = g.chainOf.get(e.to)!;
@@ -310,7 +395,7 @@
     const into = previewing === "main" ? "main" : branch;
     const tip = branches.find((b) => b.name === into)?.latest || (into === branch ? head : "");
     const c = tip ? g.chainOf.get(tip) : undefined;
-    if (!c || !byID.has(tip)) return null;
+    if (!c || !g.row.has(tip)) return null;
     // (above your changes too, on your branch)
     const gy = Math.min(y(tip), y(v.id), pending && into === branch ? yRow(0) : Infinity) - rowH;
     return { x: x(c.col), y: gy, color: c.color, label: "",
@@ -323,7 +408,7 @@
     // (parked changes: their dot, beside their version)
     const park = parks.find((p) => p.key === hovered) ?? null;
     const v = park ? null : byID.get(hovered) ?? null;
-    if (!park && !v) return null;
+    if (!park && (!v || !g.row.has(v.id))) return null; // (gone into a segment)
     const c = park ? { col: park.col, name: "" } : g.chainOf.get(v!.id)!;
     const ax = park ? parkX(park) : x(c.col), ay = park ? parkY(park) : y(v!.id);
     // To the left of the dot, centred on it: the pointer can go up and down
@@ -480,13 +565,14 @@
     if (!reserve || !selected) return null;
     const id = selected;
     const c = id === "pending" ? (pending ? pendAt : undefined) : g.chainOf.get(id);
-    if (!c || (id !== "pending" && !byID.has(id))) return null;
+    if (!c || (id !== "pending" && !g.row.has(id))) return null;
     const x1 = panX + x(c.col) + 12, y1 = panY + (id === "pending" ? yRow(0) : y(id));
     const x2 = width, y2 = Math.min(Math.max(y1, panelInset + 24), boxHeight - panelInset - 24);
     return x1 < x2 - 8 ? { x1, y1, x2, y2 } : null;
   });
 
-  let ids = $derived([...(pending ? ["pending"] : []), ...versions.map((v) => v.id)]);
+  // (a segment is passed over: Tab reaches it, Enter opens it)
+  let ids = $derived([...(pending ? ["pending"] : []), ...rowItems.filter((r) => !segs.has(r.id)).map((r) => r.id)]);
   let box = $state<HTMLElement>();
   function onkeydown(e: KeyboardEvent) {
     if (e.key === "Escape") { hovered = null; return; }
@@ -496,7 +582,8 @@
     if (i < 0 || i >= ids.length) return;
     onselect(ids[i]);
     reveal(ids[i]);
-    box?.querySelector<HTMLElement>(`[data-id="${ids[i]}"]`)?.focus({ preventScroll: true });
+    // (once drawn: it may have just come into the view)
+    tick().then(() => box?.querySelector<HTMLElement>(`[data-id="${ids[i]}"]`)?.focus({ preventScroll: true }));
   }
 </script>
 
@@ -518,10 +605,12 @@
     <div class="canvas" style:width="{full}px" style:height="{height}px" style:transform="translate({panX}px, {panY}px)">
       <svg width={full} height={height} aria-hidden="true">
         {#each marks as m (m.id)}
+          {#if inView(g.row.get(m.id)!, g.row.get(m.id)!)}
           <path class="mline" d="M {marksAt + m.w} {top + m.y} L {x(m.col) - 19} {top + m.y}" stroke="var(--lane-{m.color})"
             stroke-width="1.5" stroke-dasharray="4 4" fill="none" />
+          {/if}
         {/each}
-        {#each g.edges as e (e.from + ">" + e.to)}
+        {#each drawnEdges as e (e.from + ">" + e.to)}
           {@const c = lineChain(e)}
           <path d={path(e)} stroke="var(--lane-{c.color})" stroke-width={c.main ? 4 : 3} fill="none" stroke-linecap="round"
             opacity={!c.name ? 0.55 : merged.has(c) ? 0.75 : 1} />
@@ -537,6 +626,13 @@
           <path d={stubPath(st)} stroke="var(--lane-{st.c.color})" stroke-width="3" fill="none" stroke-linecap="round" />
           <circle cx={x(st.c.col)} cy={yRow(st.row)} r="5" fill="var(--panel)" stroke="var(--lane-{st.c.color})" stroke-width="2" />
         {/each}
+        {#each openRuns as s (s.key)}
+          {#if inView(g.row.get(s.ids[0])!, g.row.get(s.key)!)}
+            {@const c = g.chainOf.get(s.key)!}
+            <path class="segbracket" d="M {x(c.col) + 22} {y(s.ids[0])} L {x(c.col) + 22} {y(s.key)}" stroke="var(--lane-{c.color})"
+              stroke-width="1.5" stroke-dasharray="2 4" fill="none" stroke-linecap="round" />
+          {/if}
+        {/each}
         {#if ghost}
           <g class="would">
             {#each ghost.from as f, i (i)}
@@ -549,10 +645,12 @@
       </svg>
 
       {#each marks as m (m.id)}
+        {#if inView(g.row.get(m.id)!, g.row.get(m.id)!)}
         <button class="mtag" style:--c="var(--lane-{m.color})" style:left="{marksAt}px" style:top="{top + m.y}px" style:max-width="{MS_W}px"
           tabindex="-1" title={m.text} aria-label={m.text} onclick={() => onselect(m.id)}>
           <span class="mflag" aria-hidden="true">⚑</span>{#if m.ver}<b>{m.ver}</b>{/if}<span class="mname">{m.name}</span>
         </button>
+        {/if}
       {/each}
       {#each labels as l (l.name + "@" + l.id)}
         <div class="label" style:left="{center + l.dx}px" style:top="{top + l.y}px" style:width="{l.w}px" style:height="{l.h}px" style:--c="var(--lane-{l.color})">
@@ -577,7 +675,27 @@
           onmouseenter={() => hover(p.key)} onmouseleave={unhover} onfocus={() => hover(p.key)}
           onclick={() => onselect(p.key)}>P</button>
       {/each}
-      {#each versions as v (v.id)}
+      {#each openRuns as s (s.key)}
+        {#if inView(g.row.get(s.ids[0])!, g.row.get(s.ids[0])!)}
+          {@const c = g.chainOf.get(s.key)!}
+          <button class="segfold" style:left="{x(c.col) + 22}px" style:top="{y(s.ids[0])}px" style:--c="var(--lane-{c.color})"
+            aria-label={tn(s.ids.length, "Group {n} version again", "Group {n} versions again")}
+            title={tn(s.ids.length, "Group {n} version again", "Group {n} versions again")}
+            onclick={() => setOpen(s.key, false)}><span aria-hidden="true">−</span></button>
+        {/if}
+      {/each}
+      {#each drawn as r (r.id)}
+        {@const s = segs.get(r.id)}
+        {#if s}
+          {@const c = g.chainOf.get(s.id)!}
+          <button class="seg" class:side={!c.name} class:merged={merged.has(c)} class:dim={s.ids.every((id) => dimmed(byID.get(id)!))}
+            class:incoming={s.ids.every((id) => incoming.has(id))} data-id={s.id} aria-expanded="false"
+            style:left="{x(c.col)}px" style:top="{y(s.id)}px" style:--c="var(--lane-{c.color})"
+            aria-label={segText(s)} title={t("Show every version in it")} onclick={() => setOpen(s.key, true)}>
+            <span class="stack" aria-hidden="true">{countText(s.ids.length)}</span><span class="cap">{segText(s)}</span>
+          </button>
+        {:else}
+        {@const v = byID.get(r.id)!}
         {@const c = g.chainOf.get(v.id)!}
         {@const lk = lookOf(v)}
         <button class="node" class:dim={dimmed(v)} class:on={selected === v.id} class:here={v.id === head} class:now={(v.id === head && !pending) || (previewing === "goto" && card?.v?.id === v.id)} class:incoming={incoming.has(v.id)}
@@ -588,6 +706,7 @@
           onmouseenter={() => hover(v.id)} onmouseleave={unhover} onfocus={() => hover(v.id)}
           onclick={() => onselect(v.id)}>{#if showPic(lk)}<img src={lk!.picture} alt="" draggable="false"
             onerror={() => (broken = new Set(broken).add(lk!.picture))} />{:else}{initial(v.author)}{/if}{#if v.actor}<span class="amark" data-agent={v.actor.tool}>{@render spark()}</span>{/if}</button>
+        {/if}
       {/each}
 
     </div>
@@ -623,6 +742,10 @@
             <label class="frow">
               <span><strong>{t("Agents' branches")}</strong><span class="fhint">{t("Branches AI agents work on")}</span></span>
               <input type="checkbox" class="switch" role="switch" checked={filter.agents} onchange={(e) => setFilter({ agents: e.currentTarget.checked })} />
+            </label>
+            <label class="frow">
+              <span><strong>{t("Every version")}</strong><span class="fhint">{t("Each of an agent's versions on its own, not grouped")}</span></span>
+              <input type="checkbox" class="switch" role="switch" checked={filter.every} onchange={(e) => setFilter({ every: e.currentTarget.checked })} />
             </label>
             <div class="fsep"></div>
             <label class="frow">
@@ -662,7 +785,7 @@
             </div>
             {#if filtering}
               <div class="fsep"></div>
-              <button class="fitem freset" onclick={() => { setFilter({ ...DEFAULT, merged: true }); authorsOpen = false; }}>{t("Show everything")}</button>
+              <button class="fitem freset" onclick={() => { setFilter({ ...DEFAULT, merged: true, every: filter.every }); authorsOpen = false; }}>{t("Show everything")}</button>
             {/if}
           </div>
         {/if}
@@ -804,6 +927,27 @@
   .node.on, .node.here.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c); }
   .node.on.ms { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--c), 0 0 0 5.5px var(--panel), 0 0 0 7.5px var(--accent); }
   .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  /* A segment: a stack of dots on its line, its count in it, what it is
+     beside it (over the lines crossing its row: it has the row alone). */
+  .seg { position: absolute; display: flex; align-items: center; gap: var(--sp-6); height: 26px; margin: -13px 0 0 -13px;
+    padding: 0; border: none; background: none; color: var(--muted); white-space: nowrap; z-index: 1; }
+  .seg:hover:not(:disabled) { background: none; color: var(--text); }
+  .stack { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--c); background: var(--panel-2);
+    display: flex; align-items: center; justify-content: center; font-size: var(--fs-2xs); font-weight: var(--fw-bold); color: var(--text);
+    box-shadow: 0 -4px 0 -1px var(--panel), 0 -4px 0 1px var(--c), 0 4px 0 -1px var(--panel), 0 4px 0 1px var(--c); }
+  .seg:hover .stack { background: var(--hover); }
+  .cap { padding: var(--sp-2) var(--sp-6); border-radius: var(--radius-pill); background: var(--panel); font-size: var(--fs-2xs); }
+  .seg:focus-visible { outline: none; }
+  .seg:focus-visible .stack { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .seg.incoming .stack { border-style: dashed; color: var(--muted); }
+  .seg.side, .seg.merged { opacity: .75; }
+  .seg.dim { opacity: .25; }
+  /* a segment opened: a dotted bracket beside its versions, − at its top groups them again */
+  .segbracket { opacity: .7; }
+  .segfold { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; padding: 0; border-radius: 50%;
+    border: var(--border-width) solid var(--c); background: var(--panel); color: var(--c); font-size: var(--fs-xs); line-height: 1;
+    display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .segfold:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 22%, var(--panel)); border-color: var(--c); }
   /* a card's button previewed: what it would make, faint */
   .would { opacity: .5; pointer-events: none; }
   .would text { font-size: var(--fs-xs); font-weight: var(--fw-semibold); }

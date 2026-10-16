@@ -29,7 +29,11 @@ export interface MemberLook {
 }
 
 /** A version as the graph draws it. branch: the branch it was made on;
- * authorId: the member (looks are by it); actor: the AI agent that made it. */
+ * authorId: the member (looks are by it); actor: the AI agent that made it
+ * (none: a person did). What the graph's segments use, where the data has
+ * it: files: how many files it changed; check: its checks' result ("pass",
+ * "fail"; none: not checked; a checked version is never in a segment);
+ * step: the agent's step it was made in (a segment never spans two). */
 export interface GraphVersion {
   id: string;
   short: string;
@@ -40,6 +44,9 @@ export interface GraphVersion {
   parents: string[];
   branch: string;
   actor?: { tool: string; model: string } | null;
+  files?: number;
+  check?: string;
+  step?: string;
 }
 
 /** A branch as the graph draws it. latest: its newest version's id ("" with

@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { tick } from "svelte";
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import VersionGraph from "./VersionGraph.svelte";
 
@@ -288,5 +289,119 @@ describe("VersionGraph with agents", () => {
     show({ versions: history, branches, branch: "b-render", head: "r2", selected: "r2" });
     expect(dots()).toHaveLength(5);
     expect(screen.getByRole("button", { name: "Graph filters" }).getAttribute("title")).toBe("Graph filters");
+  });
+});
+
+describe("VersionGraph segments", () => {
+  const dots = () => [...document.querySelectorAll("button.node[role='option']")];
+  const segNodes = () => [...document.querySelectorAll("button.seg")];
+  const agent = { tool: "claude-code", model: "opus" };
+  // main: m2 - m1 (a person's); lane/render: r10 … r1 off m1, an agent's.
+  const lane = Array.from({ length: 10 }, (_, i) => 10 - i).map((n) => ({
+    ...version(`r${n}`, `Step ${n}`, [n === 1 ? "m1" : `r${n - 1}`]), branch: "lane/render", actor: agent,
+    time: new Date(Date.UTC(2026, 9, 6, 10, n * 12)).toISOString() }));
+  const history = [{ ...version("m2", "Mix", ["m1"]), branch: "main", time: "2026-10-06T14:00:00Z" }, ...lane,
+    { ...version("m1", "Sketch", []), branch: "main" }];
+  const branches = [main, { name: "lane/render", latest: "r10", kind: "agent" }];
+  const open = (over: Record<string, unknown> = {}) => show({ versions: history, branches, head: "m2", selected: "m2", ...over });
+  beforeEach(() => localStorage.clear());
+
+  it("draws a run of an agent's versions as one node, what matters around it its own", () => {
+    open({ milestones: [{ version: "r6", name: "Lights" }] });
+    // r10 (the branch's newest), r6 (a milestone) and r1 (where it starts) stay; r9-r7 and r5-r2 are segments.
+    expect(dots().map((d) => d.getAttribute("data-id"))).toEqual(["m2", "r10", "r6", "r1", "m1"]);
+    const segs = segNodes();
+    expect(segs.map((s) => s.getAttribute("data-id"))).toEqual(["seg:r7", "seg:r2"]);
+    expect(segs[1].getAttribute("aria-label")).toBe("lane/render · 4 versions · 36m");
+    expect(segs[1].querySelector(".stack")!.textContent).toBe("4");
+  });
+
+  it("keeps the version picked and the one you are on out of segments", () => {
+    open({ branch: "lane/render", head: "r4", selected: "r8" });
+    expect(dots().map((d) => d.getAttribute("data-id"))).toEqual(["m2", "r10", "r9", "r8", "r4", "r3", "r2", "r1", "m1"]);
+    expect(segNodes().map((s) => s.getAttribute("data-id"))).toEqual(["seg:r5"]);
+  });
+
+  it("opens a segment with a click, groups it again from its bracket, and remembers which are open", async () => {
+    open({ remember: "C:/Song" });
+    const seg = screen.getByRole("button", { name: /8 versions/ });
+    expect(seg.tagName).toBe("BUTTON"); // (Tab reaches it, Enter and Space open it)
+    expect(seg.getAttribute("aria-expanded")).toBe("false");
+    await fireEvent.click(seg);
+    expect(segNodes()).toHaveLength(0);
+    expect(dots()).toHaveLength(12);
+    expect(JSON.parse(localStorage.getItem("r3v.graph.open:C:/Song")!)).toEqual(["r2"]);
+    cleanup();
+    open({ remember: "C:/Song" });
+    await tick();
+    expect(dots()).toHaveLength(12); // (still open)
+    await fireEvent.click(screen.getByRole("button", { name: "Group 8 versions again" }));
+    expect(segNodes()).toHaveLength(1);
+    expect(dots()).toHaveLength(4);
+    expect(JSON.parse(localStorage.getItem("r3v.graph.open:C:/Song")!)).toEqual([]);
+  });
+
+  it("keeps a segment open when a version in it is picked", async () => {
+    localStorage.setItem("r3v.graph.open:C:/Song", JSON.stringify(["r2"]));
+    open({ remember: "C:/Song", selected: "r5" });
+    await tick();
+    expect(dots()).toHaveLength(12);
+    cleanup();
+    localStorage.clear();
+    open({ remember: "C:/Song", selected: "r5" });
+    expect(segNodes().map((s) => s.getAttribute("data-id"))).toEqual(["seg:r6", "seg:r2"]);
+  });
+
+  it("shows every version from the filter", async () => {
+    open({ remember: "C:/Song" });
+    expect(dots()).toHaveLength(4);
+    await fireEvent.click(screen.getByRole("button", { name: "Graph filters" }));
+    await fireEvent.click(screen.getByRole("switch", { name: /Every version/ }));
+    expect(segNodes()).toHaveLength(0);
+    expect(dots()).toHaveLength(12);
+    expect(JSON.parse(localStorage.getItem("r3v.graph.filter:C:/Song")!).every).toBe(true);
+  });
+
+  it("passes over a segment with ↑ ↓", async () => {
+    const { onselect } = open({ selected: "r10" });
+    await fireEvent.keyDown(screen.getByRole("listbox"), { key: "ArrowDown" });
+    expect(onselect).toHaveBeenLastCalledWith("r1");
+  });
+});
+
+// Thousands of versions (agents commit often): only the rows in and near
+// the view are in the page, wherever it is moved to.
+describe("VersionGraph with a long history", () => {
+  const N = 2000;
+  const long = Array.from({ length: N }, (_, i) => N - 1 - i).map((n) => ({
+    ...version(`v${n}`, `Step ${n}`, n ? [`v${n - 1}`] : []), branch: "main", actor: n ? { tool: "claude-code", model: "opus" } : null,
+    time: new Date(Date.UTC(2026, 9, 6) + n * 60_000).toISOString() }));
+  const branches = [{ name: "main", latest: `v${N - 1}` }];
+  const nodes = () => document.querySelectorAll(".node, .seg").length;
+  beforeEach(() => localStorage.clear());
+
+  it("draws a bounded number of rows with every version shown, the rows in view as it scrolls", async () => {
+    localStorage.setItem("r3v.graph.filter:C:/Song", JSON.stringify({ every: true, merged: true }));
+    const started = performance.now();
+    show({ versions: long, branches, head: `v${N - 1}`, selected: `v${N - 1}`, remember: "C:/Song" });
+    await tick();
+    const took = performance.now() - started;
+    expect(nodes()).toBeGreaterThan(10);
+    expect(nodes()).toBeLessThan(80);
+    expect(document.querySelectorAll(".canvas svg path").length).toBeLessThan(80);
+    // Far down: other rows, as few (and the one picked, kept for the keyboard).
+    await fireEvent.wheel(screen.getByRole("listbox"), { deltaY: 56 * 1000 });
+    expect(nodes()).toBeLessThan(80);
+    expect(document.querySelector('[data-id="v999"]')).toBeTruthy();
+    expect(document.querySelector('[data-id="v1990"]')).toBeNull();
+    expect(document.querySelector(`[data-id="v${N - 1}"]`)).toBeTruthy();
+    expect(took).toBeLessThan(5000); // (generous, for a slow machine)
+  });
+
+  it("draws an agent's long run as one segment", () => {
+    show({ versions: long, branches, head: `v${N - 1}`, selected: `v${N - 1}` });
+    expect(document.querySelectorAll(".seg")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /1998 versions/ })).toBeTruthy();
+    expect(document.querySelectorAll(".node")).toHaveLength(2);
   });
 });

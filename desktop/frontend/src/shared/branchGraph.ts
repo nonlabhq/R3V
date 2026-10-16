@@ -175,3 +175,18 @@ export function branchGraph(versions: GraphVersion[], branches: { name: string; 
   }
   return { chains, chainOf, row, edges, left: 0, right };
 }
+
+/** branchGraph, laid out again only when what it is drawn from changed:
+ * a refresh with the same history, a pick, a hover gets the same graph
+ * (the same object, so nothing drawn from it is worked out again). The
+ * lanes (laneOf) are taken to follow from the branches. */
+export function memoBranchGraph(): typeof branchGraph {
+  let last = "", out: BranchGraph | undefined;
+  return (versions, branches, current, mainName = "main", head = "", laneOf) => {
+    let key = `${current}\n${mainName}\n${head}\n${JSON.stringify(branches)}\n`;
+    for (const v of versions) key += `${v.id}>${v.parents.join(",")}@${v.branch ?? ""};`;
+    if (out && key === last) return out;
+    last = key;
+    return (out = branchGraph(versions, branches, current, mainName, head, laneOf));
+  };
+}

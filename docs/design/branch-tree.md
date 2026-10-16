@@ -136,6 +136,18 @@ Drawn from the tree, the same wherever you are:
   at its `from`.
 - The branch you are on is marked (glow, label), not moved.
 - Archived branches: hidden, or faint with "Show archived".
+- Segments: agents commit often, so a run of 3 or more of an agent's
+  versions on one line is one node ("lane/render · 47 versions · 2h"),
+  opened by a click and grouped again from the bracket beside it (which
+  are open is kept per project on this computer, as the filter is). Never
+  in one: where a branch starts or is merged from, merges, milestones,
+  checked versions, a person's versions, each line's newest and oldest,
+  the version you are on, the one picked and those with parked changes.
+  Where versions say their agent's step, a segment never spans two. The
+  filter's **Every version** turns them off (`graphSegments.ts`).
+- Only the rows in and near the view are drawn (nodes and lines), and the
+  layout is worked out again only when the history or the branches
+  change: thousands of versions move as smoothly as ten.
 
 ## Build order
 

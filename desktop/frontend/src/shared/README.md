@@ -19,7 +19,11 @@ The rules (`contract.test.ts` checks the first):
   Components take data (`types.ts`) and give events; whoever uses them
   fetches the data (the App from its bindings, the web app from its API).
 - `types.ts` is an interface between the two: add fields, never rename or
-  remove one.
+  remove one. The graph groups an agent's runs of versions into segments
+  (`graphSegments.ts`) from what `GraphVersion` carries: `actor` (none: a
+  person's, never grouped), and where the data has them `files`, `check`
+  and `step`; it draws only the rows in view, so it takes long histories
+  whole (no paging needed).
 - Texts are English, the key to their translation: `t`/`tn` from `i18n.ts`
   translate them through what `setTranslator` was given (the App's own
   i18n; the web app's).

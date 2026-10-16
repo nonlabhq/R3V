@@ -1886,5 +1886,12 @@
 "R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.": "R3V Cloud è in beta chiusa: creare un team richiede un invito. Puoi comunque unirti ai team a cui sei invitato.",
 "Join the waitlist": "Iscriviti alla lista d'attesa",
 "Founding member": "Membro fondatore",
-"Early access": "Accesso anticipato"
+"Early access": "Accesso anticipato",
+"{n} file change": "{n} modifica di file",
+"{n} file changes": "{n} modifiche di file",
+"Group {n} version again": "Raggruppa di nuovo {n} versione",
+"Group {n} versions again": "Raggruppa di nuovo {n} versioni",
+"Show every version in it": "Mostra ogni versione che contiene",
+"Every version": "Ogni versione",
+"Each of an agent's versions on its own, not grouped": "Ogni versione di un agente da sola, non raggruppata"
 }
