@@ -28,7 +28,9 @@ everyday (run inside a project folder):
   status                                 what changed since your last version
   watch                                  keep running: tell you about new versions (never changes
                                          your files)
-  log [BRANCH] [-n N]                    list versions (of your branch, or another branch's)
+  log [BRANCH] [-n N] [--first-parent]   list versions (of your branch, or another branch's);
+                                         --first-parent: only the main line, merges with how
+                                         many versions each brought in
 
 setup:
   init [--author NAME] [--preset code|none]

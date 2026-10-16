@@ -301,6 +301,8 @@ type versionJSON struct {
 	Actor *project.Actor `json:"actor,omitempty"`
 	// WIP: its title says it isn't finished (merge and update previews).
 	WIP bool `json:"wip,omitempty"`
+	// MergedCount: how many versions a merge brought in (log --first-parent).
+	MergedCount int `json:"merged_count,omitempty"`
 }
 
 func versionOf(m *project.Manifest, names map[string]string) versionJSON {

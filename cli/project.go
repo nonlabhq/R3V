@@ -389,6 +389,7 @@ func printStatus(r *project.Repo, s statusJSON) {
 func cmdLog(args []string) error {
 	fs := flag.NewFlagSet("log", flag.ContinueOnError)
 	limit := fs.Int("n", 0, "show only the newest N versions")
+	firstParent := fs.Bool("first-parent", false, "only the main line: each merge once, with how many versions it brought in")
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return err
@@ -405,6 +406,10 @@ func cmdLog(args []string) error {
 	}
 	if err != nil {
 		return err
+	}
+	var merged map[string]int
+	if *firstParent {
+		log, merged = project.FirstParents(log)
 	}
 	if *limit > 0 && len(log) > *limit {
 		log = log[:*limit]
@@ -425,6 +430,7 @@ func cmdLog(args []string) error {
 	for _, m := range log {
 		v := versionOf(m, names)
 		v.Branches = tips[m.ID]
+		v.MergedCount = merged[m.ID]
 		out.Versions = append(out.Versions, v)
 	}
 	result("log", out, func() {
@@ -433,8 +439,13 @@ func cmdLog(args []string) error {
 		}
 		for i, m := range log {
 			mark := ""
+			if n := merged[m.ID]; n == 1 {
+				mark = "  (+1 version)"
+			} else if n > 1 {
+				mark = fmt.Sprintf("  (+%d versions)", n)
+			}
 			if b := out.Versions[i].Branches; len(b) > 0 {
-				mark = "  [" + strings.Join(b, ", ") + "]"
+				mark += "  [" + strings.Join(b, ", ") + "]"
 			}
 			fmt.Printf("%s  %s  %-12s %s%s\n", short(m.ID), when(m), byLine(out.Versions[i].Author, m), manifest.Title(m.Message), mark)
 		}
