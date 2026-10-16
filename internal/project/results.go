@@ -31,6 +31,10 @@ type Result struct {
 	// Changes: files that were changed, not committed, when it was recorded
 	// (the result is about those files, not exactly the version).
 	Changes int `json:"changes,omitempty"`
+	// From: the version it was recorded for, when that is another one with
+	// the same files (a merge that brought in exactly a lane's head):
+	// carried over when read, never stored.
+	From string `json:"from,omitempty"`
 }
 
 // ResultStates are the states a result can be in.
@@ -46,12 +50,116 @@ func (r *Repo) resultsPath(version string) string {
 }
 
 // Results are the checks' latest results for a version (empty when none).
+// A version without results of its own that has the same files as one
+// with results (see carriedFrom) shows those, From set.
 func (r *Repo) Results(version string) map[string]Result {
+	out := r.ownResults(version)
+	if len(out) > 0 {
+		return out
+	}
+	if from := r.carriedFrom(version); from != "" {
+		out = r.ownResults(from)
+		for n, res := range out {
+			res.From = from
+			out[n] = res
+		}
+	}
+	return out
+}
+
+// ownResults are the results recorded for the version itself.
+func (r *Repo) ownResults(version string) map[string]Result {
 	out := map[string]Result{}
 	if data, err := os.ReadFile(r.resultsPath(version)); err == nil {
 		json.Unmarshal(data, &out)
 	}
 	return out
+}
+
+func (r *Repo) hasOwnResults(version string) bool {
+	_, err := os.Stat(r.resultsPath(version))
+	return err == nil
+}
+
+// carryLevels bounds how far back results are looked for.
+const carryLevels = 4
+
+// carriedFrom is the version whose results a version without any of its
+// own shows: merging a lane whose head the branch hadn't moved past makes
+// a merge version (the branch's line stays its own) with exactly the
+// lane's files, and what the checks said about those files holds for it.
+// Only merges, only parents with the same files, a few levels at most;
+// "" when none.
+func (r *Repo) carriedFrom(id string) string {
+	for range carryLevels {
+		h, err := r.Header(id)
+		if err != nil || len(h.Parents) < 2 {
+			return ""
+		}
+		next := ""
+		for _, p := range h.Parents {
+			if r.sameFiles(id, p) {
+				next = p
+				break
+			}
+		}
+		if next == "" {
+			return ""
+		}
+		if r.hasOwnResults(next) {
+			return next
+		}
+		id = next
+	}
+	return ""
+}
+
+// sameFiles: versions a and b have the same files (the same top tree, or
+// for versions older than trees the same file list) and the same samples
+// from outside the project.
+func (r *Repo) sameFiles(a, b string) bool {
+	ha, err := r.Header(a)
+	if err != nil {
+		return false
+	}
+	hb, err := r.Header(b)
+	if err != nil {
+		return false
+	}
+	if ha.Tree != "" && hb.Tree != "" {
+		if ha.Tree != hb.Tree {
+			return false
+		}
+		ra, err := r.readRecord(a)
+		if err != nil {
+			return false
+		}
+		rb, err := r.readRecord(b)
+		return err == nil && sameEntries(ra.External, rb.External)
+	}
+	ma, err := r.Load(a)
+	if err != nil {
+		return false
+	}
+	mb, err := r.Load(b)
+	return err == nil && sameEntries(ma.Files, mb.Files) && sameEntries(ma.External, mb.External)
+}
+
+// sameEntries: the same paths with the same contents, in any order.
+func sameEntries(a, b []FileEntry) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	m := make(map[string]string, len(a))
+	for _, e := range a {
+		m[e.Path] = e.Hash
+	}
+	for _, e := range b {
+		if h, ok := m[e.Path]; !ok || h != e.Hash {
+			return false
+		}
+	}
+	return true
 }
 
 // SetResult records a check's result for a version ("" the one the project
@@ -81,7 +189,7 @@ func (r *Repo) SetResult(version, name, state, note string) (string, *Result, er
 			res.Changes = len(changes)
 		}
 	}
-	all := r.Results(id)
+	all := r.ownResults(id)
 	all[name] = res
 	data, err := json.MarshalIndent(all, "", "  ")
 	if err != nil {
@@ -99,34 +207,58 @@ func (r *Repo) SetResult(version, name, state, note string) (string, *Result, er
 // Checked sums up each version's results, for the history graph: "fail"
 // when a check failed, "pass" when every one passed; a version with a
 // check still running and none failed is left out, as is one without
-// results. One read of the folder, not one per version.
-func (r *Repo) Checked() map[string]string {
+// results. One read of the folder, not one per version. Versions among
+// shown without results of their own get the ones carried over to them
+// (Results).
+func (r *Repo) Checked(shown ...string) map[string]string {
 	out := map[string]string{}
 	entries, err := os.ReadDir(filepath.Join(r.CommonDir(), resultsDir))
 	if err != nil {
 		return out
 	}
+	own := map[string]bool{}
 	for _, e := range entries {
 		id, ok := strings.CutSuffix(e.Name(), ".json")
 		if !ok || e.IsDir() {
 			continue
 		}
-		state := ""
-		for _, res := range r.Results(id) {
-			switch {
-			case res.State == "fail":
-				state = "fail"
-			case res.State == "pass" && state == "":
-				state = "pass"
-			case res.State != "pass" && state != "fail":
-				state = "running"
-			}
-		}
-		if state == "pass" || state == "fail" {
+		own[id] = true
+		if state := checkState(r.ownResults(id)); state != "" {
 			out[id] = state
 		}
 	}
+	if len(own) == 0 {
+		return out
+	}
+	for _, id := range shown {
+		if own[id] {
+			continue
+		}
+		if from := r.carriedFrom(id); out[from] != "" {
+			out[id] = out[from]
+		}
+	}
 	return out
+}
+
+// checkState sums up a version's results: "pass", "fail", or "" (none, or
+// one still running and none failed).
+func checkState(results map[string]Result) string {
+	state := ""
+	for _, res := range results {
+		switch {
+		case res.State == "fail":
+			state = "fail"
+		case res.State == "pass" && state == "":
+			state = "pass"
+		case res.State != "pass" && state != "fail":
+			state = "running"
+		}
+	}
+	if state == "running" {
+		return ""
+	}
+	return state
 }
 
 // ResultNames are a results map's checks, in order.

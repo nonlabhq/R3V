@@ -202,6 +202,110 @@ func TestVersionsKeepTheirBranch(t *testing.T) {
 	}
 }
 
+// Merging a lane main hasn't moved past: the preview says merge (what
+// happens), with the lane head's files; the merge version has them, and
+// the results recorded for the lane head show on it, carried over. Own
+// results win; a merge that changed the files gets none.
+func TestMergeBehindKeepsLaneResults(t *testing.T) {
+	a, _ := team(t)
+	if err := a.CreateBranch("vfx"); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, "fx.txt", "fx")
+	if _, _, err := a.Save("fx", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	lane := a.Head()
+	if _, _, err := a.SetResult("", "tests", "pass", "all passed"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.SwitchBranch("main", false); err != nil {
+		t.Fatal(err)
+	}
+	main := a.Head()
+	p, err := a.PreviewMerge("vfx")
+	if err != nil || p.Action != "merge" || p.SameFilesAs != lane || p.Target != lane || p.Base != main ||
+		len(p.Versions) != 1 || len(p.Conflicts) != 0 {
+		t.Fatalf("preview: %v %+v", err, p)
+	}
+	if v, err := a.PreviewVersion(lane); err != nil || v.Action != "merge" || v.SameFilesAs != lane {
+		t.Fatalf("preview version: %v %+v", err, v)
+	}
+	res, err := a.MergeBranch("vfx", "", Strategy("fail"))
+	if err != nil || res.Action != "merged" || res.SameFilesAs != lane {
+		t.Fatalf("merge: %v %+v", err, res)
+	}
+	merged := a.Head()
+	if m, _ := a.Load(merged); len(m.Parents) != 2 || m.Parents[0] != main || m.Parents[1] != lane {
+		t.Fatalf("merge version: %+v", m)
+	}
+	got := a.Results(merged)
+	if got["tests"].State != "pass" || got["tests"].From != lane {
+		t.Fatalf("carried results: %+v", got)
+	}
+	if a.Results(lane)["tests"].From != "" {
+		t.Fatal("a version's own results marked carried")
+	}
+	if c := a.Checked(merged); c[merged] != "pass" {
+		t.Fatalf("checked: %v", c)
+	}
+	if c := a.Checked(); c[merged] != "" {
+		t.Fatalf("checked without the version asked: %v", c)
+	}
+	// Own results win, and recording one doesn't copy the carried ones.
+	if _, _, err := a.SetResult(merged, "build", "fail", ""); err != nil {
+		t.Fatal(err)
+	}
+	if own := a.Results(merged); len(own) != 1 || own["build"].State != "fail" || own["build"].From != "" {
+		t.Fatalf("own results: %+v", own)
+	}
+	if c := a.Checked(merged); c[merged] != "fail" {
+		t.Fatalf("checked with own: %v", c)
+	}
+
+	// Main and the lane both move on: the merge changes the files.
+	write(t, a.Root, "mix.txt", "mix")
+	if _, _, err := a.Save("mix", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.SwitchBranch("vfx", false); err != nil {
+		t.Fatal(err)
+	}
+	write(t, a.Root, "fx2.txt", "more fx")
+	if _, _, err := a.Save("more fx", Strategy("fail")); err != nil {
+		t.Fatal(err)
+	}
+	a.SetResult("", "tests", "pass", "")
+	if _, err := a.SwitchBranch("main", false); err != nil {
+		t.Fatal(err)
+	}
+	p, err = a.PreviewMerge("vfx")
+	if err != nil || p.Action != "merge" || p.SameFilesAs != "" {
+		t.Fatalf("preview of a merge both changed: %v %+v", err, p)
+	}
+	res, err = a.MergeBranch("vfx", "", Strategy("fail"))
+	if err != nil || res.Action != "merged" || res.SameFilesAs != "" {
+		t.Fatalf("merge both changed: %v %+v", err, res)
+	}
+	if got := a.Results(a.Head()); len(got) != 0 {
+		t.Fatalf("results carried to a merge that changed the files: %+v", got)
+	}
+}
+
+// Updating the branch you are on still fast-forwards, and says so.
+func TestPreviewUpdateStillFastForwards(t *testing.T) {
+	a, b := team(t)
+	write(t, a.Root, "notes.txt", "new")
+	a.Save("notes", Strategy("fail"))
+	p, err := b.PreviewUpdate()
+	if err != nil || p.Action != "fast-forward" || p.SameFilesAs != "" {
+		t.Fatalf("%v %+v", err, p)
+	}
+	if p, err := b.PreviewMerge("main"); err != nil || p.Action != "fast-forward" {
+		t.Fatalf("merging the branch you are on: %v %+v", err, p)
+	}
+}
+
 // Each copy tells the team the work it has: changes, versions not shared,
 // changes parked; written when it changes, and at once on another branch.
 func TestWorkspaceRecordsWork(t *testing.T) {

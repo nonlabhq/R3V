@@ -23,6 +23,13 @@ export class Result {
      */
     "changes"?: number;
 
+    /**
+     * From: the version it was recorded for, when that is another one with
+     * the same files (a merge that brought in exactly a lane's head):
+     * carried over when read, never stored.
+     */
+    "from"?: string;
+
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
         if (!("state" in $$source)) {

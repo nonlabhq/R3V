@@ -2111,7 +2111,7 @@ export class PreuploadFile {
 
 export class Preview {
     /**
-     * up-to-date | ahead | fast-forward | merge
+     * up-to-date | ahead | fast-forward (update only) | merge
      */
     "action": string;
     "versions": Version[];
@@ -2129,6 +2129,12 @@ export class Preview {
      */
     "base": string;
     "target": string;
+
+    /**
+     * SameFilesAs: the merge version will have exactly this version's
+     * files (HEAD is behind it); its results carry over.
+     */
+    "sameFilesAs": string;
 
     /** Creates a new Preview instance. */
     constructor($$source: Partial<Preview> = {}) {
@@ -2152,6 +2158,9 @@ export class Preview {
         }
         if (!("target" in $$source)) {
             this["target"] = "";
+        }
+        if (!("sameFilesAs" in $$source)) {
+            this["sameFilesAs"] = "";
         }
 
         Object.assign(this, $$source);
@@ -2725,6 +2734,12 @@ export class Result {
     "park": Parking | null;
 
     /**
+     * SameFilesAs: a merge whose version has exactly this version's files;
+     * its results carry over.
+     */
+    "sameFilesAs": string;
+
+    /**
      * ChangedSince: action "changed-since": files changed after a switch
      * stopped halfway, which putting the files back would replace; nothing
      * was done. Call again with replace once the user agrees.
@@ -2772,6 +2787,9 @@ export class Result {
         if (!("park" in $$source)) {
             this["park"] = null;
         }
+        if (!("sameFilesAs" in $$source)) {
+            this["sameFilesAs"] = "";
+        }
         if (!("changedSince" in $$source)) {
             this["changedSince"] = [];
         }
@@ -2792,7 +2810,7 @@ export class Result {
         const $$createField10_0 = $$createType52;
         const $$createField11_0 = $$createType26;
         const $$createField12_0 = $$createType54;
-        const $$createField13_0 = $$createType10;
+        const $$createField14_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("log" in $$parsedSource) {
             $$parsedSource["log"] = $$createField1_0($$parsedSource["log"]);
@@ -2822,7 +2840,7 @@ export class Result {
             $$parsedSource["park"] = $$createField12_0($$parsedSource["park"]);
         }
         if ("changedSince" in $$parsedSource) {
-            $$parsedSource["changedSince"] = $$createField13_0($$parsedSource["changedSince"]);
+            $$parsedSource["changedSince"] = $$createField14_0($$parsedSource["changedSince"]);
         }
         return new Result($$parsedSource as Partial<Result>);
     }
