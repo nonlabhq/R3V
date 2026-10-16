@@ -183,6 +183,8 @@ var codes = []struct {
 	{project.ErrDirty, "unsaved_changes", exitError, "commit them first: r3v commit -m \"...\" (it also brings in the team's versions)"},
 	{project.ErrOlderVersion, "on_older_version", exitError, "go back to the latest version: r3v goto latest"},
 	{project.ErrUnshared, "unshared_versions", exitError, "share them first: r3v commit -m ..."},
+	{project.ErrNotAMerge, "not_a_merge", exitError, "pick a merge version: r3v log --first-parent lists them"},
+	{project.ErrNothingToUndo, "nothing_to_undo", exitError, "nothing to do: the branch already is without those changes"},
 	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
