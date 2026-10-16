@@ -72,7 +72,8 @@
     {/if}
     {#if asksMessage}
       <label for="merge-msg">{t("Description of the merge version")}</label>
-      <textarea id="merge-msg" rows="2" bind:value={message}></textarea>
+      <!-- written from what comes in, still the user's; emptied: the plain "Merge branch …" -->
+      <textarea id="merge-msg" rows="4" bind:value={message}></textarea>
     {/if}
     {#if archive && !blocked}
       <label class="check"><input type="checkbox" bind:checked={archiveAfter} />{t("Archive {branch} after merging", { branch: archive })}</label>
@@ -82,7 +83,7 @@
   {#snippet footer()}
     <button onclick={onclose}>{nothing ? t("Close") : t("Cancel")}</button>
     {#if !nothing}
-      <button class="primary" disabled={!!blocked || (asksMessage && !message?.trim())} onclick={onconfirm}>{actionLabel}</button>
+      <button class="primary" disabled={!!blocked} onclick={onconfirm}>{actionLabel}</button>
     {/if}
   {/snippet}
 </Modal>

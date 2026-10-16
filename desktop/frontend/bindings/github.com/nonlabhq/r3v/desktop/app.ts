@@ -861,6 +861,11 @@ export function MemberLooks(root: string): $CancellablePromise<{ [_ in string]?:
     });
 }
 
+/**
+ * MergeBranch merges another branch into the current one; message describes
+ * the merge version (the preview's, edited; "" for the plain "Merge branch
+ * <name>").
+ */
 export function MergeBranch(root: string, name: string, message: string, resolutions: { [_ in string]?: string }, force: boolean): $CancellablePromise<$models.Result | null> {
     return $Call.ByID(3015301699, root, name, message, resolutions, force).then(($result: any) => {
         return $$createType23($result);
@@ -869,7 +874,8 @@ export function MergeBranch(root: string, name: string, message: string, resolut
 
 /**
  * MergeVersion merges a version into the current branch; message describes
- * the merge version ("" for the default, see Preview.Message).
+ * the merge version (the preview's, edited; "" for the plain "Merge version
+ * <id>" or "Merge branch <name>").
  */
 export function MergeVersion(root: string, id: string, message: string, resolutions: { [_ in string]?: string }, force: boolean): $CancellablePromise<$models.Result | null> {
     return $Call.ByID(1659313061, root, id, message, resolutions, force).then(($result: any) => {

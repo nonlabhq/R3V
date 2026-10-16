@@ -917,6 +917,9 @@ func toPreview(p *project.Preview, names map[string]string) *Preview {
 	out := &Preview{Action: p.Action, Versions: toVersions(p.Versions, nil), Changes: []Change{},
 		Conflicts: toConflicts(p.Conflicts), Base: p.Base, Target: p.Target}
 	renameAuthors(names, out.Versions)
+	for i, m := range p.Versions {
+		out.Versions[i].WIP = project.LooksWIP(m.Message)
+	}
 	for _, c := range p.Changes {
 		out.Changes = append(out.Changes, toChange(c.Path, c.Status, c.From, c.Edited, c.SetDiff))
 	}
@@ -1106,11 +1109,7 @@ func (a *App) PreviewMerge(root, name string) (*Preview, error) {
 		return nil, err
 	}
 	out := toPreview(p, a.memberNames(r))
-	label := name
-	if n := branchRecords(r, false)[name].Name; n != "" {
-		label = n
-	}
-	out.Message = "Merge branch " + label
+	out.Message = p.Message
 	return out, nil
 }
 
@@ -1127,7 +1126,7 @@ func (a *App) PreviewMergeVersion(root, id string) (*Preview, error) {
 		return nil, err
 	}
 	out := toPreview(p, a.memberNames(r))
-	out.Message, _ = r.MergeMessage(id)
+	out.Message = p.Message
 	return out, nil
 }
 
@@ -1163,7 +1162,8 @@ func (a *App) VersionChanges(root, id string) ([]Change, error) {
 }
 
 // MergeVersion merges a version into the current branch; message describes
-// the merge version ("" for the default, see Preview.Message).
+// the merge version (the preview's, edited; "" for the plain "Merge version
+// <id>" or "Merge branch <name>").
 func (a *App) MergeVersion(root, id, message string, resolutions map[string]string, force bool) (*Result, error) {
 	defer a.tidyLater(root)
 	r, unlock, err := a.open(root)
@@ -1174,6 +1174,11 @@ func (a *App) MergeVersion(root, id, message string, resolutions map[string]stri
 	if set := liveGuard(r, force); set != "" {
 		return blocked(set), nil
 	}
+	if strings.TrimSpace(message) == "" {
+		if message, err = r.MergeMessage(id); err != nil {
+			return nil, err
+		}
+	}
 	res, err := r.MergeVersion(id, message, opts(resolutions))
 	if err != nil {
 		return conflictResult(r, err)
@@ -1181,6 +1186,9 @@ func (a *App) MergeVersion(root, id, message string, resolutions map[string]stri
 	return syncResult(res), nil
 }
 
+// MergeBranch merges another branch into the current one; message describes
+// the merge version (the preview's, edited; "" for the plain "Merge branch
+// <name>").
 func (a *App) MergeBranch(root, name, message string, resolutions map[string]string, force bool) (*Result, error) {
 	defer a.tidyLater(root)
 	r, unlock, err := a.open(root)
@@ -1190,6 +1198,9 @@ func (a *App) MergeBranch(root, name, message string, resolutions map[string]str
 	defer unlock()
 	if set := liveGuard(r, force); set != "" {
 		return blocked(set), nil
+	}
+	if strings.TrimSpace(message) == "" {
+		message = r.PlainMergeMessage(name)
 	}
 	res, err := r.MergeBranch(name, message, opts(resolutions))
 	if err != nil {

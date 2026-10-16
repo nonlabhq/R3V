@@ -1886,5 +1886,7 @@
 "R3V Cloud is in a closed beta: making a team needs an invitation. You can still join teams you're invited to.": "R3V Cloud はクローズドベータ中です。チームを作るには招待が必要です。招待されたチームには参加できます。",
 "Join the waitlist": "ウェイトリストに登録",
 "Founding member": "ファウンディングメンバー",
-"Early access": "アーリーアクセス"
+"Early access": "アーリーアクセス",
+"unfinished": "未完成",
+"Its title says it isn't finished: left out of the merge's description": "タイトルが未完成を示しています：マージの説明には含めません"
 }

@@ -5113,6 +5113,12 @@ export class Version {
      */
     "actor": Actor | null;
 
+    /**
+     * WIP: its title says it isn't finished (set in previews only: such a
+     * version is left out of a merge's description).
+     */
+    "wip"?: boolean;
+
     /** Creates a new Version instance. */
     constructor($$source: Partial<Version> = {}) {
         if (!("id" in $$source)) {

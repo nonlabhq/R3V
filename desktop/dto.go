@@ -31,6 +31,9 @@ type Version struct {
 	// Actor: the AI agent that made it for its author (nil: the author did).
 	// Its message is a title (the first line) and details (the rest).
 	Actor *Actor `json:"actor"`
+	// WIP: its title says it isn't finished (set in previews only: such a
+	// version is left out of a merge's description).
+	WIP bool `json:"wip,omitempty"`
 }
 
 // Actor is the agent tool that made a version ("claude-code") and its
