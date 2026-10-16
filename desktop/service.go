@@ -721,7 +721,7 @@ func graphData(r *project.Repo, ms []*project.Manifest, vs []Version) {
 		ids[i] = m.ID
 	}
 	files := r.ChangeCounts(ids, countBudget)
-	checked := r.Checked()
+	checked := r.Checked(ids...)
 	for i, m := range ms {
 		vs[i].Files, vs[i].Check = files[m.ID], checked[m.ID]
 		if m.Actor != nil {
@@ -842,6 +842,7 @@ func syncResult(res *project.SyncResult) *Result {
 		out.Action, out.Log, out.Relinked, out.KeptWork = res.Action, nonNil(res.MergeLog), nonNil(res.Relinked), res.KeptWork
 		out.TakenBack = toVersions(res.TakenBack, nil)
 		out.Park = parkingOf(res.Park)
+		out.SameFilesAs = res.SameFilesAs
 	}
 	return out
 }
@@ -946,7 +947,7 @@ func (a *App) ShareVersions(root string) (*Result, error) {
 
 func toPreview(p *project.Preview, names map[string]string) *Preview {
 	out := &Preview{Action: p.Action, Versions: toVersions(p.Versions, nil), Changes: []Change{},
-		Conflicts: toConflicts(p.Conflicts), Base: p.Base, Target: p.Target}
+		Conflicts: toConflicts(p.Conflicts), Base: p.Base, Target: p.Target, SameFilesAs: p.SameFilesAs}
 	renameAuthors(names, out.Versions)
 	for i, m := range p.Versions {
 		out.Versions[i].WIP = project.LooksWIP(m.Message)

@@ -361,6 +361,9 @@ func (r *Repo) mergeVersion(c remote.Backend, target, message string, opts Merge
 	res.MergeLog = append(res.MergeLog, shared.MergeLog...)
 	res.Relinked = append(res.Relinked, shared.Relinked...)
 	res.To = r.Head()
+	if r.sameFiles(res.To, target) {
+		res.SameFilesAs = target
+	}
 	return res, nil
 }
 
@@ -389,16 +392,20 @@ type Preview struct {
 	// Message: a merge's description written for you (what MergeBranch or
 	// MergeVersion say when given none); "" for an update.
 	Message string
+	// SameFilesAs: the merge version will have exactly this version's
+	// files (Target's: HEAD is behind it), so what the checks said about
+	// them holds for it too (Results).
+	SameFilesAs string
 }
 
 // PreviewUpdate previews `update` on the current branch.
 func (r *Repo) PreviewUpdate() (*Preview, error) {
-	return r.previewBranch(r.BranchName())
+	return r.previewBranch(r.BranchName(), false)
 }
 
 // PreviewMerge previews merging another branch.
 func (r *Repo) PreviewMerge(name string) (*Preview, error) {
-	p, err := r.previewBranch(name)
+	p, err := r.previewBranch(name, name != r.BranchName())
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +423,7 @@ func (r *Repo) PreviewVersion(ref string) (*Preview, error) {
 	if err != nil {
 		return nil, err
 	}
-	p, err := r.previewTarget(c, id)
+	p, err := r.previewTarget(c, id, true)
 	if err != nil {
 		return nil, err
 	}
@@ -428,7 +435,7 @@ func (r *Repo) PreviewVersion(ref string) (*Preview, error) {
 	return p, nil
 }
 
-func (r *Repo) previewBranch(name string) (*Preview, error) {
+func (r *Repo) previewBranch(name string, another bool) (*Preview, error) {
 	c, err := r.Client()
 	if err != nil {
 		return nil, err
@@ -441,10 +448,13 @@ func (r *Repo) previewBranch(name string) (*Preview, error) {
 	if !ok && name != r.BranchName() {
 		return nil, r.noBranch(c, heads, name, "")
 	}
-	return r.previewTarget(c, target)
+	return r.previewTarget(c, target, another)
 }
 
-func (r *Repo) previewTarget(c remote.Backend, target string) (*Preview, error) {
+// previewTarget previews integrating target. another: it comes in as a
+// merge version even when HEAD is behind (integrate), so the action says
+// "merge" then, not "fast-forward".
+func (r *Repo) previewTarget(c remote.Backend, target string, another bool) (*Preview, error) {
 	head := r.Head()
 	p := &Preview{Action: "up-to-date"}
 	if target == "" || target == head {
@@ -461,8 +471,13 @@ func (r *Repo) previewTarget(c remote.Backend, target string) (*Preview, error) 
 	if err != nil {
 		return nil, err
 	}
+	behind := baseID == head
 	p.Action = "merge"
-	if baseID == head {
+	switch {
+	case behind && another:
+		// Merging refuses uncommitted changes: the files will be target's.
+		p.SameFilesAs = target
+	case behind:
 		p.Action = "fast-forward"
 	}
 	p.Base, p.Target = baseID, target
@@ -502,7 +517,7 @@ func (r *Repo) previewTarget(c remote.Backend, target string) (*Preview, error) 
 		return nil, err
 	}
 
-	if p.Action == "merge" {
+	if p.Action == "merge" && !behind {
 		ours, err := r.Load(head)
 		if err != nil {
 			return nil, err

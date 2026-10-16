@@ -298,6 +298,9 @@ type syncJSON struct {
 	// KeptWork: uncommitted changes were kept through an update (merged
 	// with the team's versions, still uncommitted).
 	KeptWork bool `json:"kept_work,omitempty"`
+	// SameFilesAs: the merge version has exactly this version's files (the
+	// branch was behind it); its results carry over.
+	SameFilesAs string `json:"same_files_as,omitempty"`
 }
 
 // commitJSON is r3v commit's result: Warnings as status has them, of what
@@ -309,7 +312,8 @@ type commitJSON struct {
 
 func syncOf(res *project.SyncResult) syncJSON {
 	return syncJSON{Action: res.Action, From: res.From, To: res.To, Merged: nonNil(res.MergeLog),
-		Relink: nonNil(res.Relinked), ReopenSets: len(res.MergeLog) > 0, KeptWork: res.KeptWork}
+		Relink: nonNil(res.Relinked), ReopenSets: len(res.MergeLog) > 0, KeptWork: res.KeptWork,
+		SameFilesAs: res.SameFilesAs}
 }
 
 // cmdCommit commits the changes as a version and shares it (merging the

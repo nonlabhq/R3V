@@ -86,6 +86,9 @@ func cmdResults(args []string) error {
 			if res.Note != "" {
 				fmt.Printf("  %s", res.Note)
 			}
+			if res.From != "" {
+				fmt.Printf("  (recorded for %s, the same files)", short(res.From))
+			}
 			fmt.Println()
 		}
 	})

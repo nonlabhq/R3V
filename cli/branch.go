@@ -196,7 +196,8 @@ func cmdSwitch(args []string) error {
 
 // previewJSON is what update or merge would bring in.
 type previewJSON struct {
-	// Action: up-to-date, ahead (nothing new), fast-forward, merge.
+	// Action: up-to-date, ahead (nothing new), fast-forward (update only:
+	// merging another branch always makes a merge version), merge.
 	Action    string         `json:"action"`
 	Versions  []versionJSON  `json:"versions"` // incoming, newest first
 	Changes   []changeJSON   `json:"changes"`
@@ -204,12 +205,15 @@ type previewJSON struct {
 	// Message: a merge's description written for you (what merge says
 	// without -m).
 	Message string `json:"message,omitempty"`
+	// SameFilesAs: the merge version will have exactly this version's
+	// files (you are behind it); its results carry over.
+	SameFilesAs string `json:"same_files_as,omitempty"`
 }
 
 func previewOf(r *project.Repo, p *project.Preview) previewJSON {
 	names := r.MemberNames()
 	out := previewJSON{Action: p.Action, Versions: []versionJSON{}, Changes: []changeJSON{},
-		Conflicts: conflictsJSON(p.Conflicts), Message: p.Message}
+		Conflicts: conflictsJSON(p.Conflicts), Message: p.Message, SameFilesAs: p.SameFilesAs}
 	for _, m := range p.Versions {
 		v := versionOf(m, names)
 		v.WIP = project.LooksWIP(m.Message)
@@ -255,6 +259,9 @@ func printPreview(p *project.Preview, what string) {
 		}
 	} else if p.Action == "merge" {
 		fmt.Println("\nno conflicts: merges automatically")
+	}
+	if p.SameFilesAs != "" {
+		fmt.Printf("the merge version will have exactly the files of %s\n", short(p.SameFilesAs))
 	}
 }
 

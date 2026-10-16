@@ -298,6 +298,9 @@ type Result struct {
 	Locks []HeldLock `json:"locks"`
 	// Park: a switch kept uncommitted changes (Parking).
 	Park *Parking `json:"park"`
+	// SameFilesAs: a merge whose version has exactly this version's files;
+	// its results carry over.
+	SameFilesAs string `json:"sameFilesAs"`
 	// ChangedSince: action "changed-since": files changed after a switch
 	// stopped halfway, which putting the files back would replace; nothing
 	// was done. Call again with replace once the user agrees.
@@ -325,7 +328,7 @@ type Parking struct {
 }
 
 type Preview struct {
-	Action    string     `json:"action"` // up-to-date | ahead | fast-forward | merge
+	Action    string     `json:"action"` // up-to-date | ahead | fast-forward (update only) | merge
 	Versions  []Version  `json:"versions"`
 	Changes   []Change   `json:"changes"`
 	Conflicts []Conflict `json:"conflicts"`
@@ -335,6 +338,9 @@ type Preview struct {
 	// Target (what comes in).
 	Base   string `json:"base"`
 	Target string `json:"target"`
+	// SameFilesAs: the merge version will have exactly this version's
+	// files (HEAD is behind it); its results carry over.
+	SameFilesAs string `json:"sameFilesAs"`
 }
 
 func toVersion(m *project.Manifest, tips map[string][]string) Version {

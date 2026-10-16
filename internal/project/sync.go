@@ -884,6 +884,9 @@ type SyncResult struct {
 	TakenBack []*Manifest
 	// Park: what a switch did with uncommitted changes (Parking).
 	Park *ParkOutcome
+	// SameFilesAs: a merge whose version has exactly the merged version's
+	// files (HEAD was behind it); its results carry over (Results).
+	SameFilesAs string
 }
 
 // Update brings the workspace up to date with the team branch: a fast

@@ -238,14 +238,20 @@ user first).
 took from each side), `relinked` (sample paths rewritten for this computer),
 `reopen_sets` (sets changed under Live: the user must reopen them).
 `commit` also has `warnings`, as `status` has them, about what the
-version just took (a commit is never refused for one).
+version just took (a commit is never refused for one). `merge` also has
+`same_files_as` (a version id) when the merge version's files are
+exactly that version's: the branch hadn't moved since it parted.
 
 `update --preview` and `merge <branch> --preview`: `action`, `versions`
 (incoming; `wip`: true on one whose title says it isn't finished),
 `changes`, `conflicts` (`key`, `file`, `unit`, `description`,
 `can_keep_both`; a text file's hunk also `hunk`, `base`, `ours`,
-`theirs`). `merge --preview` also has `message`: the merge version's
-description `merge` writes without `-m`, from what comes in:
+`theirs`). `action` is `fast-forward` only for `update`: merging another
+branch always makes a merge version (`merge`), even when the branch you
+are on hasn't moved; then `same_files_as` is the incoming head, whose
+files the merge version will have exactly. `merge --preview` also has
+`message`: the merge version's description `merge` writes without `-m`,
+from what comes in:
 
 ```
 Merge lane/vfx: 12 versions
@@ -257,6 +263,13 @@ Merge lane/vfx: 12 versions
 (each incoming version's title, oldest first, merges and unfinished ones
 left out, at most 10; nothing to list: `Merge branch lane/vfx`). `-m`
 gives your own, used as it is.
+
+`results [VERSION]` (Nightly): `version`, `results` (each check: `state`,
+`note`, `time`, `actor`, `changes`). A merge version with no results of
+its own whose files are exactly a parent's (`same_files_as`: a lane's
+head merged into a branch that hadn't moved) shows that parent's
+results, each with `from` (where it was recorded); results recorded for
+the merge itself replace them.
 
 `undo-merge VERSION` (Nightly) takes back what a merge brought in: a new
 version on the current branch without it, the history kept (the merge
