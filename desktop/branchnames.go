@@ -107,8 +107,11 @@ func (a *App) BranchList(root string) (*BranchList, error) {
 		a.storeTeam(root, view, nil)
 	}
 	recs := branchRecords(r, true)
-	for _, b := range r.BranchesFrom(view.Heads) {
+	infos := r.BranchesFrom(view.Heads)
+	counts := branchVersionCountsOf(r, infos)
+	for _, b := range infos {
 		br := toBranch(b, recs[b.Name])
+		br.Versions = counts[b.Name]
 		out.Branches = append(out.Branches, br)
 	}
 	return out, nil

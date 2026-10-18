@@ -584,6 +584,12 @@ export class Branch {
     "kind": string;
     "owner": string;
 
+    /**
+     * Versions: how many versions are its own (branchVersionCounts), of
+     * those on this computer.
+     */
+    "versions": number;
+
     /** Creates a new Branch instance. */
     constructor($$source: Partial<Branch> = {}) {
         if (!("name" in $$source)) {
@@ -609,6 +615,9 @@ export class Branch {
         }
         if (!("owner" in $$source)) {
             this["owner"] = "";
+        }
+        if (!("versions" in $$source)) {
+            this["versions"] = 0;
         }
 
         Object.assign(this, $$source);
