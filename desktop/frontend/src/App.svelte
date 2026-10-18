@@ -106,7 +106,8 @@
   const recall = (k: string) => { try { return localStorage.getItem(k) ?? ""; } catch { return ""; } };
 
   let reloading = $state(false);
-  const turning = spinner(() => reloading);
+  // (it turns while the team is asked, too: what the sidebar shows of it then)
+  const turning = spinner(() => reloading || (!!overview?.currentTeam && !overview.teamChecked));
   let lastReload = 0;
   async function reload() {
     reloading = true;
@@ -898,10 +899,10 @@
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
+        <!-- (no line while the team is asked: the turning refresh says so,
+             and the projects stay where they are) -->
         {#if current && overview.teamError}
           <div class="offline" title={overview.teamError}>● {t("Storage not reachable")}</div>
-        {:else if current && !overview.teamChecked}
-          <div class="offline checking">● {t("checking…")}</div>
         {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
@@ -1362,7 +1363,6 @@
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }
   .offline { font-size: var(--fs-sm); color: var(--danger); padding: 0 var(--sp-8) var(--sp-4); }
-  .offline.checking { color: var(--faint); }
   .add { width: 100%; margin: var(--sp-8) 0 var(--sp-4); display: flex; flex-direction: column; align-items: center; gap: 0; padding: var(--sp-4) var(--sp-10); line-height: 1.3; }
   .add .hint { font-size: var(--fs-xs); color: var(--faint); font-weight: 400; }
   .pad { padding: 0 var(--sp-8); }

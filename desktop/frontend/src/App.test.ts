@@ -118,6 +118,15 @@ describe("App: tabs", () => {
     expect(shell.classList.contains("folded")).toBe(false);
   });
 
+  it("says the team is being asked by the turning refresh only, no line that moves the projects", async () => {
+    api.LocalOverview.mockResolvedValue({ ...overview(), teamChecked: false });
+    api.Overview.mockReturnValue(new Promise(() => {})); // the team never answers
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    expect(screen.queryByText(/checking…/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Check the team for new projects" }).classList.contains("spin")).toBe(true);
+  });
+
   it("lists the shortcuts (Ctrl+/), and Esc closes the list", async () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
