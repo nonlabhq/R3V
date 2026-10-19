@@ -8,6 +8,7 @@
   import { toast } from "./lib/notify.svelte";
   import ProjectView from "./lib/ProjectView.svelte";
   import TeamHome from "./lib/TeamHome.svelte";
+  import type { TeamKeys } from "./lib/teamSource";
   import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
   import { linkPick } from "./lib/links.svelte";
   import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
@@ -806,6 +807,10 @@
     });
     // A hosted team's people, roles or projects changed (R3V-Cloud).
     const offTeams = Events.On("teams", () => reload());
+    // The current team's look, projects or archived ones changed: read again.
+    const offTeamKeys = Events.On("team-keys", (ev: { data: TeamKeys }) => {
+      if (ev.data.overview && ev.data.team === overview?.currentTeam && !onboarding) reload();
+    });
     const offLinks = Events.On("open-link", () => openLinks());
     openLinks(); // (started from a link)
     return () => {
@@ -813,6 +818,7 @@
       offUpdate();
       offWatch();
       offTeams();
+      offTeamKeys();
       offLinks();
     };
   });

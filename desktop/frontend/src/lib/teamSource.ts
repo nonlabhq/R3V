@@ -1,5 +1,10 @@
 import { api } from "./api";
 import type { TeamSource } from "$shared/team/source";
+import { Events } from "@wailsio/runtime";
+
+// A hosted team's keys changed (live notices; desktop/livekeys.go): what to
+// read again.
+export type TeamKeys = { team: string; keys: string[]; overview: boolean; activity: boolean };
 
 // The App's source for a team's shared settings pages ($shared/team): its
 // Go bindings. countUsage: a team on its own storage (R3V counts it).
@@ -17,6 +22,7 @@ export function appTeamSource(teamId: string, hosted: boolean): TeamSource {
     setAgents: (w) => api.SetTeamAgents(teamId, w),
     clearOverrides: (pick) => api.ClearProjectWorkflow(teamId, pick),
     activity: (days) => api.TeamActivity(teamId, days).then((v) => v ?? []),
+    activityChanges: (fn) => Events.On("team-keys", (ev: { data: TeamKeys }) => { if (ev.data.team === teamId && ev.data.activity) fn(); }),
     usage: () => api.TeamUsage(teamId).then(need),
     countUsage: hosted ? undefined : () => api.CountTeamUsage(teamId).then(need),
   };
