@@ -1944,5 +1944,6 @@
 "Archive…": "Archivar…",
 "Hidden for everyone in the team; nothing deleted": "Ocultos para todo el equipo; no se borra nada",
 "{who} archived the project {project}": "{who} archivó el proyecto {project}",
-"{who} brought back the project {project}": "{who} recuperó el proyecto {project}"
+"{who} brought back the project {project}": "{who} recuperó el proyecto {project}",
+"It isn't on the team yet: commit and share it first.": "Todavía no está en el equipo: confírmalo y compártelo primero."
 }

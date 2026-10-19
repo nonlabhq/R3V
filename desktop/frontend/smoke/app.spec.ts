@@ -155,3 +155,21 @@ test("opens the team's home, and a project from the quick launcher", async () =>
   await expect(page.getByRole("heading", { name: "Moonrise" })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+
+test("archives a project for the team from its right-click menu, and brings it back from the team's home", async () => {
+  const row = () => page.locator("aside").getByRole("button", { name: /^Night Drive/ });
+  await row().first().click({ button: "right" });
+  await page.locator(".row-menu").getByRole("button", { name: "Archive project…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Archive “Night Drive”?" });
+  await expect(dialog).toContainText("Nothing is deleted");
+  await dialog.getByRole("button", { name: /^Archive( anyway)?$/ }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(row()).toHaveCount(0);
+  await page.locator(".team-menu .switch").click();
+  await page.getByRole("button", { name: "Projects", exact: true }).click();
+  const fold = page.locator(".home h2").getByRole("button", { name: /Archived/ });
+  await expect(fold).toHaveAttribute("aria-expanded", "false");
+  await fold.click();
+  await page.getByRole("button", { name: "Unarchive" }).click();
+  await expect(row().first()).toBeVisible();
+});

@@ -36,7 +36,7 @@ const overview = (archived = false) => ({
   teams: [{ id: "t", name: "Band", memberName: "Yi" }], currentTeam: "t", archive: true,
   projects: [project("Song"), project("Beat", archived)], teamChecked: true, teamError: "",
 });
-const info = (over = {}) => ({ canArchive: true, archived: false, changes: 0, unshared: false, ...over });
+const info = (over = {}) => ({ canArchive: true, archived: false, onTeam: true, changes: 0, unshared: false, ...over });
 
 beforeEach(() => {
   for (const k of Object.keys(mocks.fns)) delete mocks.fns[k];
@@ -96,6 +96,13 @@ describe("ArchiveProjectDialog", () => {
     api.ArchiveInfo.mockResolvedValue(info({ canArchive: false }));
     render(ArchiveProjectDialog, { teamId: "t", p: project("Song") as never, onarchived: vi.fn(), onclose: vi.fn() });
     expect(await screen.findByText("Only the team's admins can archive projects.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Archive" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("says a project not shared yet isn't on the team", async () => {
+    api.ArchiveInfo.mockResolvedValue(info({ onTeam: false }));
+    render(ArchiveProjectDialog, { teamId: "t", p: project("Song") as never, onarchived: vi.fn(), onclose: vi.fn() });
+    expect(await screen.findByText("It isn't on the team yet: commit and share it first.")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Archive" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });

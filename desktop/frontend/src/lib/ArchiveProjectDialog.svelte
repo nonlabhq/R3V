@@ -39,7 +39,9 @@
 <Modal title={t("Archive “{name}”?", { name: p.name })} {onclose}>
   <p>{t("It's hidden for everyone in the team. Nothing is deleted: its versions stay, and it can be brought back any time from the team's home, under Archived.")}</p>
   {#if p.root}<p class="hint">{t("The folder on this computer stays as it is; R3V stops checking it for updates.")}</p>{/if}
-  {#if info && !info.canArchive}
+  {#if info && !info.onTeam}
+    <p class="warn-text">{t("It isn't on the team yet: commit and share it first.")}</p>
+  {:else if info && !info.canArchive}
     <p class="warn-text">{t("Only the team's admins can archive projects.")}</p>
   {/if}
   {#if info && info.changes > 0}
@@ -51,7 +53,7 @@
   {#if error}<p class="error">{error}</p>{/if}
   {#snippet footer()}
     <button onclick={onclose}>{t("Cancel")}</button>
-    <button class="primary" onclick={archive} disabled={busy || !info || !info.canArchive}>
+    <button class="primary" onclick={archive} disabled={busy || !info || !info.canArchive || !info.onTeam}>
       {notShared ? t("Archive anyway") : t("Archive")}</button>
   {/snippet}
 </Modal>

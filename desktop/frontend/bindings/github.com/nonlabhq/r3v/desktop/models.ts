@@ -378,6 +378,12 @@ export class ArchiveInfo {
     "archived": boolean;
 
     /**
+     * OnTeam: the team has the project (one added and never shared isn't
+     * on it yet: nothing to archive).
+     */
+    "onTeam": boolean;
+
+    /**
      * Changes and Unshared: the copy here has uncommitted changes, or
      * versions the team hasn't got (archiving asks first).
      */
@@ -391,6 +397,9 @@ export class ArchiveInfo {
         }
         if (!("archived" in $$source)) {
             this["archived"] = false;
+        }
+        if (!("onTeam" in $$source)) {
+            this["onTeam"] = false;
         }
         if (!("changes" in $$source)) {
             this["changes"] = 0;

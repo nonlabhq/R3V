@@ -1944,5 +1944,6 @@
 "Archive…": "封存…",
 "Hidden for everyone in the team; nothing deleted": "团队里每个人都看不到；什么都没删除",
 "{who} archived the project {project}": "{who} 封存了项目 {project}",
-"{who} brought back the project {project}": "{who} 取消封存了项目 {project}"
+"{who} brought back the project {project}": "{who} 取消封存了项目 {project}",
+"It isn't on the team yet: commit and share it first.": "它还不在团队里：请先提交并分享。"
 }

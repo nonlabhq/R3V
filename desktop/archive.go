@@ -25,6 +25,9 @@ type ArchiveInfo struct {
 	// CanArchive: this computer may (an R3V Cloud team's admins only).
 	CanArchive bool `json:"canArchive"`
 	Archived   bool `json:"archived"`
+	// OnTeam: the team has the project (one added and never shared isn't
+	// on it yet: nothing to archive).
+	OnTeam bool `json:"onTeam"`
 	// Changes and Unshared: the copy here has uncommitted changes, or
 	// versions the team hasn't got (archiving asks first).
 	Changes  int  `json:"changes"`
@@ -48,6 +51,11 @@ func (a *App) ArchiveInfo(teamID, projectID string) (*ArchiveInfo, error) {
 		return nil, err
 	}
 	_, out.Archived = got[projectID]
+	ps, err := b.Projects()
+	if err != nil {
+		return nil, err
+	}
+	out.OnTeam = slices.ContainsFunc(ps, func(p remote.Project) bool { return p.ID == projectID })
 	if root := store.ProjectRoot(teamID, projectID); root != "" {
 		out.Changes, out.Unshared, err = a.notShared(root)
 		if err != nil {

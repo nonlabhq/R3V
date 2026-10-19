@@ -1944,5 +1944,6 @@
 "Archive…": "アーカイブ…",
 "Hidden for everyone in the team; nothing deleted": "チームの全員に非表示。何も削除されていません",
 "{who} archived the project {project}": "{who} がプロジェクト {project} をアーカイブ",
-"{who} brought back the project {project}": "{who} がプロジェクト {project} のアーカイブを解除"
+"{who} brought back the project {project}": "{who} がプロジェクト {project} のアーカイブを解除",
+"It isn't on the team yet: commit and share it first.": "まだチームにありません。先にコミットして共有してください。"
 }

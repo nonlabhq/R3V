@@ -1944,5 +1944,6 @@
 "Archive…": "보관…",
 "Hidden for everyone in the team; nothing deleted": "팀의 모두에게 숨김, 삭제된 것은 없음",
 "{who} archived the project {project}": "{who}님이 프로젝트 {project}를 보관했습니다",
-"{who} brought back the project {project}": "{who}님이 프로젝트 {project}의 보관을 해제했습니다"
+"{who} brought back the project {project}": "{who}님이 프로젝트 {project}의 보관을 해제했습니다",
+"It isn't on the team yet: commit and share it first.": "아직 팀에 없습니다. 먼저 커밋하고 공유하세요."
 }

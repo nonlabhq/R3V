@@ -65,7 +65,7 @@ func TestArchiveProjectInApp(t *testing.T) {
 	// Uncommitted changes: said, and refused unless confirmed.
 	writeFile(t, root, "notes.txt", "a change")
 	info, err := a.ArchiveInfo(teamID, pid)
-	if err != nil || !info.CanArchive || info.Archived || info.Changes != 1 || info.Unshared {
+	if err != nil || !info.CanArchive || !info.OnTeam || info.Archived || info.Changes != 1 || info.Unshared {
 		t.Fatalf("archive info: %+v %v", info, err)
 	}
 	if err := a.ArchiveProject(teamID, pid, false); !errors.Is(err, project.ErrDirty) {
