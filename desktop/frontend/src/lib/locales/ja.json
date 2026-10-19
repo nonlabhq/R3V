@@ -2005,5 +2005,7 @@
 "This copy is {team}'s now, and your versions are shared there": "このコピーは {team} のものになり、あなたのバージョンもそこで共有しました",
 "New: {kind} can lock too": "新機能：{kind}もロックできます",
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V は現在これらを既定でロックします。チームは以前に種類を選んでいるため、追加するまでロックされません。",
-"Add": "追加"
+"Add": "追加",
+"This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "このマージは、未コミットの変更があるファイルを変更します（{files}）。先にそれらをコミットしてから、マージしてください。",
+"Your uncommitted changes are kept, still uncommitted.": "未コミットの変更はそのまま残ります（未コミットのまま）。"
 }

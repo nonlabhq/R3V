@@ -650,6 +650,23 @@
   // The merge version's description, edited in the preview (null: no merge).
   let mergeMessage = $state<string | null>(null);
 
+  // Uncommitted changes in the way of a merge: those in files it changes (a
+  // change of the rules coming in is in the way of all). The others stay as
+  // they are, uncommitted, and aren't part of the merge.
+  function mergeBlocked(data: Preview): string {
+    const paths = (cs: { path: string; from: string }[]) => cs.flatMap((c) => (c.from ? [c.path, c.from] : [c.path]));
+    const mine = paths(st?.changes ?? []);
+    if (!mine.length) return "";
+    const theirs = new Set(paths(data.changes));
+    const hit = [...new Set(theirs.has(".r3v.yaml") ? mine : mine.filter((p) => theirs.has(p)))];
+    if (!hit.length) return "";
+    const files = hit.slice(0, 3).join(", ") + (hit.length > 3 ? ", …" : "");
+    return t("This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.", { files });
+  }
+
+  // What a merge's toast adds when it kept uncommitted changes.
+  const keptText = (r: Result) => (r.keptWork ? " " + t("Your uncommitted changes are kept, still uncommitted.") : "");
+
   async function openMergePreview(name: string) {
     busy = "preview";
     try {
@@ -659,7 +676,7 @@
       archiveAfter = true;
       preview = {
         title: t("Merge “{from}” into “{into}”", { from: bl(name), into: bl(st?.branch ?? "") }), label: t("Merge and share"), data,
-        blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
+        blocked: mergeBlocked(data),
         archive: name !== "main" ? name : undefined,
         run: {
           name: "merge",
@@ -667,7 +684,7 @@
           call: (res, force) => api.MergeBranch(root, name, mergeMessage ?? "", res, force),
           done: (r) => {
             const nothing = r.action === "up-to-date" || r.action === "ahead";
-            toast(nothing ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000);
+            toast(nothing ? t("Nothing to merge from {from}", { from: bl(name) }) : t("Merged {from} into {into} and shared it", { from: bl(name), into: bl(st?.branch ?? "") }) + reopen() + keptText(r), "ok", 8000);
             if (archiveAfter && name !== "main") archiving = { branch: name, merged: true };
           },
         },
@@ -704,13 +721,13 @@
       mergeMessage = data.message;
       preview = {
         title: t("Merge {from} into “{into}”", { from: label, into: bl(st?.branch ?? "") }), label: t("Merge and share"), data,
-        blocked: st?.changes.length ? t("You have uncommitted changes. Commit a version first, then merge.") : "",
+        blocked: mergeBlocked(data),
         run: {
           name: "merge",
           merge: { kind: "merge", branch: v.branches[0] ?? "", version: label },
           call: (res, force) => api.MergeVersion(root, v.id, mergeMessage ?? "", res, force),
           done: (r) => toast(r.action === "up-to-date" || r.action === "ahead"
-            ? t("“{into}” already has {from}", { into: bl(st?.branch ?? ""), from: label }) : t("Merged {from} into {into} and shared it", { from: label, into: bl(st?.branch ?? "") }) + reopen(), "ok", 8000),
+            ? t("“{into}” already has {from}", { into: bl(st?.branch ?? ""), from: label }) : t("Merged {from} into {into} and shared it", { from: label, into: bl(st?.branch ?? "") }) + reopen() + keptText(r), "ok", 8000),
         },
       };
     } catch (e) {

@@ -2005,5 +2005,7 @@
 "This copy is {team}'s now, and your versions are shared there": "這份副本現在屬於 {team}，你的版本也已分享到那裡",
 "New: {kind} can lock too": "新功能：{kind}也可以鎖定",
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V 現在預設會鎖定它們。你的團隊之前自己選過種類，所以要加入後才會鎖定。",
-"Add": "加入"
+"Add": "加入",
+"This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "這次合併會改動你有未提交變更的檔案（{files}）。請先提交它們，再合併。",
+"Your uncommitted changes are kept, still uncommitted.": "你未提交的變更都保留著，仍未提交。"
 }

@@ -2005,5 +2005,7 @@
 "This copy is {team}'s now, and your versions are shared there": "这份副本现在属于 {team}，你的版本也已共享到那里",
 "New: {kind} can lock too": "新功能：{kind}也可以锁定",
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V 现在默认锁定它们。你的团队之前自己选过种类，所以要添加后才会锁定。",
-"Add": "添加"
+"Add": "添加",
+"This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "此合并会改动你有未提交变更的文件（{files}）。请先提交它们，再合并。",
+"Your uncommitted changes are kept, still uncommitted.": "你未提交的变更都保留着，仍未提交。"
 }

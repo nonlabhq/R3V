@@ -2005,5 +2005,7 @@
 "This copy is {team}'s now, and your versions are shared there": "이 사본은 이제 {team} 소속이며, 내 버전도 그곳에 공유했습니다",
 "New: {kind} can lock too": "새 기능: {kind}도 잠글 수 있습니다",
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V는 이제 기본으로 잠급니다. 팀이 이전에 종류를 직접 골랐기 때문에 추가하기 전에는 잠기지 않습니다.",
-"Add": "추가"
+"Add": "추가",
+"This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "이 병합은 커밋하지 않은 변경이 있는 파일을 바꿉니다({files}). 먼저 커밋한 다음 병합하세요.",
+"Your uncommitted changes are kept, still uncommitted.": "커밋하지 않은 변경은 그대로 남아 있습니다(아직 커밋 전)."
 }
