@@ -998,6 +998,43 @@ export class CloudPeople {
 }
 
 /**
+ * CloudRename is a name changed on R3V Cloud: the team's summary now, and
+ * the teams whose member record couldn't be written (not reached).
+ */
+export class CloudRename {
+    "team": TeamSummary;
+    "notUpdated": string[];
+
+    /** Creates a new CloudRename instance. */
+    constructor($$source: Partial<CloudRename> = {}) {
+        if (!("team" in $$source)) {
+            this["team"] = (new TeamSummary());
+        }
+        if (!("notUpdated" in $$source)) {
+            this["notUpdated"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CloudRename instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CloudRename {
+        const $$createField0_0 = $$createType21;
+        const $$createField1_0 = $$createType10;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("team" in $$parsedSource) {
+            $$parsedSource["team"] = $$createField0_0($$parsedSource["team"]);
+        }
+        if ("notUpdated" in $$parsedSource) {
+            $$parsedSource["notUpdated"] = $$createField1_0($$parsedSource["notUpdated"]);
+        }
+        return new CloudRename($$parsedSource as Partial<CloudRename>);
+    }
+}
+
+/**
  * CloudStatus is where the app stands with the service.
  */
 export class CloudStatus {
@@ -1142,7 +1179,7 @@ export class Conflict {
      * Creates a new Conflict instance from a string or object.
      */
     static createFrom($$source: any = {}): Conflict {
-        const $$createField11_0 = $$createType22;
+        const $$createField11_0 = $$createType23;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("text" in $$parsedSource) {
             $$parsedSource["text"] = $$createField11_0($$parsedSource["text"]);
@@ -1202,9 +1239,9 @@ export class ConvertFormat {
      * Creates a new ConvertFormat instance from a string or object.
      */
     static createFrom($$source: any = {}): ConvertFormat {
-        const $$createField3_0 = $$createType23;
-        const $$createField4_0 = $$createType23;
-        const $$createField5_0 = $$createType23;
+        const $$createField3_0 = $$createType24;
+        const $$createField4_0 = $$createType24;
+        const $$createField5_0 = $$createType24;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("bitrates" in $$parsedSource) {
             $$parsedSource["bitrates"] = $$createField3_0($$parsedSource["bitrates"]);
@@ -1493,9 +1530,9 @@ export class HunkText {
      * Creates a new HunkText instance from a string or object.
      */
     static createFrom($$source: any = {}): HunkText {
-        const $$createField0_0 = $$createType24;
-        const $$createField1_0 = $$createType24;
-        const $$createField2_0 = $$createType24;
+        const $$createField0_0 = $$createType25;
+        const $$createField1_0 = $$createType25;
+        const $$createField2_0 = $$createType25;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("base" in $$parsedSource) {
             $$parsedSource["base"] = $$createField0_0($$parsedSource["base"]);
@@ -1562,7 +1599,7 @@ export class KeptOpenWith {
      * Creates a new KeptOpenWith instance from a string or object.
      */
     static createFrom($$source: any = {}): KeptOpenWith {
-        const $$createField0_0 = $$createType26;
+        const $$createField0_0 = $$createType27;
         const $$createField1_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("last" in $$parsedSource) {
@@ -1750,7 +1787,7 @@ export class LockOutcome {
      */
     static createFrom($$source: any = {}): LockOutcome {
         const $$createField0_0 = $$createType10;
-        const $$createField1_0 = $$createType28;
+        const $$createField1_0 = $$createType29;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("locked" in $$parsedSource) {
             $$parsedSource["locked"] = $$createField0_0($$parsedSource["locked"]);
@@ -3029,7 +3066,7 @@ export class Result {
         const $$createField8_0 = $$createType5;
         const $$createField9_0 = $$createType5;
         const $$createField10_0 = $$createType56;
-        const $$createField11_0 = $$createType28;
+        const $$createField11_0 = $$createType29;
         const $$createField12_0 = $$createType58;
         const $$createField14_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
@@ -5895,16 +5932,16 @@ const $$createType17 = cloud$0.Invitation.createFrom;
 const $$createType18 = $Create.Array($$createType17);
 const $$createType19 = cloud$0.Project.createFrom;
 const $$createType20 = $Create.Array($$createType19);
-const $$createType21 = HunkText.createFrom;
-const $$createType22 = $Create.Nullable($$createType21);
-const $$createType23 = $Create.Array($Create.Any);
-const $$createType24 = HunkSide.createFrom;
-const $$createType25 = LastProgram.createFrom;
-const $$createType26 = $Create.Nullable($$createType25);
-const $$createType27 = HeldLock.createFrom;
-const $$createType28 = $Create.Array($$createType27);
-const $$createType29 = TeamSummary.createFrom;
-const $$createType30 = $Create.Array($$createType29);
+const $$createType21 = TeamSummary.createFrom;
+const $$createType22 = HunkText.createFrom;
+const $$createType23 = $Create.Nullable($$createType22);
+const $$createType24 = $Create.Array($Create.Any);
+const $$createType25 = HunkSide.createFrom;
+const $$createType26 = LastProgram.createFrom;
+const $$createType27 = $Create.Nullable($$createType26);
+const $$createType28 = HeldLock.createFrom;
+const $$createType29 = $Create.Array($$createType28);
+const $$createType30 = $Create.Array($$createType21);
 const $$createType31 = TeamProject.createFrom;
 const $$createType32 = $Create.Array($$createType31);
 const $$createType33 = SectionView.createFrom;

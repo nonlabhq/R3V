@@ -199,6 +199,12 @@ func GetMe(service string) (*Me, error) {
 	return &me, nil
 }
 
+// SetName changes the signed-in person's display name on the service (what
+// their teams get when they next ask who they are).
+func SetName(service, name string) error {
+	return do(service, "PATCH", "/v1/me", map[string]string{"name": name})
+}
+
 // TeamAddress is a hosted team's address, as the teams store keeps it.
 func TeamAddress(service, team string) string {
 	return "r3v-cloud+" + strings.TrimRight(service, "/") + "/v1/teams/" + team

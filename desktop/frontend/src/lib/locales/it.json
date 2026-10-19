@@ -1985,5 +1985,8 @@
 "{who} took {project} out of the section {section}": "{who} ha tolto {project} dalla sezione {section}",
 "{who} changed the sections": "{who} ha cambiato le sezioni",
 "Add project…": "Aggiungi progetto…",
-"Add a project or a section": "Aggiungi un progetto o una sezione"
+"Add a project or a section": "Aggiungi un progetto o una sezione",
+"Renamed on R3V Cloud, for everyone in your teams there": "Rinominato su R3V Cloud, per tutti nei tuoi team lì",
+"{teams} couldn't be reached: rename again later so they show the new name.": "{teams} non è raggiungibile: rinominati più tardi perché mostri il nuovo nome.",
+"Your name on R3V Cloud, in all your teams there.": "Il tuo nome su R3V Cloud, in tutti i tuoi team lì."
 }

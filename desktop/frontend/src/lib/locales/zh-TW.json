@@ -1985,5 +1985,8 @@
 "{who} took {project} out of the section {section}": "{who} 把 {project} 移出分組 {section}",
 "{who} changed the sections": "{who} 變更了分組",
 "Add project…": "新增專案…",
-"Add a project or a section": "新增專案或分組"
+"Add a project or a section": "新增專案或分組",
+"Renamed on R3V Cloud, for everyone in your teams there": "已在 R3V Cloud 改名，你在那裡的團隊都會看到",
+"{teams} couldn't be reached: rename again later so they show the new name.": "無法連上 {teams}：請稍後再改一次名，讓那裡顯示新名字。",
+"Your name on R3V Cloud, in all your teams there.": "你在 R3V Cloud 的名字，用於你在那裡的所有團隊。"
 }

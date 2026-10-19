@@ -1985,5 +1985,8 @@
 "{who} took {project} out of the section {section}": "{who} が {project} をセクション {section} から外しました",
 "{who} changed the sections": "{who} がセクションを変更しました",
 "Add project…": "プロジェクトを追加…",
-"Add a project or a section": "プロジェクトかセクションを追加"
+"Add a project or a section": "プロジェクトかセクションを追加",
+"Renamed on R3V Cloud, for everyone in your teams there": "R3V Cloud で名前を変更しました（そこのチーム全員に表示されます）",
+"{teams} couldn't be reached: rename again later so they show the new name.": "{teams} に接続できませんでした。新しい名前を表示させるには、あとでもう一度変更してください。",
+"Your name on R3V Cloud, in all your teams there.": "R3V Cloud でのあなたの名前（そこのすべてのチームで使われます）。"
 }
