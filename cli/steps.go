@@ -25,7 +25,7 @@ import (
 // makes one by hand, goes back to one, compares two.
 
 const stepsUsage = `
-steps (an agent's moves, on this computer; Nightly):
+steps (an agent's moves, on this computer):
   steps [--session ID] [--list] [--json] the latest session's prompts and steps (--list: the sessions)
   step [-m NOTE]                         a step of the files as they are now
   step start -m "WHAT"                   an agent without hooks begins a task (ends one left open)

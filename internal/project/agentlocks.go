@@ -18,9 +18,9 @@ import (
 // such a file (the hook) or commits it; the person's uncommitted changes
 // count as theirs. The list itself is package agentlock.
 
-// AgentLocks: agent locks are in this build (the Nightly channel while
-// they're new; agentlocks_nightly.go). Off, nothing is checked at commit.
-var AgentLocks = false
+// AgentLocks: agent locks are in this build (every build since 0.3; tests
+// turn it off to play an older R3V). Off, nothing is checked at commit.
+var AgentLocks = true
 
 // agentTool is the agent tool this repo works for (Repo.Actor: the CLI's,
 // from R3V_ACTOR or the tool's own mark), "" for a person. The app never

@@ -3,7 +3,7 @@
 // change ("locks" events: yours, someone's notice, a share), and what they
 // say in words. Off (the team's switch, the project's .r3v.yaml, a team on
 // its own storage), view.on is false and nothing shows. Agent locks
-// (Nightly: between the workspaces on this computer) come with them, an
+// (between the workspaces on this computer) come with them, an
 // agent's workspace or your changes as the holder; agents take and free
 // them without telling the app, so they are read again now and then.
 import { Events } from "@wailsio/runtime";

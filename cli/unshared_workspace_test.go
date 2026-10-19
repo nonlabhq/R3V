@@ -1,5 +1,3 @@
-//go:build nightly
-
 package cli
 
 import (

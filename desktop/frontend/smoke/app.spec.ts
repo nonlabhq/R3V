@@ -103,7 +103,7 @@ test("merges a branch, asking about what both sides changed", async () => {
   await expect(page.getByText(/Merged half-time-chorus into main and shared it/).first()).toBeVisible({ timeout: 30_000 });
 });
 
-// Nightly: a workspace for an agent, made beside the project, then removed.
+// A workspace for an agent, made beside the project, then removed.
 test("makes a workspace in the Workspaces tab, and removes it", async () => {
   // (the merge before offers archiving its branch: not now)
   const archive = page.getByRole("dialog", { name: /now that it's merged/ });

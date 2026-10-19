@@ -10,7 +10,7 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   changes in the folder that aren't this work: list the work's files and folders after the flags
   (`r3v commit -m "…" src/menu`), the rest stays uncommitted. Unfinished work isn't committed to
   be merged later ("WIP" versions): it stays uncommitted (switching parks it) until it's done.
-- Steps (R3V Nightly) let the user go back to any point of your work. Claude Code set up with
+- Steps let the user go back to any point of your work. Claude Code set up with
   `r3v agent setup` makes them with its hooks: nothing to do. Any other tool: begin each task with
   `r3v step start -m "what you're about to do" --json`, end it with
   `r3v step end -m "what you did" --json`, then commit if the work is finished. Never run

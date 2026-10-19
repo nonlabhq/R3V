@@ -9,9 +9,9 @@ import (
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
-// undoMergeUsage is undo-merge's line in the usage (Nightly).
+// undoMergeUsage is undo-merge's line in the usage.
 const undoMergeUsage = `
-taking back a merge (Nightly):
+taking back a merge:
   undo-merge VERSION [-m MESSAGE] [--strategy keep|undo|both] [--resolve KEY=keep|undo|both]
                                          a new version without what that merge brought in (the
                                          history stays); what changed since is merged, a conflict

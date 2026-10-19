@@ -23,9 +23,9 @@ import (
 // is; a session's turns (prompts) and steps are lines in
 // .r3v/steps/<session>.jsonl, this copy's.
 
-// Steps: agents' tool calls make steps (the Nightly channel while it's new;
-// steps_nightly.go).
-var Steps = false
+// Steps: agents' tool calls make steps (every build since 0.3; tests turn
+// it off to play an older R3V).
+var Steps = true
 
 const stepsDir = "steps"
 

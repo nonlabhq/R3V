@@ -3985,8 +3985,8 @@ export class State {
     "locksOffer": boolean;
 
     /**
-     * AgentWorkspaces: the Agents view is offered (Nightly, a team's
-     * project, its main copy); WorkspaceCount its workspaces here.
+     * AgentWorkspaces: the Agents view is offered (a team's project, its
+     * main copy); WorkspaceCount its workspaces here.
      * WorkspaceOf: this copy is a workspace, of the project in that folder.
      */
     "agentWorkspaces": boolean;
@@ -4208,7 +4208,7 @@ export class State {
  */
 export class StepsInfo {
     /**
-     * Available: this build makes steps (Nightly); On: and this copy does.
+     * Available: this build makes steps; On: and this copy does.
      */
     "available": boolean;
     "on": boolean;

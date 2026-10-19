@@ -20,7 +20,7 @@
   // happened lately, and its projects (those on this computer, then those
   // only on the cloud storage; a project's workspaces counted on it, not
   // listed) or its settings.
-  let { overview, team, projects, open, onopen, onadd, onnewsection, onsettings, onsection, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
+  let { overview, team, projects, open, onopen, onadd, onnewsection, onsettings, onsection, adding = false, reload, canMove = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
     projects: TeamProject[];
@@ -33,7 +33,6 @@
     adding?: boolean;
     reload: () => Promise<void>;
     canMove?: boolean;
-    agents?: boolean; // this build has agents (Nightly: their Workflow settings)
     section?: "projects" | "settings";
   } = $props();
 
@@ -265,7 +264,7 @@
   {:else}
     <div class="body settings">
       {#key team.id}
-        <TeamSettings {team} inline tabs workflowTab={agents || !!team.hosted} {reload} onclose={() => (section = "projects")}
+        <TeamSettings {team} inline tabs workflowTab {reload} onclose={() => (section = "projects")}
           onopenversion={openVersion}
           teams={overview.teams} {canMove} offline={!!overview.teamError}
           roots={projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root)} />

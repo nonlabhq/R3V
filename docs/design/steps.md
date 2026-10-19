@@ -1,7 +1,7 @@
 # Steps
 
-Status: first version built, Nightly (`project.Steps`): on this computer
-only. The second (the steps' records shared with their version) is to
+Status: first version built, in every build since 0.3 (`project.Steps`):
+on this computer only. The second (the steps' records shared with their version) is to
 come.
 
 An agent works in many small moves: one task can be fifty tool calls. When

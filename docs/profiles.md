@@ -96,7 +96,7 @@ handlers:
 
 R3V before 0.1.39 doesn't know `handlers:` and refuses the file, and Stable refuses it for now: set `requires: "0.1.39"` when you add it.
 
-## Workspaces (Nightly)
+## Workspaces
 
 An agent's workspace (`r3v workspace add`) gets the project's tracked files. To spare it building from nothing, `.r3v.yaml` can name build folders the rules leave out that a new workspace gets a copy of:
 

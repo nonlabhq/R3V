@@ -1,5 +1,3 @@
-//go:build nightly
-
 package cli
 
 import (
@@ -134,3 +132,4 @@ func TestStepStartEndWithoutHooks(t *testing.T) {
 		t.Fatalf("sessions: %+v", s)
 	}
 }
+

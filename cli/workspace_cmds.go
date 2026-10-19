@@ -1,14 +1,11 @@
-//go:build nightly
-
 package cli
 
-// Workspaces (several agents on one project) are on the Nightly channel
-// while they're new.
+// Workspaces (several agents on one project), in every build since 0.3.
 func init() {
 	extraCommands["workspace"] = cmdWorkspace
 	jsonCommands["workspace"] = true
 	extraUsage += `
-workspaces (several agents on one project; Nightly):
+workspaces (several agents on one project):
   workspace add [<folder>] --branch NAME [--from BRANCH|VERSION]
                                          another copy of the project on a branch of its own, made
                                          from the files here (in <project>.workspaces beside it

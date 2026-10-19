@@ -1,8 +1,6 @@
-//go:build nightly
-
 package cli
 
-// Steps are on the Nightly channel while they're new.
+// Steps, in every build since 0.3.
 func init() {
 	extraCommands["steps"] = cmdSteps
 	extraCommands["step"] = cmdStep

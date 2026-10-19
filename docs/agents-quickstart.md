@@ -1,13 +1,13 @@
 # Agents on your project: a quick start
 
 For people who want AI agents (Claude Code; Codex next) to work on a
-project versioned with R3V, several at once. On the Nightly channel.
+project versioned with R3V, several at once (R3V 0.3 or later).
 How it works: [design/agent-workspaces.md](design/agent-workspaces.md);
 the words: [glossary.md](glossary.md).
 
 ## Once per project
 
-1. **R3V Nightly** (Settings › Updates › Channel: Nightly).
+1. **R3V 0.3 or later** (Settings › Updates).
 2. **A team**: the project must be in one (an agent's work goes on a
    branch, and branches are the team's). Your own bucket
    ([team-setup.md](team-setup.md)), or R3V Cloud.

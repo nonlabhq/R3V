@@ -69,7 +69,7 @@
     api.ProjectInfo(p.root).then((i) => (info = i)).catch(() => {});
   });
 
-  // Agents' steps (Nightly): this computer's choices.
+  // Agents' steps: this computer's choices.
   let steps = $state<StepsInfo | null>(null);
   $effect(() => {
     if (!here) return;

@@ -14,7 +14,7 @@ import (
 // workspace list.
 
 const resultsUsage = `
-results (what builds and tests said about a version; Nightly):
+results (what builds and tests said about a version):
   result <check> pass|fail|running [-m NOTE] [--version V]
                                          record a check's result for the version you're on
                                          (e.g. result tests pass -m "cargo test: 214 passed")

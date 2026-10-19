@@ -46,13 +46,13 @@ import (
 // says where a copy is, or what it has under way, is its own. Local
 // cleanup in any copy keeps what every copy needs (otherCopies).
 
-// AgentWorkspaces: making workspaces (the Nightly channel while it's new;
-// workspaces_nightly.go). Projects with workspaces work either way.
-var AgentWorkspaces = false
+// AgentWorkspaces: making workspaces (every build since 0.3; tests turn it
+// off to play an older R3V). Projects with workspaces work either way.
+var AgentWorkspaces = true
 
 var (
 	// ErrWorkspacesNotInBuild: this build makes no workspaces.
-	ErrWorkspacesNotInBuild = errors.New("workspaces are on the Nightly channel")
+	ErrWorkspacesNotInBuild = errors.New("workspaces need a newer R3V")
 	// ErrInWorkspace: something only the main copy of a project does.
 	ErrInWorkspace = errors.New("this is a workspace of a project: do this in the project's main copy")
 	// ErrWorkspaceOrphaned: the main copy a workspace uses is gone.

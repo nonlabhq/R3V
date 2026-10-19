@@ -16,7 +16,7 @@ import (
 // the graph.
 
 const milestonesUsage = `
-milestones (a version named for the whole team, like a Git tag; Nightly):
+milestones (a version named for the whole team, like a Git tag):
   milestone NAME [VERSION] [-m NOTE]     name a version the team has (default: the one you're on)
   milestone rename NAME NEW              rename a milestone
   milestone note NAME NOTE               change its note ("" for none)
