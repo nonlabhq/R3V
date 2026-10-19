@@ -34,6 +34,7 @@
   // this computer (openwith.ts).
   let menu = $state(false);
   let programs = $state<Program[] | null>(null);
+  let programsFor = "";
   let saved = $state(0); // kept changed: read again
   let kept = $derived.by(() => { void saved; return readOpenWith(st.root); });
   let main = $derived<"tool" | "program" | "menu">(st.openable.length ? "tool" : kept.last ? "program" : "menu");
@@ -56,9 +57,12 @@
   function openMenu() {
     menu = true;
     first();
-    const chosen = kept.chosen;
+    const chosen = kept.chosen, root = st.root;
+    if (programsFor !== root) programs = null; // another project's chosen ones
     api.OpenPrograms(chosen).then((l) => {
+      if (root !== st.root) return;
       programs = l ?? [];
+      programsFor = root;
       // A chosen program no longer there is dropped (and forgotten).
       const still = programs.filter((p) => p.chosen).map((p) => p.id);
       if (still.length !== chosen.length) {
@@ -150,7 +154,7 @@
     <div class="open-wrap" bind:this={wrap}>
       <div class="split">
         <button class="main" class:primary={main !== "menu"} onclick={mainAction} title={mainTitle}
-          aria-haspopup={main === "menu" || st.openable.length > 1 ? "menu" : undefined}>{#if main !== "menu"}▶ {/if}{mainLabel}</button>
+          aria-haspopup={main === "menu" || st.openable.length > 1 ? "menu" : undefined}>{main !== "menu" ? "▶ " : ""}{mainLabel}</button>
         <button class="more" class:primary={main !== "menu"} bind:this={toggle} onclick={() => (menu ? closeMenu() : openMenu())}
           aria-haspopup="menu" aria-expanded={menu} aria-label={t("More ways to open the project")} title={t("More ways to open the project")}>▾</button>
       </div>

@@ -112,6 +112,16 @@ test("lists the shortcuts, and Esc closes the list", async () => {
   await expect(page.getByRole("dialog", { name: "Keyboard shortcuts" })).toHaveCount(0);
 });
 
+test("offers the project's sets and other programs for its folder in the Open in menu", async () => {
+  await page.getByRole("button", { name: "More ways to open the project" }).click();
+  const menu = page.getByRole("menu", { name: "Open in…" });
+  await expect(menu.getByText("Project files")).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Explorer" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Choose a program…" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+});
+
 test("opens the project's settings", async () => {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(page.getByText(/rules|Rules/).first()).toBeVisible();
