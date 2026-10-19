@@ -202,6 +202,8 @@ r3v verify --repair   # bring back what can be: from the project folder or the t
 
 The app does the same from a project's ⋯ menu in the sidebar (**Check project…**). A file damaged here (a failing disk, say) comes back from a file in the project folder with the same content, or from the team's storage; what has no copy left anywhere is listed with the version it's in.
 
+It says what is where. Versions: every version on this computer, of which those in this branch's history (what `r3v log` lists); the others are other branches' or workspaces' (a version committed `--local` in a workspace, say) or R3V's own (work kept through an update). Files: those stored in `.r3v` (read again), and those only in the team's storage: once a version is shared, R3V lets go of its copy here of files the team's storage has (Live Sets and the rules stay) and downloads one when a version needs it, so few files stored here is expected, not history lost; going back to an old version then needs the team's storage. `--json`: `versions`, `in_history`, `other_versions`, `folder_lists`, `local_files`, `local_bytes`, `team_only_files`, `folder_only_files`, `team_checked`, `problems`, `open_problems`, `summary`.
+
 ## Backing up the team
 
 ```

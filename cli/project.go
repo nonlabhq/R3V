@@ -685,6 +685,12 @@ func cmdVerify(args []string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	if jsonMode {
+		out := verifyOf(rep)
+		out.TeamUnreachable = r.Config.Remote != nil && !rep.TeamChecked
+		result("verify", out, nil)
+		return 0, nil
+	}
 	open := 0
 	for _, p := range rep.Problems {
 		what := p.ID[:min(10, len(p.ID))]
@@ -714,6 +720,50 @@ func cmdVerify(args []string) (int, error) {
 		return 1, nil
 	}
 	return 0, nil
+}
+
+// verifyJSON is `r3v verify --json`: what was checked, and where the files
+// are (few kept here after sharing is expected: team_only_files).
+type verifyJSON struct {
+	Versions        int   `json:"versions"`       // every version record on this computer
+	InHistory       int   `json:"in_history"`     // of them, this branch's history (as log lists it)
+	OtherVersions   int   `json:"other_versions"` // other branches' or workspaces', or R3V's own
+	FolderLists     int   `json:"folder_lists"`   // checked
+	LocalFiles      int   `json:"local_files"`    // stored on this computer, read again
+	LocalBytes      int64 `json:"local_bytes"`
+	TeamOnlyFiles   int   `json:"team_only_files"`   // only in the team's storage (downloaded when needed)
+	FolderOnlyFiles int   `json:"folder_only_files"` // only in the project folder
+	TeamChecked     bool  `json:"team_checked"`
+	// TeamUnreachable: in a team whose storage couldn't be asked: files only
+	// it has weren't checked.
+	TeamUnreachable bool          `json:"team_unreachable"`
+	Repaired        bool          `json:"repaired"` // --repair was given
+	Problems        []problemJSON `json:"problems"`
+	OpenProblems    int           `json:"open_problems"` // not repaired (text: exit 1)
+	Summary         string        `json:"summary"`
+}
+
+type problemJSON struct {
+	Kind   string `json:"kind"` // version, folder-list, file
+	ID     string `json:"id"`
+	Path   string `json:"path,omitempty"`
+	Detail string `json:"detail"`
+	Fixed  bool   `json:"fixed"`
+	How    string `json:"how,omitempty"`
+}
+
+func verifyOf(rep *project.VerifyReport) verifyJSON {
+	out := verifyJSON{Versions: rep.Versions, InHistory: rep.InHistory, OtherVersions: rep.Versions - rep.InHistory,
+		FolderLists: rep.Folders, LocalFiles: rep.Files, LocalBytes: rep.Bytes, TeamOnlyFiles: rep.TeamOnly,
+		FolderOnlyFiles: rep.InFolder, TeamChecked: rep.TeamChecked, Repaired: rep.Repaired,
+		Problems: []problemJSON{}, Summary: rep.Summary()}
+	for _, p := range rep.Problems {
+		out.Problems = append(out.Problems, problemJSON{Kind: p.Kind, ID: p.ID, Path: p.Path, Detail: p.Detail, Fixed: p.Fixed, How: p.How})
+		if !p.Fixed {
+			out.OpenProblems++
+		}
+	}
+	return out
 }
 
 func cmdStorageCleanup(args []string) error {

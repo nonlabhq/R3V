@@ -40,7 +40,7 @@ var jsonMode bool
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
 	"version": true, "backup": true, "switch": true, "goto": true, "checkout": true, "parked": true,
-	"discard": true, "rules": true, "profile": true} // (rules: only rules ignore)
+	"discard": true, "rules": true, "profile": true, "verify": true} // (rules: only rules ignore)
 
 // stripJSON takes --json (or -json) out of args.
 func stripJSON(args []string) ([]string, bool) {

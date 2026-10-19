@@ -90,8 +90,8 @@ set commands:
         [--strategy fail|ours|theirs|both]
 
 for programs and AI agents:
-  --json                                 status, log, save, update, merge, backup, version: one
-                                         JSON object on stdout; errors with fixed codes
+  --json                                 status, log, save, update, merge, backup, verify, version:
+                                         one JSON object on stdout; errors with fixed codes
   --wait SECONDS                         how long a command waits for the app or another command
                                          working on the project (default 10); reading commands
                                          (status, log...) read without waiting

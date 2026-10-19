@@ -14,7 +14,7 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `project`, `section`, `lock` and `locks`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `verify`, `project`, `section`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -222,6 +222,20 @@ Merging another branch always makes a version.
 through first parents: a branch's own versions, each merge once); a merge
 on it has `merged_count`, how many versions it brought in (text: "(+N
 versions)"). With `log BRANCH` too.
+
+`verify [--repair]` checks the history: `versions` (every version record
+on this computer), `in_history` (of them, this branch's history: what
+`log` lists), `other_versions` (the rest: other branches' or workspaces',
+or R3V's own, as work kept through an update), `folder_lists`,
+`local_files` and `local_bytes` (stored here, read again),
+`team_only_files` (only in the team's storage), `folder_only_files`,
+`team_checked` (`team_unreachable`: the team's storage couldn't be asked),
+`problems` (`kind`, `id`, `path`, `detail`, `fixed`, `how`),
+`open_problems` (not repaired: `--json` exits 0, read this; the text
+output exits 1) and `summary`. Once versions are shared R3V lets go of
+its copies here of files the team's storage has (Live Sets and the rules
+stay) and downloads one when a version needs it: few `local_files` with
+many `team_only_files` is expected, not history lost.
 
 `branch new NAME --agent` starts an agent's branch (its kind is `agent`,
 its owner the member you work for; Nightly, on a team that keeps branch
