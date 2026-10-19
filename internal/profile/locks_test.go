@@ -83,13 +83,13 @@ func TestLockingTeamTimesProject(t *testing.T) {
 }
 
 func TestDefaultLockKinds(t *testing.T) {
-	want := []string{"unreal", "unity", "godot", "blender", "source-art"}
+	want := []string{"unreal", "unity", "godot", "blender", "source-art", "models"}
 	if got := DefaultLockKinds(); !reflect.DeepEqual(got, want) {
 		t.Errorf("defaults: %v", got)
 	}
 	l := ResolveLocking(TeamLocks{On: true, Kinds: DefaultLockKinds()}, FileLocks{})
 	for p, want := range map[string]bool{"a.umap": true, "b.prefab": true, "c.scn": true, "d.tscn": false, "e.psd": true,
-		"f.als": false, "g.wav": false, "h.png": false} {
+		"f.als": false, "g.wav": false, "h.png": false, "Assets/ship.fbx": true, "i.obj": true, "j.dae": true, "k.glb": true} {
 		if l.AutoLocks(p) != want {
 			t.Errorf("%s: %v", p, !want)
 		}
