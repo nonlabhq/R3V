@@ -237,9 +237,7 @@ user first).
 `saved` (the version committed, or null), `from`, `to`, `merged` (what a merge
 took from each side), `relinked` (sample paths rewritten for this computer),
 `reopen_sets` (sets changed under Live: the user must reopen them),
-`restored` (true: the team had deleted the project, from another copy or
-by moving it to another team, and kept it; sharing brought it back: tell
-the user).
+`restored` (`project restore` only: the project is back on its team).
 `commit` also has `warnings`, as `status` has them, about what the
 version just took (a commit is never refused for one). `merge` also has
 `same_files_as` (a version id) when the merge version's files are
@@ -332,6 +330,21 @@ for everyone in the team (nothing deleted; the folder here stays); it's
 refused with `unsaved_changes` or `unshared_versions` unless `--force`
 (ask the user first), and on R3V Cloud teams with `not_admin` for anyone
 but owners and admins. Archive or unarchive only when the user asks.
+
+A project its team deleted (moved to another team, or deleted for
+everyone, from another copy or computer) while this copy still points at
+it: `commit` commits here and stops with `project_deleted`; nothing is
+shared, nothing brought back. `error.deleted`: `project`, `team`, `time`,
+`by` (a member's name), `moved_to` (the team it moved to), `moved_to_here`
+(this computer has joined that team), `not_allowed`. **Never pick a way
+out on your own: tell the user what happened and ask.** Their choices:
+`r3v remote --team "<moved_to>"` points this copy at the team it moved to
+(only for a project its team no longer has, and that team has; the next
+`commit` shares the versions there, merging what was shared there
+meanwhile); `r3v project restore` brings it back to its team with its
+history and shares the versions (on R3V Cloud teams owners and admins
+only, while the team keeps it, 30 days; result as `commit`'s, `restored`:
+true).
 `status` gives `team.archived: true` for an archived project.
 
 `section` (sections group the team's projects, the same for
@@ -431,7 +444,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
-| 1 | `project_deleted` | the project was deleted from its team (or moved to another) and only an owner or admin can bring it back (by sharing it), or the team no longer keeps it; the versions stay committed here: tell the user |
+| 1 | `project_deleted` | the team deleted the project (moved it to another team, or deleted it for everyone); the versions stay committed here. Read `deleted` and ask the user: never point the copy elsewhere or bring the project back on your own (see "A project its team deleted") |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |
 | 1 | `in_workspace` | only the project's main copy does this (connecting it to a team, moving it): run it there |

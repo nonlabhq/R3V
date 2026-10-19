@@ -25,6 +25,9 @@ projects of the team:
                                          changes or versions not shared unless --force (ask the user);
                                          on R3V Cloud teams, admins only
   project unarchive                      bring this project back for the team
+  project restore                        bring this project back to its team, which deleted it (or it
+                                         moved away), with its history, and share the versions here;
+                                         on R3V Cloud teams, owners and admins only (ask the user)
 `
 }
 
@@ -48,7 +51,7 @@ type projectListJSON struct {
 	Here       bool   `json:"here"` // the project in this folder
 }
 
-const projectUsage = "usage: r3v project list | archive [--force] | unarchive"
+const projectUsage = "usage: r3v project list | archive [--force] | unarchive | restore"
 
 func cmdProject(args []string) error {
 	if len(args) == 0 {
@@ -62,6 +65,9 @@ func cmdProject(args []string) error {
 	}
 	if len(pos) > 0 || *force && args[0] != "archive" {
 		return usageError(projectUsage)
+	}
+	if args[0] == "restore" {
+		return projectRestore()
 	}
 	r, err := openRead()
 	if err != nil {
@@ -111,6 +117,33 @@ func cmdProject(args []string) error {
 		return nil
 	}
 	return usageError(projectUsage)
+}
+
+// projectRestore brings the project back to its team, which deleted it,
+// and shares the versions here (as commit does, nothing committed).
+func projectRestore() error {
+	r, err := openRepo()
+	if err != nil {
+		return err
+	}
+	if r.Config.Remote == nil {
+		return project.ErrNoRemote
+	}
+	defer tidy(r)
+	r.RestoreDeleted = true
+	res, err := r.Share(project.MergeOptions{Strategy: "fail"})
+	if err != nil {
+		return err
+	}
+	out := syncOf(res)
+	result("project", out, func() {
+		printMerge(res)
+		if !res.Restored {
+			fmt.Println("the project is on its team: nothing to bring back")
+		}
+		fmt.Println("shared with the team")
+	})
+	return nil
 }
 
 // checkAllShared fails when the copy here has work the team hasn't got.

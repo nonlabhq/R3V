@@ -124,6 +124,22 @@ type cliError struct {
 	Holder    *holderJSON // project_busy: who holds the project
 	// Suggestion: the branch meant, when one asked for isn't there.
 	Suggestion string
+	Deleted    *deletedJSON // project_deleted: what happened
+}
+
+// deletedJSON is what the team's log tells of a project deleted from its
+// team (project_deleted).
+type deletedJSON struct {
+	Project string `json:"project"`
+	Team    string `json:"team"`
+	Time    string `json:"time,omitempty"` // RFC 3339
+	By      string `json:"by,omitempty"`   // a member's name
+	// MovedTo: the team it moved to; MovedToHere: this computer has joined
+	// it (r3v remote --team points this copy there).
+	MovedTo     string `json:"moved_to,omitempty"`
+	MovedToHere bool   `json:"moved_to_here,omitempty"`
+	// NotAllowed: r3v project restore was refused: owners and admins only.
+	NotAllowed bool `json:"not_allowed,omitempty"`
 }
 
 // holderJSON is who holds a project's lock, as it recorded itself (Running
@@ -171,6 +187,8 @@ type errorJSON struct {
 	Holder    *holderJSON    `json:"holder,omitempty"`
 	// Suggestion: the closest branch to one asked for that isn't there.
 	Suggestion string `json:"suggestion,omitempty"`
+	// Deleted: project_deleted's details.
+	Deleted *deletedJSON `json:"deleted,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
 	// having failed after.
 	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
@@ -202,8 +220,6 @@ var codes = []struct {
 	{project.ErrNothingToUndo, "nothing_to_undo", exitError, "nothing to do: the branch already is without those changes"},
 	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
-	{project.ErrProjectDeleted, "project_deleted", exitError,
-		"the project was deleted from its team (or moved to another): the versions stay here; tell the user (an owner or admin of the team brings it back by sharing it)"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
 	{project.ErrWorkspaceNotDone, "workspace_not_merged", exitError,
 		"merge its branch (r3v merge <branch> in the main copy), commit or discard its changes; or --force to lose them"},
@@ -257,6 +273,10 @@ func classify(err error) *cliError {
 		return &cliError{Code: "project_busy", Exit: exitLater, Err: err, Holder: holderOf(busy.Holder),
 			Hint: "the app or another command is working on the project: try again in a moment (or wait longer: --wait SECONDS)"}
 	}
+	var gone *project.DeletedError
+	if errors.As(err, &gone) {
+		return deletedError(err, gone)
+	}
 	var noBranch *project.NoBranchError
 	if errors.As(err, &noBranch) {
 		return &cliError{Code: "error", Exit: exitError, Err: err, Suggestion: noBranch.Suggestion}
@@ -291,6 +311,28 @@ func classify(err error) *cliError {
 	return &cliError{Code: "error", Exit: exitError, Err: err}
 }
 
+// deletedError is project_deleted, with how to go on: point this copy at
+// the team the project moved to, or (owners and admins) bring it back.
+func deletedError(err error, gone *project.DeletedError) *cliError {
+	d := &deletedJSON{Project: gone.Project, Team: gone.Team, By: gone.By, MovedTo: gone.MovedTo,
+		MovedToHere: gone.MovedToTeam != "", NotAllowed: gone.NotAllowed}
+	if !gone.Time.IsZero() {
+		d.Time = gone.Time.UTC().Format(time.RFC3339)
+	}
+	hint := "the versions stay committed here; ask the user what to do: "
+	switch {
+	case gone.MovedToTeam != "":
+		hint += fmt.Sprintf("`r3v remote --team %q` points this copy at the team it moved to (its versions shared there by the next commit)", gone.MovedTo)
+	case gone.MovedTo != "":
+		hint += fmt.Sprintf("it moved to %s, which this computer hasn't joined: join it in R3V, then `r3v remote --team %q`", gone.MovedTo, gone.MovedTo)
+	case gone.NotAllowed:
+		hint += "an owner or admin of the team can bring it back (`r3v project restore`)"
+	default:
+		hint += "an owner or admin of the team can bring it back, with its history: `r3v project restore`"
+	}
+	return &cliError{Code: "project_deleted", Exit: exitError, Err: err, Hint: hint, Deleted: d}
+}
+
 // fail reports err (text on stderr, or JSON on stdout) and returns the exit
 // status.
 func fail(command string, err error) int {
@@ -298,11 +340,11 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Deleted: ce.Deleted, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
-	if ce.Code == "merge_conflict" { // the conflicts are in the message; how to go on is not
+	if ce.Code == "merge_conflict" || ce.Code == "project_deleted" { // (how to go on isn't in the message)
 		fmt.Fprintln(os.Stderr, ce.Hint)
 	}
 	return ce.Exit
