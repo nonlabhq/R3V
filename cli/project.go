@@ -259,6 +259,10 @@ type statusJSON struct {
 	Base *baseJSON `json:"base,omitempty"`
 	// Warnings: what is worth a look before committing (see warningJSON).
 	Warnings []warningJSON `json:"warnings"`
+	// Unshared: versions committed here the team's branch doesn't have
+	// (commit --local); no other copy sees them until shared. Absent
+	// without a team, or when it can't be reached.
+	Unshared *int `json:"unshared,omitempty"`
 }
 
 // warningJSON is a word before committing, never a refusal. Code
@@ -279,6 +283,12 @@ type warningJSON struct {
 	Bytes   int64  `json:"bytes"`
 	Rule    string `json:"rule"`
 	Pattern string `json:"pattern"`
+	// Code "unshared_versions" (merge, update: unshared.go): another copy
+	// here with versions not shared, which this couldn't see; Reason says
+	// so in English.
+	Workspace string `json:"workspace,omitempty"`
+	Branch    string `json:"branch,omitempty"`
+	Count     int    `json:"count,omitempty"`
 }
 
 func builtWarnings(found []project.BuiltFolder) []warningJSON {
@@ -378,6 +388,11 @@ func cmdStatus(args []string) error {
 			archived, _ := remote.ArchivedProjects(c)
 			_, out.Team.Archived = archived[r.Config.ProjectID]
 		}
+		if out.Team.Error == "" {
+			if n, err := r.Unshared(); err == nil {
+				out.Unshared = &n
+			}
+		}
 		if c, err := r.Client(); err == nil && out.Team.Error == "" && remote.ProjectSections {
 			ss, _ := remote.Sections(c)
 			if i := remote.FindSection(ss, remote.SectionOf(ss, r.Config.ProjectID)); i >= 0 {
@@ -432,6 +447,9 @@ func printStatus(r *project.Repo, s statusJSON) {
 		fmt.Println("team: new versions saved by others (run `r3v update`)")
 	default:
 		fmt.Println("team: up to date")
+	}
+	if s.Unshared != nil && *s.Unshared > 0 {
+		fmt.Printf("%d version(s) committed here not shared yet: the team and the project's other copies don't see them; `r3v commit` shares them\n", *s.Unshared)
 	}
 	printSuggestions(r)
 	for _, p := range s.InUse {

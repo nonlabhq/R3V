@@ -20,9 +20,12 @@ type workspaceJSON struct {
 	Created    string `json:"created"`     // RFC 3339
 	// With list: where it is. Ahead and behind (of its base branch) are
 	// null when the team can't be reached.
-	Head         string `json:"head,omitempty"`
-	Ahead        *int   `json:"ahead,omitempty"`
-	Behind       *int   `json:"behind,omitempty"`
+	Head   string `json:"head,omitempty"`
+	Ahead  *int   `json:"ahead,omitempty"`
+	Behind *int   `json:"behind,omitempty"`
+	// Unshared: its versions its branch on the team lacks (commit --local:
+	// a merge here can't see them); null when the team can't be reached.
+	Unshared     *int   `json:"unshared,omitempty"`
 	Changes      int    `json:"changes"` // files changed, not committed
 	Parked       int    `json:"parked"`  // sets of parked changes
 	LastActivity string `json:"last_activity,omitempty"`
@@ -99,7 +102,7 @@ func cmdWorkspace(args []string) error {
 		out := []workspaceJSON{}
 		for _, s := range list {
 			w := workspaceOf(s.WorkspaceEntry)
-			w.BranchName, w.Head, w.Ahead, w.Behind = s.BranchName, s.Head, s.Ahead, s.Behind
+			w.BranchName, w.Head, w.Ahead, w.Behind, w.Unshared = s.BranchName, s.Head, s.Ahead, s.Behind, s.Unshared
 			w.Changes, w.Parked, w.Missing, w.Results = s.Changes, s.Parked, s.Missing, s.Results
 			w.LastActivity = s.LastActivity.UTC().Format(time.RFC3339)
 			out = append(out, w)
@@ -119,6 +122,10 @@ func cmdWorkspace(args []string) error {
 				}
 				fmt.Printf("%s  %s  %s, %d change(s) not committed  (last %s)\n", w.Folder, w.BranchName, where,
 					w.Changes, w.LastActivity)
+				if w.Unshared != nil && *w.Unshared > 0 {
+					fmt.Printf("  %d version(s) not shared yet (committed --local): merging %s doesn't see them until `r3v commit` there shares them\n",
+						*w.Unshared, w.BranchName)
+				}
 				if line := resultsLine(w.Results); line != "" {
 					fmt.Println("  " + line)
 				}

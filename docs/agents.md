@@ -166,6 +166,7 @@ when a field changes meaning; new fields may appear any time.
 | `changes` | `path`, `status` (`added`, `modified`, `deleted`, `renamed` with `from`, `untracked`: still on disk but the rules leave it out), `set_changes` (for Live sets: tracks, devices, clips changed, one line each), `weight` (for Live sets, the biggest kind of change: `noise` a plugin re-saving its own state, `tidy` names/colors/order/groups, `mix`, `sound` devices, `arrangement` clips/notes/tracks/tempo) |
 | `base` | in a workspace, when the branch it was made from has versions this branch hasn't: `branch` (its name) and `behind` (how many); `r3v merge <branch>` brings them in (`update` gets this branch's only). Also in `update --json` |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v rules preset <folder> <preset>` |
+| `unshared` | versions committed here (`commit --local`) the team's branch doesn't have: no one else, not even this computer's other copies of the project, sees them until a commit shares them. Absent without a team or when it can't be reached |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
 | `warnings` | worth a look before committing (never a refusal): `code`, and its fields. Code `looks_built`: a folder new in the changes looks like a build's output, named like a folder the rules leave out (`target-dx12/` beside `target/`) or holding 50 built files (`.obj`, `.pdb`, `.rlib`…) or 200 MB (then `folder` is where most of those are: `tools/out/`, not all of a new `tools/`); `folder`, `kind` (why: `name`, named like `like`, the ignored folder, e.g. `"Backup/"`; `built`, built files; `size`, new bytes), `reason` (the same in English, for people), `files`, `bytes`, `rule` (the line for `.r3v.yaml`'s `rules:`, e.g. `ignore: "target-*/"`) and `pattern` (its pattern) |
 
@@ -253,7 +254,15 @@ took from each side), `relinked` (sample paths rewritten for this computer),
 `reopen_sets` (a merge changed Live Sets under Live: the user must reopen them; never in a project
 without sets, a Unity one say).
 `commit` also has `warnings`, as `status` has them, about what the
-version just took (a commit is never refused for one). `merge` also has
+version just took (a commit is never refused for one). `update` and
+`merge` (and their `--preview`) have `unshared_elsewhere` when another
+copy of the project on this computer (the main copy, a workspace) has
+versions on that branch not shared yet (`commit --local`): they aren't on
+the team's branch, so `up-to-date` or `ahead` doesn't mean they are in.
+Each: `workspace` (its folder), `main_copy`, `branch`, `count`; each also
+a warning in `warnings`: `code` `unshared_versions`, `reason`,
+`workspace`, `branch`, `count`. Ask that copy's agent or the user to
+commit there (it shares them), then merge again. `merge` also has
 `same_files_as` (a version id) when the merge version's files are
 exactly that version's: the branch hadn't moved since it parted.
 
@@ -327,7 +336,9 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
 - `workspace list`: `main` (the main copy's folder), `workspaces`: each as
   above with `head`, `ahead` and `behind` (versions of its branch not in
   `base`, and of `base` not on it; absent when the team can't be reached),
-  `changes` (files changed, not committed), `parked`, `last_activity`,
+  `unshared` (versions committed there `--local`, not on the team's
+  branch: a merge here doesn't see them), `changes` (files changed, not
+  committed), `parked`, `last_activity`,
   `missing` (the folder is gone: remove it from the list).
 - `workspace remove <folder> [--force]`: `removed`. Refused
   (`workspace_not_merged`) while its versions aren't all merged into
@@ -428,7 +439,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared |
 | 1 | `on_older_version` | on an older version: `r3v goto latest` |
 | 1 | `switch_unfinished` | a switch stopped half-way and its files aren't put back (see `unfinished`): nothing was committed. Run any command to let R3V finish or roll back the step; if it reports `changed_since_switch`, ask the user, then `r3v goto <version> --force` (replacing those files) or the app's offer |
-| 1 | `unshared_versions` | `r3v commit -m ...` shares them |
+| 1 | `unshared_versions` | `r3v commit -m ...` shares them. (Also a warning's code, never a refusal, in `merge` and `update`: another copy here has versions not shared) |
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |
 | 1 | `files_locked_by_agent` | another copy of the project on this computer (an agent's workspace, or the project's main copy) holds files the commit or `lock` needs (`locks`: `path`, `holder` `agent`\|`person`, `workspace`, `branch`, `actor`, `folder` (that copy's), `main_copy` (true: the project's main copy holds it; no merge frees its locks)); the message says who and where. Nothing was committed or locked: leave those files, or ask the user |

@@ -208,6 +208,9 @@ type previewJSON struct {
 	// SameFilesAs: the merge version will have exactly this version's
 	// files (you are behind it); its results carry over.
 	SameFilesAs string `json:"same_files_as,omitempty"`
+	// UnsharedElsewhere, Warnings: as in merge's and update's results.
+	UnsharedElsewhere []unsharedJSON `json:"unshared_elsewhere,omitempty"`
+	Warnings          []warningJSON  `json:"warnings,omitempty"`
 }
 
 func previewOf(r *project.Repo, p *project.Preview) previewJSON {
@@ -300,7 +303,9 @@ func cmdMergeBranch(args []string) error {
 		if err != nil {
 			return err
 		}
-		result("merge", previewOf(r, p), func() { printPreview(p, "branch "+pos[0]) })
+		out := previewOf(r, p)
+		out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, key)
+		result("merge", out, func() { printPreview(p, "branch "+pos[0]); printUnshared(out.UnsharedElsewhere) })
 		return nil
 	}
 	if err := guardLiveAlways(r, *force); err != nil {
@@ -314,10 +319,12 @@ func cmdMergeBranch(args []string) error {
 	}
 	out := syncOf(res)
 	out.ReopenSets = reopenSets(r, res, before, r.Head())
+	out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, key)
 	result("merge", out, func() {
+		defer printUnshared(out.UnsharedElsewhere)
 		switch res.Action {
 		case "up-to-date", "ahead":
-			fmt.Printf("nothing to merge: you already have everything from %s\n", pos[0])
+			fmt.Printf("nothing to merge: you already have everything the team's branch %s has\n", pos[0])
 		default:
 			printMerge(res)
 			reopen := ""

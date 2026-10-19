@@ -301,6 +301,12 @@ type syncJSON struct {
 	// SameFilesAs: the merge version has exactly this version's files (the
 	// branch was behind it); its results carry over.
 	SameFilesAs string `json:"same_files_as,omitempty"`
+	// UnsharedElsewhere (update, merge): the project's other copies here
+	// with versions on that branch not shared, which this couldn't see;
+	// each also a warning "unshared_versions". (commit has warnings of
+	// its own.)
+	UnsharedElsewhere []unsharedJSON `json:"unshared_elsewhere,omitempty"`
+	Warnings          []warningJSON  `json:"warnings,omitempty"`
 }
 
 // commitJSON is r3v commit's result: Warnings as status has them, of what
@@ -409,7 +415,8 @@ func cmdCommit(args []string) error {
 		switch out.Action {
 		case "local":
 			if *local && r.Config.Remote != nil {
-				fmt.Printf("committed version %s on this computer: your next commit shares it\n", short(m.ID))
+				fmt.Printf("committed version %s on this computer: your next commit shares it "+
+					"(until then the team's branch, and the project's other copies, don't have it)\n", short(m.ID))
 			} else {
 				fmt.Printf("committed version %s on this computer (not connected to a team; see `r3v remote`)\n", short(m.ID))
 			}
@@ -459,7 +466,9 @@ func cmdUpdate(args []string) error {
 		if err != nil {
 			return err
 		}
-		result("update", previewOf(r, p), func() { printPreview(p, "the team") })
+		out := previewOf(r, p)
+		out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, r.BranchName())
+		result("update", out, func() { printPreview(p, "the team"); printUnshared(out.UnsharedElsewhere) })
 		return nil
 	}
 	if err := guardLive(r, *force); err != nil {
@@ -474,7 +483,9 @@ func cmdUpdate(args []string) error {
 	out := syncOf(res)
 	out.ReopenSets = reopenSets(r, res, before, r.Head())
 	out.Base = baseNews(r)
+	out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, r.BranchName())
 	result("update", out, func() {
+		defer printUnshared(out.UnsharedElsewhere)
 		defer printBaseNews(out.Base)
 		switch res.Action {
 		case "up-to-date":

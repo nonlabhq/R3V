@@ -191,6 +191,8 @@ r3v commit --local -m "message"      # commit a version on this computer only
 
 On an older version, newer versions are kept. Committing, getting updates and merging wait until you go back to the latest version; to continue from the older one, start a branch there (`r3v branch new NAME`). An exported copy has no R3V history; samples from outside the project are copied into its `Samples/Imported`.
 
+A version committed `--local` isn't on the team's branch until the next commit shares it: the team, and the project's other copies on this computer (workspaces), don't see it. `r3v status` counts such versions (`unshared` with `--json`), `r3v workspace list` each workspace's; merging or updating from another copy that can't see them says which copy has them and how many (`unshared_elsewhere`, warning `unshared_versions`), rather than only "nothing to merge".
+
 Versions store file contents by SHA-256 in `.r3v/objects` inside the project (deduplicated). Samples referenced from outside the project are stored too and, on a computer that lacks them, placed under `.r3v/external/` with the set's sample paths rewritten. Samples from Live packs are only recorded by pack name. `Backup/` and `*.asd` are ignored.
 
 ## Checking the history
