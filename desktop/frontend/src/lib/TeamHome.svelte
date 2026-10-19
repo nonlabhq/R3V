@@ -7,18 +7,20 @@
   import TeamSettings from "./TeamSettings.svelte";
   import { storageKind } from "./teamText";
   import { linkPick } from "./links.svelte";
+  import ProjectMenu from "./ProjectMenu.svelte";
 
   // A team's home (a click on the team in the sidebar): who's in it, and its
-  // projects (those on this computer, then those still only on the team; a
+  // projects (those on this computer, then those only on the cloud storage; a
   // project's workspaces counted on it, not listed) or its settings. Not a
   // tab: the tabs show no tab picked.
-  let { overview, team, projects, open, onopen, onadd, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
+  let { overview, team, projects, open, onopen, onadd, onsettings, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
     projects: TeamProject[];
     open: (p: TeamProject) => boolean; // already in a tab
     onopen: (p: TeamProject) => void;
     onadd: () => void;
+    onsettings: (p: TeamProject) => void; // a project's settings (from its menu)
     adding?: boolean;
     reload: () => Promise<void>;
     canMove?: boolean;
@@ -44,6 +46,21 @@
     tn(mains.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
   const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status]
     ?? `⑂ ${p.branchLabel || p.branch}`);
+
+  // A card's menu (its ⋯, or a right click): the same as the project's row
+  // in the sidebar. opener: the ⋯ (Esc gives it the focus back).
+  let menu = $state<{ p: TeamProject; at: { left: number; top: number }; opener: HTMLElement | null } | null>(null);
+  const keyOf = (p: TeamProject) => p.root || p.id;
+  function moreMenu(p: TeamProject, e: MouseEvent) {
+    const el = e.currentTarget as HTMLElement;
+    if (menu && keyOf(menu.p) === keyOf(p)) { menu = null; return; }
+    const r = el.getBoundingClientRect();
+    menu = { p, opener: el, at: { left: Math.max(0, Math.min(r.right - 220, window.innerWidth - 240)), top: Math.min(r.bottom + 4, window.innerHeight - 160) } };
+  }
+  function rightMenu(p: TeamProject, e: MouseEvent) {
+    e.preventDefault();
+    menu = { p, opener: null, at: { left: Math.min(e.clientX, window.innerWidth - 240), top: Math.min(e.clientY, window.innerHeight - 160) } };
+  }
 </script>
 
 <div class="home">
@@ -75,6 +92,8 @@
   {#if section === "projects"}
     {#snippet card(p: TeamProject)}
       {@const n = spaces(p)}
+      {@const on = !!menu && keyOf(menu.p) === keyOf(p)}
+      <div class="slot" class:on oncontextmenu={(e) => rightMenu(p, e)} role="none">
       <button class="card {p.status}" onclick={() => onopen(p)} title={p.root || p.name}>
         <ProjectIcon {p} size={36} />
         <span class="text">
@@ -83,6 +102,9 @@
         </span>
         {#if open(p)}<span class="tag">{t("open")}</span>{:else if p.status === "remote"}<span class="cloud" aria-hidden="true">☁</span>{/if}
       </button>
+      <button class="ghost more" title={t("More")} aria-label={t("More")} aria-haspopup="menu" aria-expanded={on}
+        onclick={(e) => moreMenu(p, e)}>⋯</button>
+      </div>
     {/snippet}
     <h2>{t("On this computer")}<span class="count">{here.length}</span></h2>
     <div class="cards">
@@ -96,11 +118,14 @@
       </button>
     </div>
     {#if away.length}
-      <h2>{t("On the team only")}<span class="count">{away.length}</span>
+      <h2>{t("On the cloud storage")}<span class="count">{away.length}</span>
         <span class="hint">{t("Open one to download it to this computer")}</span></h2>
       <div class="cards">
         {#each away as p (p.id)}{@render card(p)}{/each}
       </div>
+    {/if}
+    {#if menu}
+      <ProjectMenu p={menu.p} at={menu.at} opener={menu.opener} {onsettings} onclose={() => (menu = null)} />
     {/if}
   {:else}
     {#key team.id}
@@ -144,6 +169,13 @@
   .tag { position: absolute; top: var(--sp-8); right: var(--sp-10); font-size: var(--fs-2xs); padding: 0 var(--sp-6);
     border-radius: var(--radius-pill); background: var(--accent-bg); color: var(--accent); }
   .cloud { position: absolute; top: var(--sp-8); right: var(--sp-10); font-size: var(--fs-sm); color: var(--faint); }
+  /* ⋯ at the top right, on hover or focus (a button beside the card's, not
+     in it), over the "open" tag or cloud while it shows */
+  .slot { position: relative; display: flex; min-width: 0; }
+  .slot > .card { flex: 1; min-width: 0; }
+  .more { position: absolute; top: var(--sp-4); right: var(--sp-4); padding: 0 var(--sp-6); line-height: 1.4; color: var(--muted); opacity: 0; }
+  .slot:hover .more, .slot.on .more, .more:focus-visible { opacity: 1; }
+  .slot:hover .card :is(.tag, .cloud), .slot.on .card :is(.tag, .cloud), .slot:has(.more:focus-visible) .card :is(.tag, .cloud) { visibility: hidden; }
   .card.add { border-style: dashed; background: transparent; }
   .plus { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: var(--fs-xl); color: var(--muted); }
 </style>

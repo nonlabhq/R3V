@@ -1812,7 +1812,7 @@
 "Shown instead of the icon": "代替图标显示",
 "The team's initial": "团队的首字母",
 "On this computer": "在这台电脑上",
-"On the team only": "只在团队里",
+"On the cloud storage": "在云端存储空间",
 "Open one to download it to this computer": "打开即可下载到这台电脑",
 "Claude Code here doesn't make steps yet": "这里的 Claude Code 还没有记录步骤",
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "直接在这个文件夹（不是工作区）工作的 agent，在 R3V 的 hook 加进它的设置（.claude/settings.local.json，不纳入版本）后就会记录步骤。",

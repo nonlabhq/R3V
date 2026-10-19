@@ -1812,7 +1812,7 @@
 "Shown instead of the icon": "아이콘 대신 표시됨",
 "The team's initial": "팀의 첫 글자",
 "On this computer": "이 컴퓨터",
-"On the team only": "팀에만 있음",
+"On the cloud storage": "클라우드 저장소에 있음",
 "Open one to download it to this computer": "열면 이 컴퓨터로 내려받을 수 있습니다",
 "Claude Code here doesn't make steps yet": "여기의 Claude Code는 아직 단계를 기록하지 않습니다",
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "이 폴더 자체(작업 공간이 아닌)에서 일하는 에이전트는 R3V의 hook이 설정(.claude/settings.local.json, 버전 관리 안 됨)에 들어가면 단계를 기록합니다.",

@@ -124,7 +124,7 @@ test("offers the project's sets and other programs for its folder in the Open in
 
 test("offers the same programs for its folder in the project's right-click menu", async () => {
   await page.getByRole("button", { name: /^Night Drive/ }).first().click({ button: "right" });
-  await page.locator(".row-menu").getByRole("button", { name: /Open the folder in/ }).hover();
+  await page.locator(".row-menu").getByRole("menuitem", { name: /Open the folder in/ }).hover();
   const list = page.getByRole("menu", { name: "Open the folder in" });
   await expect(list.getByRole("menuitem", { name: "Explorer" })).toHaveCount(0); // ("Open folder" is in the menu)
   await expect(list.getByRole("menuitem", { name: "Choose a program…" })).toBeVisible();
@@ -154,4 +154,32 @@ test("opens the team's home, and a project from the quick launcher", async () =>
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Moonrise" })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("a project card in the team's home has the project's menu behind its ⋯", async () => {
+  await page.locator(".team-menu .switch").click();
+  const more = page.locator(".slot").filter({ hasText: "Night Drive" }).getByRole("button", { name: "More" });
+  await more.focus();
+  await page.keyboard.press("Enter");
+  const menu = page.getByRole("menu", { name: "Night Drive" });
+  await expect(menu.getByRole("menuitem", { name: "Open folder" })).toBeFocused();
+  await expect(menu.getByRole("menuitem", { name: /Open the folder in/ })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Settings…" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(more).toBeFocused();
+});
+
+test("the folded sidebar's team mark has the team list beside it, on hover", async () => {
+  await page.getByRole("button", { name: "Hide the sidebar" }).click();
+  const mark = page.locator(".mark-slot .team-mark"), caret = page.locator(".mark-slot").getByRole("button", { name: "Switch team" });
+  await mark.hover();
+  await expect(caret).toHaveCSS("opacity", "1");
+  const m = (await mark.boundingBox())!, c = (await caret.boundingBox())!;
+  expect(c.x).toBeGreaterThanOrEqual(m.x + m.width - 1); // (to its right, over the room there)
+  await caret.click();
+  await expect(page.getByRole("menu").getByRole("button", { name: /Demo Band/ })).toBeVisible();
+  await caret.click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await page.getByRole("button", { name: "Show the sidebar" }).click();
 });
