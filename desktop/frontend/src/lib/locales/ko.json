@@ -1926,5 +1926,11 @@
 "Mouse": "마우스",
 "Middle click · Ctrl+click": "가운데 클릭 · Ctrl+클릭",
 "In the sidebar: open a project or team in a new tab": "사이드바에서: 프로젝트나 팀을 새 탭에서 열기",
-"Middle click on a tab": "탭을 가운데 클릭"
+"Middle click on a tab": "탭을 가운데 클릭",
+"Appearance": "모양",
+"Look": "스타일",
+"Flat": "플랫",
+"Cards": "카드",
+"Panels side by side, compact.": "패널을 나란히, 촘촘하게.",
+"Cards floating on the window, roomier.": "창 위에 뜬 카드, 여유 있게."
 }

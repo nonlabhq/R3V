@@ -1926,5 +1926,11 @@
 "Mouse": "マウス",
 "Middle click · Ctrl+click": "中クリック · Ctrl+クリック",
 "In the sidebar: open a project or team in a new tab": "サイドバーで：プロジェクトやチームを新しいタブで開く",
-"Middle click on a tab": "タブを中クリック"
+"Middle click on a tab": "タブを中クリック",
+"Appearance": "外観",
+"Look": "スタイル",
+"Flat": "フラット",
+"Cards": "カード",
+"Panels side by side, compact.": "パネルを並べて、コンパクトに。",
+"Cards floating on the window, roomier.": "ウィンドウに浮かぶカードで、ゆったりと。"
 }

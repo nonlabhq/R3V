@@ -5,6 +5,10 @@ import '@fontsource-variable/geist/wght-italic.css'
 import '@fontsource-variable/space-grotesk/wght.css'
 import App from './App.svelte'
 import { startLanguage } from './lib/i18n.svelte'
+import { startLook } from './lib/look.svelte'
+
+// The look at once (data-look on <html>), so nothing is drawn in the other.
+startLook()
 
 // The language first: texts are shown in it from the start.
 startLanguage().finally(() => {

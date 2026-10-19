@@ -1926,5 +1926,11 @@
 "Mouse": "滑鼠",
 "Middle click · Ctrl+click": "中鍵點擊 · Ctrl+點擊",
 "In the sidebar: open a project or team in a new tab": "在側欄：在新分頁中開啟專案或團隊",
-"Middle click on a tab": "中鍵點擊分頁"
+"Middle click on a tab": "中鍵點擊分頁",
+"Appearance": "外觀",
+"Look": "樣式",
+"Flat": "扁平",
+"Cards": "卡片",
+"Panels side by side, compact.": "面板並排，較緊湊。",
+"Cards floating on the window, roomier.": "卡片浮在視窗上，較寬鬆。"
 }

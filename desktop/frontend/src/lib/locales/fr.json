@@ -1926,5 +1926,11 @@
 "Mouse": "Souris",
 "Middle click · Ctrl+click": "Clic du milieu · Ctrl+clic",
 "In the sidebar: open a project or team in a new tab": "Dans la barre latérale : ouvrir un projet ou une équipe dans un nouvel onglet",
-"Middle click on a tab": "Clic du milieu sur un onglet"
+"Middle click on a tab": "Clic du milieu sur un onglet",
+"Appearance": "Apparence",
+"Look": "Style",
+"Flat": "Plat",
+"Cards": "Cartes",
+"Panels side by side, compact.": "Panneaux côte à côte, compact.",
+"Cards floating on the window, roomier.": "Cartes flottant sur la fenêtre, plus aéré."
 }

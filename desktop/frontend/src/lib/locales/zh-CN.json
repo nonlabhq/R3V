@@ -1926,5 +1926,11 @@
 "Mouse": "鼠标",
 "Middle click · Ctrl+click": "中键点击 · Ctrl+点击",
 "In the sidebar: open a project or team in a new tab": "在侧栏：在新标签页中打开项目或团队",
-"Middle click on a tab": "中键点击标签页"
+"Middle click on a tab": "中键点击标签页",
+"Appearance": "外观",
+"Look": "样式",
+"Flat": "扁平",
+"Cards": "卡片",
+"Panels side by side, compact.": "面板并排，较紧凑。",
+"Cards floating on the window, roomier.": "卡片浮在窗口上，较宽松。"
 }
