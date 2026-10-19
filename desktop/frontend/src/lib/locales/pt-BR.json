@@ -1911,5 +1911,16 @@
 "An older version · {ago}": "Uma versão anterior · {ago}",
 "Copy path": "Copiar caminho",
 "Copied {path}": "{path} copiado",
-"Archived ({n})": "Arquivados ({n})"
+"Archived ({n})": "Arquivados ({n})",
+"Explorer": "Explorador de Arquivos",
+"Terminal": "Terminal",
+"Open in…": "Abrir no…",
+"Open the project folder in {program}": "Abrir a pasta do projeto no {program}",
+"Open the project folder in another program": "Abrir a pasta do projeto em outro programa",
+"Choose a program to open the project with": "Escolha um programa para abrir o projeto",
+"More ways to open the project": "Mais formas de abrir o projeto",
+"Project files": "Arquivos do projeto",
+"Open the folder in": "Abrir a pasta no",
+"Looking for programs…": "Procurando programas…",
+"Choose a program…": "Escolher um programa…"
 }

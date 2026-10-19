@@ -1911,5 +1911,16 @@
 "An older version · {ago}": "旧版本 · {ago}",
 "Copy path": "复制路径",
 "Copied {path}": "已复制 {path}",
-"Archived ({n})": "已封存（{n}）"
+"Archived ({n})": "已封存（{n}）",
+"Explorer": "文件资源管理器",
+"Terminal": "终端",
+"Open in…": "打开方式…",
+"Open the project folder in {program}": "用 {program} 打开项目文件夹",
+"Open the project folder in another program": "用其他程序打开项目文件夹",
+"Choose a program to open the project with": "选择用来打开项目的程序",
+"More ways to open the project": "更多打开项目的方式",
+"Project files": "项目文件",
+"Open the folder in": "用以下程序打开文件夹",
+"Looking for programs…": "正在查找程序…",
+"Choose a program…": "选择程序…"
 }

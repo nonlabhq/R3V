@@ -1911,5 +1911,16 @@
 "An older version · {ago}": "以前のバージョン · {ago}",
 "Copy path": "パスをコピー",
 "Copied {path}": "{path} をコピーしました",
-"Archived ({n})": "アーカイブ済み（{n}）"
+"Archived ({n})": "アーカイブ済み（{n}）",
+"Explorer": "エクスプローラー",
+"Terminal": "ターミナル",
+"Open in…": "プログラムで開く…",
+"Open the project folder in {program}": "プロジェクトフォルダーを {program} で開く",
+"Open the project folder in another program": "プロジェクトフォルダーを別のプログラムで開く",
+"Choose a program to open the project with": "プロジェクトを開くプログラムを選択",
+"More ways to open the project": "プロジェクトのほかの開き方",
+"Project files": "プロジェクトのファイル",
+"Open the folder in": "フォルダーを開くプログラム",
+"Looking for programs…": "プログラムを探しています…",
+"Choose a program…": "プログラムを選択…"
 }

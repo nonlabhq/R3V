@@ -1911,5 +1911,16 @@
 "An older version · {ago}": "이전 버전 · {ago}",
 "Copy path": "경로 복사",
 "Copied {path}": "{path} 복사됨",
-"Archived ({n})": "보관됨 ({n})"
+"Archived ({n})": "보관됨 ({n})",
+"Explorer": "파일 탐색기",
+"Terminal": "터미널",
+"Open in…": "다음에서 열기…",
+"Open the project folder in {program}": "프로젝트 폴더를 {program}에서 열기",
+"Open the project folder in another program": "프로젝트 폴더를 다른 프로그램에서 열기",
+"Choose a program to open the project with": "프로젝트를 열 프로그램 선택",
+"More ways to open the project": "프로젝트를 여는 다른 방법",
+"Project files": "프로젝트 파일",
+"Open the folder in": "폴더 열기 프로그램",
+"Looking for programs…": "프로그램을 찾는 중…",
+"Choose a program…": "프로그램 선택…"
 }

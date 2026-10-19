@@ -87,6 +87,16 @@ func Run() {
 			SetTitle(title).
 			PromptForSingleSelection()
 	}
+	svc.pickFile = func(title string) (string, error) {
+		if path := os.Getenv("R3V_DEV_PICK_FILE"); path != "" {
+			return path, nil
+		}
+		return app.Dialog.OpenFile().
+			CanChooseFiles(true).
+			AddFilter("Programs (*.exe)", "*.exe").
+			SetTitle(title).
+			PromptForSingleSelection()
+	}
 
 	window = app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:             "main",

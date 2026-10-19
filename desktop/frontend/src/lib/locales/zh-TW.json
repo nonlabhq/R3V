@@ -1911,5 +1911,16 @@
 "An older version · {ago}": "舊版本 · {ago}",
 "Copy path": "複製路徑",
 "Copied {path}": "已複製 {path}",
-"Archived ({n})": "已封存（{n}）"
+"Archived ({n})": "已封存（{n}）",
+"Explorer": "檔案總管",
+"Terminal": "終端機",
+"Open in…": "開啟方式…",
+"Open the project folder in {program}": "用 {program} 開啟專案資料夾",
+"Open the project folder in another program": "用其他程式開啟專案資料夾",
+"Choose a program to open the project with": "選擇用來開啟專案的程式",
+"More ways to open the project": "更多開啟專案的方式",
+"Project files": "專案檔案",
+"Open the folder in": "用以下程式開啟資料夾",
+"Looking for programs…": "正在尋找程式…",
+"Choose a program…": "選擇程式…"
 }
