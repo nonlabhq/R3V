@@ -208,6 +208,25 @@ func (r *Repo) StepEnd(detail string) (*StepEnded, error) {
 	return ended, writeAgentTasks(path, tasks)
 }
 
+// EndTaskAtCommit ends the task the agent running R3V left open (StepEnd)
+// before it commits, so that the version lists the task's steps: an agent
+// that commits without `step end` loses none. The step's detail names the
+// commit. Nil when none is open, steps are off, or no agent runs R3V (a
+// person's commits, the app's, end nothing).
+//
+// Stopped after the end, before the version is made (or the commit
+// failing): the task is ended, its step made on the version the files are
+// on, so the next commit lists it as this one would have.
+func (r *Repo) EndTaskAtCommit(title string) (*StepEnded, error) {
+	if r.Actor == nil || r.Actor.Tool == "" {
+		return nil, nil
+	}
+	return r.StepEnd(CommitEndDetail + title)
+}
+
+// CommitEndDetail begins the detail of a step a commit ended the task with.
+const CommitEndDetail = "ended by commit: "
+
 // OpenTask is the task the agent running R3V began and hasn't ended, nil
 // when none is.
 func (r *Repo) OpenTask() *OpenStep {

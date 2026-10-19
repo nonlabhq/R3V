@@ -9,7 +9,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
-// Agent locks (docs/design/agent-workspaces.md, "Locks"; Nightly while
+// Agent locks (docs/design/agent-workspaces.md, "Locks"; while
 // project.AgentLocks is): the workspaces of a project on this computer
 // take turns on files that can't be merged. The app shows them with the
 // team's locks (one padlock: you, a member, an agent's workspace) and

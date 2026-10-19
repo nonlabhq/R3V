@@ -142,8 +142,8 @@ func fullUsage() string {
 	return u[:i] + extraUsage + u[i:]
 }
 
-// extraCommands are commands only some builds have (the Nightly channel's),
-// and extraUsage their lines in the usage.
+// extraCommands are the commands each part of this build adds (an
+// extension's too), and extraUsage their lines in the usage.
 var (
 	extraCommands = map[string]func(args []string) error{}
 	extraUsage    string

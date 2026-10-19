@@ -1,8 +1,6 @@
-//go:build nightly
-
 package cli
 
-// Results are on the Nightly channel while they're new.
+// Results, in every build since 0.3.
 func init() {
 	extraCommands["result"] = cmdResult
 	extraCommands["results"] = cmdResults

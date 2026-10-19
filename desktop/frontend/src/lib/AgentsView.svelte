@@ -12,7 +12,7 @@
   import Modal from "$shared/Modal.svelte";
   import NewWorkspaceDialog from "./NewWorkspaceDialog.svelte";
 
-  // The Agents view (Nightly; docs/design/agent-workspaces.md, "The
+  // The Agents view (docs/design/agent-workspaces.md, "The
   // overview"): the project's workspaces on this computer, an agent's each,
   // with what each has done; merged into the branch it came from, opened,
   // removed. Read again when the project changes (version), and now and

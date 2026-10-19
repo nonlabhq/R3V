@@ -1,8 +1,6 @@
-//go:build nightly
-
 package cli
 
-// Undoing a merge is on the Nightly channel while it's new.
+// Undoing a merge, in every build since 0.3.
 func init() {
 	extraCommands["undo-merge"] = cmdUndoMerge
 	jsonCommands["undo-merge"] = true

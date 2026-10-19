@@ -74,7 +74,7 @@ r3v switch main
 r3v merge yi-ideas --preview  # what would come in and what conflicts
 r3v merge yi-ideas            # merge into your branch and share
 r3v merge yi-ideas -m "..."   # with your own description (else it lists what came in)
-r3v undo-merge <version>      # Nightly: a new version without what that merge brought in
+r3v undo-merge <version>      # a new version without what that merge brought in
 r3v branch log main           # who moved the branch, when, from which version to which
 r3v branch archive yi-ideas   # put it away: its versions stay
 r3v branch archived           # what was archived, by whom, when
@@ -126,7 +126,7 @@ the files (`--json`: `unsaved_changes`, `details.files`); a change of
 `.r3v.yaml` coming in touches them all. The app does the same. Stopped
 half-way, putting the files back gives the changes back with them.
 
-`r3v undo-merge <version>` (Nightly) takes back a merge without rewriting
+`r3v undo-merge <version>` takes back a merge without rewriting
 the history: a new version on your branch without what it brought in.
 What changed since the merge stays; where the same thing changed again it
 asks as a merge does: `--strategy keep` keeps it as it is now, `undo`
@@ -143,7 +143,7 @@ files as they are (`--json`: `unfinished`).
 
 Teams on storage keep a log of every branch move (each move is its own record, never changed). A branch moved by mistake can be put back: check out the version it was on and commit from there.
 
-## Workspaces: several agents on one project (Nightly)
+## Workspaces: several agents on one project
 
 ```
 r3v workspace add --branch renderer                       # another copy, on a branch of its own (../game.workspaces/renderer)
@@ -220,7 +220,7 @@ home, the same for everyone in the team; a project is in one at most (the
 order they show in is each person's own, set in the app). On
 an R3V Cloud team only its owners and admins change them.
 
-## Results (Nightly)
+## Results
 
 ```
 r3v result <check> pass|fail|running [-m NOTE] [--version V]   # record what a check said about a version
@@ -281,7 +281,7 @@ r3v storage-cleanup --delete   # delete those that are due
 
 Or in the app: the team's settings (⚙) → **Storage cleanup**. Deleted projects and uploads that stopped leave files behind. A file is deleted only once a cleanup has found it unused a day before and it is at least a week old; files a teammate's share in progress relies on are never deleted. Deleted files go to a trash in the storage for two weeks first: should a cleanup ever be wrong, R3V takes a file back from there when it's needed (and `r3v verify --repair` does for a whole project). Works on teams that use S3 or R2 storage.
 
-## AI agents on one computer (Nightly)
+## AI agents on one computer
 
 ```
 r3v agent setup --tool claude-code     # (every build) in a project or workspace folder: Claude Code's hook, R3V_ACTOR, the guide
@@ -294,11 +294,13 @@ r3v lock --break <path>                # take anyone's lock off a path (the pers
 
 Agent locks keep two agents (each in a workspace of the project) from changing the same file that can't be merged: textures, models, sounds, `.blend`, Unity and Unreal assets (the project's own kinds and paths when it sets them, else the team's lock kinds when it has them; the team or the project can turn agent locks off: docs/design/team-settings.md). Code never locks: it merges hunk by hunk; `--claim` only tells other agents you're on it (`lock` on such a file claims it instead, listed in `claimed_instead`). `agent setup` writes `.claude/settings.local.json` (a `PreToolUse` hook running `r3v hook pre-tool`, and `R3V_ACTOR` in `env`, merged with what is there; this copy's, never tracked) and, in the main copy, adds the agents' lines to `CLAUDE.md` (commit it); `workspace add --agent claude-code` sets a workspace up; the hook locks a file when the agent first changes it, or refuses the change saying who holds it. A commit by an agent changing a file another workspace holds, or one the person changed and hasn't committed, is refused (`files_locked_by_agent`); a person's commit never is. A lock protects work not committed, and work not yet merged into the branch the workspaces merge into (main, or a workspace's base): on a workspace's own branch it is held until that branch is merged; on a base branch (the main copy's, usually) a commit frees the copy's locks on what it committed (folder locks stay until unlocked). One whose agent hasn't been heard of for 15 minutes is stale, and the next lock asked over it takes it; `--take` takes over one sooner, when its holder is gone, with a reason that `locks` shows. Kept on this computer only, beside the project's store (`.r3v/agent-locks`). See [design/agent-workspaces.md](design/agent-workspaces.md).
 
-## Steps: an agent's moves (Nightly)
+## Steps: an agent's moves
 
 ```
 r3v steps [--session ID] [--list]      # the latest session's prompts and steps (--list: the sessions)
 r3v step [-m NOTE]                     # a step of the files as they are now
+r3v step start -m "WHAT"               # an agent tool without hooks begins a task (ends one left open)
+r3v step end [-m "WHAT I DID"]         # and ends it: a step of the files as they are (a commit ends it too)
 r3v step back <n> [--session ID]       # the files as at step n (the files now are a step first)
 r3v step diff <a> [<b>] [--session ID] # what changed from step a to step b (or to the files now)
 ```

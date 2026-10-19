@@ -13,7 +13,7 @@ import (
 
 // StepsInfo is a copy's steps for the app.
 type StepsInfo struct {
-	// Available: this build makes steps (Nightly); On: and this copy does.
+	// Available: this build makes steps; On: and this copy does.
 	Available bool                 `json:"available"`
 	On        bool                 `json:"on"`
 	Settings  project.StepSettings `json:"settings"`

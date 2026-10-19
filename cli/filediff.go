@@ -60,7 +60,7 @@ var fileCommands = false
 
 const fileDiffsUsage = `
 files (each kind the way it reads: text line by line, a Live Set track by track,
-a picture its size, any other file its size; Nightly):
+a picture its size, any other file its size):
   diff [PATHS]                           what changed in each file since the version you're on
   diff --version V [PATHS]               what a version changed
   diff --from A --to B [PATHS]           what changed between two versions

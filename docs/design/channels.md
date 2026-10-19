@@ -64,6 +64,17 @@ before and just don't show it. Members' and projects' looks are such data
 the projects ungrouped, archived ones too). A team feature is for what an older R3V would
 misread, lose or delete.
 
+The agents' features (in every build since 0.3: workspaces, steps, agent
+locks, results, undo-merge) need none either. What they keep is this
+computer's (`.r3v/steps/`, the store's `results/`, `.r3v/agent-locks`, a
+workspace's link and the main copy's list of them), never the team's;
+steps are local versions that every R3V's local cleanup already keeps.
+What reaches the team is what any R3V writes: versions (an agent's
+`actor`, an undo-merge an ordinary version), branches, and branch records
+whose `kind` and `owner` (an agent's branch) every R3V since 0.1.80
+keeps when it rewrites one. The agents' Workflow settings are the
+`workflow` team feature already.
+
 Project kinds a Stable build doesn't know say so too: a `.r3v.yaml` naming a
 preset only Nightly has fails with "needs R3V's Nightly channel" (CLI:
 `needs_nightly`, exit 6). Unity, Unreal, Godot, code and design files are in

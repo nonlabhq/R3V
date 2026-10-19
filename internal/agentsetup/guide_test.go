@@ -70,14 +70,15 @@ func TestGuideNew(t *testing.T) {
 }
 
 // The guide tells tools without hooks to wrap each task in step start
-// and step end, and commit after; Claude Code, set up, is told its hooks
+// and step end, and commit after (a commit ending a task left open);
+// Claude Code, set up, is told its hooks
 // make the steps, and given no commands for them.
 func TestGuideSteps(t *testing.T) {
 	block := guideBlock()
 	for _, want := range []string{
 		"Claude Code set up with\n  `r3v agent setup` makes them with its hooks: nothing to do.",
 		"Any other tool: begin each task with\n  `r3v step start -m \"what you're about to do\" --json`",
-		"`r3v step end -m \"what you did\" --json`, then commit if the work is finished.",
+		"`r3v step end -m \"what you did\" --json`, then commit if the work is finished (a commit also\n  ends the task left open).",
 	} {
 		if strings.Count(block, want) != 1 {
 			t.Fatalf("the guide lacks %q:\n%s", want, block)

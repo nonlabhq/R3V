@@ -244,7 +244,7 @@ var codes = []struct {
 		"merge its branch (r3v merge <branch> in the main copy), commit or discard its changes; or --force to lose them"},
 	{project.ErrInWorkspace, "in_workspace", exitError, "run it in the project's main copy"},
 	{project.ErrWorkspaceOrphaned, "workspace_orphaned", exitError, "the project's main copy was moved or deleted: make the workspace again"},
-	{project.ErrWorkspacesNotInBuild, "needs_nightly", exitUpgrade, "the user must switch R3V to the Nightly channel (Settings → Updates)"},
+	{project.ErrWorkspacesNotInBuild, "needs_nightly", exitUpgrade, "the user must update R3V"},
 	{remote.ErrStorageFull, "cloud_quota", exitError, "the team's storage on R3V Cloud is full: delete projects or versions to make room (reading still works); the version stays here, shared once there is room"},
 	{cloud.ErrBetaOnly, "cloud_beta_only", exitError, "R3V Cloud is in a closed beta: ask for an invitation, or join the waitlist at " + cloud.Waitlist},
 	{cloud.ErrOneTeam, "cloud_one_team", exitError, "the beta includes one team of your own: use it, or delete it to make another"},

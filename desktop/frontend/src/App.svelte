@@ -142,7 +142,7 @@
       () => toast(appVersion, "info"));
   }
   let edition = $state(""); // a build with extensions, e.g. "Pro"
-  let nightly = $state(false); // the Style lab is there to try looks
+  let nightly = $state(false); // the Style lab is there to try looks; projects move between teams
 
   // A newer release: offered until the user hides that version (unless it's
   // required: then the app can't be used before updating). A signed one is
@@ -842,13 +842,12 @@
     if (folder) share(folder);
   }
 
-  // A project just added (Nightly): the guide for AI agents offered when it
+  // A project just added: the guide for AI agents offered when it
   // has none (AGENTS.md: committed with its first version).
   // theirs: the project has an AGENTS.md (or CLAUDE.md) of its own, without
   // R3V's part: offered at its end.
   let guideAsk = $state<{ root: string; theirs: boolean } | null>(null);
   async function offerGuide(root: string) {
-    if (!nightly) return;
     try {
       const has = await api.AgentGuide(root);
       if (has !== "has") guideAsk = { root, theirs: has === "theirs" };
@@ -1209,7 +1208,7 @@
       {#if current && (home || !selectedEntry)}
         <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
           onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined} onsettings={(p) => (settingsFor = p)}
-          onsection={canEditSections ? moveToSection : undefined} adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
+          onsection={canEditSections ? moveToSection : undefined} adding={busy === "add"} {reload} canMove bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}

@@ -98,7 +98,7 @@ func TestAgentCommitRefused(t *testing.T) {
 		t.Fatalf("taken at commit (notes.txt doesn't lock): %+v", all)
 	}
 
-	// Off (Stable): nothing checked.
+	// Off (an older R3V): nothing checked.
 	AgentLocks = false
 	os.WriteFile(filepath.Join(r.Root, "tex", "rock.png"), []byte("rock 3"), 0o644)
 	if _, err := r.Snapshot("stable"); err != nil {

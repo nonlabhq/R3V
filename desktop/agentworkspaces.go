@@ -16,7 +16,7 @@ import (
 )
 
 // The Agents view (docs/design/agent-workspaces.md, "The overview";
-// Nightly while project.AgentWorkspaces is): a project's workspaces on this
+// while project.AgentWorkspaces is): a project's workspaces on this
 // computer, each an agent's folder on a branch of its own, with what each
 // has to merge; made, merged and removed from the app. (Workspaces, in
 // workrecord.go, is something else: the team's other copies.)

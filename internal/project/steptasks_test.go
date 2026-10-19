@@ -218,3 +218,62 @@ func TestStepTasksOff(t *testing.T) {
 		t.Fatalf("sessions: %+v", all)
 	}
 }
+
+// A commit ends the task the agent left open: its step, named for the
+// commit, is the version's. With none open it ends nothing, and a
+// person's commit ends nothing either.
+func TestCommitEndsTheOpenTask(t *testing.T) {
+	r := stepsProject(t)
+	r.Actor = &Actor{Kind: "agent", Tool: "codex", Session: "c"}
+	if _, err := r.StepStart("Warm the lights"); err != nil {
+		t.Fatal(err)
+	}
+	write(t, r.Root, "notes.txt", "two")
+	ended, err := r.EndTaskAtCommit("Warmer lights")
+	if err != nil || ended == nil || ended.Step == nil || ended.Step.Detail != CommitEndDetail+"Warmer lights" ||
+		ended.Step.Tool != ToolStepEnd || ended.Turn != 1 {
+		t.Fatalf("ended: %+v %v", ended, err)
+	}
+	if r.OpenTask() != nil {
+		t.Fatal("still open after the commit's end")
+	}
+	v := mustSnapshot(t, r, "Warmer lights")
+	got, err := r.VersionSteps(v.ID)
+	if err != nil || len(got) != 1 || got[0].Steps != 1 || got[0].Turns[0].Note != "Warm the lights" {
+		t.Fatalf("version's steps: %+v %v", got, err)
+	}
+	if again, err := r.EndTaskAtCommit("next"); err != nil || again != nil {
+		t.Fatalf("none open: %+v %v", again, err)
+	}
+
+	r.Actor = nil // a person's task by hand: their commit leaves it open
+	if _, err := r.StepStart("by hand"); err != nil {
+		t.Fatal(err)
+	}
+	if e, err := r.EndTaskAtCommit("mine"); err != nil || e != nil || r.OpenTask() == nil {
+		t.Fatalf("a person's commit: %+v %v", e, err)
+	}
+}
+
+// The commit fails after ending the task (or is stopped there): the task
+// stays ended, and the next commit's version lists its step.
+func TestCommitEndsTheTaskThenFails(t *testing.T) {
+	r := stepsProject(t)
+	r.Actor = &Actor{Kind: "agent", Tool: "codex", Session: "f"}
+	if _, err := r.StepStart("Retitle"); err != nil {
+		t.Fatal(err)
+	}
+	write(t, r.Root, "notes.txt", "two")
+	if _, err := r.EndTaskAtCommit("Retitled"); err != nil {
+		t.Fatal(err)
+	}
+	// (no version made: the commit failed)
+	if r.OpenTask() != nil {
+		t.Fatal("open again")
+	}
+	time.Sleep(1100 * time.Millisecond) // (times are to the second)
+	v := mustSnapshot(t, r, "Retitled, again")
+	if got, _ := r.VersionSteps(v.ID); len(got) != 1 || got[0].Steps != 1 {
+		t.Fatalf("the next version's steps: %+v", got)
+	}
+}

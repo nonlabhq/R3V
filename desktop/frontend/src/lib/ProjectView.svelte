@@ -78,7 +78,7 @@
   // The tab is remembered per project. Overview: the history graph, then the
   // picked version (or your changes) and its files; Changes and History are
   // the earlier layout, hidden now (OLD_TABS) and kept for a while.
-  // Agents: the project's workspaces (Nightly, a team's project).
+  // Agents: the project's workspaces (a team's project).
   type Tab = "overview" | "files" | "agents" | "settings" | "changes" | "history";
   const OLD_TABS = false;
   const tabs: Tab[] = OLD_TABS ? ["overview", "files", "agents", "settings", "changes", "history"] : ["overview", "files", "agents", "settings"];

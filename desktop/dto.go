@@ -257,8 +257,8 @@ type State struct {
 	BranchGone *ArchivedBranch `json:"branchGone"`
 	Milestones []Milestone     `json:"milestones"` // (TeamPart.Milestones)
 	LocksOffer bool            `json:"locksOffer"` // (TeamPart.LocksOffer)
-	// AgentWorkspaces: the Agents view is offered (Nightly, a team's
-	// project, its main copy); WorkspaceCount its workspaces here.
+	// AgentWorkspaces: the Agents view is offered (a team's project, its
+	// main copy); WorkspaceCount its workspaces here.
 	// WorkspaceOf: this copy is a workspace, of the project in that folder.
 	AgentWorkspaces bool `json:"agentWorkspaces"`
 	WorkspaceCount  int  `json:"workspaceCount"`

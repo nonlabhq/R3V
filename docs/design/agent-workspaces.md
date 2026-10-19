@@ -1,6 +1,6 @@
 # Several agents on one project
 
-Status: being built (Nightly). From "R3V 的機會" (direction 1, case A: one
+Status: built, in every build since 0.3. From "R3V 的機會" (direction 1, case A: one
 computer, several agents), with the small things it needs first. Agent
 tools: Claude Code first, then Codex.
 
@@ -52,7 +52,7 @@ r3v workspace remove <folder>        # when merged; asks (fails) if not
   for each other).
 
 Built (`feat/workspaces`; `internal/project/workspaces.go`, `r3v
-workspace` on Nightly):
+workspace`):
 
 | Shared: the main copy's `.r3v` (`CommonDir`) | Each copy's own `.r3v` (`Dir`) |
 |---|---|
@@ -99,7 +99,7 @@ merge preview and decisions as today, then the branch archived and the
 workspace offered for removal. A coordinating agent can merge from the
 command line (`r3v merge <branch> --json`).
 
-As built (`feat/agents-view`, Nightly: `desktop/agentworkspaces.go`,
+As built (`feat/agents-view`: `desktop/agentworkspaces.go`,
 `AgentsView.svelte`): the project's **Agents** tab (a team's project, its
 main copy; the tab counts the workspaces). **Merge into <base>** opens the
 merge preview of its branch (going to the base branch first when the
@@ -107,7 +107,8 @@ project is on another), with the archive offer after as for any branch.
 **Open** shows the workspace in the sidebar under its project (the app's
 `teams.json` `workspaces`; nothing runs in the background there).
 **Remove** asks; refused, it says what's left and offers removing anyway.
-**New workspace** makes one in `Song.workspaces` (`Song.workspacesenderer`;
+**New workspace** makes one in `Song.workspaces` (`Song.workspaces
+enderer`;
   a folder chosen instead gets "Song (renderer)" in it), set up
 for Claude Code by default (`internal/agentsetup`, shared with the CLI;
 the hook runs the `bin\r3v.exe` installed with the app).
@@ -184,7 +185,7 @@ Agent locks:
   with none for a while is stale, shown so, and the next lock asked over
   it takes it.
 
-As built (`feat/agent-locks`, Nightly: `internal/agentlock`, the commit
+As built (`feat/agent-locks`: `internal/agentlock`, the commit
 check in `project.Snapshot`, `cli/agentlocks.go`):
 
 - The list is `CommonDir()/agent-locks`: one JSON file per lock (named by
@@ -267,8 +268,8 @@ this copy's and never tracked) and `@AGENTS.md` in `CLAUDE.md`; run by
 `workspace add --agent TOOL`. The hooks are Claude Code's only: other
 tools get no first-touch locking (the commit check still refuses a
 locked file), and make their steps themselves, the guide telling them
-to wrap each task in `r3v step start` and `r3v step end` (Nightly;
-[steps.md](steps.md#tools-without-hooks)).
+to wrap each task in `r3v step start` and `r3v step end` (a commit
+ends one left open; [steps.md](steps.md#tools-without-hooks)).
 
 ## Stopping half-way
 

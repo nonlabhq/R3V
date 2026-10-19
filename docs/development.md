@@ -118,7 +118,7 @@ Work goes in lanes, each a session of its own; only Core merges into `main`.
    lane's can reach Stable or the settings both channels share.
 2. **New things arrive behind Nightly**: a preset imported only by Nightly
    builds, a build tag, or a switch set only in a `nightly` file (as
-   `project.Steps` is), with a Stable test that shows Stable doesn't reach
+   `project.Parking` is), with a Stable test that shows Stable doesn't reach
    it. Moving one into Stable takes the gate away and turns its Stable test
    into one that Stable has it. Stable and
    Nightly share the settings folder (teams, sessions): what Nightly writes

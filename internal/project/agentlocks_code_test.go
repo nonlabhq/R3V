@@ -1,5 +1,3 @@
-//go:build nightly
-
 package project
 
 import (
@@ -11,7 +9,7 @@ import (
 )
 
 // Code never locks, even where the project's rules ask for a folder: it
-// merges hunk by hunk. (The code preset is the Nightly channel's.)
+// merges hunk by hunk.
 func TestCodeNeverLocks(t *testing.T) {
 	dir := t.TempDir()
 	for p, c := range map[string]string{"package.json": "{}", "src/main.ts": "x", "src/logo.png": "png",

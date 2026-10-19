@@ -28,7 +28,7 @@
     onopenversion?: (project: string, version: string) => void; // (Activity: a version, in its project)
     inline?: boolean;      // in the team's home, not a dialog
     tabs?: boolean;        // in tabs down the left (docs/design/team-settings.md)
-    workflowTab?: boolean; // with the Workflow tab (Nightly: its settings are agents' and R3V Cloud's file locks)
+    workflowTab?: boolean; // with the Workflow tab (agents' settings, and R3V Cloud's file locks)
     teams?: TeamSummary[]; // the teams here (where it can move to)
     canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
     offline?: boolean; // its storage can't be reached now

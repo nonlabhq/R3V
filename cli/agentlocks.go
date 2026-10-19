@@ -18,11 +18,10 @@ import (
 // Agent locks between the workspaces of a project on this computer
 // (docs/design/agent-workspaces.md, "Locks"): `lock`, `unlock`, `locks`,
 // and the Claude Code hook that takes them on first touch (`agent setup`,
-// in every build, installs it). On the Nightly channel while they're new;
-// the hook is in every build, so a project set up by Nightly and opened by
-// Stable isn't stopped (it allows everything there).
+// in every build, installs it). In every build since 0.3; an older R3V's
+// hook allows everything, so a project set up by a newer one isn't stopped.
 
-// agentCommands adds the agent lock commands (the Nightly channel's).
+// agentCommands adds the agent lock commands.
 func agentCommands() {
 	extraCommands["lock"] = cmdLock
 	extraCommands["unlock"] = cmdUnlock
@@ -33,7 +32,7 @@ func agentCommands() {
 }
 
 const agentUsage = `
-AI agents on one computer (Nightly):
+AI agents on one computer:
   lock <paths…> [--claim]                lock files (or folders) for this workspace, all or none; --claim
                                          only tells other agents (code, which never locks, is claimed)
   lock --take <paths…> --reason <why>    take over others' locks on paths whose holder is gone (kept

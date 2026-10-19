@@ -76,13 +76,13 @@ same `next` (see Output); `update` and `merge` fail with
   explain <file>` says why a file is tracked. Leave out what a build or a
   tool makes again (caches, renders, build outputs) before the first
   commit: `rules: - ignore: "renders/"`.
-- **Steps** (Nightly) keep the files at points of your work, so the
+- **Steps** keep the files at points of your work, so the
   person can go back to any of them. Claude Code set up with `r3v agent
   setup`: R3V's hooks keep them after each of your tool calls, under the
   person's prompt; nothing to do on your side. Any other tool (no hooks):
   wrap each task in `r3v step start -m "what you're about to do" --json`
   and `r3v step end -m "what you did" --json`, then commit if the work is
-  finished (see Output). Don't run `r3v step back` yourself (it changes
+  finished (see Output; a commit ends the task left open too). Don't run `r3v step back` yourself (it changes
   the files of the copy, the person's edits included).
 - **Don't commit unfinished work to merge it later.** A branch is merged
   whole: what isn't finished stays uncommitted (switching away parks it,
@@ -316,7 +316,7 @@ stay) and downloads one when a version needs it: few `local_files` with
 many `team_only_files` is expected, not history lost.
 
 `branch new NAME --agent` starts an agent's branch (its kind is `agent`,
-its owner the member you work for; Nightly, on a team that keeps branch
+its owner the member you work for; on a team that keeps branch
 names): `r3v branch` shows them marked.
 
 `branch archive NAME` puts a branch away (versions stay; not main, not the
@@ -347,7 +347,9 @@ without sets, a Unity one say),
 version just took (a commit is never refused for one), and `shared`:
 `false` when the versions are on this computer only (`--local`, or a
 project on no team: then a `not_connected` warning and `next`, the ways
-to connect it and the commit that shares them once connected). `update` and
+to connect it and the commit that shares them once connected), and
+`step_ended` when it ended the task an agent left open (`step start`).
+`update` and
 `merge` (and their `--preview`) have `unshared_elsewhere` when another
 copy of the project on this computer (the main copy, a workspace) has
 versions on that branch not shared yet (`commit --local`): they aren't on
@@ -381,14 +383,14 @@ Merge lane/vfx: 12 versions
 left out, at most 10; nothing to list: `Merge branch lane/vfx`). `-m`
 gives your own, used as it is.
 
-`results [VERSION]` (Nightly): `version`, `results` (each check: `state`,
+`results [VERSION]`: `version`, `results` (each check: `state`,
 `note`, `time`, `actor`, `changes`). A merge version with no results of
 its own whose files are exactly a parent's (`same_files_as`: a lane's
 head merged into a branch that hadn't moved) shows that parent's
 results, each with `from` (where it was recorded); results recorded for
 the merge itself replace them.
 
-`step start -m NOTE` and `step end [-m NOTE]` (Nightly; for tools without
+`step start -m NOTE` and `step end [-m NOTE]` (for tools without
 R3V's hooks): a start begins a task (a turn whose note is NOTE, redacted)
 and keeps the files first when they changed since the step before (the
 user's edits, say): `open` (`session`, `turn`, `since`, `note`), `before`
@@ -403,10 +405,13 @@ session); a tool without one goes on in its latest session for 4 hours,
 then starts another. A task open longer than 12 hours is closed by the
 next start without a step (`stale`: true). Both are ok and change
 nothing when steps are off here (`off`: true) or Claude Code's hooks make
-them (`hooked`: true). End before you commit: the version lists the steps
-made before it.
+them (`hooked`: true). A commit ends the task you left open first, so
+the version lists its steps: `commit --json` gives that end as
+`step_ended` (as `ended` above; its step's `detail` `ended by commit:`
+and the commit's title). `step end` is still the way to end a task
+that doesn't commit.
 
-`undo-merge VERSION` (Nightly) takes back what a merge brought in: a new
+`undo-merge VERSION` takes back what a merge brought in: a new
 version on the current branch without it, the history kept (the merge
 stays in it; don't rewrite anything). What changed since the merge stays;
 where the same thing changed again it stops with `merge_conflict` as a
@@ -433,8 +438,8 @@ still parked). `--force` discards instead. `parked` lists them (`parked`);
 files here, `parked discard <branch[@version]>` drops one (ask the user
 first). Tell the user what was parked and brought back.
 
-`workspace` (Nightly; several agents on one project, each in a folder of
-its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on-one-project-nightly)):
+`workspace` (several agents on one project, each in a folder of
+its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on-one-project)):
 
 - `workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent claude-code]`
   (no folder: `<project>.workspaces/<branch>` beside the project):
@@ -523,7 +528,7 @@ the one chosen in the app. The first run can copy many gigabytes.
 copied; `null` with `--preview`). It only adds to the team's storage; still,
 preview first and ask the user.
 
-## Several agents on one project (Nightly)
+## Several agents on one project
 
 For the person setting it up: [agents-quickstart.md](agents-quickstart.md).
 The project's `AGENTS.md` (`r3v agent setup` in the main copy, or the
