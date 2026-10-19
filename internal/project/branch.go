@@ -544,6 +544,37 @@ func (r *Repo) previewTarget(c remote.Backend, target string, another bool) (*Pr
 }
 
 // fileChanges lists what changed from a to b, with semantic diffs for sets.
+// SetsChanged says whether a Live Set differs between versions a and b
+// ("": none yet): only then must sets open in Live be reopened. Either
+// version unreadable: true, as it can't tell.
+func (r *Repo) SetsChanged(a, b string) bool {
+	files := func(id string) map[string]FileEntry {
+		if id == "" {
+			return map[string]FileEntry{}
+		}
+		m, err := r.Load(id)
+		if err != nil {
+			return nil
+		}
+		return m.FileMap()
+	}
+	fa, fb := files(a), files(b)
+	if fa == nil || fb == nil {
+		return true
+	}
+	for p, f := range fb {
+		if isSet(p) && fa[p].Hash != f.Hash {
+			return true
+		}
+	}
+	for p := range fa {
+		if _, ok := fb[p]; isSet(p) && !ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *Repo) fileChanges(a, b *Manifest) ([]FileChange, error) {
 	af, bf := a.FileMap(), b.FileMap()
 	var out []FileChange

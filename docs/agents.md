@@ -236,7 +236,8 @@ user first).
 `nothing-changed`, `up-to-date`, `ahead`, `fast-forward`, `merged`),
 `saved` (the version committed, or null), `from`, `to`, `merged` (what a merge
 took from each side), `relinked` (sample paths rewritten for this computer),
-`reopen_sets` (sets changed under Live: the user must reopen them).
+`reopen_sets` (a merge changed Live Sets under Live: the user must reopen them; never in a project
+without sets, a Unity one say).
 `commit` also has `warnings`, as `status` has them, about what the
 version just took (a commit is never refused for one). `merge` also has
 `same_files_as` (a version id) when the merge version's files are

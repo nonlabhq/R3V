@@ -307,17 +307,24 @@ func cmdMergeBranch(args []string) error {
 		return err
 	}
 	defer tidy(r)
+	before := r.Head()
 	res, err := r.MergeBranch(key, *message, opts)
 	if err != nil {
 		return err
 	}
-	result("merge", syncOf(res), func() {
+	out := syncOf(res)
+	out.ReopenSets = reopenSets(r, res, before, r.Head())
+	result("merge", out, func() {
 		switch res.Action {
 		case "up-to-date", "ahead":
 			fmt.Printf("nothing to merge: you already have everything from %s\n", pos[0])
 		default:
 			printMerge(res)
-			fmt.Printf("merged %s into %s and shared it (%s); reopen the set in Live\n", pos[0], r.BranchName(), short(res.To))
+			reopen := ""
+			if out.ReopenSets {
+				reopen = "; reopen the set in Live"
+			}
+			fmt.Printf("merged %s into %s and shared it (%s)%s\n", pos[0], r.BranchName(), short(res.To), reopen)
 		}
 	})
 	return nil
