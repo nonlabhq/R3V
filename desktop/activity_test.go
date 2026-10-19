@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/remote/cloudtest"
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
@@ -55,3 +56,61 @@ func TestTeamActivity(t *testing.T) {
 }
 
 func parseTime(s string) time.Time { t, _ := time.Parse(time.RFC3339Nano, s); return t }
+
+// An R3V Cloud team's Activity comes ready made from its service (one
+// request), with who and which agent for the filters; an older service
+// without it, the team's logs are read as for any team.
+func TestTeamActivityOfAHostedTeam(t *testing.T) {
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	t.Cleanup(waitTidy)
+	f := cloudtest.NewFake(t)
+	a := NewApp()
+	hosted, err := a.ConnectTeam(f.Address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.SetIdentity(hosted.ID, cloudtest.Owner, "Robin"); err != nil {
+		t.Fatal(err)
+	}
+	root := newSong(t)
+	if _, err := a.AddProjectToTeam(hosted.ID, root); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.Save(root, "first", true, nil, true, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now().UTC()
+	f.SetEvents([]map[string]any{
+		{"time": now.Add(-time.Hour).Format(time.RFC3339Nano), "kind": "share", "project": "p1", "projectName": "Song",
+			"branch": "Main", "version": "v2", "title": "Chorus", "by": kaiID, "byName": "Kai", "tool": "claude-code", "model": "opus"},
+		{"time": now.Format(time.RFC3339Nano), "kind": "merge", "project": "p1", "projectName": "Song",
+			"branch": "Main", "version": "v3", "title": "Both verses", "by": cloudtest.Owner, "byName": "Robin"},
+	})
+	f.ResetRequests()
+	items, err := a.TeamActivity(hosted.ID, 400)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 || items[0].Kind != "merge" || items[1].Tool != "claude-code" || items[1].Model != "opus" ||
+		items[1].By != kaiID || items[1].ByName != "Kai" || items[0].Title != "Both verses" {
+		t.Fatalf("items %+v", items)
+	}
+	if r := f.Requests(); f.Total() != 1 || r["GET events"] != 1 || f.EventsDays != "366" {
+		t.Errorf("requests %v (days %s)", r, f.EventsDays)
+	}
+
+	// An older service: the team's logs, as before.
+	f.Old.Store(true)
+	items, err = a.TeamActivity(hosted.ID, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := map[string]int{}
+	for _, it := range items {
+		kinds[it.Kind]++
+	}
+	if kinds["project-added"] != 1 || kinds["branch-made"] != 1 || kinds["merge"] != 0 {
+		t.Fatalf("kinds %v in %+v", kinds, items)
+	}
+}
