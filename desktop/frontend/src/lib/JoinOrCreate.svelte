@@ -7,7 +7,7 @@
   import CloudJoin from "./CloudJoin.svelte";
 
   // Join a team with a connection code, or create one on your own storage;
-  // on Nightly, also R3V-Cloud (hosted teams).
+  // also R3V-Cloud (hosted teams).
   let { onconnected }: { onconnected: (t: TeamSummary) => void } = $props();
   let mode = $state<"join" | "create" | "cloud">("join");
   let created = $state(false); // showing the new team's code: no switching back

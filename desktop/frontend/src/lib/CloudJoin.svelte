@@ -5,7 +5,7 @@
 
   // R3V-Cloud in "Join or create a team": sign in through the browser (the
   // account's teams come with it), then create a team or join one with an
-  // invitation link. Nightly only, while it's built.
+  // invitation link.
   let { onconnected }: { onconnected: (t: TeamSummary) => void } = $props();
 
   let status = $state<CloudStatus | null>(null);
