@@ -1,11 +1,17 @@
 // The open tabs at the top of the window: one ordered list for every team.
 // A tab is a project's (its key: its folder, or its id while it isn't on
-// this computer) on a team, or a new tab ("new:…", no team). A project tab
+// this computer) on a team, a team's home (HOME), or a new tab ("new:…", no
+// team). A project tab
 // keeps a small picture of its project, so it can be drawn while another
 // team is shown; it is refreshed whenever its team is. App.svelte keeps the
 // list; these are its steps.
 
 export const isNew = (k: string) => k.startsWith("new:");
+
+/** A team's home as a tab: no folder or id looks like it. */
+export const HOME = "home:";
+export const isHome = (k: string) => k === HOME;
+export const homeRef = (team: string): TabRef => ({ team, key: HOME });
 
 /** What a tab shows of its project while its team isn't the one shown. */
 export type TabSnap = { id: string; root: string; name: string; icon: string; color: string; status: string };
@@ -78,7 +84,21 @@ export function renameTab(tabs: TabRef[], team: string, from: string, to: string
  *  team's list is whole (known), of projects it no longer has. New tabs
  *  stay. */
 export function pruneTabs(tabs: TabRef[], teams: Set<string>, team: string, known: Set<string> | null): TabRef[] {
-  return tabs.filter((x) => isNew(x.key) || (teams.has(x.team) && !(known && x.team === team && !known.has(x.key))));
+  return tabs.filter((x) => isNew(x.key) || (teams.has(x.team) && (isHome(x.key) || !(known && x.team === team && !known.has(x.key)))));
+}
+
+/** Opens ref in a tab of its own, at the end (once). */
+export function addTab(tabs: TabRef[], ref: TabRef): TabRef[] {
+  return tabs.some((x) => tabId(x) === tabId(ref)) ? tabs : [...tabs, ref];
+}
+
+/** The tab from shows ref instead, in its place (a left click in the
+ *  sidebar); with no such tab, ref opens at the end. ref open already: the
+ *  same list (that tab is gone to instead). */
+export function replaceTab(tabs: TabRef[], from: string, ref: TabRef): TabRef[] {
+  if (tabs.some((x) => tabId(x) === tabId(ref))) return tabs;
+  const at = tabs.findIndex((x) => tabId(x) === from);
+  return at < 0 ? [...tabs, ref] : tabs.map((x, i) => (i === at ? ref : x));
 }
 
 /** How many teams the project tabs are on. */

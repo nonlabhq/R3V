@@ -63,14 +63,73 @@ describe("App: tabs", () => {
     await waitFor(() => expect(tabs()).toHaveLength(1));
     await fireEvent.click(document.querySelector<HTMLElement>(".team-menu .switch")!);
     expect(await screen.findByRole("heading", { name: "Band" })).toBeTruthy();
-    expect(screen.getAllByRole("tab").some((x) => x.getAttribute("aria-selected") === "true")).toBe(false);
+    // in the tab shown, as a click in the sidebar does: a tab of the team's home
+    expect(tabs()).toEqual([expect.stringContaining("Band")]);
+    expect(screen.getByRole("tab").getAttribute("aria-selected")).toBe("true");
     await fireEvent.click(screen.getByRole("button", { name: "Team settings" }));
     expect(await screen.findByRole("textbox", { name: "Team name" })).toBeTruthy();
-    // a project from the home opens in its tab
+    // a project from the home opens in its tab, the home's stays
     await fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     await fireEvent.click(screen.getAllByRole("button", { name: /^Beat/ }).at(-1)!);
-    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Band"), expect.stringContaining("Beat")]));
     expect(screen.queryByRole("heading", { name: "Band" })).toBeNull();
+  });
+
+  const middleClick = (el: Element) => fireEvent(el, new MouseEvent("auxclick", { button: 1, bubbles: true, cancelable: true }));
+  const on = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent?.trim();
+  const inSidebar = (name: string) => screen.getAllByRole("button", { name: new RegExp(`^${name}`) })[0];
+
+  it("shows a project clicked in the sidebar in the tab shown, or goes to its tab", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    await fireEvent.click(inSidebar("Beat"));
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Beat")]));
+    expect(on()).toContain("Beat");
+    expect(JSON.parse(localStorage.getItem("r3v.tabs")!).map((x: { key: string }) => x.key)).toEqual(["C:/Beat"]);
+    // open already in another tab: that tab is gone to, none replaced
+    await middleClick(inSidebar("Song"));
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await fireEvent.click(inSidebar("Song"));
+    expect(tabs()).toEqual([expect.stringContaining("Beat"), expect.stringContaining("Song")]);
+    expect(on()).toContain("Song");
+  });
+
+  it("opens a project in a tab behind with a middle click or Ctrl+click, and closes a tab with a middle click", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    await middleClick(inSidebar("Beat"));
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Beat")]));
+    expect(on()).toContain("Song"); // (behind: the one shown stays)
+    // the middle click on a tab closes it, as × does
+    await middleClick(screen.getAllByRole("tab")[0].closest(".tab")!);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Beat")]));
+    expect(on()).toContain("Beat");
+    await fireEvent.click(inSidebar("Song"), { ctrlKey: true });
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Beat"), expect.stringContaining("Song")]));
+    expect(on()).toContain("Beat");
+  });
+
+  it("opens the team's home as a tab of its own, drawn with the team's mark, and keeps it", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    await middleClick(document.querySelector(".team-menu .switch")!);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Band")]));
+    expect(on()).toContain("Song");
+    const [song, band] = screen.getAllByRole("tab");
+    expect(band.title).toBe("Band · Team home");
+    expect(band.querySelector(".pi")!.classList.contains("solid")).toBe(true); // a team's mark
+    expect(song.querySelector(".pi")!.classList.contains("solid")).toBe(false); // a project's icon
+    await fireEvent.click(band);
+    expect(await screen.findByRole("heading", { name: "Band" })).toBeTruthy();
+    expect(on()).toContain("Band");
+    expect(JSON.parse(localStorage.getItem("r3v.tabs")!).map((x: { key: string }) => x.key)).toEqual(["C:/Song", "home:"]);
+    // kept: R3V opened again starts on its first tab, the home on its own
+    cleanup();
+    localStorage.setItem("r3v.tabs", JSON.stringify([{ team: "t", key: "home:" }, { team: "t", key: "C:/Song" }]));
+    render(App);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Band"), expect.stringContaining("Song")]));
+    expect(on()).toContain("Band");
+    expect(await screen.findByRole("heading", { name: "Band" })).toBeTruthy();
   });
 
   it("opens the quick launcher with Ctrl+T, but not held down, nor while typing", async () => {
@@ -101,9 +160,10 @@ describe("App: tabs", () => {
   it("goes through, closes and reopens tabs, and folds the sidebar, with the keyboard", async () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
-    await fireEvent.click(screen.getAllByRole("button", { name: /^Beat/ })[0]); // a second tab
+    await fireEvent.click(screen.getAllByRole("button", { name: /^Beat/ })[0], { ctrlKey: true }); // a second tab
     await waitFor(() => expect(tabs()).toHaveLength(2));
-    const on = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent?.trim();
+    expect(on()).toContain("Song");
+    await fireEvent.keyDown(window, { key: "Tab", ctrlKey: true });
     expect(on()).toContain("Beat");
     await fireEvent.keyDown(window, { key: "Tab", ctrlKey: true });
     expect(on()).toContain("Song"); // (round to the first)
@@ -269,6 +329,23 @@ describe("App: tabs of more than one team", () => {
     await fireEvent.keyDown(window, { key: "T", ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(teamShown()).toContain("Band"));
     await waitFor(() => expect(on()).toContain("Song"));
+  });
+
+  it("goes to another team's home from its tab, the sidebar on that team", async () => {
+    localStorage.setItem("r3v.tabs", JSON.stringify([
+      { team: "a", key: "C:/Song", p: { id: "song", root: "C:/Song", name: "Song", icon: "", color: "", status: "downloaded" } },
+      { team: "b", key: "home:" },
+    ]));
+    render(App);
+    await waitFor(() => expect(on()).toContain("Song"));
+    await fireEvent.click(screen.getAllByRole("tab")[1]);
+    await waitFor(() => expect(teamShown()).toContain("Duo"));
+    expect(await screen.findByRole("heading", { name: "Duo" })).toBeTruthy();
+    expect(on()).toContain("Duo");
+    // a click on a project in the sidebar shows it in that tab
+    await fireEvent.click(screen.getAllByRole("button", { name: /^Loop/ })[0]);
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Loop")]));
+    expect(on()).toContain("Loop");
   });
 
   it("starts the one list from the team's old one, and drops tabs of teams gone", async () => {
