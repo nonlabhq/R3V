@@ -19,6 +19,10 @@ type StepsInfo struct {
 	Settings  project.StepSettings `json:"settings"`
 	// Hooked: Claude Code in this copy makes them (its hooks are set up).
 	Hooked bool `json:"hooked"`
+	// Tool is the agent tool the copy is set up for ("": none): another
+	// than Claude Code makes its steps itself (r3v step start and end),
+	// with no hooks to set up.
+	Tool string `json:"tool"`
 	// Session is the one asked for, or the latest (nil: none yet).
 	Session  *project.Session `json:"session"`
 	Sessions []SessionSummary `json:"sessions"`
@@ -47,6 +51,7 @@ func (a *App) Steps(root, session string) (*StepsInfo, error) {
 	}
 	info.On, info.Settings = r.StepsOn(), r.StepSettingsNow()
 	info.Hooked = agentsetup.StepHooks(r.Root)
+	info.Tool = agentsetup.CopyTool(r.Root)
 	all, err := r.Sessions()
 	if err != nil {
 		return nil, err

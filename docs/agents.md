@@ -76,10 +76,14 @@ same `next` (see Output); `update` and `merge` fail with
   explain <file>` says why a file is tracked. Leave out what a build or a
   tool makes again (caches, renders, build outputs) before the first
   commit: `rules: - ignore: "renders/"`.
-- **Steps** (Nightly): R3V's hooks keep the files after each of your tool
-  calls, under the person's prompt, so the person can go back to any of
-  them. Nothing to do on your side; don't run `r3v step back` yourself
-  (it changes the files of the copy, the person's edits included).
+- **Steps** (Nightly) keep the files at points of your work, so the
+  person can go back to any of them. Claude Code set up with `r3v agent
+  setup`: R3V's hooks keep them after each of your tool calls, under the
+  person's prompt; nothing to do on your side. Any other tool (no hooks):
+  wrap each task in `r3v step start -m "what you're about to do" --json`
+  and `r3v step end -m "what you did" --json`, then commit if the work is
+  finished (see Output). Don't run `r3v step back` yourself (it changes
+  the files of the copy, the person's edits included).
 - **Don't commit unfinished work to merge it later.** A branch is merged
   whole: what isn't finished stays uncommitted (switching away parks it,
   Nightly: `r3v parked`), or is finished before the branch is merged.
@@ -356,6 +360,24 @@ its own whose files are exactly a parent's (`same_files_as`: a lane's
 head merged into a branch that hadn't moved) shows that parent's
 results, each with `from` (where it was recorded); results recorded for
 the merge itself replace them.
+
+`step start -m NOTE` and `step end [-m NOTE]` (Nightly; for tools without
+R3V's hooks): a start begins a task (a turn whose note is NOTE, redacted)
+and keeps the files first when they changed since the step before (the
+user's edits, say): `open` (`session`, `turn`, `since`, `note`), `before`
+(that step, or null), `previous` (a task you left open, ended now: as
+`ended` below). An end keeps the files as they are as a step of that
+task: `ended` (`session`, `turn`, `since`, `note`, `step`, `stale`; null
+with `note` saying none was started: a no-op), `step` (`n`, `turn`,
+`version`, `files` changed since the step before, `tool` `step end`,
+`detail` your NOTE, `actor`; null when nothing changed). Your session is
+your tool's (`R3V_ACTOR_SESSION`, Codex's thread, opencode's or Pi's
+session); a tool without one goes on in its latest session for 4 hours,
+then starts another. A task open longer than 12 hours is closed by the
+next start without a step (`stale`: true). Both are ok and change
+nothing when steps are off here (`off`: true) or Claude Code's hooks make
+them (`hooked`: true). End before you commit: the version lists the steps
+made before it.
 
 `undo-merge VERSION` (Nightly) takes back what a merge brought in: a new
 version on the current branch without it, the history kept (the merge

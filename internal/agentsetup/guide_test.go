@@ -69,6 +69,25 @@ func TestGuideNew(t *testing.T) {
 	}
 }
 
+// The guide tells tools without hooks to wrap each task in step start
+// and step end, and commit after; Claude Code, set up, is told its hooks
+// make the steps, and given no commands for them.
+func TestGuideSteps(t *testing.T) {
+	block := guideBlock()
+	for _, want := range []string{
+		"Claude Code set up with\n  `r3v agent setup` makes them with its hooks: nothing to do.",
+		"Any other tool: begin each task with\n  `r3v step start -m \"what you're about to do\" --json`",
+		"`r3v step end -m \"what you did\" --json`, then commit if the work is finished.",
+	} {
+		if strings.Count(block, want) != 1 {
+			t.Fatalf("the guide lacks %q:\n%s", want, block)
+		}
+	}
+	if strings.Count(block, "r3v step start") != 1 || strings.Count(block, "r3v step end") != 1 {
+		t.Fatalf("step commands said more than once:\n%s", block)
+	}
+}
+
 // A CRLF AGENTS.md keeps its line ends.
 func TestGuideKeepsLineEnds(t *testing.T) {
 	root := t.TempDir()

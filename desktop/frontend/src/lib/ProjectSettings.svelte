@@ -305,7 +305,8 @@
        Cloud teams, agents' settings where this build has agents) -->
   {#if steps?.available || team?.hosted}<ProjectWorkflow root={p.root} />{/if}
   {#if steps?.available}
-    {#if !steps.settings.off && !steps.hooked}
+    <!-- (a copy set up for another tool: it makes its steps itself, r3v step start and end) -->
+    {#if !steps.settings.off && !steps.hooked && (!steps.tool || steps.tool === "claude-code")}
       <section>
         <div class="action">
           <div><strong>{t("Claude Code here doesn't make steps yet")}</strong>
