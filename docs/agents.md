@@ -82,7 +82,7 @@ same `next` (see Output); `update` and `merge` fail with
   person's prompt; nothing to do on your side. Any other tool (no hooks):
   wrap each task in `r3v step start -m "what you're about to do" --json`
   and `r3v step end -m "what you did" --json`, then commit if the work is
-  finished (see Output). Don't run `r3v step back` yourself (it changes
+  finished (see Output; a commit ends the task left open too). Don't run `r3v step back` yourself (it changes
   the files of the copy, the person's edits included).
 - **Don't commit unfinished work to merge it later.** A branch is merged
   whole: what isn't finished stays uncommitted (switching away parks it,
@@ -320,7 +320,9 @@ without sets, a Unity one say),
 version just took (a commit is never refused for one), and `shared`:
 `false` when the versions are on this computer only (`--local`, or a
 project on no team: then a `not_connected` warning and `next`, the ways
-to connect it and the commit that shares them once connected). `update` and
+to connect it and the commit that shares them once connected), and
+`step_ended` when it ended the task an agent left open (`step start`).
+`update` and
 `merge` (and their `--preview`) have `unshared_elsewhere` when another
 copy of the project on this computer (the main copy, a workspace) has
 versions on that branch not shared yet (`commit --local`): they aren't on
@@ -376,8 +378,11 @@ session); a tool without one goes on in its latest session for 4 hours,
 then starts another. A task open longer than 12 hours is closed by the
 next start without a step (`stale`: true). Both are ok and change
 nothing when steps are off here (`off`: true) or Claude Code's hooks make
-them (`hooked`: true). End before you commit: the version lists the steps
-made before it.
+them (`hooked`: true). A commit ends the task you left open first, so
+the version lists its steps: `commit --json` gives that end as
+`step_ended` (as `ended` above; its step's `detail` `ended by commit:`
+and the commit's title). `step end` is still the way to end a task
+that doesn't commit.
 
 `undo-merge VERSION` takes back what a merge brought in: a new
 version on the current branch without it, the history kept (the merge

@@ -268,7 +268,8 @@ this copy's and never tracked) and `@AGENTS.md` in `CLAUDE.md`; run by
 `workspace add --agent TOOL`. The hooks are Claude Code's only: other
 tools get no first-touch locking (the commit check still refuses a
 locked file), and make their steps themselves, the guide telling them
-to wrap each task in `r3v step start` and `r3v step end` ([steps.md](steps.md#tools-without-hooks)).
+to wrap each task in `r3v step start` and `r3v step end` (a commit
+ends one left open; [steps.md](steps.md#tools-without-hooks)).
 
 ## Stopping half-way
 

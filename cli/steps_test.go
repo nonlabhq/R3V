@@ -133,3 +133,47 @@ func TestStepStartEndWithoutHooks(t *testing.T) {
 	}
 }
 
+// A commit ends the task an agent began and left open (step_ended, its
+// step named for the commit), so the version lists its steps; with none
+// open it says nothing of steps.
+func TestCommitEndsTheOpenTask(t *testing.T) {
+	asUnknown(t)
+	t.Setenv("CODEX_THREAD_ID", "th-c")
+	a := newFolder(t, map[string]string{"notes.txt": "one"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	if exit, rep := run(t, a, "step", "start", "-m", "Make the notes longer"); exit != 0 {
+		t.Fatalf("start: %+v", rep.Error)
+	}
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("one, two"), 0o644)
+	exit, rep := run(t, a, "commit", "-m", "Longer notes")
+	var out struct {
+		Saved     *struct{ ID string }
+		StepEnded *project.StepEnded `json:"step_ended"`
+	}
+	json.Unmarshal(rep.Result, &out)
+	if exit != 0 || out.Saved == nil || out.StepEnded == nil || out.StepEnded.Turn != 1 || out.StepEnded.Step == nil ||
+		out.StepEnded.Step.Detail != project.CommitEndDetail+"Longer notes" {
+		t.Fatalf("commit: %d %s %+v", exit, rep.Result, rep.Error)
+	}
+	r, err := project.Open(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Actor = &project.Actor{Kind: "agent", Tool: "codex", Session: "th-c"}
+	if r.OpenTask() != nil {
+		t.Fatal("still open")
+	}
+	if got, _ := r.VersionSteps(out.Saved.ID); len(got) != 1 || got[0].Steps != 1 {
+		t.Fatalf("the version's steps: %+v", got)
+	}
+	if exit, text := runText(t, a, "commit", "-m", "nothing"); exit != 0 || strings.Contains(text, "ended") {
+		t.Fatalf("none open: %d %q", exit, text)
+	}
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("three"), 0o644)
+	if exit, rep := run(t, a, "commit", "-m", "Third"); exit != 0 || strings.Contains(string(rep.Result), "step_ended") {
+		t.Fatalf("none open: %d %s", exit, rep.Result)
+	}
+}

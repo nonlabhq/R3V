@@ -124,10 +124,15 @@ The rules, so that an agent told to run them always can:
 - **Steps off**, or **Claude Code whose hooks make the steps here**:
   both change nothing, ok (`off`, `hooked`), so the same guide works
   everywhere.
-- **A commit** doesn't look at what is open: the guide says to end
-  first, so the version lists the task's steps (made on its parent before
-  it). Committed while open, the end then makes its step on the new
-  version (often of the very same files).
+- **A commit ends the task first** (`r3v commit`, when an agent runs
+  it and has one open; not with Claude Code's hooks making the steps):
+  a step of the files then in that task's turn, its `detail` `ended by
+  commit: <the commit's title>`, then the version, which lists the
+  task's steps (made on its parent before it). `commit --json` gives it
+  as `step_ended` (as `step end`'s `ended`). An agent that commits
+  without `step end` loses nothing; ending first is still the way for a
+  task that doesn't commit. A person's commits, the app's included, end
+  nothing.
 - Two agents of one tool with no session ids in one copy share an open
   task; each in a workspace of its own (the guide's way) has its own.
 
@@ -139,6 +144,7 @@ Stopped half-way:
 | start: the first step written | the turn and its step | as above |
 | start: the open record written | a task open | the end, or the next start, ends it |
 | end: the step written, the record not cleared | the step | ending again makes no second step (the files are as at it); the next start ends it, nothing changed |
+| commit: the task ended, no version yet (stopped, or the commit refused: a locked file, a conflict) | the step, on the version the files are on, nothing open | the next commit's version lists it, as this one would have |
 
 The open record is written whole or not at all (written aside, then
 renamed); one that can't be read counts as nothing open.

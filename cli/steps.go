@@ -219,7 +219,7 @@ func cmdStepTask(what string, args []string) error {
 	case !r.StepsOn():
 		res["off"] = true
 		say = "steps are off for this project (R3V's project settings): nothing kept"
-	case r.Actor != nil && r.Actor.Tool == agentsetup.ClaudeCodeTool && agentsetup.StepHooks(r.Root):
+	case stepsHooked(r):
 		res["hooked"] = true
 		say = "Claude Code's hooks make the steps here: nothing to do"
 	}
@@ -265,6 +265,12 @@ func cmdStepTask(what string, args []string) error {
 		fmt.Printf("ended turn %d%s\n", ended.Turn, endedLine(ended))
 	})
 	return nil
+}
+
+// stepsHooked: Claude Code's hooks make the steps of the agent running R3V
+// here, so its start, end (and commit) leave tasks alone.
+func stepsHooked(r *project.Repo) bool {
+	return r.Actor != nil && r.Actor.Tool == agentsetup.ClaudeCodeTool && agentsetup.StepHooks(r.Root)
 }
 
 // endedLine says what an end kept.

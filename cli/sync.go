@@ -318,12 +318,14 @@ type syncJSON struct {
 // commitJSON is r3v commit's result: Warnings as status has them, of what
 // the version took. Shared: the project's versions are in the team's
 // storage (false: on this computer only, with --local or in no team; Next
-// then says how to connect it).
+// then says how to connect it). StepEnded: the task the agent began with
+// step start and left open, ended by the commit (as step end's ended).
 type commitJSON struct {
 	syncJSON
-	Warnings []warningJSON `json:"warnings"`
-	Shared   bool          `json:"shared"`
-	Next     []nextJSON    `json:"next,omitempty"`
+	Warnings  []warningJSON      `json:"warnings"`
+	Shared    bool               `json:"shared"`
+	Next      []nextJSON         `json:"next,omitempty"`
+	StepEnded *project.StepEnded `json:"step_ended,omitempty"`
 }
 
 // reopenSets: a merge changed Live Sets (between before, the version the
@@ -377,6 +379,14 @@ func cmdCommit(args []string) error {
 			return err
 		}
 	}
+	// The agent's task left open ends first, so the version lists its
+	// steps (the commit failing after, it stays ended: the next lists them).
+	var stepEnded *project.StepEnded
+	if !stepsHooked(r) {
+		if stepEnded, err = r.EndTaskAtCommit(manifest.Title(msg)); err != nil {
+			return err
+		}
+	}
 	defer tidy(r)
 	var m *project.Manifest
 	var res *project.SyncResult
@@ -416,7 +426,7 @@ func cmdCommit(args []string) error {
 		out.Saved = &v
 	}
 	// (after the fact: a commit isn't refused for it; status warned before)
-	warned := commitJSON{syncJSON: out, Warnings: []warningJSON{}, Shared: connected(r) && out.Action != "local"}
+	warned := commitJSON{syncJSON: out, Warnings: []warningJSON{}, Shared: connected(r) && out.Action != "local", StepEnded: stepEnded}
 	if m != nil {
 		warned.Warnings = builtWarnings(r.BuiltFoldersIn(m))
 	}
@@ -427,6 +437,9 @@ func cmdCommit(args []string) error {
 	}
 	result("commit", warned, func() {
 		defer printWarnings(warned.Warnings, true)
+		if stepEnded != nil {
+			fmt.Printf("ended the open task (turn %d)%s\n", stepEnded.Turn, endedLine(stepEnded))
+		}
 		switch out.Action {
 		case "local":
 			if connected(r) {

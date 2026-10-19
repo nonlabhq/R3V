@@ -277,6 +277,8 @@ Agent locks keep two agents (each in a workspace of the project) from changing t
 ```
 r3v steps [--session ID] [--list]      # the latest session's prompts and steps (--list: the sessions)
 r3v step [-m NOTE]                     # a step of the files as they are now
+r3v step start -m "WHAT"               # an agent tool without hooks begins a task (ends one left open)
+r3v step end [-m "WHAT I DID"]         # and ends it: a step of the files as they are (a commit ends it too)
 r3v step back <n> [--session ID]       # the files as at step n (the files now are a step first)
 r3v step diff <a> [<b>] [--session ID] # what changed from step a to step b (or to the files now)
 ```
