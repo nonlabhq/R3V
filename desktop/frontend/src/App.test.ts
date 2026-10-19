@@ -349,8 +349,15 @@ describe("App: tabs of more than one team", () => {
     await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Loop"), expect.stringContaining("Beat")]));
     expect(on()).toContain("Loop");
     expect(screen.getAllByRole("tab")[1].title).toBe("Band · Beat\nC:/Beat");
-    // tabs of two teams: each says which
-    expect(document.querySelectorAll(".tab-team")).toHaveLength(2);
+    // tabs of two teams: a project's tab is its icon and name alone (its
+    // team in the tooltip), in either look; a home's has its team's mark
+    for (const look of ["flat", "cards"]) {
+      document.documentElement.dataset.look = look;
+      const [loop, beat] = screen.getAllByRole("tab");
+      for (const tab of [loop, beat]) expect(tab.querySelectorAll(".pi")).toHaveLength(1); // (its own icon, no team mark)
+      expect(loop.title).toBe("Duo · Loop\nC:/Loop");
+    }
+    delete document.documentElement.dataset.look;
     // remembered as one list
     expect(JSON.parse(localStorage.getItem("r3v.tabs")!).map((x: { team: string; key: string }) => `${x.team}:${x.key}`))
       .toEqual(["b:C:/Loop", "a:C:/Beat"]);
@@ -373,6 +380,9 @@ describe("App: tabs of more than one team", () => {
     await waitFor(() => expect(teamShown()).toContain("Duo"));
     await waitFor(() => expect(on()).toContain("Duo"));
     expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Duo")]);
+    // (a home's tab: its team's mark)
+    expect(screen.getAllByRole("tab")[1].querySelectorAll(".pi")).toHaveLength(1);
+    expect(screen.getAllByRole("tab")[1].title).toContain("Team home");
   });
 
   it("opens a team's home in a tab behind with a middle click or Ctrl+click in the team menu", async () => {

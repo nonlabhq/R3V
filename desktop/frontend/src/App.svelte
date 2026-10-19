@@ -14,11 +14,11 @@
   import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
   import { linkPick } from "./lib/links.svelte";
   import { besideMain, moveKey, readOrder, sortByOrder, withGroupOrder } from "./lib/order";
-  import { foldSection, groupBySection, sectionFolds, type Group } from "./lib/sections.svelte";
+  import { foldSection, groupBySection, orderedSections, sectionFolds, setSectionOrder, type Group } from "./lib/sections.svelte";
   import SectionMenu from "./lib/SectionMenu.svelte";
   import PromptDialog from "./lib/PromptDialog.svelte";
   import { addTab, closeTab, homeRef, isHome, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab,
-    snapOf, tabId, teamsOf, toSave, type TabRef, type TabSnap } from "./lib/tabs";
+    snapOf, tabId, toSave, type TabRef, type TabSnap } from "./lib/tabs";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
   import { untrack } from "svelte";
   import { flip } from "svelte/animate";
@@ -255,10 +255,12 @@
   // (the one shown stays, folded or not)
   let rows = $derived(entries.filter((p) => (!wsHidden(p) && !archivedHidden(p)) || p === selectedEntry));
   // Sections (docs/design/sections.md): the panel groups the
-  // projects by the team's sections, the ungrouped first, each section
+  // projects by the team's sections, the ungrouped last, each section
   // folding (this computer); an agent's workspace goes with its project.
-  // Those who may (canEditSections) drag a project onto another section.
-  let sections = $derived<SectionView[]>(overview?.sectionsOn ? overview.sections ?? [] : []);
+  // The sections in this person's order (a header dragged; this computer
+  // only). Those who may (canEditSections) drag a project onto another
+  // section.
+  let sections = $derived<SectionView[]>(overview?.sectionsOn ? orderedSections(overview.currentTeam, overview.sections ?? []) : []);
   let canEditSections = $derived(!!overview?.sectionsOn && !!current?.canEditSections);
   let movedTo = $state<Record<string, string>>({}); // projects just dropped on a section, until the list says so
   const mainOf = (p: TeamProject) => (p.workspace ? entries.find((m) => !m.workspace && sameRoot(m.root, p.mainRoot)) : p);
@@ -403,10 +405,10 @@
     const p = entries.find((e) => rowKey(e) === x.key);
     return p ? { id, key: x.key, team: x.team, p } : null;
   }).filter((x): x is Tab => !!x));
-  // Which team a tab is on shows once tabs of more than one are open.
-  let manyTeams = $derived(teamsOf(tabItems) > 1);
   const teamOf = (id: string) => overview?.teams.find((t) => t.id === id);
-  // "Team · Project", and its folder.
+  // "Team · Project", and its folder: a project's tab is its icon and name
+  // alone, whatever teams the tabs are on (its team said here, so two
+  // teams' projects of one name are told apart); a home's, its team's mark.
   const tabTitle = (team: string, p: { name: string; root: string }) =>
     [team ? `${team} · ${p.name}` : p.name, p.root].filter(Boolean).join("\n");
   // (by key: reading the overview again makes new project objects)
@@ -638,9 +640,29 @@
     const a = sectionAsk!, name = a.name.trim();
     if (await sectionCall(() => (a.id ? api.RenameSection(teamId, a.id, name) : api.NewSection(teamId, name)))) sectionAsk = null;
   }
-  function moveSection(id: string, by: number) {
-    const i = sections.findIndex((s) => s.id === id);
-    sectionCall(() => api.MoveSection(teamId, id, i + by));
+  // Dragging a section's header moves the section among the others, as a
+  // project is moved (anyone: the order is each person's, kept on this
+  // computer, not the team's).
+  let sectDragging = $state(""); // the section being dragged (drawn lifted)
+  let sectDy = $state(0);
+  function sectDown(e: PointerEvent, id: string) {
+    if (!(e.target as HTMLElement).closest(".sect-h") || (e.target as HTMLElement).closest(".sect-more")) return;
+    const team = teamId;
+    dragSort(e, {
+      axis: "y",
+      start: () => (sectDragging = id),
+      move: (before) => {
+        const ids = sections.map((s) => s.id);
+        const moved = moveKey(ids, id, before ? ids.indexOf(before) : ids.length);
+        if (moved !== ids) setSectionOrder(team, moved);
+      },
+      follow: (d) => (sectDy = d),
+      end: (moved) => {
+        if (moved) { projDragged = true; setTimeout(() => (projDragged = false)); }
+        sectDragging = "";
+        sectDy = 0;
+      },
+    });
   }
   async function deleteSection(s: SectionView) {
     sectionDelete = null;
@@ -764,7 +786,9 @@
     toast(t("Archived “{name}” for the team: it's under Archived in the team's home", { name: p.name }), "ok", 8000);
     const shown = selectedEntry && rowKey(selectedEntry) === rowKey(p);
     await reload();
-    if (shown) showHome();
+    // (the one shown: its tab shows the team's home instead, and the panel
+    // lets it go)
+    if (shown) { selected = {}; goHome(); }
   }
   async function unarchive(p: TeamProject) {
     try {
@@ -997,7 +1021,6 @@
       </div>
       {#if current}
         <div class="team-slot"><TeamMenu folded {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))}
-          onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined}
           onteam={switchTeam} onsettings={openTeamSettings} /></div>
       {/if}
       <div class="section-slot">
@@ -1007,9 +1030,9 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
         <!-- (each section its own list, a line between: the icons alone) -->
-        {#each groups as g (g.id)}
+        {#each groups as g, gi (g.id)}
           {#if !g.id || groupRows(g).length}
-            <div class="folded-group" class:sect={!!g.id} class:drop={dropOn === g.id} data-section={g.id} title={g.name || undefined}>
+            <div class="folded-group" class:sect={gi > 0} class:drop={dropOn === g.id} data-section={g.id} title={g.name || undefined}>
               {#each groupRows(g) as p (p.root || p.id)}
                 <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p), dragging)}
                   style:pointer-events={dragging === orderOf(p) ? "none" : undefined}
@@ -1049,7 +1072,6 @@
       <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))} onteam={switchTeam}
-        onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined}
         onsettings={openTeamSettings} /></div>
 
       <div class="list">
@@ -1057,7 +1079,7 @@
         <div class="section row-h section-slot band" oncontextmenu={(e) => openSectionMenu("", e)}>
           <span>{t("Projects")}</span>
           {#if current}
-            <button class="ghost tiny flat-only add-tiny" onclick={plus} disabled={busy === "add"}
+            <button class="ghost tiny add-tiny" onclick={plus} disabled={busy === "add"}
               title={canEditSections ? t("Add a project or a section") : t("Add project")} aria-label={canEditSections ? t("Add a project or a section") : t("Add project")}
               aria-haspopup={canEditSections ? "menu" : undefined}>+</button>
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
@@ -1068,47 +1090,50 @@
         {#if current && overview.teamError}
           <div class="offline" title={overview.teamError}>● {t("Storage not reachable")}</div>
         {/if}
-        <!-- the ungrouped projects, then each section (its header folds it;
-             its menu for those who may change the team's sections) -->
+        <!-- each section (its header folds it, and dragged moves it; its
+             menu for those who may change the team's sections), then the
+             ungrouped projects -->
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="groups" class:dragging={!!dragging && canEditSections}
           onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
-          {#each groups as g, gi (g.id)}
-            {#if g.id}
+          <div class="sects">
+            {#each groups.slice(0, -1) as g (g.id)}
               {@const shut = !!sectionFolds[g.id]}
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div class="sect-h" class:drop={dropOn === g.id} data-section={g.id} oncontextmenu={(e) => openSectionMenu(g.id, e)}>
-                <button class="sect-fold" aria-expanded={!shut} onclick={() => foldSection(g.id)}
-                  title={shut ? t("Show the section's projects") : t("Hide the section's projects")}>
-                  <span class="caret" aria-hidden="true">{shut ? "▸" : "▾"}</span><span class="sect-name">{g.name}</span>
-                  <span class="count">{projectCount(g)}</span>
-                </button>
-                {#if canEditSections}
-                  <button class="ghost tiny sect-more" title={t("Section menu")} aria-label={t("Section menu")} aria-haspopup="menu"
-                    onclick={(e) => openSectionMenu(g.id, e, e.currentTarget)}>⋯</button>
-                {/if}
+              <div class="sect-box" data-key={g.id} class:lifted={sectDragging === g.id} animate:flip={slide(g.id, sectDragging)}
+                style:transform={sectDragging === g.id ? `translateY(${sectDy}px)` : undefined}
+                style:pointer-events={sectDragging === g.id ? "none" : undefined} onpointerdown={(e) => sectDown(e, g.id)}>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="sect-h" class:drop={dropOn === g.id} data-section={g.id} oncontextmenu={(e) => openSectionMenu(g.id, e)}>
+                  <button class="sect-fold" aria-expanded={!shut} onclick={() => foldSection(g.id)}
+                    title={shut ? t("Show the section's projects") : t("Hide the section's projects")}>
+                    <span class="caret" aria-hidden="true">{shut ? "▸" : "▾"}</span><span class="sect-name">{g.name}</span>
+                    <span class="count">{projectCount(g)}</span>
+                  </button>
+                  {#if canEditSections}
+                    <button class="ghost tiny sect-more" title={t("Section menu")} aria-label={t("Section menu")} aria-haspopup="menu"
+                      onclick={(e) => openSectionMenu(g.id, e, e.currentTarget)}>⋯</button>
+                  {/if}
+                </div>
+                {@render groupList(g)}
               </div>
-            {/if}
-            <ul data-projects data-section={g.id} class:drop={dropOn === g.id} aria-label={g.name || undefined}>
-              {#each groupRows(g) as p (p.root || p.id)}
-                <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
-                  animate:flip={slide(orderOf(p), dragging)} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
-                  style:pointer-events={dragging === orderOf(p) ? "none" : undefined}
-                  onpointerdown={(e) => { if (!p.workspace) projDown(e, p); }} oncontextmenu={(e) => openMenu(p, e)}>
-                  {@render row(p)}
-                </li>
-              {:else}
-                {#if gi === 0 && groups.length === 1}<li class="empty faint">{t("No projects in this team yet.")}</li>{/if}
-              {/each}
-            </ul>
-          {/each}
+            {/each}
+          </div>
+          {@render groupList(groups[groups.length - 1])}
         </div>
-        <div class="cards-only">
-          <button class="add" onclick={addToTeam} disabled={busy === "add" || !current}>
-            <span>+ {t("Add project")}</span>
-            <span class="hint">{t("Select project folder")}</span>
-          </button>
-        </div>
+        {#snippet groupList(g: Group<TeamProject>)}
+          <ul data-projects data-section={g.id} class:drop={dropOn === g.id} class:after-sects={!g.id && groups.length > 1 && (groupRows(g).length > 0 || !!dragging)} aria-label={g.name || undefined}>
+            {#each groupRows(g) as p (p.root || p.id)}
+              <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
+                animate:flip={slide(orderOf(p), dragging)} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
+                style:pointer-events={dragging === orderOf(p) ? "none" : undefined}
+                onpointerdown={(e) => { if (!p.workspace) projDown(e, p); }} oncontextmenu={(e) => openMenu(p, e)}>
+                {@render row(p)}
+              </li>
+            {:else}
+              {#if !g.id && groups.length === 1}<li class="empty faint">{t("No projects in this team yet.")}</li>{/if}
+            {/each}
+          </ul>
+        {/snippet}
       </div>
       <!-- what needs you: R3V's update, the team's asks (kept below the
            projects, so they stay where they are folded or not) -->
@@ -1170,7 +1195,6 @@
                 title={x.home ? `${name} · ${t("Team home")}` : proj ? tabTitle(team?.name ?? "", proj) : name}
                 onclick={() => goTab(x)}>
                 {#if x.home}{#if team}<TeamMark {team} size={16} />{/if}{:else if proj}<ProjectIcon p={proj} size={16} />{/if}{name}
-                {#if manyTeams && team && !x.home}<span class="tab-team"><TeamMark {team} size={16} /></span>{/if}
               </button>
               <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
                 title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
@@ -1184,8 +1208,8 @@
       <div class="content-body">
       {#if current && (home || !selectedEntry)}
         <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
-          onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined} onsettings={(p) => (settingsFor = p)} onarchive={(p) => { if (canArchive(p)) archiving = p; }}
-          adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
+          onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined} onsettings={(p) => (settingsFor = p)}
+          onsection={canEditSections ? moveToSection : undefined} adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
@@ -1310,8 +1334,8 @@
 {#if sectionMenu}
   {@const id = sectionMenu.id}
   {@const i = sections.findIndex((s) => s.id === id)}
-  <SectionMenu name={sections[i]?.name ?? ""} at={sectionMenu.at} opener={sectionMenu.opener} first={i === 0} last={i === sections.length - 1}
-    onrename={() => (sectionAsk = { id, name: sections[i]?.name ?? "" })} onmove={(by) => moveSection(id, by)}
+  <SectionMenu name={sections[i]?.name ?? ""} at={sectionMenu.at} opener={sectionMenu.opener}
+    onrename={() => (sectionAsk = { id, name: sections[i]?.name ?? "" })}
     ondelete={() => (sectionDelete = sections[i] ?? null)} onadd={sectionMenu.add ? addToTeam : undefined}
     onnew={() => (sectionAsk = { id: "", name: "" })} onclose={() => (sectionMenu = null)} />
 {/if}
@@ -1328,8 +1352,8 @@
 {/if}
 
 {#if rowMenu && menuFor}
-  <ProjectMenu p={menuFor} at={menuAt} onsettings={(p) => (settingsFor = p)} onarchive={canArchive(menuFor) ? (p) => (archiving = p) : undefined}
-    onclose={() => (rowMenu = "")} />
+  <ProjectMenu p={menuFor} at={menuAt} onsettings={(p) => (settingsFor = p)}
+    sections={canEditSections ? sections : undefined} onsection={moveToSection} onclose={() => (rowMenu = "")} />
 {/if}
 <Tooltip />
 {#if launching && overview}
@@ -1497,14 +1521,14 @@
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   /* The project dragged: lifted over the others, where the pointer is; let
      go, it settles into its place. */
-  li[data-key], .folded-row, .tab { touch-action: none; transition: transform .15s ease-out; }
+  li[data-key], .folded-row, .tab, .sect-box { touch-action: none; transition: transform .15s ease-out; }
   /* (as specific as the rule above: the one dragged never lags the pointer) */
-  li[data-key].lifted, .folded-row.lifted, .tab.lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
+  li[data-key].lifted, .folded-row.lifted, .tab.lifted, .sect-box.lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
   /* (solid under a dimmed row: the rows it passes don't show through) */
-  li.lifted, .folded-row.lifted { background: var(--bg-sunken); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  li.lifted, .folded-row.lifted, .sect-box.lifted { background: var(--bg-sunken); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .lifted .proj, .lifted .folded-proj { background: var(--panel-2); }
   .tab.lifted:not(.on) { background: var(--panel); }
-  @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row, .tab { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row, .tab, .sect-box { transition: none; } }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo { position: relative; }
   .logo img { width: 22px; height: 22px; display: block; }
@@ -1532,6 +1556,9 @@
   /* A section: its header (folds it), then its projects. Dragged over,
      where a project would go is marked; while one is dragged, an empty
      list keeps a strip to drop on. */
+  .sect-box { position: relative; }
+  /* (the ungrouped projects, after the sections: a line above them) */
+  ul.after-sects { margin-top: var(--sp-8); padding-top: var(--sp-4); border-top: var(--border-width) solid var(--line); }
   .sect-h { position: relative; display: flex; align-items: center; margin-top: var(--sp-8); border-radius: var(--row-radius); }
   .sect-fold { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); padding: var(--sp-4) var(--sp-28) var(--sp-4) var(--sp-8);
     border: none; background: transparent; text-align: left; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--muted); }
@@ -1571,8 +1598,6 @@
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }
   .offline { font-size: var(--fs-sm); color: var(--danger); padding: 0 var(--sp-8) var(--sp-4); }
-  .add { width: 100%; margin: var(--sp-8) 0 var(--sp-4); display: flex; flex-direction: column; align-items: center; gap: 0; padding: var(--sp-4) var(--sp-10); line-height: 1.3; }
-  .add .hint { font-size: var(--fs-xs); color: var(--faint); font-weight: 400; }
   .pad { padding: 0 var(--sp-8); }
   .link { border: none; background: none; color: var(--muted); text-decoration: underline; padding: 0; font-size: var(--fs-md); text-align: left; }
   .version { margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-4); padding: var(--sp-2) var(--sp-4);
@@ -1621,7 +1646,6 @@
     padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .tab-name:hover:not(:disabled) { background: transparent; }
   /* Which team a tab is on, once tabs of more than one are open. */
-  .tab-team { flex: none; margin-left: auto; display: inline-flex; }
   .tab-x { border: none; background: transparent; padding: 0 var(--sp-8); color: var(--faint); font-size: var(--fs-lg); line-height: 1; visibility: hidden; }
   .tab:hover .tab-x, .tab.on .tab-x { visibility: visible; }
   .tab-x:hover:not(:disabled) { background: transparent; color: var(--text); }

@@ -952,13 +952,6 @@ export function MoveProject(root: string, teamID: string, copy: boolean): $Cance
 }
 
 /**
- * MoveSection puts a section at place to among the team's (0 first).
- */
-export function MoveSection(teamID: string, sectionID: string, to: number): $CancellablePromise<void> {
-    return $Call.ByID(532132423, teamID, sectionID, to);
-}
-
-/**
  * NewSection adds a section to the team, last.
  */
 export function NewSection(teamID: string, name: string): $CancellablePromise<$models.SectionView> {
@@ -1407,7 +1400,7 @@ export function SetChannel(channel: string): $CancellablePromise<$models.UpdateI
  * member record in each of those teams, so teammates see it on their
  * versions now. Nothing changes when the service refuses or can't be
  * reached; a team not reached keeps the old name in its record
- * (NotUpdated) until the name is saved again.
+ * (NotUpdated) until the app next starts (renameMemberRecords).
  */
 export function SetCloudName(teamID: string, name: string): $CancellablePromise<$models.CloudRename> {
     return $Call.ByID(301328511, teamID, name).then(($result: any) => {

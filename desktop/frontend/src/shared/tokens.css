@@ -223,6 +223,8 @@
   --button-line-hover: var(--line-strong);
   --pane-inset: 16px;                /* floating cards' room from the window around them */
   --pane-gap: 0px;                   /* between panels side by side */
+  --detail-float: 1;                 /* 1: a project's details float over its graph's card (0: beside it) */
+  --detail-gap: 20px;                /* (floating) the details' room from the card's edges */
   --pane-edge: var(--line);          /* the line this look draws there instead */
   --pane-radius: var(--radius-card);
   --surface-card: var(--panel);      /* a card holding panels (Files' list and file) */
@@ -231,8 +233,6 @@
   --bleed: 0;                        /* 1: bands reach their panel's edges (it scales their negative margins) */
   --band-h: 28px;
   --side-band-gap: 0px;              /* under the side bar's bands */
-  --flat-only: none;                 /* (a display) what only the Flat look shows: */
-  --cards-only: block;               /* ...and what only this one does */
   /* What is picked (a project, a row, a folder, a menu item): one style
      everywhere, a background and a mark (a box-shadow) on its left, or on
      top for the tabs at the top. */
@@ -328,6 +328,8 @@
   --button-line-hover: transparent;
   --pane-inset: 0px;
   --pane-gap: 2px;
+  --detail-float: 0;
+  --detail-gap: 0px;
   --pane-edge: transparent;
   --pane-radius: 0px;
   --surface-card: transparent;
@@ -335,8 +337,6 @@
   --pane-pad: 0px;
   --bleed: 1;
   --side-band-gap: var(--sp-6);
-  --flat-only: flex;
-  --cards-only: none;
   --select-bg: color-mix(in srgb, var(--accent) 11%, transparent);
   --select-soft: color-mix(in srgb, var(--accent) 11%, transparent);
   --select-bar: inset 2px 0 0 var(--accent);

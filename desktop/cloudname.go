@@ -3,6 +3,7 @@ package desktop
 import (
 	"errors"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 
@@ -23,7 +24,7 @@ type CloudRename struct {
 // member record in each of those teams, so teammates see it on their
 // versions now. Nothing changes when the service refuses or can't be
 // reached; a team not reached keeps the old name in its record
-// (NotUpdated) until the name is saved again.
+// (NotUpdated) until the app next starts (renameMemberRecords).
 func (a *App) SetCloudName(teamID, name string) (CloudRename, error) {
 	name = strings.TrimSpace(name)
 	if name == "" || len(name) > 100 {
@@ -94,4 +95,47 @@ func (a *App) SetCloudName(teamID, name string) (CloudRename, error) {
 		}
 	}
 	return out, nil
+}
+
+// renameMemberRecords writes the account's name into the person's member
+// record of each of service's teams where it differs: the teams a rename
+// didn't reach (NotUpdated), caught up quietly at start; one not reached
+// now is tried again next time. A record not written yet is left to its
+// first write (which takes the name then), and so is an account with no
+// name.
+func renameMemberRecords(service, name string) {
+	if name = strings.TrimSpace(name); name == "" {
+		return
+	}
+	store, err := teams.Load()
+	if err != nil {
+		return
+	}
+	var wg sync.WaitGroup
+	for _, h := range store.Teams {
+		if s, ok := cloud.Hosted(h); !ok || !strings.EqualFold(s, service) || h.NoAccess || h.MemberID == "" {
+			continue
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			b, err := h.Open()
+			if err != nil {
+				return
+			}
+			ms, err := b.Members()
+			if err != nil {
+				return
+			}
+			i := slices.IndexFunc(ms, func(m remote.Member) bool { return m.ID == h.MemberID })
+			if i < 0 || ms[i].Name == name {
+				return
+			}
+			if remote.RenameMember(b, h.MemberID, name) == nil {
+				forgetNames(h.Remote.URL)
+				looksCache.forget(h.Remote.URL)
+			}
+		}()
+	}
+	wg.Wait()
 }

@@ -133,7 +133,9 @@ label { display: block; color: var(--muted); font-size: var(--fs-sm); margin: va
 /* A panel's header band (class band): in the Flat look a dot and a label
    in capitals on a band of its own, maybe a count or a small button at its
    end (class end); the R3V look draws it as the heading each place has
-   (styled there), or not at all (flat-only). The label always starts
+   (styled there), or, where the place has none of its own (class
+   caption), as a small heading in capitals. Both looks have the same
+   headings: only how they're drawn differs. The label always starts
    after the dot, whatever the place's own heading spreads out; only what
    is marked end goes to the right. */
 :root[data-look="flat"] .band {
@@ -143,7 +145,8 @@ label { display: block; color: var(--muted); font-size: var(--fs-sm); margin: va
 }
 :root[data-look="flat"] .band::before { content: ""; width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--accent); }
 :root[data-look="flat"] .band .end { margin-left: auto; font-weight: var(--fw-medium); letter-spacing: 0; text-transform: none; color: var(--faint); }
-
-/* What one look shows and the other leaves out. */
-.flat-only, .band.flat-only { display: var(--flat-only); }
-.cards-only { display: var(--cards-only); }
+:root:not([data-look="flat"]) .band.caption {
+  display: flex; align-items: baseline; gap: var(--sp-8); flex: none;
+  font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+:root:not([data-look="flat"]) .band.caption .end { margin-left: auto; min-width: 0; font-weight: normal; letter-spacing: 0; text-transform: none; color: var(--faint); }

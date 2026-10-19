@@ -1143,7 +1143,6 @@
 "They can't reach the team or its projects any more. What they downloaded stays on their computer.": "对方将无法再访问这个团队及其项目。已下载的文件会留在对方的电脑上。",
 "Removed {name}": "已移除 {name}",
 "Signed out of R3V-Cloud: sign in to share and update": "已退出 R3V-Cloud：请登录后再分享和更新",
-"Your name comes from your R3V-Cloud account.": "你的名字来自 R3V-Cloud 账号。",
 "Leave the team…": "离开团队…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "你也会离开 R3V-Cloud 上的这个团队：之后需要有人重新邀请你才能回来。项目文件夹会留在磁盘上。",
 "The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "当前登录的账号不在这个团队里（或已不在）。它的项目会原样留在这里；到团队设置移除团队，即可把项目保留为本地项目。",
@@ -1972,8 +1971,6 @@
 "No section": "不分组",
 "Sections": "分组",
 "Rename…": "重命名…",
-"Move up": "上移",
-"Move down": "下移",
 "Delete section…": "删除分组…",
 "New section…": "新建分组…",
 "No projects in this section yet": "这个分组还没有项目",
@@ -1984,9 +1981,12 @@
 "{who} put {project} in the section {section}": "{who} 把 {project} 放进分组 {section}",
 "{who} took {project} out of the section {section}": "{who} 把 {project} 移出分组 {section}",
 "{who} changed the sections": "{who} 更改了分组",
-"Add project…": "添加项目…",
 "Add a project or a section": "添加项目或分组",
 "Renamed on R3V Cloud, for everyone in your teams there": "已在 R3V Cloud 改名，你在那里的团队都会看到",
-"{teams} couldn't be reached: rename again later so they show the new name.": "无法连接 {teams}：请稍后再改一次名，让那里显示新名字。",
-"Your name on R3V Cloud, in all your teams there.": "你在 R3V Cloud 的名字，用于你在那里的所有团队。"
+"Your name on R3V Cloud, in all your teams there.": "你在 R3V Cloud 的名字，用于你在那里的所有团队。",
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "无法连接 {teams}：下次启动 R3V 时会同步新名字。",
+"Move to": "移到",
+"None": "无",
+"Show all ({n})": "全部显示（{n}）",
+"Show less": "收起"
 }

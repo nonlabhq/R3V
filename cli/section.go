@@ -18,7 +18,8 @@ func init() {
 	jsonCommands["section"] = true
 	extraUsage += `
 sections of the team's projects:
-  section [list]                         the team's sections in order, with their projects
+  section [list]                         the team's sections, with their projects (in the app
+                                         each person orders them on their computer)
   section new NAME                       add a section (last)
   section rename NAME NEW-NAME           rename a section
   section delete NAME                    delete a section: its projects become ungrouped

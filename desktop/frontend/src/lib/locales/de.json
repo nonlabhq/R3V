@@ -1143,7 +1143,6 @@
 "They can't reach the team or its projects any more. What they downloaded stays on their computer.": "Sie erreichen das Team und seine Projekte nicht mehr. Was sie heruntergeladen haben, bleibt auf ihrem Computer.",
 "Removed {name}": "{name} entfernt",
 "Signed out of R3V-Cloud: sign in to share and update": "Von R3V-Cloud abgemeldet: Melde dich an, um zu teilen und zu aktualisieren",
-"Your name comes from your R3V-Cloud account.": "Dein Name kommt aus deinem R3V-Cloud-Konto.",
 "Leave the team…": "Team verlassen…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "Du verlässt das Team auch auf R3V-Cloud: Um zurückzukommen, muss dich jemand erneut einladen. Projektordner bleiben auf der Festplatte.",
 "The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "Das angemeldete Konto ist (nicht mehr) in diesem Team. Seine Projekte bleiben hier, wie sie sind: entferne das Team in seinen Einstellungen, um sie als lokale Projekte zu behalten.",
@@ -1972,8 +1971,6 @@
 "No section": "Kein Abschnitt",
 "Sections": "Abschnitte",
 "Rename…": "Umbenennen…",
-"Move up": "Nach oben",
-"Move down": "Nach unten",
 "Delete section…": "Abschnitt löschen…",
 "New section…": "Neuer Abschnitt…",
 "No projects in this section yet": "Noch keine Projekte in diesem Abschnitt",
@@ -1984,9 +1981,12 @@
 "{who} put {project} in the section {section}": "{who} hat {project} in den Abschnitt {section} gelegt",
 "{who} took {project} out of the section {section}": "{who} hat {project} aus dem Abschnitt {section} genommen",
 "{who} changed the sections": "{who} hat die Abschnitte geändert",
-"Add project…": "Projekt hinzufügen…",
 "Add a project or a section": "Ein Projekt oder einen Abschnitt hinzufügen",
 "Renamed on R3V Cloud, for everyone in your teams there": "Auf R3V Cloud umbenannt, für alle in deinen Teams dort",
-"{teams} couldn't be reached: rename again later so they show the new name.": "{teams} war nicht erreichbar: benenne dich später noch einmal um, damit dort der neue Name steht.",
-"Your name on R3V Cloud, in all your teams there.": "Dein Name auf R3V Cloud, in all deinen Teams dort."
+"Your name on R3V Cloud, in all your teams there.": "Dein Name auf R3V Cloud, in all deinen Teams dort.",
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "{teams} war nicht erreichbar: bekommt den neuen Namen beim nächsten Start von R3V.",
+"Move to": "Verschieben nach",
+"None": "Keine",
+"Show all ({n})": "Alle zeigen ({n})",
+"Show less": "Weniger zeigen"
 }

@@ -14,7 +14,6 @@
   import Modal from "$shared/Modal.svelte";
   import Tx from "./Tx.svelte";
   import MergeSetPreview from "./MergeSetPreview.svelte";
-  import { look } from "./look.svelte";
 
   // Things both sides changed, decided one at a time over the whole app:
   // keep yours, keep theirs, or (where it can be) both. A track of a set
@@ -290,7 +289,7 @@
       <!-- what is being done and how far (Flat: on a bar across the top), then the decision -->
       <header>
           <div class="context faint">
-            {#if look() === "flat"}<strong class="what-done">{finish}</strong>{/if}
+            <strong class="what-done">{finish}</strong>
             {#if kind === "merge"}
               {@const parts = t("Merging {from} into {into}").split(/(\{from\}|\{into\})/)}
               {#each parts as p}{#if p === "{from}"}{#if theirBranch}{@render branchDot(theirBranch, theirColor)}{:else}<span class="ver">{version}</span>{/if}{:else if p === "{into}"}{@render branchDot(ourBranch, ourColor)}{:else}{p}{/if}{/each}

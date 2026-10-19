@@ -21,8 +21,9 @@ import (
 //
 //	{"sections": [{"id": "<16 hex>", "name": "Engine", "projects": ["<project id>", ...]}]}
 //
-// in the order everyone sees them. The order of the projects inside one
-// is each person's own (kept on their computer), not this record's. Not a
+// The order of the sections, and of the projects inside one, is each
+// person's own (kept on their computer); the record's order is only where
+// a section someone hasn't placed yet goes (new ones last). Not a
 // field of the project's record: an older R3V rewriting that would drop
 // it. Written whole with a conditional write, the change made again over
 // someone else's (as archived.json). An older R3V never reads it and only
@@ -53,7 +54,7 @@ const (
 	SectionMade       = "made"
 	SectionRenamed    = "renamed"
 	SectionDeleted    = "deleted"
-	SectionMoved      = "moved"       // its place among the sections
+	SectionMoved      = "moved"       // its place among the sections (no longer written: the order is each person's; still read)
 	SectionProjectIn  = "project-in"  // a project put in it
 	SectionProjectOut = "project-out" // a project taken out, ungrouped
 )
@@ -277,24 +278,6 @@ func DeleteSection(b Backend, id string) (bool, error) {
 		name := rec.Sections[i].Name
 		rec.Sections = slices.Delete(rec.Sections, i, i+1)
 		return &TeamEvent{Change: SectionDeleted, Section: name}, nil
-	})
-}
-
-// MoveSection puts section id at place to among the sections (0 first;
-// past the end: last).
-func MoveSection(b Backend, id string, to int) (bool, error) {
-	return editSections(b, func(rec *sectionsRecord) (*TeamEvent, error) {
-		i := slices.IndexFunc(rec.Sections, func(x Section) bool { return x.ID == id })
-		if i < 0 {
-			return nil, ErrNoSection
-		}
-		to = max(0, min(to, len(rec.Sections)-1))
-		if to == i {
-			return nil, nil
-		}
-		x := rec.Sections[i]
-		rec.Sections = slices.Insert(slices.Delete(rec.Sections, i, i+1), to, x)
-		return &TeamEvent{Change: SectionMoved, Section: x.Name}, nil
 	})
 }
 

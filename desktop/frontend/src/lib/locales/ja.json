@@ -1143,7 +1143,6 @@
 "They can't reach the team or its projects any more. What they downloaded stays on their computer.": "この人はチームとそのプロジェクトにアクセスできなくなります。ダウンロード済みのファイルは相手のコンピューターに残ります。",
 "Removed {name}": "{name} を削除しました",
 "Signed out of R3V-Cloud: sign in to share and update": "R3V-Cloud からサインアウトしています：共有と更新にはサインインしてください",
-"Your name comes from your R3V-Cloud account.": "名前は R3V-Cloud のアカウントのものです。",
 "Leave the team…": "チームを抜ける…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "R3V-Cloud 上のこのチームからも抜けます。戻るには、もう一度招待してもらう必要があります。プロジェクトのフォルダーはディスクに残ります。",
 "The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "サインイン中のアカウントはこのチームに（もう）いません。プロジェクトはそのままここに残ります。チームの設定でチームを削除すると、ローカルのプロジェクトとして残せます。",
@@ -1972,8 +1971,6 @@
 "No section": "セクションなし",
 "Sections": "セクション",
 "Rename…": "名前を変更…",
-"Move up": "上へ移動",
-"Move down": "下へ移動",
 "Delete section…": "セクションを削除…",
 "New section…": "新しいセクション…",
 "No projects in this section yet": "このセクションにはまだプロジェクトがありません",
@@ -1984,9 +1981,12 @@
 "{who} put {project} in the section {section}": "{who} が {project} をセクション {section} に入れました",
 "{who} took {project} out of the section {section}": "{who} が {project} をセクション {section} から外しました",
 "{who} changed the sections": "{who} がセクションを変更しました",
-"Add project…": "プロジェクトを追加…",
 "Add a project or a section": "プロジェクトかセクションを追加",
 "Renamed on R3V Cloud, for everyone in your teams there": "R3V Cloud で名前を変更しました（そこのチーム全員に表示されます）",
-"{teams} couldn't be reached: rename again later so they show the new name.": "{teams} に接続できませんでした。新しい名前を表示させるには、あとでもう一度変更してください。",
-"Your name on R3V Cloud, in all your teams there.": "R3V Cloud でのあなたの名前（そこのすべてのチームで使われます）。"
+"Your name on R3V Cloud, in all your teams there.": "R3V Cloud でのあなたの名前（そこのすべてのチームで使われます）。",
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "{teams} に接続できませんでした。次に R3V を起動したときに新しい名前が反映されます。",
+"Move to": "移動先",
+"None": "なし",
+"Show all ({n})": "すべて表示（{n}）",
+"Show less": "表示を減らす"
 }

@@ -204,8 +204,12 @@
   let tabs = $derived<{ id: Tab; label: string }[]>([{ id: "general", label: t("General") },
     ...(workflowTab ? [{ id: "workflow" as Tab, label: t("Workflow") }] : []),
     { id: "activity", label: t("Activity") }, { id: "usage", label: t("Usage") }]);
-  // What the shared pages read and change (the team's, through the bindings).
-  let source = $derived(appTeamSource(team.id, !!team.hosted));
+  // What the shared pages read and change (the team's, through the
+  // bindings): made again only for another team, not for each read of the
+  // team's list (a new team object), which would read the pages again.
+  let sourceId = $derived(team.id);
+  let sourceHosted = $derived(!!team.hosted);
+  let source = $derived(appTeamSource(sourceId, sourceHosted));
 </script>
 
 <!-- (your own name and colour aren't here: they're yours, in User

@@ -25,7 +25,7 @@
 
 <div class="tabbed">
   <nav class="tabs" aria-label={label}>
-    <div class="band flat-only" aria-hidden="true">{label}</div>
+    <div class="band caption" aria-hidden="true">{label}</div>
     <div class="list">
       {#each tabs as x (x.id)}
         <button class:on={shown === x.id} aria-current={shown === x.id ? "page" : undefined} onclick={() => pick(x.id)}>{x.label}</button>
@@ -42,6 +42,8 @@
   .content { flex: 1; min-width: 0; max-width: calc(720px + 100vw * var(--bleed)); background: var(--surface-head);
     padding: 0 calc(var(--sp-16) * var(--bleed)) calc(var(--sp-16) * var(--bleed)); }
   .tabs { flex: none; width: calc(160px + 60px * var(--bleed)); background: var(--surface-head); }
+  /* (Flat: the band over the tabs; this look: a caption) */
+  .caption { margin: 0 calc(var(--sp-10) * (1 - var(--bleed))) calc(var(--sp-8) * (1 - var(--bleed))); }
   .list { display: flex; flex-direction: column; gap: calc(var(--sp-2) * (1 - var(--bleed))); position: sticky; top: 0; padding-top: calc(var(--sp-4) * var(--bleed)); }
   .tabs button { justify-content: flex-start; text-align: left; border: none; background: transparent; color: var(--muted);
     padding: var(--sp-6) var(--sp-10) var(--sp-6) calc(var(--sp-10) + var(--sp-4) * var(--bleed)); border-radius: var(--row-radius); font-size: var(--fs-base); }

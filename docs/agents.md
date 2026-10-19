@@ -333,7 +333,8 @@ but owners and admins. Archive or unarchive only when the user asks.
 
 `section` (sections group the team's projects, the same for
 everyone in the team): `section list` (or `section`): `sections` in the
-team's order (`id`, `name`, `projects`: `id`, `name`, `here`),
+team record's order (the app orders them per computer; `id`, `name`,
+`projects`: `id`, `name`, `here`),
 `ungrouped` (the projects in none) and `here` (the id of this project's
 section, "" for none). `section new NAME`, `rename NAME NEW-NAME`, `delete
 NAME` (its projects become ungrouped), `add NAME` (puts the project in this

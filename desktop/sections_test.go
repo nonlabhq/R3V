@@ -11,8 +11,8 @@ import (
 )
 
 // Sections (docs/design/sections.md) in the app: the overview gives the
-// team's sections in order and each project's; making, filling, renaming,
-// moving and deleting them; kept as last read (LocalOverview); a
+// team's sections (the record's order) and each project's; making, filling,
+// renaming and deleting them; kept as last read (LocalOverview); a
 // teammate's change followed when the team is read; Activity has them. On
 // R3V Cloud, only admins.
 
@@ -66,11 +66,8 @@ func TestSectionsInApp(t *testing.T) {
 	if len(ov.Sections) != 2 || ov.Sections[0].Name != "Game" || ov.Projects[0].Section != game.ID || ov.Projects[0].SectionName != "Game" {
 		t.Fatalf("grouped: %+v %+v", ov.Sections, ov.Projects[0])
 	}
-	// Moved to another, the sections' order changed, one renamed.
+	// Moved to another, one renamed.
 	if err := a.SetProjectSection(teamID, pid, tools.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := a.MoveSection(teamID, tools.ID, 0); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.RenameSection(teamID, tools.ID, "Engine"); err != nil {
@@ -78,7 +75,7 @@ func TestSectionsInApp(t *testing.T) {
 	}
 	// Without asking the team: as last read.
 	ov = overviewOf(t, a, true)
-	if len(ov.Sections) != 2 || ov.Sections[0].Name != "Engine" || ov.Projects[0].SectionName != "Engine" {
+	if len(ov.Sections) != 2 || ov.Sections[1].Name != "Engine" || ov.Projects[0].SectionName != "Engine" {
 		t.Fatalf("local: %+v %+v", ov.Sections, ov.Projects[0])
 	}
 	if all, _ := a.AllProjects(); all[0].Projects[0].Section != tools.ID {

@@ -4,17 +4,15 @@
 
   // A section's menu in the left panel (a right click on its header, or its
   // ⋯), for those who may change the team's sections; without a section
-  // (the panel's Projects band), New section… alone; from a + (onadd), Add
-  // project… first. Placed on the window, it closes on a click elsewhere or
-  // Esc (focus back on opener).
-  let { name = "", at, opener = null, first = false, last = false, onrename, onmove, ondelete, onadd, onnew, onclose }: {
+  // (the panel's Projects band), New section… alone; from a + (onadd),
+  // Project and Section. Placed on the window, it closes on a click elsewhere or
+  // Esc (focus back on opener). (No Move: a section is dragged to its place,
+  // each person's own.)
+  let { name = "", at, opener = null, onrename, ondelete, onadd, onnew, onclose }: {
     name?: string; // the section's ("": none, New section… only)
     at: { left: number; top: number };
     opener?: HTMLElement | null;
-    first?: boolean; // first of the sections (no Move up)
-    last?: boolean;
     onrename?: () => void;
-    onmove?: (by: -1 | 1) => void;
     ondelete?: () => void;
     onadd?: () => void;
     onnew: () => void;
@@ -55,13 +53,16 @@
   onkeydown={keydown}>
   {#if name}
     <button class="item" role="menuitem" onclick={() => then(onrename!)}>{t("Rename…")}</button>
-    {#if !first}<button class="item" role="menuitem" onclick={() => then(() => onmove!(-1))}>{t("Move up")}</button>{/if}
-    {#if !last}<button class="item" role="menuitem" onclick={() => then(() => onmove!(1))}>{t("Move down")}</button>{/if}
     <button class="item danger-text" role="menuitem" onclick={() => then(ondelete!)}>{t("Delete section…")}</button>
     <div class="sep"></div>
   {/if}
-  {#if onadd}<button class="item" role="menuitem" onclick={() => then(onadd)}>{t("Add project…")}</button>{/if}
-  <button class="item" role="menuitem" onclick={() => then(onnew)}>{t("New section…")}</button>
+  <!-- (from a +: the + says add, so just what to add) -->
+  {#if onadd}
+    <button class="item" role="menuitem" onclick={() => then(onadd)}>{t("Project")}</button>
+    <button class="item" role="menuitem" onclick={() => then(onnew)}>{t("Section")}</button>
+  {:else}
+    <button class="item" role="menuitem" onclick={() => then(onnew)}>{t("New section…")}</button>
+  {/if}
 </div>
 
 <style>

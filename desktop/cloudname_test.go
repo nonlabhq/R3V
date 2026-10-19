@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/remote/cloudtest"
 	"github.com/nonlabhq/r3v/internal/teams"
@@ -91,5 +92,55 @@ func TestSetCloudName(t *testing.T) {
 	}
 	if _, err := a.SetCloudName(own.ID, "Kai"); err == nil {
 		t.Error("a self-hosted team's name went to R3V Cloud")
+	}
+}
+
+// A team a rename didn't reach gets the account's name at the next start,
+// quietly: the service down, nothing written and nothing said (tried again
+// next time); a record not written yet is left alone.
+func TestStartupCatchesUpCloudName(t *testing.T) {
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	f := cloudtest.NewFake(t)
+	f.AddMember("kai", kaiID, false)
+	t.Setenv("R3V_CLOUD_TOKEN", "kai")
+	t.Setenv("R3V_CLOUD_URL", f.Service)
+	a := NewApp()
+	t.Cleanup(a.live.Close)
+	var told []string
+	a.notify = func(title, _ string) { told = append(told, title) }
+	if err := cloud.SetName(f.Service, "Kai Ito"); err != nil {
+		t.Fatal(err)
+	}
+	a.syncHosted()
+	store, _ := teams.Load()
+	if len(store.Teams) != 1 {
+		t.Fatalf("teams %+v", store.Teams)
+	}
+	hosted := store.Teams[0]
+	if n := memberName(t, hosted, kaiID); n != "" {
+		t.Errorf("a record not written yet was written: %q", n)
+	}
+
+	b, _ := hosted.Open()
+	if err := remote.RenameMember(b, kaiID, "kai"); err != nil {
+		t.Fatal(err)
+	}
+	f.Down.Store(true)
+	a.syncHosted()
+	f.Down.Store(false)
+	if n := memberName(t, hosted, kaiID); n != "kai" {
+		t.Errorf("written while down: %q", n)
+	}
+	a.syncHosted()
+	if n := memberName(t, hosted, kaiID); n != "Kai Ito" {
+		t.Errorf("the member record says %q", n)
+	}
+	f.ResetRequests()
+	a.syncHosted() // the same name: nothing written
+	if n := f.Requests()["PUT key"]; n != 0 {
+		t.Errorf("wrote %d keys with the name already there", n)
+	}
+	if len(told) != 0 {
+		t.Errorf("told %v", told)
 	}
 }

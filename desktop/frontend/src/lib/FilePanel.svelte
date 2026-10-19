@@ -110,7 +110,7 @@
 </script>
 
 <div class="fp">
-  <div class="band flat-only">{t("File")}<span class="end where" title={file.path}>{dirOf(file.path)}</span></div>
+  <div class="band caption file-band">{t("File")}<span class="end where" title={file.path}>{dirOf(file.path)}</span></div>
   <header>
     <span class="badge"><FileIcon path={file.path} kind={file.kind} /></span>
     <strong class="name" title={file.path}>{baseName(file.path)}</strong>
@@ -160,7 +160,7 @@
       <section class="history" class:folded={!histOpen}>
         <h3 class="band"><button class="fold" aria-expanded={histOpen} onclick={toggleHistory}>
           <span class="chev" aria-hidden="true">{histOpen ? "▾" : "▸"}</span>{t("History of this file")}{#if !histOpen && history?.length}<span class="n">{history.length}</span>{/if}
-        </button>{#if histOpen && history?.length}<span class="end flat-only">{tn(history.length, "{n} version", "{n} versions")}</span>{/if}</h3>
+        </button>{#if histOpen && history?.length}<span class="end">{tn(history.length, "{n} version", "{n} versions")}</span>{/if}</h3>
         {#if !histOpen}
           <!-- (folded: the file takes the room) -->
         {:else if history === null}
@@ -204,6 +204,8 @@
 
 <style>
   .fp { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  /* (Flat: the band across the panel; this look: a caption over the name) */
+  .file-band { margin: calc(var(--sp-16) * (1 - var(--bleed))) calc(var(--sp-18) * (1 - var(--bleed))) calc(var(--sp-8) * (var(--bleed) - 1)); }
   .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
   header { flex: none; display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-16) var(--sp-18) var(--sp-12); }
   .badge { flex: none; min-width: 22px; height: 18px; padding: 0 var(--sp-4); border-radius: var(--radius-sm); background: var(--hover-strong);
@@ -222,7 +224,8 @@
   .history { flex: 1; min-height: 0; overflow: auto; }
   .history.folded { flex: none; padding-bottom: var(--sp-10); }
   .history.folded h3 { margin: 0 calc(var(--sp-18) * -1 * var(--bleed)); }
-  .history h3 { margin: calc(var(--sp-12) * -1 * var(--bleed)) calc(var(--sp-18) * -1 * var(--bleed)) var(--sp-10); }
+  .history h3 { display: flex; align-items: center; margin: calc(var(--sp-12) * -1 * var(--bleed)) calc(var(--sp-18) * -1 * var(--bleed)) var(--sp-10); }
+  .history h3 .end { margin-left: auto; font-weight: normal; letter-spacing: 0; text-transform: none; }
   .history.folded { padding-top: calc(var(--sp-12) * (1 - var(--bleed))); }
   .top.grow { flex: 1; }
   .fold { display: inline-flex; align-items: center; gap: var(--sp-6); padding: 0; border: none; background: none; color: inherit;

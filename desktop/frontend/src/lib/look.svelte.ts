@@ -30,6 +30,15 @@ function apply(l: Look) {
   document.documentElement.dataset.look = l;
 }
 
+/** A length token's value now, in px (0 when it isn't one), for the few
+ * places that place things in script; read again when the look changes.
+ * (Components never ask which look is in use: they read its tokens.) */
+export function tokenPx(name: string): number {
+  void state.look;
+  if (typeof getComputedStyle !== "function") return 0;
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
+}
+
 /** Uses a look and remembers it. */
 export function setLook(l: Look) {
   try {
