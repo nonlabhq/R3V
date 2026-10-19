@@ -133,9 +133,11 @@ label { display: block; color: var(--muted); font-size: var(--fs-sm); margin: va
 /* A panel's header band (class band): in the Flat look a dot and a label
    in capitals on a band of its own, maybe a count or a small button at its
    end (class end); the R3V look draws it as the heading each place has
-   (styled there), or not at all (flat-only). */
+   (styled there), or not at all (flat-only). The label always starts
+   after the dot, whatever the place's own heading spreads out; only what
+   is marked end goes to the right. */
 :root[data-look="flat"] .band {
-  display: flex; align-items: center; gap: var(--sp-8); flex: none; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-8); flex: none; box-sizing: border-box;
   min-height: var(--band-h); padding: 0 var(--sp-10); border: none; border-radius: 0; background: var(--surface-band);
   font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
 }
