@@ -532,3 +532,29 @@ describe("App: the user", () => {
     expect(screen.queryByRole("button", { name: "Upload picture…" })).toBeNull(); // (no looks: no picture or colour)
   });
 });
+
+// A project just added offers the guide for AI agents, but not an Ableton
+// Live one: its Project settings offer it instead.
+describe("App: adding a project", () => {
+  const add = async (tool: string) => {
+    api.ChooseFolder.mockResolvedValue("C:/New");
+    api.AddProjectToTeam.mockResolvedValue(project("New"));
+    api.AgentGuide.mockResolvedValue("");
+    api.ProjectInfo.mockResolvedValue({ tool, openable: ["."] });
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.click(screen.getAllByRole("button", { name: "Add project" })[0]);
+    await waitFor(() => expect(api.AgentGuide).toHaveBeenCalledWith("C:/New"));
+  };
+
+  it("offers the guide for AI agents", async () => {
+    await add("Unity");
+    expect(await screen.findByRole("dialog", { name: "Add a guide for AI agents?" })).toBeTruthy();
+  });
+
+  it("doesn't for an Ableton Live project", async () => {
+    await add("Ableton Live");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole("dialog", { name: "Add a guide for AI agents?" })).toBeNull();
+  });
+});

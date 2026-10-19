@@ -2007,5 +2007,8 @@
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V 现在默认锁定它们。你的团队之前自己选过种类，所以要添加后才会锁定。",
 "Add": "添加",
 "This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "此合并会改动你有未提交变更的文件（{files}）。请先提交它们，再合并。",
-"Your uncommitted changes are kept, still uncommitted.": "你未提交的变更都保留着，仍未提交。"
+"Your uncommitted changes are kept, still uncommitted.": "你未提交的变更都保留着，仍未提交。",
+"AI agents": "AI 代理",
+"A short guide in the project tells AI agents (Claude Code, Codex and others) that it is versioned with R3V and how to work in it.": "项目里的一份简短指引会告诉 AI 代理（Claude Code、Codex 等）：这个项目用 R3V 做版本管理，以及如何在其中工作。",
+"Set up AI agents…": "设置 AI 代理…"
 }

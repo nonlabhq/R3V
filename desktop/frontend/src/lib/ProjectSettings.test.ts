@@ -89,6 +89,49 @@ describe("ProjectSettings in tabs", () => {
   });
 });
 
+// An Ableton Live project isn't offered the agents' guide when added: its
+// Workflow tab offers it, until it has it.
+describe("ProjectSettings: AI agents", () => {
+  const workflow = async () => {
+    render(ProjectSettings, props());
+    await fireEvent.click(await within(nav()).findByRole("button", { name: "Workflow" }));
+  };
+
+  it("offers a Live project the guide for AI agents in Workflow", async () => {
+    api.ProjectInfo.mockResolvedValue({ branch: "main", tool: "Ableton Live", rules: { applied: [], error: "" } });
+    api.AgentGuide.mockResolvedValue("");
+    api.AddAgentGuide.mockResolvedValue(["AGENTS.md", "CLAUDE.md"]);
+    await workflow();
+    await fireEvent.click(await screen.findByRole("button", { name: "Set up AI agents…" }));
+    const ask = await screen.findByRole("dialog", { name: "Add a guide for AI agents?" });
+    await fireEvent.click(within(ask).getByRole("button", { name: "Add the guide" }));
+    await waitFor(() => expect(api.AddAgentGuide).toHaveBeenCalledWith("C:/Song"));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Set up AI agents…" })).toBeNull());
+  });
+
+  it("offers adding R3V's part to the project's own guide", async () => {
+    api.ProjectInfo.mockResolvedValue({ branch: "main", tool: "Ableton Live", rules: { applied: [], error: "" } });
+    api.AgentGuide.mockResolvedValue("theirs");
+    await workflow();
+    await fireEvent.click(await screen.findByRole("button", { name: "Set up AI agents…" }));
+    expect(await screen.findByRole("dialog", { name: "Add R3V's part to the project's guide for AI agents?" })).toBeTruthy();
+  });
+
+  it("doesn't once it has the guide, nor for other kinds (asked when added)", async () => {
+    api.ProjectInfo.mockResolvedValue({ branch: "main", tool: "Ableton Live", rules: { applied: [], error: "" } });
+    api.AgentGuide.mockResolvedValue("has");
+    await workflow();
+    await screen.findByRole("combobox", { name: "File locking" });
+    expect(screen.queryByRole("button", { name: "Set up AI agents…" })).toBeNull();
+    cleanup();
+    api.ProjectInfo.mockResolvedValue({ branch: "main", tool: "Unity", rules: { applied: [], error: "" } });
+    api.AgentGuide.mockResolvedValue("");
+    await workflow();
+    await screen.findByRole("combobox", { name: "File locking" });
+    expect(screen.queryByRole("button", { name: "Set up AI agents…" })).toBeNull();
+  });
+});
+
 describe("BranchSettings", () => {
   it("says how many versions the branch has", () => {
     render(BranchSettings, { root: "C:/Song", branch: "b-1", branches: [branch("main", 12), branch("b-1", 3, { label: "lighting" })],

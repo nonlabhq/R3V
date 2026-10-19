@@ -13,6 +13,7 @@
   import ProjectCheck from "./ProjectCheck.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import ProjectWorkflow from "./ProjectWorkflow.svelte";
+  import AgentGuideDialog from "./AgentGuideDialog.svelte";
   import SettingsTabs from "$shared/team/SettingsTabs.svelte";
   import { branchLabel, branchLane } from "$shared/branches";
   import { ago, type BranchList, type ArchivedBranch, type SectionView, type StepsInfo } from "./api";
@@ -75,6 +76,15 @@
     if (!here) return;
     api.Steps(p.root, "").then((s) => (steps = s)).catch(() => {});
   });
+  // The guide for AI agents (AGENTS.md): not offered when an Ableton Live
+  // project is added, so offered here (Workflow) until it has it.
+  let guide = $state<string | null>(null); // api.AgentGuide: "has", "theirs" (their own, without R3V's part), ""
+  let guideAsk = $state(false);
+  $effect(() => {
+    if (!here) return;
+    api.AgentGuide(p.root).then((g) => (guide = g)).catch(() => {});
+  });
+  const guideEntry = $derived(info?.tool === "Ableton Live" && guide !== null && guide !== "has");
   // Claude Code in this folder (not a workspace R3V made) makes steps once
   // R3V's hooks are in its settings.
   let hooking = $state(false);
@@ -174,7 +184,7 @@
   // checks, the danger zone), then Branches, Rules and Workflow.
   type Tab = "general" | "branches" | "rules" | "workflow";
   const hasBranches = $derived(!!branchList?.names && !!branchList.branches.length);
-  const hasWorkflow = $derived(here && !!info && (!!steps?.available || !!team?.hosted));
+  const hasWorkflow = $derived(here && !!info && (!!steps?.available || !!team?.hosted || guideEntry));
   let tabs = $derived<{ id: Tab; label: string }[]>([{ id: "general", label: t("General") },
     ...(hasBranches ? [{ id: "branches" as Tab, label: t("Branches") }] : []),
     ...(here && info ? [{ id: "rules" as Tab, label: t("Rules") }] : []),
@@ -316,6 +326,15 @@
       </section>
     {/if}
   {/if}
+  {#if guideEntry}
+    <section>
+      <div class="action">
+        <div><strong>{t("AI agents")}</strong>
+          <p class="hint">{t("A short guide in the project tells AI agents (Claude Code, Codex and others) that it is versioned with R3V and how to work in it.")}</p></div>
+        <button onclick={() => (guideAsk = true)}>{t("Set up AI agents…")}</button>
+      </div>
+    </section>
+  {/if}
 {/snippet}
 
 {#snippet healthPart()}
@@ -428,6 +447,10 @@
       <button class="primary" onclick={() => (healthOpen = false)}>{t("OK")}</button>
     {/snippet}
   </Modal>
+{/if}
+
+{#if guideAsk}
+  <AgentGuideDialog root={p.root} theirs={guide === "theirs"} onclose={() => (guideAsk = false)} ondone={() => (guide = "has")} />
 {/if}
 
 {#if moving && team && onmoved}

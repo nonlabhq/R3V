@@ -2007,5 +2007,8 @@
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V는 이제 기본으로 잠급니다. 팀이 이전에 종류를 직접 골랐기 때문에 추가하기 전에는 잠기지 않습니다.",
 "Add": "추가",
 "This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "이 병합은 커밋하지 않은 변경이 있는 파일을 바꿉니다({files}). 먼저 커밋한 다음 병합하세요.",
-"Your uncommitted changes are kept, still uncommitted.": "커밋하지 않은 변경은 그대로 남아 있습니다(아직 커밋 전)."
+"Your uncommitted changes are kept, still uncommitted.": "커밋하지 않은 변경은 그대로 남아 있습니다(아직 커밋 전).",
+"AI agents": "AI 에이전트",
+"A short guide in the project tells AI agents (Claude Code, Codex and others) that it is versioned with R3V and how to work in it.": "프로젝트 안의 짧은 안내가 AI 에이전트(Claude Code, Codex 등)에게 이 프로젝트가 R3V로 버전 관리된다는 것과 그 안에서 작업하는 방법을 알려 줍니다.",
+"Set up AI agents…": "AI 에이전트 설정…"
 }
