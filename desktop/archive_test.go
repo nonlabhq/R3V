@@ -36,7 +36,7 @@ func listed(t *testing.T, a *App, id string) TeamProject {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !ov.Archive {
+	if !ov.Archive || !ov.Teams[0].CanArchive {
 		t.Error("the build archives, the overview says not")
 	}
 	for _, p := range ov.Projects {
@@ -182,6 +182,12 @@ func TestArchiveOnCloudAdminsOnlyApp(t *testing.T) {
 	if info, err := a.ArchiveInfo(hosted.ID, tp.ID); err != nil || info.CanArchive {
 		t.Errorf("a member's archive info: %+v %v", info, err)
 	}
+	if ov, _ := a.LocalOverview(); ov.Teams[0].CanArchive {
+		t.Error("archiving offered before the team was asked")
+	}
+	if ov, _ := a.Overview(); ov.Teams[0].CanArchive {
+		t.Error("archiving offered to a member")
+	}
 	if err := a.ArchiveProject(hosted.ID, tp.ID, true); !errors.Is(err, remote.ErrNotAdmin) {
 		t.Errorf("a member archiving: %v", err)
 	}
@@ -192,6 +198,9 @@ func TestArchiveOnCloudAdminsOnlyApp(t *testing.T) {
 	}
 	if !listed(t, a, tp.ID).Archived {
 		t.Error("not archived")
+	}
+	if ov, _ := a.Overview(); !ov.Teams[0].CanArchive {
+		t.Error("archiving not offered to the owner")
 	}
 	forgetRoles()
 }

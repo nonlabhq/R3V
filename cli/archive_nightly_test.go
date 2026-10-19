@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/project"
@@ -43,6 +44,10 @@ func TestProjectArchiveCommands(t *testing.T) {
 	if json.Unmarshal(rep.Result, &list) != nil || len(list.Projects) != 1 || !list.Projects[0].Archived ||
 		!list.Projects[0].Here || list.Projects[0].ArchivedAt == "" {
 		t.Fatalf("list: %s", rep.Result)
+	}
+	// Not watched while archived (it returns at once).
+	if exit, text := runText(t, a, "watch"); exit != 0 || !strings.Contains(text, "not watched") {
+		t.Errorf("watch an archived project: %d %s", exit, text)
 	}
 	_, rep = run(t, a, "status")
 	var st struct{ Team struct{ Archived bool } }

@@ -4705,6 +4705,13 @@ export class TeamSummary {
      */
     "noAccess": boolean;
 
+    /**
+     * CanArchive: this computer may archive the team's projects and bring
+     * them back (docs/design/archive.md): anyone on a team's own storage,
+     * an R3V Cloud team's admins (known once the team is asked).
+     */
+    "canArchive": boolean;
+
     /** Creates a new TeamSummary instance. */
     constructor($$source: Partial<TeamSummary> = {}) {
         if (!("id" in $$source)) {
@@ -4775,6 +4782,9 @@ export class TeamSummary {
         }
         if (!("noAccess" in $$source)) {
             this["noAccess"] = false;
+        }
+        if (!("canArchive" in $$source)) {
+            this["canArchive"] = false;
         }
 
         Object.assign(this, $$source);

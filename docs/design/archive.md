@@ -48,7 +48,9 @@ not a team feature.
   (each time the team's list is read) and keeps it as last read
   (`team-archived.json` in the app's settings), so it knows at start what
   not to watch, and follows a teammate's archiving or unarchiving the next
-  time it reads the team.
+  time it reads the team. `r3v watch` doesn't watch one either.
+- On an R3V Cloud team, archiving and Unarchive are offered only to
+  owners and admins (the app knows the role once it has asked the team).
 - It leaves the left panel. The team's home lists it under
   **Archived (N)**, folded by default, with Unarchive; from there it can
   still be opened, or its settings.

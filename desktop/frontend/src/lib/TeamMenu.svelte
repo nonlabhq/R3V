@@ -14,10 +14,12 @@
   // in a tab behind (onhomebehind), as a browser does.
   // part: the team itself, or what it asks of you (signing in, your name,
   // backups…), drawn apart (at the sidebar's foot: the projects don't move).
-  let { overview, reload, home = false, onhome, onhomebehind, onteam, onsettings, part = "team" }: {
+  // folded: the sidebar folded, the team as its mark alone; the caret shows
+  // on hover (or focus) beside it, over the empty space, moving nothing.
+  let { overview, reload, home = false, onhome, onhomebehind, onteam, onsettings, part = "team", folded = false }: {
     overview: Overview; reload: () => Promise<void>; home?: boolean;
     onhome: () => void; onhomebehind?: () => void; onteam?: (id: string, behind: boolean) => void;
-    onsettings: (team: TeamSummary) => void; part?: "team" | "notices";
+    onsettings: (team: TeamSummary) => void; part?: "team" | "notices"; folded?: boolean;
   } = $props();
 
   let open = $state(false);
@@ -169,8 +171,24 @@
 
 <svelte:window onclick={(e) => { if (open && !(e.target as HTMLElement).closest(".team-menu")) open = false; }} />
 
-<div class="team-menu" class:notices={part === "notices"}>
-  {#if part === "team"}
+<div class="team-menu" class:notices={part === "notices"} class:folded>
+  {#snippet caret()}
+    <button class="caret" onclick={() => (open = !open)} aria-haspopup="menu" aria-expanded={open}
+      title={tr("Switch team")} aria-label={tr("Switch team")}>
+      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
+    </button>
+  {/snippet}
+  {#if part === "team" && folded}
+  <div class="mark-slot">
+    <button class="team-mark" class:on={home} onclick={(e) => { open = false; if ((e.ctrlKey || e.metaKey) && onhomebehind) onhomebehind(); else onhome(); }}
+      onmousedown={(e) => { if (e.button === 1) e.preventDefault(); }}
+      onauxclick={(e) => { if (e.button === 1 && onhomebehind) { e.preventDefault(); onhomebehind(); } }}
+      title={current?.name ?? ""} aria-label={current?.name ?? tr("No team")} aria-current={home ? "page" : undefined}>
+      {#if current}<TeamMark team={current} size={36} />{/if}
+    </button>
+    {@render caret()}
+  </div>
+  {:else if part === "team"}
   <!-- the team (a click opens its home), and the others behind the caret -->
   <div class="current" class:on={home}>
     <button class="switch" onclick={(e) => { open = false; if ((e.ctrlKey || e.metaKey) && onhomebehind) onhomebehind(); else onhome(); }}
@@ -183,10 +201,7 @@
         <span class="label">{current ? storageKind(current) : tr("Team")}</span>
       </span>
     </button>
-    <button class="caret" onclick={() => (open = !open)} aria-haspopup="menu" aria-expanded={open}
-      title={tr("Switch team")} aria-label={tr("Switch team")}>
-      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" /></svg>
-    </button>
+    {@render caret()}
   </div>
   {:else}
   {#if current?.hosted && current.signedOut}
@@ -238,6 +253,7 @@
           onmousedown={(e) => { if (e.button === 1 && onteam) e.preventDefault(); }}
           onauxclick={(e) => { if (e.button === 1 && onteam) { e.preventDefault(); select(t.id, true); } }}>
           <span class="check">{t.id === overview.currentTeam ? "✓" : ""}</span>
+          <TeamMark team={t} size={18} />
           <span class="tname">{t.name}</span>
         </button>
       {/each}
@@ -306,10 +322,10 @@
   .current { display: flex; align-items: stretch; gap: var(--sp-4); }
   .switch {
     flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-10); text-align: left; padding: var(--sp-8) var(--sp-8);
-    background: transparent; border-color: transparent; border-radius: var(--radius-lg);
+    background: transparent; border-color: transparent; border-radius: var(--row-radius);
   }
-  .switch:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
-  .current.on .switch { background: var(--accent-bg); }
+  .switch:hover:not(:disabled) { background: var(--side-hover); border-color: transparent; }
+  .current.on .switch { background: var(--select-bg); box-shadow: var(--select-bar); }
   .tt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .label { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -321,6 +337,16 @@
     position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: var(--z-menu); padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
+  /* folded: the mark, and the caret over the room to its right */
+  .mark-slot { position: relative; width: 36px; margin: 0 auto; }
+  .team-mark { width: 36px; height: 36px; padding: 0; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
+    background: transparent; border-color: transparent; }
+  .team-mark:hover:not(:disabled) { border-color: var(--line-strong); background: transparent; }
+  .team-mark.on { border-color: var(--accent); }
+  .mark-slot .caret { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); width: 12px; height: 24px;
+    border-color: transparent; border-radius: var(--radius-xs); opacity: 0; }
+  .mark-slot:hover .caret, .mark-slot .caret:focus-visible, .mark-slot .caret[aria-expanded="true"] { opacity: 1; }
+  .folded .menu { right: auto; min-width: 240px; }
   .item { display: flex; align-items: center; gap: var(--sp-8); width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; }
   .item:hover { background: var(--hover); }
   .moved { color: var(--accent); font-size: var(--fs-sm); line-height: 1.4; }

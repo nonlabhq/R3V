@@ -78,6 +78,10 @@ type TeamSummary struct {
 	// NoAccess: a hosted team the account signed in isn't in (any more): it
 	// stays, with its projects, until removed.
 	NoAccess bool `json:"noAccess"`
+	// CanArchive: this computer may archive the team's projects and bring
+	// them back (docs/design/archive.md): anyone on a team's own storage,
+	// an R3V Cloud team's admins (known once the team is asked).
+	CanArchive bool `json:"canArchive"`
 }
 
 // TeamProject is a project as the sidebar shows it.
@@ -172,7 +176,9 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	ov := &Overview{Author: store.Author, CurrentTeam: store.Current, Teams: []TeamSummary{},
 		Projects: []TeamProject{}, Archive: remote.ProjectArchive}
 	for _, t := range store.Teams {
-		ov.Teams = append(ov.Teams, teamSummary(t))
+		s := teamSummary(t)
+		s.CanArchive = remote.ProjectArchive && !s.Hosted
+		ov.Teams = append(ov.Teams, s)
 	}
 	t := store.Find(store.Current)
 	if t == nil {
@@ -233,6 +239,8 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 					teams.SyncTeamLook(t.ID, look)
 					ov.Teams[i].Icon, ov.Teams[i].Color, ov.Teams[i].Picture = look.Icon, look.Color, dataURL(readPicture(look.Picture))
 				}
+				// (an R3V Cloud team's role asks the service: only now)
+				ov.Teams[i].CanArchive = remote.ProjectArchive && canEditWorkflow(t)
 				ov.Teams[i].Moving = info.Moving != nil
 				ov.Teams[i].MovedTo = info.MovedTo
 				if to := store.FindByURL(info.MovedTo); info.MovedTo != "" && to != nil {

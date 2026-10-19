@@ -31,7 +31,7 @@
   {:else}
     {initial(p.name)}
   {/if}
-  {#if p.status === "remote"}<span class="mark" title={t("On the team, not on this computer yet")}>☁</span>
+  {#if p.status === "remote"}<span class="mark" title={t("On the cloud storage, not on this computer yet")}>☁</span>
   {:else if p.status === "missing"}<span class="mark warn">⚠</span>{/if}
 </span>
 

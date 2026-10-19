@@ -609,7 +609,8 @@ describe("ProjectView: the header", () => {
     const header = document.querySelector("header")!;
     expect(within(header).getByText("Band")).toBeTruthy();
     expect(header.querySelector(".pi svg")).toBeTruthy(); // the icon, not the initial
-    await fireEvent.click(within(header).getByRole("button", { name: "Team settings: names, connection code, keys" }));
+    // (the team's name opens its settings)
+    await fireEvent.click(within(header).getByRole("button", { name: "Band" }));
     expect(onteamsettings).toHaveBeenCalledWith(band);
   });
 
@@ -617,7 +618,7 @@ describe("ProjectView: the header", () => {
     await show({ teamId: "", teamName: "", remoteUrl: "" }, { teams: [band], onteamsettings: vi.fn() });
     const header = document.querySelector("header")!;
     expect(within(header).queryByText("Band")).toBeNull();
-    expect(within(header).queryByRole("button", { name: "Team settings: names, connection code, keys" })).toBeNull();
+    expect(within(header).queryByRole("button", { name: "Band" })).toBeNull();
     expect(header.querySelector(".pi")?.textContent).toContain("S"); // its initial
   });
 });

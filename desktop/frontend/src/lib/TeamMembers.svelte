@@ -17,7 +17,7 @@
 </script>
 
 <section>
-  <h3>{t("Members")}</h3>
+  <h3 class="band">{t("Members")}</h3>
   {#if members === null}
     <p class="faint small">{t("Reading…")}</p>
   {:else if members.length === 0}
@@ -38,7 +38,7 @@
 
 <style>
   section { margin-bottom: var(--sp-18); }
-  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 var(--sp-8); }
+  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 calc(var(--sp-16) * -1 * var(--bleed)) var(--sp-8); }
   ul { list-style: none; margin: 0 0 var(--sp-8); padding: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
   li { display: flex; align-items: center; gap: var(--sp-8); font-size: var(--fs-base); }
   .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

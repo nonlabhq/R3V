@@ -357,14 +357,14 @@
 
 <div class="files-tab" style:grid-template-columns="{widths.tree}px minmax(0, 1fr)">
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="vsplit" style:left="{widths.tree + 24}px" onpointerdown={resizeTree}></div>
+  <div class="vsplit" style:left="calc({widths.tree}px + var(--pane-inset) * 1.5 + var(--pane-gap) / 2)" onpointerdown={resizeTree}></div>
   <!-- the folders -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
   <nav class="tree card-box" aria-label={t("Folders")} tabindex="-1" onkeydown={onTreeKey}
     onpointermove={onTreeMove} onpointerup={() => (treePress = null)}>
-    <div class="tree-h">
+    <div class="tree-h band">
       <span>{t("Folders")}</span>
-      {#if changedTotal}<span class="faint">{tn(changedTotal, "{n} changed", "{n} changed")}</span>{/if}
+      {#if changedTotal}<span class="faint end">{tn(changedTotal, "{n} changed", "{n} changed")}</span>{/if}
     </div>
     <ul>
       <li class="root-row">
@@ -408,6 +408,7 @@
   <!-- the folder's files, and the file picked -->
   <section class="area-card card-box" style:--panel-w="{panelPx}px" bind:clientWidth={cardW}>
     <div class="files">
+      <div class="band flat-only files-band">{t("Files")}</div>
       <div class="toolbar">
         <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : name })}
           aria-label={t("Filter")} />
@@ -576,7 +577,7 @@
     </div>
 
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="vsplit panel-split" style:right="calc(var(--panel-w) + 24px)" onpointerdown={resizePanel}></div>
+    <div class="vsplit panel-split" style:right="calc(var(--panel-w) + var(--pane-inset) * 1.5 + var(--pane-gap) / 2)" onpointerdown={resizePanel}></div>
     <aside class="panel">
       {@render panel(current, sel.picked.length)}
     </aside>
@@ -597,18 +598,18 @@
 {/if}
 
 <style>
-  .files-tab { position: relative; display: grid; gap: var(--sp-16); height: 100%; min-height: 0; padding: var(--sp-16); }
+  .files-tab { position: relative; display: grid; gap: calc(var(--pane-inset) + var(--pane-gap)); height: 100%; min-height: 0; padding: var(--pane-inset); }
   /* the lines between the columns, dragged to resize them */
-  .vsplit { position: absolute; top: var(--sp-16); bottom: var(--sp-16); width: 9px; margin-left: -4px; cursor: col-resize; z-index: 3; touch-action: none; }
+  .vsplit { position: absolute; top: var(--pane-inset); bottom: var(--pane-inset); width: 9px; margin-left: -4px; cursor: col-resize; z-index: 3; touch-action: none; }
   .vsplit:hover, .vsplit:active { background: linear-gradient(to right, transparent 4px, var(--accent) 4px, var(--accent) 5px, transparent 5px); }
-  .panel-split { top: var(--sp-16); bottom: var(--sp-16); margin-left: 0; margin-right: -4px; }
-  .card-box { min-height: 0; border-radius: var(--radius-card); background: var(--panel); box-shadow: var(--shadow-card); }
-  .tree { display: flex; flex-direction: column; overflow: hidden; padding: var(--sp-14) var(--sp-8) var(--sp-12); }
+  .panel-split { margin-left: 0; margin-right: -4px; }
+  .card-box { min-height: 0; border-radius: var(--pane-radius); background: var(--surface-pane); box-shadow: var(--shadow-card); }
+  .tree { display: flex; flex-direction: column; overflow: hidden; padding: 0 0 var(--sp-12); }
   .tree:focus { outline: none; }
-  .tree-h { display: flex; justify-content: space-between; align-items: baseline; padding: 0 var(--sp-10) var(--sp-10);
+  .tree-h { display: flex; justify-content: space-between; align-items: baseline; padding: var(--sp-14) var(--sp-18) var(--sp-10);
     font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
   .tree-h .faint { text-transform: none; letter-spacing: 0; font-weight: normal; }
-  .tree ul { flex: 1; min-height: 0; overflow: auto; list-style: none; margin: 0; padding: 0; }
+  .tree ul { flex: 1; min-height: 0; overflow: auto; list-style: none; margin: 0; padding: 0 var(--pane-pad); }
   .tree li { display: flex; align-items: center; }
   .tree-line { height: var(--border-width); margin: var(--sp-6) var(--sp-8); background: var(--line); }
   .row.sub, .card.sub { cursor: default; }
@@ -638,18 +639,19 @@
   .chev svg { width: 10px; height: 10px; color: var(--muted); transition: transform .12s; }
   .chev svg.open { transform: rotate(90deg); }
   .folder { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); border: none; background: transparent; text-align: left;
-    padding: var(--sp-6) var(--sp-8); border-radius: var(--radius); font-size: var(--fs-md); }
+    padding: var(--sp-6) var(--sp-8); border-radius: var(--row-radius); font-size: var(--fs-md); }
   .folder:hover:not(.on) { background: var(--hover-soft); }
-  .folder.on { background: var(--accent-soft); font-weight: var(--fw-semibold); }
+  .folder.on { background: var(--select-soft); box-shadow: var(--select-bar); font-weight: var(--fw-semibold); }
   .fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pill { flex: none; min-width: 18px; padding: 0 var(--sp-6); border-radius: var(--radius-pill); background: var(--warn-soft); color: var(--warn);
     font-size: var(--fs-2xs); font-weight: var(--fw-bold); text-align: center; }
-  .note { flex: none; margin: var(--sp-10) var(--sp-10) 0; font-size: var(--fs-xs); line-height: 1.5; }
+  .note { flex: none; margin: var(--sp-10) var(--sp-18) 0; font-size: var(--fs-xs); line-height: 1.5; }
   :global(.file-drop-target-active) { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-soft) !important; }
 
-  .area-card { position: relative; display: flex; overflow: hidden; }
+  .area-card { position: relative; display: flex; overflow: hidden; background: var(--surface-card); }
   .files { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: var(--sp-14) var(--sp-16) 0;
-    margin-right: calc(var(--panel-w) + var(--sp-32)); }
+    margin-right: calc(var(--panel-w) + var(--pane-inset) * 2 + var(--pane-gap)); background: var(--surface-pane); }
+  .files-band { margin: calc(var(--sp-14) * -1 * var(--bleed)) calc(var(--sp-16) * -1 * var(--bleed)) var(--sp-10); }
   .toolbar { display: flex; align-items: center; gap: var(--sp-10); }
   .filter { flex: 0 1 220px; min-width: 120px; padding: var(--sp-6) var(--sp-10); font-size: var(--fs-sm); border-radius: var(--radius); }
   .modes { display: flex; margin-left: auto; padding: 2px; border-radius: var(--radius-pill); background: var(--bg-sunken); }
@@ -664,7 +666,7 @@
   .area { position: relative; flex: 1; min-height: 0; overflow: auto; padding-bottom: var(--sp-16); user-select: none; }
   .area:focus { outline: none; }
   .row { display: grid; align-items: center; gap: var(--sp-10);
-    padding: 0 var(--sp-8); border-radius: var(--radius); }
+    padding: 0 var(--sp-8); border-radius: var(--row-radius); }
   .row.head { position: sticky; top: 0; z-index: 1; height: 30px; background: var(--panel); }
   .row.head button { border: none; background: transparent; padding: 0; text-align: left; font-size: var(--fs-2xs); color: var(--faint);
     text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -677,7 +679,8 @@
   .type { min-width: 0; font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row.item { height: 48px; border-bottom: var(--border-width) solid var(--line-soft); cursor: default; }
   .row.item:hover:not(.on) { background: var(--hover-soft); }
-  .row.on, .card.on { background: var(--accent-soft); }
+  .row.on { background: var(--select-soft); box-shadow: var(--select-bar); }
+  .card.on { background: var(--accent-soft); }
   .row.deleted .fname, .card.deleted .cname { text-decoration: line-through; color: var(--faint); }
   .badge { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm);
     background: var(--hover-strong); color: var(--muted); font-weight: var(--fw-bold); width: 24px; height: 20px; font-size: var(--fs-2xs); }
@@ -709,7 +712,7 @@
   .empty { padding: var(--sp-16) var(--sp-8); }
 
   /* the file, floating over the card's right side */
-  .panel { position: absolute; top: var(--sp-16); right: var(--sp-16); bottom: var(--sp-16); width: var(--panel-w); display: flex; flex-direction: column;
+  .panel { position: absolute; top: var(--pane-inset); right: var(--pane-inset); bottom: var(--pane-inset); width: var(--panel-w); display: flex; flex-direction: column;
     overflow: hidden; border-radius: var(--radius-xl); background: var(--surface-float); backdrop-filter: var(--float-filter); box-shadow: var(--shadow-float); }
   .panel > :global(*) { flex: 1; min-height: 0; }
 

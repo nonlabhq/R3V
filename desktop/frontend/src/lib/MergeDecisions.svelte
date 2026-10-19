@@ -14,6 +14,7 @@
   import Modal from "$shared/Modal.svelte";
   import Tx from "./Tx.svelte";
   import MergeSetPreview from "./MergeSetPreview.svelte";
+  import { look } from "./look.svelte";
 
   // Things both sides changed, decided one at a time over the whole app:
   // keep yours, keep theirs, or (where it can be) both. A track of a set
@@ -286,9 +287,10 @@
 <div class="scrim" role="presentation">
   <div class="panel surface-dialog" role="dialog" aria-modal="true" aria-label={fullTitle} bind:this={panel}>
     {#if c}
+      <!-- what is being done and how far (Flat: on a bar across the top), then the decision -->
       <header>
-        <div class="heading">
           <div class="context faint">
+            {#if look() === "flat"}<strong class="what-done">{finish}</strong>{/if}
             {#if kind === "merge"}
               {@const parts = t("Merging {from} into {into}").split(/(\{from\}|\{into\})/)}
               {#each parts as p}{#if p === "{from}"}{#if theirBranch}{@render branchDot(theirBranch, theirColor)}{:else}<span class="ver">{version}</span>{/if}{:else if p === "{into}"}{@render branchDot(ourBranch, ourColor)}{:else}{p}{/if}{/each}
@@ -300,16 +302,6 @@
             {/if}
             {#if project}<span> · {project}</span>{/if}
           </div>
-          <h2>
-            {#if kind !== "undo"}
-              <span class="pair">
-                {@render avatar(ours, ours?.author || me, 30)}
-                {#if other}{@render avatar(theirs, other, 30)}{/if}
-              </span>
-            {/if}
-            <span><Tx text={title} em={titleVars} vars={{ who: other }} /></span>
-          </h2>
-        </div>
         <div class="progress">
           <span class="faint">{tn(conflicts.length, "{i} of {n} decision", "{i} of {n} decisions", { i: at + 1 })}</span>
           <span class="bar" aria-hidden="true">
@@ -317,6 +309,15 @@
           </span>
         </div>
       </header>
+      <h2>
+        {#if kind !== "undo"}
+          <span class="pair">
+            {@render avatar(ours, ours?.author || me, 30)}
+            {#if other}{@render avatar(theirs, other, 30)}{/if}
+          </span>
+        {/if}
+        <span><Tx text={title} em={titleVars} vars={{ who: other }} /></span>
+      </h2>
 
       <p class="explain">
         {#if kind === "undo"}
@@ -380,14 +381,19 @@
     position: fixed; inset: 0; z-index: var(--z-dialog); display: flex; align-items: center; justify-content: center;
     background: var(--scrim-strong); backdrop-filter: var(--scrim-blur); padding: var(--sp-24);
   }
+  /* (Flat: bleed 1, the top and bottom on bars across the panel) */
   .panel {
-    width: 1080px; max-width: 100%; max-height: 100%; overflow: auto; outline: none;
+    position: relative; width: calc(1080px - 40px * var(--bleed)); max-width: 100%; max-height: 100%; overflow: auto; outline: none;
     border: var(--border-width) solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-dialog);
     padding: var(--sp-24) var(--sp-28); display: flex; flex-direction: column; gap: var(--sp-18);
   }
-  header { display: flex; align-items: flex-start; gap: var(--sp-20); }
-  .heading { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
-  .context { font-size: var(--fs-sm); }
+  header { display: flex; align-items: flex-start; gap: var(--sp-20); background: var(--surface-bar);
+    margin: calc(var(--sp-24) * -1 * var(--bleed)) calc(var(--sp-28) * -1 * var(--bleed)) calc(var(--sp-12) * -1 * (1 - var(--bleed)));
+    padding: calc(var(--sp-8) * var(--bleed)) calc(var(--sp-14) * var(--bleed)); }
+  .context { flex: 1; min-width: 0; font-size: var(--fs-sm); align-self: center; }
+  .what-done { display: inline-flex; align-items: center; gap: var(--sp-8); margin-right: var(--sp-8); color: var(--text);
+    font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; }
+  .what-done::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
   .br { color: var(--c); white-space: nowrap; }
   .br i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin: 0 var(--sp-4) 0 var(--sp-2); }
   .ver { color: var(--text); }
@@ -395,7 +401,7 @@
   h2 :global(em) { font-style: normal; color: var(--accent); }
   .pair { display: inline-flex; flex: none; }
   .pair > :global(.av + .av) { margin-left: -8px; box-shadow: 0 0 0 2px var(--panel-2); }
-  .progress { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-6); font-size: var(--fs-sm); padding-top: var(--sp-10); }
+  .progress { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-6); font-size: var(--fs-sm); }
   .bar { display: flex; gap: var(--sp-4); max-width: 260px; }
   .bar i { width: 22px; min-width: 4px; flex: 0 1 auto; height: 6px; border-radius: var(--radius-pill); background: var(--line-strong); }
   .bar i.done { background: var(--accent); }
@@ -405,12 +411,12 @@
   .cards { display: flex; gap: var(--sp-16); }
   .card {
     flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-12); cursor: pointer;
-    padding: var(--sp-18); border-radius: var(--radius-card); background: var(--panel);
+    padding: var(--sp-18); border-radius: var(--pane-radius); background: var(--panel);
     box-shadow: 0 0 0 var(--border-width) var(--line); outline: none;
   }
   .card:hover { box-shadow: 0 0 0 var(--border-width) var(--line-strong); }
   .card:focus-visible { box-shadow: 0 0 0 2px var(--line-strong); }
-  .card.on { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }
+  .card.on { background: var(--accent-soft); box-shadow: 0 0 0 calc(var(--border-width) * (2 - var(--bleed))) var(--accent); }
   .card.both { flex: none; padding: var(--sp-12) var(--sp-14); border-radius: var(--radius-lg); }
   .top { display: flex; align-items: center; gap: var(--sp-10); min-width: 0; }
   .label { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -433,7 +439,8 @@
   .no { flex: none; width: 4ch; padding: 0 var(--sp-8) 0 var(--sp-6); text-align: right; color: var(--faint); user-select: none; }
   .tx { white-space: pre; padding-right: var(--sp-12); }
   .original summary { cursor: pointer; color: var(--muted); font-size: var(--fs-sm); margin-bottom: var(--sp-6); }
-  footer { display: flex; align-items: center; gap: var(--sp-8); }
+  footer { display: flex; align-items: center; gap: var(--sp-8); background: var(--surface-bar);
+    margin: 0 calc(var(--sp-28) * -1 * var(--bleed)) calc(var(--sp-24) * -1 * var(--bleed)); padding: calc(var(--sp-12) * var(--bleed)) calc(var(--sp-28) * var(--bleed)); }
   footer .primary { padding-left: var(--sp-18); padding-right: var(--sp-18); }
   .grow { flex: 1; }
 </style>

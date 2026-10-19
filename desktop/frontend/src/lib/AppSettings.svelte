@@ -2,9 +2,10 @@
   import { api } from "./api";
   import Modal from "$shared/Modal.svelte";
   import { languages, chosenLanguage, setLanguage, t } from "./i18n.svelte";
+  import { look, looks, setLook, type Look } from "./look.svelte";
 
-  // R3V's own settings (not a project's or a team's): language, starting
-  // with Windows, updates, where downloads go, and help.
+  // R3V's own settings (not a project's or a team's): language, the look,
+  // starting with Windows, updates, where downloads go, and help.
   let { version, edition, autostart, autoUpdate, downloadDir, update, checking, onautostart, onautoupdate, oncheck,
     ondownloaddir, onupdate, onclose }: {
     version: string;
@@ -49,6 +50,9 @@
     }
   }
 
+  const lookName = (l: Look) => (l === "flat" ? t("Flat") : t("Cards"));
+  const lookHint = (l: Look) => (l === "flat" ? t("Panels side by side, compact.") : t("Cards floating on the window, roomier."));
+
   const repo = "https://github.com/nonlabhq/R3V";
   // A new issue with what helps to look into it filled in (nothing about the
   // user or their projects).
@@ -90,6 +94,19 @@
       <span class="mono path" title={downloadDir}>{downloadDir || t("a folder you choose")}</span>
       <button class="small" onclick={ondownloaddir}>{t("Change…")}</button>
     </div>
+  </section>
+
+  <section>
+    <h3>{t("Appearance")}</h3>
+    <div class="line">
+      <span class="label">{t("Look")}</span>
+      <div class="seg" role="radiogroup" aria-label={t("Look")}>
+        {#each looks as l (l)}
+          <button role="radio" aria-checked={look() === l} class:on={look() === l} onclick={() => setLook(l)}>{lookName(l)}</button>
+        {/each}
+      </div>
+    </div>
+    <p class="hint">{lookHint(look())}</p>
   </section>
 
   <section>

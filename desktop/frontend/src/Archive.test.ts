@@ -33,7 +33,7 @@ const { api } = mocks;
 const project = (name: string, archived = false) =>
   ({ id: name.toLowerCase(), name, root: `C:/${name}`, status: "downloaded", branch: "main", archived });
 const overview = (archived = false) => ({
-  teams: [{ id: "t", name: "Band", memberName: "Yi" }], currentTeam: "t", archive: true,
+  teams: [{ id: "t", name: "Band", memberName: "Yi", canArchive: true }], currentTeam: "t", archive: true,
   projects: [project("Song"), project("Beat", archived)], teamChecked: true, teamError: "",
 });
 const info = (over = {}) => ({ canArchive: true, archived: false, onTeam: true, changes: 0, unshared: false, ...over });
@@ -57,8 +57,8 @@ describe("Archiving from the left panel", () => {
     await waitFor(() => expect(tabs()).toHaveLength(1));
     expect(document.querySelector("aside")!.textContent).toContain("Beat");
     await fireEvent.contextMenu(rowOf("Beat"), { clientX: 20, clientY: 40 });
-    const menu = document.querySelector<HTMLElement>(".row-menu")!;
-    await fireEvent.click(within(menu).getByRole("button", { name: "Archive project…" }));
+    const menu = await screen.findByRole("menu", { name: "Beat" });
+    await fireEvent.click(within(menu).getByRole("menuitem", { name: "Archive project…" }));
     const dialog = await screen.findByRole("dialog", { name: "Archive “Beat”?" });
     expect(dialog.textContent).toContain("hidden for everyone in the team");
     expect(dialog.textContent).toContain("Nothing is deleted");
@@ -76,7 +76,19 @@ describe("Archiving from the left panel", () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
     await fireEvent.contextMenu(rowOf("Beat"), { clientX: 20, clientY: 40 });
-    expect(within(document.querySelector<HTMLElement>(".row-menu")!).queryByRole("button", { name: "Archive project…" })).toBeNull();
+    expect(within(await screen.findByRole("menu", { name: "Beat" })).queryByRole("menuitem", { name: "Archive project…" })).toBeNull();
+  });
+
+  it("has no Archive project… for a member of an R3V Cloud team", async () => {
+    const member = { ...overview(), teams: [{ id: "t", name: "Band", memberName: "Yi", hosted: true, canArchive: false }] };
+    api.Overview.mockResolvedValue(member);
+    api.LocalOverview.mockResolvedValue(member);
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.contextMenu(rowOf("Beat"), { clientX: 20, clientY: 40 });
+    const menu = await screen.findByRole("menu", { name: "Beat" });
+    expect(within(menu).getByRole("menuitem", { name: "Settings…" })).toBeTruthy();
+    expect(within(menu).queryByRole("menuitem", { name: "Archive project…" })).toBeNull();
   });
 });
 
@@ -108,13 +120,17 @@ describe("ArchiveProjectDialog", () => {
 });
 
 describe("TeamHome's Archived section", () => {
+  const home = (canArchive: boolean, over = {}) => ({
+    overview: { teams: [], currentTeam: "t", projects: [], author: "", teamChecked: true, teamError: "" } as never,
+    team: { id: "t", name: "Band", address: "s3+https://x/b", memberId: "m1", canArchive } as never,
+    projects: [project("Song"), project("Beat", true)] as never, open: () => false, onopen: vi.fn(), onadd: vi.fn(),
+    onsettings: vi.fn(), reload: vi.fn(async () => {}), ...over });
+
   it("lists archived projects folded, opens one, and brings one back", async () => {
     const reload = vi.fn(async () => {});
     const onopen = vi.fn();
     const beat = project("Beat", true);
-    render(TeamHome, { overview: { teams: [], currentTeam: "t", projects: [], author: "", teamChecked: true, teamError: "" } as never,
-      team: { id: "t", name: "Band", address: "s3+https://x/b", memberId: "m1" } as never,
-      projects: [project("Song"), beat] as never, open: () => false, onopen, onadd: vi.fn(), reload });
+    render(TeamHome, home(true, { projects: [project("Song"), beat], onopen, reload }));
     const fold = screen.getByRole("button", { name: /Archived/ });
     expect(fold.textContent).toContain("1");
     expect(fold.getAttribute("aria-expanded")).toBe("false");
@@ -126,6 +142,21 @@ describe("TeamHome's Archived section", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Unarchive" }));
     await waitFor(() => expect(api.UnarchiveProject).toHaveBeenCalledWith("t", "beat"));
     expect(reload).toHaveBeenCalled();
+  });
+
+  it("has no Unarchive for a member of an R3V Cloud team", async () => {
+    render(TeamHome, home(false));
+    await fireEvent.click(screen.getByRole("button", { name: /Archived/ }));
+    expect(screen.getByTitle("C:/Beat")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Unarchive" })).toBeNull();
+  });
+
+  it("offers Archive project… in a card's ⋯ menu", async () => {
+    const onarchive = vi.fn();
+    render(TeamHome, home(true, { onarchive }));
+    await fireEvent.click(screen.getAllByRole("button", { name: "More" })[0]);
+    await fireEvent.click(await screen.findByRole("menuitem", { name: "Archive project…" }));
+    expect(onarchive).toHaveBeenCalledWith(expect.objectContaining({ name: "Song" }));
   });
 });
 

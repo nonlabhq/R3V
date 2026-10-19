@@ -7,7 +7,8 @@
   // A team's Activity tab (docs/design/team-settings.md): what happened,
   // newest first, by day; filtered by project, by each member or each agent,
   // and how far back. A version's line opens it in its project's graph.
-  let { source, onopen }: { source: TeamSource; onopen?: (project: string, version: string) => void } = $props();
+  // latest: only the newest few, unfiltered (a team's home).
+  let { source, onopen, latest = 0 }: { source: TeamSource; onopen?: (project: string, version: string) => void; latest?: number } = $props();
 
   let days = $state(30);
   let items = $state<ActivityItem[] | null>(null);
@@ -70,7 +71,19 @@
   const opens = (i: ActivityItem) => !!onopen && !!i.version && (i.kind === "share" || i.kind === "merge" || i.kind === "branch-made");
 </script>
 
+{#snippet line(i: ActivityItem)}
+  <li class={i.kind} class:agent={!!i.tool}>
+    {#if opens(i)}
+      <button class="line" onclick={() => onopen!(i.project, i.version)}>{text(i)}</button>
+    {:else}
+      <span class="line">{text(i)}</span>
+    {/if}
+    <span class="meta">{meta(i)}</span>
+  </li>
+{/snippet}
+
 <section>
+  {#if !latest}
   <div class="filters">
     <select aria-label={t("Project")} bind:value={project}>
       <option value="">{t("All projects")}</option>
@@ -93,6 +106,7 @@
       <option value={90}>{t("Last 90 days")}</option>
     </select>
   </div>
+  {/if}
 
   {#if error}
     <p class="error">{error}</p>
@@ -100,20 +114,15 @@
     <p class="faint">{t("Reading…")}</p>
   {:else if !shown.length}
     <p class="faint">{t("Nothing happened in this time.")}</p>
+  {:else if latest}
+    <ul>
+      {#each shown.slice(0, latest) as i, n (n + i.time)}{@render line(i)}{/each}
+    </ul>
   {:else}
     {#each byDay as d (d.day)}
       <h4>{d.day}</h4>
       <ul>
-        {#each d.items as i, n (n + i.time)}
-          <li class={i.kind} class:agent={!!i.tool}>
-            {#if opens(i)}
-              <button class="line" onclick={() => onopen!(i.project, i.version)}>{text(i)}</button>
-            {:else}
-              <span class="line">{text(i)}</span>
-            {/if}
-            <span class="meta">{meta(i)}</span>
-          </li>
-        {/each}
+        {#each d.items as i, n (n + i.time)}{@render line(i)}{/each}
       </ul>
     {/each}
   {/if}

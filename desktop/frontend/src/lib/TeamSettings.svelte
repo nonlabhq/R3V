@@ -8,7 +8,6 @@
   import Modal from "$shared/Modal.svelte";
   import KeptSamples from "./KeptSamples.svelte";
   import CodeBox from "./CodeBox.svelte";
-  import IdentityForm from "./IdentityForm.svelte";
   import BackupSection from "./BackupSection.svelte";
   import Fold from "./Fold.svelte";
   import TeamPeople from "$shared/team/TeamPeople.svelte";
@@ -21,10 +20,10 @@
   import SettingsTabs from "$shared/team/SettingsTabs.svelte";
   import { appTeamSource } from "./teamSource";
 
-  // One team's settings: its name, your name in it, the connection code for
-  // teammates, how this computer reaches it (storage keys), and
-  // disconnecting.
-  let { team, author = "", reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs: tabsOn = false, workflowTab = false, onopenversion }: {
+  // One team's settings: its name, the connection code for teammates, how
+  // this computer reaches it (storage keys), and disconnecting. (Your name
+  // in it is in User settings.)
+  let { team, reload, onclose, roots = [], offline = false, teams = [], canMove = false, inline = false, tabs: tabsOn = false, workflowTab = false, onopenversion }: {
     team: TeamSummary;
     onopenversion?: (project: string, version: string) => void; // (Activity: a version, in its project)
     inline?: boolean;      // in the team's home, not a dialog
@@ -34,7 +33,6 @@
     canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
     offline?: boolean; // its storage can't be reached now
     roots?: string[]; // its projects on this computer (kept under Local when leaving)
-    author?: string; // this computer's name, suggested when you have none here
     reload: () => Promise<void>;
     onclose: () => void;
   } = $props();
@@ -56,7 +54,6 @@
   let historySize = $state(0); // bytes those weigh
   let leaving = $state(false);
   const mb = (n: number) => (n >= 1 << 30 ? `${(n / (1 << 30)).toFixed(1)} GB` : `${Math.max(1, Math.round(n / (1 << 20)))} MB`);
-  let editingMe = $state(false);
   let shareSetup = $state(untrack(() => team.shareSetup));
   let shareError = $state("");
   let preupload = $state(untrack(() => team.preupload));
@@ -99,13 +96,6 @@
     } finally {
       cleaning = "";
     }
-  }
-
-  async function identitySaved(s: TeamSummary) {
-    const renamed = !!team.memberId && s.memberName !== team.memberName;
-    editingMe = false;
-    await reload();
-    toast(t(renamed ? "You're “{name}” in {team} — on all your versions" : "You're “{name}” in {team}", { name: s.memberName, team: s.name }), "ok");
   }
 
   $effect(() => {
@@ -218,20 +208,16 @@
   let source = $derived(appTeamSource(team.id, !!team.hosted));
 </script>
 
+<!-- (your own name and colour aren't here: they're yours, in User
+     settings, from your picture at the side bar's bottom) -->
 {#snippet body()}
   {@render naming()}
-  {#if team.hosted}
-    {@render myName()}
-    <TeamPeople {source} />
-  {:else}
-    {@render myName()}
-  {/if}
+  {#if team.hosted}<TeamPeople {source} />{/if}
   {@render rest()}
 {/snippet}
 
 {#snippet general()}
   {@render naming()}
-  {@render myName()}
   {#if team.hosted}<TeamPeople {source} />{:else if !offline}<TeamMembers {team} />{/if}
   {@render rest()}
 {/snippet}
@@ -242,7 +228,7 @@
 
 {#snippet naming()}
   <section>
-    <h3>{t("Name")}</h3>
+    <h3 class="band">{t("Name")}</h3>
     <div class="name-line">
       {#if team.looks && !offline && canLook}
         <LookPicker seed={team.id} name={team.name} icon={team.icon ?? ""} color={team.color ?? ""} picture={team.picture ?? ""} solid
@@ -266,36 +252,10 @@
   </section>
 {/snippet}
 
-{#snippet myName()}
-  {#if team.hosted}
-  <section>
-    <h3>{t("Your name in this team")}</h3>
-    <span class="myname">{team.memberName}</span>
-    <p class="faint small">{t("Your name comes from your R3V-Cloud account.")}</p>
-  </section>
-  {:else}
-  <section>
-    <h3>{t("Your name in this team")}</h3>
-    {#if team.memberId && !editingMe}
-      <div class="row me">
-        <span class="myname">{team.memberName}</span>
-        <button onclick={() => (editingMe = true)}>{t("Change…")}</button>
-      </div>
-      <p class="faint small">{t("Shown next to the versions you commit, for everyone in the team.")}</p>
-    {:else}
-      {#key team.memberName}
-        <IdentityForm {team} suggested={author} submitLabel="Save" onsaved={identitySaved} />
-      {/key}
-      {#if team.memberId}<button class="ghost small" onclick={() => (editingMe = false)}>{t("Cancel")}</button>{/if}
-    {/if}
-  </section>
-  {/if}
-{/snippet}
-
 {#snippet rest()}
   {#if team.isStorage}
     <section>
-      <h3>{t("Invite teammates")}</h3>
+      <h3 class="band">{t("Invite teammates")}</h3>
       <p class="faint small"><Tx text={t("Send this connection code privately; they choose {join} and paste it. It contains the storage key.")} em={{ join: t("Join a team") }} /></p>
       {#if code}<CodeBox {code} />{/if}
     </section>
@@ -303,7 +263,7 @@
 
   {#if team.canShareSetup}
     <section>
-      <h3>{t("Your setup")}</h3>
+      <h3 class="band">{t("Your setup")}</h3>
       <label class="share"><input type="checkbox" checked={shareSetup} onchange={(e) => toggleShare(e.currentTarget.checked)} />
         {t("Share my setup with the team")}</label>
       <p class="faint small">{t("Your Ableton Live version and the names of your plugins and packs (never files), so a project check can tell who can open a project.")} {t("Turning it off removes it from the team's storage.")}</p>
@@ -353,7 +313,7 @@
 
   {#if team.isStorage && canMove}
     <section>
-      <h3>{t("Move to R3V Cloud")}</h3>
+      <h3 class="band">{t("Move to R3V Cloud")}</h3>
       <div class="move">
         <p class="faint small">{t("R3V Cloud copies the whole team's history from this storage itself, while everyone keeps working; then everyone's projects move over as they are. Nothing is deleted here.")}</p>
         <button onclick={() => (movingTeam = true)}>{t("Move…")}</button>
@@ -363,7 +323,7 @@
 
   {#if team.isStorage}
     <section>
-      <h3>{t("Storage cleanup")}</h3>
+      <h3 class="band">{t("Storage cleanup")}</h3>
       <p class="faint small">{t("Files no version of any project uses — left by deleted projects, or by uploads that stopped — still take space in the bucket. R3V deletes them only once they've been unused for a day and are a week old, so it never takes a file a teammate is sharing right now.")}</p>
       {#if cleanup}
         {@const c = cleanup}
@@ -480,6 +440,8 @@
   .move p { flex: 1; margin: 0; }
   section { margin-bottom: var(--sp-18); }
   h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 var(--sp-8); }
+  /* (Flat: across the panel) */
+  .inline h3, :global(.tabbed) h3 { margin: 0 calc(var(--sp-16) * -1 * var(--bleed)) var(--sp-8); }
   .small { font-size: var(--fs-md); }
   section > p { margin: 0 0 var(--sp-8); }
   .btns { gap: var(--sp-6); margin-top: var(--sp-8); }
@@ -492,9 +454,6 @@
   .share { display: flex; align-items: center; gap: var(--sp-8); color: var(--text); font-size: var(--fs-base); }
   .share input { width: auto; }
   .danger-text { color: var(--danger); }
-  .me { gap: var(--sp-10); align-items: center; margin-bottom: var(--sp-4); }
-  .me button { padding: var(--sp-4) var(--sp-10); font-size: var(--fs-md); }
-  .myname { font-weight: var(--fw-semibold); }
   .keep { display: flex; gap: var(--sp-10); align-items: flex-start; margin: var(--sp-12) 0 0; color: var(--text); font-size: var(--fs-base); }
   .keep input { width: auto; margin-top: var(--sp-4); }
   .keep .faint { display: block; margin-top: var(--sp-2); }

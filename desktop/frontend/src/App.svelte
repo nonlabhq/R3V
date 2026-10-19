@@ -2,7 +2,7 @@
   import TeamMark from "$shared/TeamMark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type Program, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -21,6 +21,7 @@
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
   import TeamMenu from "./lib/TeamMenu.svelte";
+  import ProjectMenu from "./lib/ProjectMenu.svelte";
   import TeamSettings from "./lib/TeamSettings.svelte";
   import VerifyDialog from "./lib/VerifyDialog.svelte";
   import Modal from "$shared/Modal.svelte";
@@ -33,7 +34,7 @@
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
-  import { chooseProgram, loadPrograms, migrateOpenWith, openFolderWith, programLabel } from "./lib/openwith";
+  import { migrateOpenWith } from "./lib/openwith";
   import Tooltip from "./lib/Tooltip.svelte";
   import Avatar from "$shared/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
@@ -68,57 +69,11 @@
     settingsFor = null;
     return p;
   }
-  // The menu's "Open in" (read when the menu opens).
-  let menuInfo = $state<ProjectInfo | null>(null);
-  // A list beside the menu (the project's sets, or the programs to open its
-  // folder in): placed on the window (the sidebar's list scrolls, and would
-  // cut it off), kept open while the pointer crosses over to it.
-  let openSub = $state<"" | "sets" | "programs">("");
-  let subAt = $state({ left: 0, top: 0 });
-  let subTimer: ReturnType<typeof setTimeout> | undefined;
-  function showSub(e: MouseEvent, which: "sets" | "programs") {
-    clearTimeout(subTimer);
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    subAt = { left: Math.min(r.right - 2, window.innerWidth - 220), top: r.top - 6 };
-    openSub = which;
-  }
-  function hideSub() {
-    clearTimeout(subTimer);
-    subTimer = setTimeout(() => (openSub = ""), 180);
-  }
-  // The programs the folder can be opened in (as the header's "Open in"
-  // menu lists them), read when that list first shows.
-  let menuPrograms = $state<Program[] | null>(null);
-  function showPrograms(e: MouseEvent, p: TeamProject) {
-    showSub(e, "programs");
-    if (menuPrograms) return;
-    const key = rowKey(p);
-    // (not Explorer: the menu's own "Open folder" is it)
-    loadPrograms(p.root).then((l) => { if (rowMenu === key) menuPrograms = l.filter((x) => x.id !== "explorer"); });
-  }
-  function openFolderIn(p: TeamProject, prog: Program | null) {
-    rowMenu = "";
-    if (prog) openFolderWith(p.root, prog);
-    else chooseProgram(p.root);
-  }
   function openMenu(p: TeamProject, e: MouseEvent) {
     e.preventDefault();
-    const key = rowKey(p);
-    rowMenu = key;
+    rowMenu = rowKey(p);
     menuAt = { left: Math.min(e.clientX, window.innerWidth - 240), top: Math.min(e.clientY, window.innerHeight - 160) };
-    menuInfo = null;
-    menuPrograms = null;
-    openSub = "";
-    if (rowMenu && p.root && p.status === "downloaded") {
-      api.ProjectInfo(p.root).then((i) => { if (rowMenu === key) menuInfo = i; }).catch(() => {});
-    }
   }
-  const toolName = (tool: string) => (tool === "Ableton Live" ? "Live" : tool ? t(tool) : t("its program"));
-  function openIn(p: TeamProject, rel: string) {
-    rowMenu = "";
-    api.OpenInTool(p.root, rel).catch((e) => toast(errorText(e), "error"));
-  }
-  const openLabel = (p: TeamProject, rel: string) => (rel === "." ? p.name : rel);
 
   const SELECTED_KEY = "r3v.selected";
   const DOWNLOAD_DIR_KEY = "r3v.downloadDir";
@@ -275,6 +230,8 @@
   // beside its project, not dragged)
   const orderOf = (p: TeamProject) => (p.workspace ? p.root : p.id || p.root);
   let entries = $derived(besideMain(sortByOrder(overview?.projects ?? [], orderOf, order)));
+  // the project whose menu is open (right click on its row)
+  let menuFor = $derived(rowMenu ? entries.find((p) => rowKey(p) === rowMenu) : undefined);
   // A project's workspaces, under it in the sidebar, folded away with its
   // toggle (remembered, by the project's folder).
   const sameRoot = (a = "", b = "") => !!a && !!b && a.replace(/[\\/]+$/, "").toLowerCase() === b.replace(/[\\/]+$/, "").toLowerCase();
@@ -573,7 +530,7 @@
   // where the pointer is.
   const slide = (key: string, held: string) => ({ duration: key === held || reducedMotion() ? 0 : 160 });
   function projDown(e: PointerEvent, key: string) {
-    if ((e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
+    if ((e.target as HTMLElement).closest(".fold-ws")) return;
     dragSort(e, {
       axis: "y",
       start: () => (dragging = key),
@@ -704,7 +661,7 @@
   }
 
   // Archiving a project for the team (docs/design/archive.md; Nightly).
-  const canArchive = (p: TeamProject) => !!overview?.archive && !!current && !p.workspace && !!p.id && !p.archived;
+  const canArchive = (p: TeamProject) => !!overview?.archive && !!current?.canArchive && !p.workspace && !!p.id && !p.archived;
   async function archived(p: TeamProject) {
     archiving = null;
     settingsFor = null;
@@ -894,7 +851,6 @@
       e.preventDefault();
       launching = !launching;
     }
-    if (e.key === "Escape" && rowMenu) { e.preventDefault(); rowMenu = ""; }
     tabKeysDown(e);
     // F5, Ctrl+R: the project list (an open project refreshes itself), never the page.
     if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) {
@@ -902,9 +858,7 @@
       if (overview && !onboarding) reload();
     }
   }}
-  onclick={(e) => {
-    if (rowMenu && !(e.target as HTMLElement).closest(".row-menu")) rowMenu = "";
-  }} />
+ />
 
 {#if !overview || onboarding}
   <div class="bare-bar">{@render winControls()}</div>
@@ -941,11 +895,8 @@
         </button>
       </div>
       {#if current}
-        <div class="team-slot">
-          <button class="team-mark" class:on={home}
-            onclick={(e) => (e.ctrlKey || e.metaKey ? openTab(homeRef(teamId)) : goHome())}
-            onmousedown={noAutoscroll} onauxclick={middle(() => openTab(homeRef(teamId)))} title={current.name} aria-label={current.name}><TeamMark team={current} size={36} /></button>
-        </div>
+        <div class="team-slot"><TeamMenu folded {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))}
+          onteam={switchTeam} onsettings={openTeamSettings} /></div>
       {/if}
       <div class="section-slot">
         <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\\)"} aria-label={t("Show the sidebar")}>»</button>
@@ -965,16 +916,12 @@
         <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
       <!-- folded: who you are, as your picture -->
-      {#if current?.memberName}
+      {#if current}
         <div class="user folded-user">
-          {#if profile?.available}
-            <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName} · ${t("User settings")}`}
-              aria-label={t("User settings")}>
-              <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} size={28} />
-            </button>
-          {:else}
-            <span class="avatar" title={current.memberName}>{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
-          {/if}
+          <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName || t("No name yet")} · ${t("User settings")}`}
+            aria-label={t("User settings")}>
+            <Avatar name={current.memberName || "?"} seed={current.memberId} color={profile?.color ?? ""} picture={profile?.picture ?? ""} size={28} />
+          </button>
         </div>
       {/if}
       {:else}
@@ -995,9 +942,11 @@
         onsettings={openTeamSettings} /></div>
 
       <div class="list">
-        <div class="section row-h section-slot">
+        <div class="section row-h section-slot band">
           <span>{t("Projects")}</span>
           {#if current}
+            <button class="ghost tiny flat-only add-tiny" onclick={addToTeam} disabled={busy === "add"} title={t("Add project")}
+              aria-label={t("Add project")}>+</button>
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
@@ -1018,10 +967,12 @@
             <li class="empty faint">{t("No projects in this team yet.")}</li>
           {/each}
         </ul>
-        <button class="add" onclick={addToTeam} disabled={busy === "add" || !current}>
-          <span>+ {t("Add project")}</span>
-          <span class="hint">{t("Select project folder")}</span>
-        </button>
+        <div class="cards-only">
+          <button class="add" onclick={addToTeam} disabled={busy === "add" || !current}>
+            <span>+ {t("Add project")}</span>
+            <span class="hint">{t("Select project folder")}</span>
+          </button>
+        </div>
       </div>
       <!-- what needs you: R3V's update, the team's asks (kept below the
            projects, so they stay where they are folded or not) -->
@@ -1046,16 +997,14 @@
         {/if}
         <TeamMenu {overview} {reload} part="notices" onhome={() => goHome()} onsettings={openTeamSettings} />
       </div>
-      <!-- who you are in this team, and the app's settings -->
+      <!-- who you are in this team (the one way to your name, colour and
+           account: User settings), and the app's settings -->
       <div class="user">
-        {#if current?.memberName && profile?.available}
+        {#if current}
           <button class="ghost who" onclick={() => (userSettings = true)} title={t("User settings")}>
-            <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} />
-            <span class="user-name">{current.memberName}</span>
+            <Avatar name={current.memberName || "?"} seed={current.memberId} color={profile?.color ?? ""} picture={profile?.picture ?? ""} />
+            <span class="user-name">{current.memberName || t("No name yet")}</span>
           </button>
-        {:else if current?.memberName}
-          <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
-          <span class="user-name">{current.memberName}</span>
         {/if}
         <button class="ghost keys" onclick={() => (keysHelp = true)} title={t("Keyboard shortcuts") + " (Ctrl+/)"}
           aria-label={t("Keyboard shortcuts")}>⌨</button>
@@ -1099,6 +1048,7 @@
       <div class="content-body">
       {#if current && (home || !selectedEntry)}
         <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
+          onsettings={(p) => (settingsFor = p)} onarchive={(p) => { if (canArchive(p)) archiving = p; }}
           adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
@@ -1203,7 +1153,7 @@
     <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
       onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))}
       class:locked={p.status === "remote" && teamLocked}
-      title={p.status === "remote" ? t("On the team, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
+      title={p.status === "remote" ? t("On the cloud storage, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
       <ProjectIcon {p} size={24} />
       <span class="text">
         <span class="name">{p.workspace ? `⑂ ${p.branchLabel || p.branch}` : p.name}</span>
@@ -1218,60 +1168,13 @@
         title={wsFolded[p.root] ? t("Show its workspaces") : t("Hide its workspaces")}>
         <span class="caret" aria-hidden="true">{wsFolded[p.root] ? "▸" : "▾"}</span>{spaces.length}</button>
     {/if}
-    {#if rowMenu === rowKey(p)}
-      <div class="row-menu surface-menu" role="menu" style:left="{menuAt.left}px" style:top="{menuAt.top}px">
-        {#if menuInfo && menuInfo.openable.length === 1}
-          <button class="item" onclick={() => openIn(p, menuInfo!.openable[0])}>{t("Open in {tool}", { tool: toolName(menuInfo.tool) })}</button>
-        {:else if menuInfo && menuInfo.openable.length > 1}
-          <div class="sub" role="none" onmouseenter={(e) => showSub(e, "sets")} onmouseleave={hideSub}>
-            <button class="item has-sub" aria-expanded={openSub === "sets"}>
-              {t("Open in {tool}", { tool: toolName(menuInfo.tool) })}<span class="arrow">›</span>
-            </button>
-            {#if openSub === "sets"}
-              <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" style:left="{subAt.left}px" style:top="{subAt.top}px"
-                onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
-                {#each menuInfo.openable as rel}
-                  <button class="item" onclick={() => openIn(p, rel)}>{openLabel(p, rel)}</button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        {#if p.root && p.status !== "missing"}
-          <button class="item" onclick={() => { rowMenu = ""; api.ShowFolder(p.root); }}>{t("Open folder")}</button>
-        {/if}
-        {#if p.root && p.status === "downloaded"}
-          <div class="sub" role="none" onmouseenter={(e) => showPrograms(e, p)} onmouseleave={hideSub}>
-            <button class="item has-sub" aria-haspopup="menu" aria-expanded={openSub === "programs"}
-              onclick={(e) => showPrograms(e, p)}>{t("Open the folder in")}<span class="arrow">›</span></button>
-            {#if openSub === "programs"}
-              <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" aria-label={t("Open the folder in")}
-                style:left="{subAt.left}px" style:top="{subAt.top}px" onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
-                {#if menuPrograms === null}
-                  <div class="item faint">{t("Looking for programs…")}</div>
-                {:else}
-                  {#each menuPrograms as prog (prog.id)}
-                    <button class="item" role="menuitem" title={prog.path || undefined} onclick={() => openFolderIn(p, prog)}>{programLabel(prog)}</button>
-                  {/each}
-                {/if}
-                <div class="sep"></div>
-                <button class="item" role="menuitem" onclick={() => openFolderIn(p, null)}>{t("Choose a program…")}</button>
-              </div>
-            {/if}
-          </div>
-        {/if}
-        {#if !p.workspace}
-          <div class="sep"></div>
-          <button class="item" onclick={() => { rowMenu = ""; settingsFor = p; }}>{t("Settings…")}</button>
-          {#if canArchive(p)}
-            <button class="item" onclick={() => { rowMenu = ""; archiving = p; }}>{t("Archive project…")}</button>
-          {/if}
-        {/if}
-      </div>
-    {/if}
 {/snippet}
 
 
+{#if rowMenu && menuFor}
+  <ProjectMenu p={menuFor} at={menuAt} onsettings={(p) => (settingsFor = p)} onarchive={canArchive(menuFor) ? (p) => (archiving = p) : undefined}
+    onclose={() => (rowMenu = "")} />
+{/if}
 <Tooltip />
 {#if launching && overview}
   <QuickLaunch teams={overview.teams} current={teamId} {recent} onpick={launch} onclose={() => (launching = false)} />
@@ -1302,8 +1205,9 @@
 {/if}
 
 {#if userSettings}
-  <UserSettings team={current} onclose={() => (userSettings = false)}
-    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }} />
+  <UserSettings team={current} author={overview?.author ?? ""} onclose={() => (userSettings = false)}
+    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }}
+    onidentity={async () => { await reload(); loadProfile(); refreshKey++; }} />
 {/if}
 
 {#snippet projectSettings(p: TeamProject, inline: boolean)}
@@ -1325,7 +1229,7 @@
     onunlink={() => { settingsFor = null; leaving = { roots: [p.root], go: () => forget(p) }; }}
     onlocate={() => { settingsFor = null; locate(p); }}
     onarchive={canArchive(p) ? () => (archiving = p) : undefined}
-    onunarchive={overview?.archive && p.archived ? () => unarchive(p) : undefined} />
+    onunarchive={overview?.archive && current?.canArchive && p.archived ? () => unarchive(p) : undefined} />
 {/snippet}
 
 {#if archiving && current}
@@ -1336,7 +1240,7 @@
 
 {#if teamSettingsFor && overview}
   {@const tm = overview.teams.find((x) => x.id === teamSettingsFor!.id) ?? teamSettingsFor}
-  <TeamSettings team={tm} author={overview.author} {reload} onclose={() => (teamSettingsFor = null)}
+  <TeamSettings team={tm} {reload} onclose={() => (teamSettingsFor = null)}
     teams={overview.teams} canMove
     offline={tm.id === overview.currentTeam && !!overview.teamError}
     roots={tm.id === overview.currentTeam ? overview.projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root) : []} />
@@ -1387,7 +1291,7 @@
 {#if nightly}<StyleLab />{/if}
 
 <style>
-  .shell { position: relative; display: grid; grid-template-columns: 256px 1fr; height: 100%; }
+  .shell { position: relative; display: grid; grid-template-columns: 256px 1fr; column-gap: var(--pane-gap); height: 100%; background: var(--surface-gutter); }
   .side-split { position: absolute; top: 0; bottom: 0; width: 7px; margin-left: -4px; z-index: var(--z-sticky); cursor: col-resize; touch-action: none; }
   .side-split:hover, .shell.sizing .side-split { background: linear-gradient(to right, transparent 3px, var(--accent) 3px, var(--accent) 4px, transparent 4px); }
   .shell.sizing { cursor: col-resize; user-select: none; }
@@ -1402,8 +1306,6 @@
   .section-slot { height: var(--section-h); box-sizing: border-box; flex: none; }
   .user { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-8) calc(var(--sp-10) * -1) calc(var(--sp-12) * -1);
     padding: var(--sp-10) var(--sp-14); border-top: var(--border-width) solid var(--line); }
-  .user .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
   .who { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-2) var(--sp-4);
     margin-left: calc(var(--sp-4) * -1); text-align: left; color: var(--text); }
   .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
@@ -1422,16 +1324,12 @@
   .shell.folded .team-slot, .shell.folded .section-slot { justify-content: center; }
   .shell.folded .section-slot { display: flex; align-items: center; }
   .shell.folded .section-slot .fold { margin: 0; }
-  .team-mark { flex: none !important; width: 36px; height: 36px; padding: 0; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
-    background: transparent; border-color: transparent; }
-  .team-mark:hover:not(:disabled) { border-color: var(--line-strong); background: transparent; }
-  .team-mark.on { border-color: var(--accent); }
   .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center;
     padding: 0; margin: 0 calc(var(--sp-6) * -1); }
   .folded-row { height: var(--row-h); flex: none; display: flex; align-items: center; justify-content: center; }
-  .folded-proj { padding: var(--sp-2); border: var(--border-width) solid transparent; border-radius: var(--radius-lg); background: transparent; line-height: 0; }
-  .folded-proj:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
-  .folded-proj.on { background: var(--accent-bg); border-color: var(--accent-line); }
+  .folded-proj { padding: var(--sp-2); border: var(--border-width) solid transparent; border-radius: var(--row-radius); background: transparent; line-height: 0; }
+  .folded-proj:hover:not(:disabled) { background: var(--side-hover); border-color: transparent; }
+  .folded-proj.on { background: var(--select-bg); box-shadow: var(--select-bar); border-color: var(--select-line); }
   .folded-proj.remote { opacity: .45; }
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   /* The project dragged: lifted over the others, where the pointer is; let
@@ -1449,14 +1347,17 @@
   .logo img { width: 22px; height: 22px; display: block; }
   .logo .news { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn);
     box-shadow: 0 0 0 2px var(--bg-sunken); }
-  aside { background: var(--bg-sunken); border-right: var(--border-width) solid var(--line); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
+  aside { background: var(--surface-side); border-right: var(--border-width) solid var(--pane-edge); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }
   .brand:hover { background: var(--panel-2); }
   .brand img { width: 24px; height: 24px; }
   .brand img.wordmark { width: auto; height: 18px; }
-  .list { flex: 1; overflow: auto; min-height: 0; }
+  .list { flex: 1; overflow: auto; min-height: 0; margin: 0 calc(var(--sp-10) * -1); padding: 0 var(--sp-10); }
   .section { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-8) var(--sp-8) var(--sp-4); }
+  /* (Flat: a band across the side bar, a step apart from the rows) */
+  .section.band { margin: 0 calc(var(--sp-10) * -1) var(--side-band-gap); padding-left: var(--sp-18); padding-right: var(--sp-18); }
+  .add-tiny { font-size: var(--fs-lg); line-height: 18px; margin-left: auto; }
   .row-h { display: flex; align-items: center; justify-content: space-between; }
   .tiny { padding: 0 var(--sp-6); font-size: var(--fs-md); line-height: 18px; color: var(--faint); }
   .tiny:hover { color: var(--text); }
@@ -1468,12 +1369,12 @@
   .dl-progress { width: 360px; max-width: 100%; margin: var(--sp-10) auto 0; display: flex; text-align: left; }
   ul { list-style: none; margin: 0; padding: 0; }
   li { display: flex; align-items: center; position: relative; }
-  .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--radius-lg); text-align: left; }
-  .proj:hover { background: var(--panel); }
+  .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--row-radius); text-align: left; }
+  .proj:hover { background: var(--side-hover); }
   /* an agent's workspace: under its project, a step in */
   li.ws .proj { padding-left: var(--sp-28); }
   li.has-ws .proj { padding-right: calc(var(--sp-28) + var(--sp-16)); }
-  .proj.on { background: var(--accent-bg); }
+  .proj.on, .proj.on:hover { background: var(--select-bg); box-shadow: var(--select-bar); }
   .icon { width: 16px; text-align: center; color: var(--accent); }
   .text { display: flex; flex-direction: column; min-width: 0; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1491,24 +1392,6 @@
   .fold-ws:hover { background: var(--hover); color: var(--text); }
   /* (beside the project's button, not in it: a button of its own) */
   .pre-slot { position: absolute; top: 9px; right: 28px; }
-  .row-menu {
-    position: fixed; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);
-    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
-  }
-  .row-menu .item {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; border: none;
-    background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left;
-  }
-  .row-menu .item:hover { background: var(--hover); }
-  .row-menu .sep { height: 1px; background: var(--line); margin: var(--sp-4) var(--sp-2); }
-  .row-menu .sub { position: relative; }
-  .row-menu .has-sub { flex-direction: row; justify-content: space-between; align-items: center; }
-  .row-menu .arrow { color: var(--faint); }
-  .row-menu.submenu { position: fixed; right: auto; min-width: 200px; max-width: 340px; z-index: var(--z-submenu); }
-  .row-menu.submenu .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
-  .row-menu .has-sub[aria-expanded="true"] { background: var(--hover); }
-  .row-menu div.item.faint { color: var(--faint); cursor: default; }
-  .row-menu div.item.faint:hover { background: none; }
   .danger-text { color: var(--danger); }
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }
@@ -1551,13 +1434,14 @@
      and the window's buttons. Empty space drags the window. */
   .titlebar, .aside-top { --wails-draggable: drag; }
   .titlebar button, .titlebar .tab, .aside-top button { --wails-draggable: no-drag; }
-  .titlebar { display: flex; align-items: flex-end; height: 40px; flex: none; background: var(--bg-sunken);
-    border-bottom: var(--border-width) solid var(--line); }
-  .tabs { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0 var(--sp-8); height: 100%; }
-  .tab { display: flex; align-items: center; min-width: 0; max-width: 220px; height: 32px; border: var(--border-width) solid transparent;
-    border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; color: var(--muted); }
-  .tab:hover { background: var(--panel); }
-  .tab.on { background: var(--bg); border-color: var(--line); color: var(--text); margin-bottom: calc(var(--border-width) * -1); height: calc(32px + var(--border-width)); }
+  .titlebar { display: flex; align-items: flex-end; height: var(--titlebar-h); flex: none; background: var(--surface-titlebar);
+    border-bottom: var(--border-width) solid var(--pane-edge); }
+  .tabs { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0 var(--titlebar-pad); height: 100%; }
+  .tab { display: flex; align-items: center; min-width: 0; max-width: 220px; height: var(--tab-h); border: var(--border-width) solid transparent;
+    border-bottom: none; border-radius: var(--tab-radius) var(--tab-radius) 0 0; color: var(--muted); }
+  .tab:hover { background: var(--side-hover); }
+  .tab.on { background: var(--surface-tab); border-color: var(--pane-edge); color: var(--text); margin-bottom: calc(var(--border-width) * -1);
+    height: calc(var(--tab-h) + var(--border-width)); box-shadow: var(--select-bar-top); }
   .tab-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
     padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .tab-name:hover:not(:disabled) { background: transparent; }

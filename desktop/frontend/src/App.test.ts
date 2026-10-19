@@ -458,7 +458,7 @@ describe("App: a project's right-click menu", () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
     const menu = await menuOf("Song");
-    const sub = within(menu).getByRole("button", { name: /Open the folder in/ });
+    const sub = within(menu).getByRole("menuitem", { name: /Open the folder in/ });
     await fireEvent.mouseEnter(sub.parentElement!);
     const list = await screen.findByRole("menu", { name: "Open the folder in" });
     await waitFor(() => expect(within(list).getAllByRole("menuitem").map((b) => b.textContent)).toEqual(
@@ -471,7 +471,7 @@ describe("App: a project's right-click menu", () => {
     // Choose a program…: kept for the project by R3V, and the folder opened in it
     api.ChooseProgram.mockResolvedValue({ id: "D:/Other.exe", name: "Other", path: "D:/Other.exe", chosen: true });
     const again = await menuOf("Beat");
-    await fireEvent.mouseEnter(within(again).getByRole("button", { name: /Open the folder in/ }).parentElement!);
+    await fireEvent.mouseEnter(within(again).getByRole("menuitem", { name: /Open the folder in/ }).parentElement!);
     await fireEvent.click(await screen.findByRole("menuitem", { name: "Choose a program…" }));
     expect(api.ChooseProgram).toHaveBeenCalledWith("C:/Beat", expect.any(String));
     await waitFor(() => expect(api.OpenFolderWith).toHaveBeenLastCalledWith("C:/Beat", "D:/Other.exe"));
@@ -514,11 +514,11 @@ describe("App: the user", () => {
     expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
   });
 
-  it("keeps the user area as it was where looks aren't (Stable)", async () => {
+  it("opens User settings from your picture where looks aren't (Stable) too: the one way to your name", async () => {
     api.Profile.mockResolvedValue({ available: false, name: "Yi", memberId: "m1", color: "", picture: "", notShared: [] });
     render(App);
-    await screen.findByText("Yi");
-    await new Promise((r) => setTimeout(r, 20));
-    expect(screen.queryByRole("button", { name: /Yi/ })).toBeNull();
+    await fireEvent.click(await screen.findByRole("button", { name: /Yi/ }));
+    expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Upload picture…" })).toBeNull(); // (no looks: no picture or colour)
   });
 });
