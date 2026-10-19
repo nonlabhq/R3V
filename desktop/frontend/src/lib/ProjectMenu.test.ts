@@ -19,6 +19,16 @@ const labels = () => [...screen.getByRole("menu", { name: "Song" }).querySelecto
 const props = (over = {}) => ({ p: project(), at: { left: 10, top: 10 }, onsettings: vi.fn(), onclose: vi.fn(), ...over });
 
 describe("ProjectMenu", () => {
+  it("offers Move to › only for a project the team has: one not shared yet isn't the team's to group", async () => {
+    const sections = [{ id: "s1", name: "Game" }];
+    render(ProjectMenu, props({ p: project({ shared: true }), sections, onsection: vi.fn() }));
+    await waitFor(() => expect(labels()).toContain("Move to"));
+    cleanup();
+    render(ProjectMenu, props({ p: project({ shared: false }), sections, onsection: vi.fn() }));
+    await waitFor(() => expect(labels()).toContain("Settings…"));
+    expect(labels()).not.toContain("Move to");
+  });
+
   it("offers a project's sets, its folder and its settings", async () => {
     api.ProjectInfo.mockResolvedValue({ openable: [".", "Live/Alt.als"], tool: "Ableton Live" });
     api.OpenPrograms.mockResolvedValue([{ id: "explorer", name: "Explorer" }, { id: "code", name: "VS Code" }]);

@@ -113,6 +113,9 @@ type TeamProject struct {
 	// Section and SectionName: the team's section it's in ("": none).
 	Section     string `json:"section"`
 	SectionName string `json:"sectionName"`
+	// Shared: the team lists it (it was shared): only then can it go in a
+	// section (the team's record names the team's projects).
+	Shared bool `json:"shared"`
 }
 
 type Overview struct {
@@ -210,6 +213,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 				seen[p.ID] = i
 				ov.Projects = append(ov.Projects, TeamProject{ID: p.ID, Name: p.Name, Status: "remote"})
 			}
+			ov.Projects[i].Shared = true
 			if remote.Looks {
 				ov.Projects[i].Icon, ov.Projects[i].Color = p.Icon, p.Color
 				ov.Projects[i].Picture = dataURL(readPicture(p.Picture))

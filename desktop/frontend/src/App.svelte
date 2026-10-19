@@ -588,7 +588,7 @@
         }
         dragging = "";
         dragDy = 0;
-        if (moved && to !== null) moveToSection(p, to);
+        if (moved && to !== null && p.shared) moveToSection(p, to); // (one not shared yet isn't the team's to group)
       },
     });
   }
@@ -1411,7 +1411,7 @@
     onarchive={canArchive(p) ? () => (archiving = p) : undefined}
     onunarchive={overview?.archive && current?.canArchive && p.archived ? () => unarchive(p) : undefined}
     sections={overview?.sectionsOn ? sections : undefined}
-    onsection={canEditSections ? async (id) => { await api.SetProjectSection(teamId, p.id, id); const key = rowKey(p); await reload();
+    onsection={canEditSections && p.shared ? async (id) => { await api.SetProjectSection(teamId, p.id, id); const key = rowKey(p); await reload();
       if (settingsFor) settingsFor = entries.find((e) => rowKey(e) === key) ?? null; } : undefined} />
 {/snippet}
 

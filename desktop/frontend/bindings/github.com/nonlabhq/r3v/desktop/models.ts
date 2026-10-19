@@ -4658,6 +4658,12 @@ export class TeamProject {
     "section": string;
     "sectionName": string;
 
+    /**
+     * Shared: the team lists it (it was shared): only then can it go in a
+     * section (the team's record names the team's projects).
+     */
+    "shared": boolean;
+
     /** Creates a new TeamProject instance. */
     constructor($$source: Partial<TeamProject> = {}) {
         if (!("id" in $$source)) {
@@ -4701,6 +4707,9 @@ export class TeamProject {
         }
         if (!("sectionName" in $$source)) {
             this["sectionName"] = "";
+        }
+        if (!("shared" in $$source)) {
+            this["shared"] = false;
         }
 
         Object.assign(this, $$source);
