@@ -21,7 +21,8 @@ import (
 // with it (text place by place, Unity's scenes with UnityYAMLMerge), any
 // other file whole (the side that changed it). The handler is the
 // project's when -o is in one (its rules and presets), else the presets'
-// by the file's name; --as text or whole overrides it. Places both sides
+// by the file's name, and for a file they don't know its content (text
+// line by line, anything else whole); --as text or whole overrides it. Places both sides
 // changed differently stop it, unless --strategy says which side wins
 // (both: ours then theirs, for text). merge-sets is its Live Sets' name,
 // as before.
@@ -84,6 +85,9 @@ func cmdMergeFiles(args []string) error {
 	switch {
 	case res.Handler == "":
 		res.Handler = mergeHandlerFor(*out)
+		if res.Handler == "" { // (a file no one knows, outside a project: by its content, as git's mergetool)
+			res.Handler = "text"
+		}
 		if res.Handler == "text" && !text {
 			res.Handler = handlerWhole // (as in a branch merge: "text" that isn't is chosen whole)
 		}
@@ -155,7 +159,9 @@ func cmdMergeFiles(args []string) error {
 
 // mergeHandlerFor is the merge a branch merge would use for the file at
 // out: its project's rules when out is in one, else the presets' by its
-// name; whole when none applies or this R3V lacks the handler.
+// name; whole when none applies or this R3V lacks the handler. Outside a
+// project a file no preset knows (KnownByName) gets "": its content
+// decides (merge-files is git's mergetool in ordinary repositories too).
 func mergeHandlerFor(out string) string {
 	var h profile.Handler
 	byName := true
@@ -169,7 +175,9 @@ func mergeHandlerFor(out string) string {
 		}
 	}
 	if byName {
-		h = profile.HandlerByName(out)
+		if h = profile.HandlerByName(out); h.Merge == "" && !profile.KnownByName(out) {
+			return ""
+		}
 	}
 	if h.Merge == "" || handlers.Merge(h.Merge) == nil {
 		return handlerWhole

@@ -50,6 +50,11 @@ func TestUnityPreset(t *testing.T) {
 			t.Errorf("by name %s: %q, want %q", name, got, want)
 		}
 	}
+	for name, want := range map[string]bool{"Hero.fbx": true, "Main.unity": true, "Tree.ply": true, "notes.foo": false, "a.txt": false} {
+		if profile.KnownByName(name) != want {
+			t.Errorf("known %s: %v", name, !want)
+		}
+	}
 }
 
 func TestMetaCheck(t *testing.T) {

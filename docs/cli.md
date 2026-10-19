@@ -288,7 +288,9 @@ r3v merge-files <base> <ours> <theirs> -o out [--strategy fail|ours|theirs|both]
 handler the project's rules give `out` when it is in a project, else the one
 the presets give its name (text line by line, a Unity scene with
 UnityYAMLMerge). A kind no handler takes, a `.fbx` say, is merged whole: a
-conflict when both sides changed it. `--as text` merges it line by line
+conflict when both sides changed it. Outside a project, a file no preset
+knows (a `.txt` in an ordinary git repository) goes by its content: text
+line by line, anything else whole. `--as text` merges it line by line
 anyway, `--as whole` chooses it whole. `--json`: `kind` (`text`, `binary`:
 what the files are), `handler` (how they were merged: `text`, `whole`, or a
 preset's, as `unity-yaml`), `out`, `conflicts`, `resolved`.

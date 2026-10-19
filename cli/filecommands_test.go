@@ -172,6 +172,16 @@ func TestMergeFilesFollowsHandlers(t *testing.T) {
 	merge(exitConflict, tb, to, tt, "-o", filepath.Join(dir, "notes.txt"), "--as", "whole")
 	bb, bo := put("b.bin", "\x00a"), put("o.bin", "\x00b")
 	merge(exitUsage, bb, bo, bb, "-o", filepath.Join(dir, "x.txt"), "--as", "text")
+	// A name no preset knows: by its content, as git's mergetool always did.
+	if res := merge(0, tb, to, tt, "-o", filepath.Join(dir, "notes.foo")); res.Handler != "text" || res.Conflicts != 0 {
+		t.Errorf("unknown text: %+v", res)
+	}
+	if data, _ := os.ReadFile(filepath.Join(dir, "notes.foo")); string(data) != "A\nb\nC\n" {
+		t.Errorf("unknown text: %q", data)
+	}
+	if res := merge(0, bb, bb, bo, "-o", filepath.Join(dir, "x.foo")); res.Handler != "whole" || res.Kind != "binary" {
+		t.Errorf("unknown binary: %+v", res)
+	}
 
 	// A preset's own handler: merged when clean, else the whole file.
 	sb, so, st := put("b.zzscene", "base"), put("o.zzscene", "ours"), put("t.zzscene", "theirs")
@@ -196,7 +206,8 @@ func TestMergeFilesFollowsHandlers(t *testing.T) {
 }
 
 // In a project merge-files takes the project's rules for -o's path: one
-// whose presets merge no .txt merges it whole, as its branch merges do.
+// whose presets merge no .txt merges it whole, as its branch merges do
+// (outside, by the presets, or a name they don't know by its content).
 func TestMergeFilesInProject(t *testing.T) {
 	a := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "notes.txt": "a\nb\nc\n"})
 	t.Chdir(a)
@@ -213,6 +224,9 @@ func TestMergeFilesInProject(t *testing.T) {
 	exit, rep := run(t, a, "merge-files", base, ours, theirs, "-o", filepath.Join(a, "notes.txt"))
 	if exit != exitConflict || rep.Error.Code != "merge_conflict" {
 		t.Fatalf("in the project: %d %+v", exit, rep.Error)
+	}
+	if exit, rep := run(t, a, "merge-files", base, ours, theirs, "-o", filepath.Join(a, "notes.foo")); exit != exitConflict {
+		t.Fatalf("a name no preset knows, in the project: %d %+v", exit, rep.Error)
 	}
 	// The same files outside it: the presets' text handler.
 	exit, rep = run(t, tmp, "merge-files", base, ours, theirs, "-o", filepath.Join(tmp, "notes.txt"))

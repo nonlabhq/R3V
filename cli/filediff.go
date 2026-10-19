@@ -70,7 +70,8 @@ a picture its size, any other file its size; Nightly):
   merge-files <base> <ours> <theirs> -o <out> [--strategy fail|ours|theirs|both] [--as text|whole]
                                          a 3-way merge of three files, each kind the way a branch
                                          merge merges it (the project's rules for <out>, else by its
-                                         name: a scene or a model whole); --as text: line by line
+                                         name: a scene or a model whole; a name no preset knows, by
+                                         its content); --as text: line by line
                                          (merge-sets: the same, for Live Sets)
 `
 

@@ -526,8 +526,9 @@ Codes are stable; messages are for people and may change.
   side changed them.
 - `r3v merge-files <base> <ours> <theirs> -o <out>` merges three files on
   disk the way a branch merge would (the project's rules for `out`, else
-  the presets' by its name): a scene or a model changed on both sides is a
-  `merge_conflict`, not lines mixed. `--json` `handler` says how it merged
+  the presets' by its name; outside a project, a file they don't know by
+  its content: text line by line): a scene or a model changed on both
+  sides is a `merge_conflict`, not lines mixed. `--json` `handler` says how it merged
   (`text`, `whole`, `unity-yaml`, …); `--as text` merges line by line
   anyway, only when the user says the file can be.
 - `r3v status` shows what changed inside a modified set
