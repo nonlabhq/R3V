@@ -1,5 +1,6 @@
 <script lang="ts">
   import TeamMark from "$shared/TeamMark.svelte";
+  import Wordmark from "./lib/Wordmark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
   import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type TeamProject, type TeamSummary, type Profile,
@@ -1036,7 +1037,7 @@
       {:else}
       <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
-        <img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
+        <Wordmark />
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
       </button>
       <!-- the version, short (0.1.3, and Nightly); in full in its tooltip, copied on a click -->
@@ -1513,8 +1514,6 @@
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }
   .brand:hover { background: var(--panel-2); }
-  .brand img { width: 24px; height: 24px; }
-  .brand img.wordmark { width: auto; height: 18px; }
   .list { flex: 1; overflow: auto; min-height: 0; margin: 0 calc(var(--sp-10) * -1); padding: 0 var(--sp-10); }
   .section { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-8) var(--sp-8) var(--sp-4); }
   /* (Flat: a band across the side bar, a step apart from the rows) */
