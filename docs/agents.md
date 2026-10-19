@@ -246,7 +246,9 @@ Reading commands (`status`, `log`, `diff`, `results`, `merge --preview`,
 `branch`, `workspace list`, `rules check`/`explain`) don't wait for the app
 or another command working on the project: they read it as it is, write
 nothing, and add `"busy": true` and `holder` (who has it, as in
-`project_busy` below) to their result. Commands that change the project
+`project_busy` below) to their result; without `--json` a note on stderr
+says so. Nothing is needed of you then: the result is good, only what the
+other is doing right now may be missing. Commands that change the project
 wait for it up to 10 seconds; `--wait SECONDS` (any command) waits longer
 or less, and with a reading command waits that long for the lock before
 reading without it.
