@@ -7,6 +7,8 @@
   import TeamSettings from "./TeamSettings.svelte";
   import { storageKind } from "./teamText";
   import { linkPick } from "./links.svelte";
+  import { toast } from "./notify.svelte";
+  import { errorText } from "./api";
 
   // A team's home (a click on the team in the sidebar): who's in it, and its
   // projects (those on this computer, then those still only on the team; a
@@ -36,12 +38,29 @@
 
   let kind = $derived(storageKind(team));
   let mains = $derived(projects.filter((p) => !p.workspace));
-  let here = $derived(mains.filter((p) => p.status !== "remote"));
-  let away = $derived(mains.filter((p) => p.status === "remote"));
+  // Archived for the team (docs/design/archive.md): listed apart, folded.
+  let active = $derived(mains.filter((p) => !p.archived));
+  let archived = $derived(mains.filter((p) => p.archived));
+  let here = $derived(active.filter((p) => p.status !== "remote"));
+  let away = $derived(active.filter((p) => p.status === "remote"));
+  let archivedOpen = $state(false);
+  let unarchiving = $state("");
+  async function unarchive(p: TeamProject) {
+    unarchiving = p.id;
+    try {
+      await api.UnarchiveProject(team.id, p.id);
+      toast(t("“{name}” is back for the team", { name: p.name }), "ok");
+      await reload();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      unarchiving = "";
+    }
+  }
   const same = (a = "", b = "") => !!a && !!b && a.replace(/[\/]+$/, "").toLowerCase() === b.replace(/[\/]+$/, "").toLowerCase();
   const spaces = (p: TeamProject) => projects.filter((w) => w.workspace && same(w.mainRoot, p.root)).length;
   let summary = $derived([members.length ? tn(members.length, "{n} member", "{n} members") : "",
-    tn(mains.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
+    tn(active.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
   const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status]
     ?? `⑂ ${p.branchLabel || p.branch}`);
 </script>
@@ -102,6 +121,21 @@
         {#each away as p (p.id)}{@render card(p)}{/each}
       </div>
     {/if}
+    {#if archived.length}
+      <h2><button class="fold" aria-expanded={archivedOpen} onclick={() => (archivedOpen = !archivedOpen)}>
+        <span class="caret" aria-hidden="true">{archivedOpen ? "▾" : "▸"}</span>{t("Archived")}<span class="count">{archived.length}</span></button>
+        <span class="hint">{t("Hidden for everyone in the team; nothing deleted")}</span></h2>
+      {#if archivedOpen}
+        <div class="cards">
+          {#each archived as p (p.id)}
+            <div class="archived-card">
+              {@render card(p)}
+              <button class="unarchive" onclick={() => unarchive(p)} disabled={unarchiving === p.id}>{t("Unarchive")}</button>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    {/if}
   {:else}
     {#key team.id}
       <TeamSettings {team} inline tabs workflowTab={agents || !!team.hosted} author={overview.author} {reload} onclose={() => (section = "projects")}
@@ -145,5 +179,14 @@
     border-radius: var(--radius-pill); background: var(--accent-bg); color: var(--accent); }
   .cloud { position: absolute; top: var(--sp-8); right: var(--sp-10); font-size: var(--fs-sm); color: var(--faint); }
   .card.add { border-style: dashed; background: transparent; }
+  h2 .fold { display: inline-flex; align-items: baseline; gap: var(--sp-8); padding: 0; border: none; background: transparent;
+    font: inherit; color: inherit; }
+  h2 .fold:hover:not(:disabled) { background: transparent; color: var(--text); }
+  .caret { font-size: var(--fs-xs); color: var(--faint); }
+  .archived-card { position: relative; }
+  .archived-card .card { width: 100%; padding-right: 110px; }
+  .archived-card .card .name { color: var(--muted); }
+  .unarchive { position: absolute; right: var(--sp-12); top: 50%; transform: translateY(-50%); padding: var(--sp-4) var(--sp-10);
+    font-size: var(--fs-md); }
   .plus { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: var(--fs-xl); color: var(--muted); }
 </style>

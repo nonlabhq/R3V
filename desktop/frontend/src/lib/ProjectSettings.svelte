@@ -22,7 +22,7 @@
   // it). In the project's Settings tab, in tabs down the left as a team's
   // settings are. The actions that need a confirmation of their own are the
   // caller's.
-  let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved }: {
+  let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved, onarchive, onunarchive }: {
     p: TeamProject;
     inline?: boolean;       // in the project's Settings tab, not a dialog
     team?: TeamSummary;     // the project's team (none: on this computer only)
@@ -35,6 +35,10 @@
     onmoved?: (teamId: string, copied: boolean) => void;
     onunlink: () => void;
     onlocate: () => void;
+    // Archiving it for the team (docs/design/archive.md; Nightly): none
+    // where the build or the project can't.
+    onarchive?: () => void;
+    onunarchive?: () => void;
   } = $props();
 
   const here = $derived(p.status === "downloaded");
@@ -317,6 +321,19 @@
         <div><strong>{t("Move to another team…")}</strong>
           <p class="hint">{t("Its whole history goes to another team (or a copy of it). The folder here stays as it is.")}</p></div>
         <button onclick={() => (moving = true)}>{t("Move…")}</button>
+      </div>
+    {/if}
+    {#if team && p.archived && onunarchive}
+      <div class="action">
+        <div><strong>{t("Archived")}</strong>
+          <p class="hint">{t("Hidden for everyone in the team; nothing deleted. Bringing it back lists it for everyone again.")}</p></div>
+        <button onclick={onunarchive}>{t("Unarchive")}</button>
+      </div>
+    {:else if team && onarchive}
+      <div class="action">
+        <div><strong>{t("Archive project…")}</strong>
+          <p class="hint">{t("Hides it for everyone in the team. Nothing is deleted, and it can be brought back.")}</p></div>
+        <button onclick={onarchive}>{t("Archive…")}</button>
       </div>
     {/if}
     {#if team}

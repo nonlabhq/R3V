@@ -118,7 +118,7 @@ describe("User settings", () => {
 
 describe("Project icon and colour", () => {
   const p = { id: "p1", name: "Song", root: "C:/Song", status: "remote", branch: "", branchLabel: "", icon: "", color: "", picture: "",
-    workspace: false, mainRoot: "" };
+    workspace: false, mainRoot: "", archived: false };
   const props = { p, onclose: () => {}, onrenamed: () => {}, oncheck: () => {}, ondelete: () => {}, onunlink: () => {}, onlocate: () => {} };
 
   it("picks an icon and a colour for the team", async () => {

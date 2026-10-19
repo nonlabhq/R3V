@@ -39,6 +39,7 @@
   import UserSettings from "./lib/UserSettings.svelte";
   import KindDialog from "./lib/KindDialog.svelte";
   import ConfirmDialog from "$shared/ConfirmDialog.svelte";
+  import ArchiveProjectDialog from "./lib/ArchiveProjectDialog.svelte";
 
 
   let overview = $state<Overview | null>(null);
@@ -51,6 +52,7 @@
   let rowMenu = $state(""); // key of the project whose menu (right-click) is open
   let menuAt = $state({ left: 0, top: 0 }); // where it was asked for
   let confirmDelete = $state<TeamProject | null>(null);
+  let archiving = $state<TeamProject | null>(null); // Archive project…
   // A project about to leave R3V: teammates' samples are offered into it first.
   let leaving = $state<{ roots: string[]; go: () => void } | null>(null);
   let checking = $state<TeamProject | null>(null); // Check project…
@@ -283,8 +285,12 @@
   }
   const workspacesOf = (p: TeamProject) => (p.workspace || !p.root ? [] : entries.filter((w) => w.workspace && sameRoot(w.mainRoot, p.root)));
   const wsHidden = (p: TeamProject) => !!p.workspace && !!wsFolded[entries.find((m) => !m.workspace && sameRoot(m.root, p.mainRoot))?.root ?? ""];
+  // Archived for the team (docs/design/archive.md): out of the panel, with
+  // its workspaces (the team's home lists it).
+  const archivedHidden = (p: TeamProject) => p.archived ||
+    (!!p.workspace && entries.some((m) => !m.workspace && m.archived && sameRoot(m.root, p.mainRoot)));
   // (the one shown stays, folded or not)
-  let rows = $derived(entries.filter((p) => !wsHidden(p) || p === selectedEntry));
+  let rows = $derived(entries.filter((p) => (!wsHidden(p) && !archivedHidden(p)) || p === selectedEntry));
   let selectedEntry = $derived(
     entries.find((p) => (selected.root ? p.root === selected.root : !!selected.id && p.id === selected.id && !p.root)));
 
@@ -631,7 +637,7 @@
     const first = untrack(() => tabItems).find((x) => x.p || (x.home && x.team === teamId));
     if (first?.home) return showHome();
     const pick = first?.p ?? entries.find((p) => p.root && p.root === last) ??
-      entries.find((p) => p.status === "downloaded") ?? entries[0];
+      entries.find((p) => p.status === "downloaded" && !p.archived) ?? entries.find((p) => !p.archived);
     if (pick) select(pick);
   });
 
@@ -692,6 +698,26 @@
       renamed(rowKey(p), rowKey(got));
       await reload();
       select(got);
+    } catch (e) {
+      toast(errorText(e), "error");
+    }
+  }
+
+  // Archiving a project for the team (docs/design/archive.md; Nightly).
+  const canArchive = (p: TeamProject) => !!overview?.archive && !!current && !p.workspace && !!p.id && !p.archived;
+  async function archived(p: TeamProject) {
+    archiving = null;
+    settingsFor = null;
+    toast(t("Archived “{name}” for the team: it's under Archived in the team's home", { name: p.name }), "ok", 8000);
+    const shown = selectedEntry && rowKey(selectedEntry) === rowKey(p);
+    await reload();
+    if (shown) showHome();
+  }
+  async function unarchive(p: TeamProject) {
+    try {
+      await api.UnarchiveProject(overview!.currentTeam, p.id);
+      toast(t("“{name}” is back for the team", { name: p.name }), "ok");
+      await reload();
     } catch (e) {
       toast(errorText(e), "error");
     }
@@ -1237,6 +1263,9 @@
         {#if !p.workspace}
           <div class="sep"></div>
           <button class="item" onclick={() => { rowMenu = ""; settingsFor = p; }}>{t("Settings…")}</button>
+          {#if canArchive(p)}
+            <button class="item" onclick={() => { rowMenu = ""; archiving = p; }}>{t("Archive project…")}</button>
+          {/if}
         {/if}
       </div>
     {/if}
@@ -1294,8 +1323,15 @@
     oncheck={() => { settingsFor = null; checking = p; }}
     ondelete={() => { settingsFor = null; deleteWord = ""; confirmDelete = p; }}
     onunlink={() => { settingsFor = null; leaving = { roots: [p.root], go: () => forget(p) }; }}
-    onlocate={() => { settingsFor = null; locate(p); }} />
+    onlocate={() => { settingsFor = null; locate(p); }}
+    onarchive={canArchive(p) ? () => (archiving = p) : undefined}
+    onunarchive={overview?.archive && p.archived ? () => unarchive(p) : undefined} />
 {/snippet}
+
+{#if archiving && current}
+  {@const p = archiving}
+  <ArchiveProjectDialog teamId={current.id} {p} onclose={() => (archiving = null)} onarchived={() => archived(p)} />
+{/if}
 {#snippet settingsTab()}{#if selectedEntry}{@render projectSettings(selectedEntry, true)}{/if}{/snippet}
 
 {#if teamSettingsFor && overview}
