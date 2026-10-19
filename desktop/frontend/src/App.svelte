@@ -90,7 +90,8 @@
     showSub(e, "programs");
     if (menuPrograms) return;
     const key = rowKey(p);
-    loadPrograms(p.root).then((l) => { if (rowMenu === key) menuPrograms = l; });
+    // (not Explorer: the menu's own "Open folder" is it)
+    loadPrograms(p.root).then((l) => { if (rowMenu === key) menuPrograms = l.filter((x) => x.id !== "explorer"); });
   }
   function openFolderIn(p: TeamProject, prog: Program | null) {
     rowMenu = "";

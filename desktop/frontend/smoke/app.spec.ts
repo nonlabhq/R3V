@@ -126,7 +126,7 @@ test("offers the same programs for its folder in the project's right-click menu"
   await page.getByRole("button", { name: /^Night Drive/ }).first().click({ button: "right" });
   await page.locator(".row-menu").getByRole("button", { name: /Open the folder in/ }).hover();
   const list = page.getByRole("menu", { name: "Open the folder in" });
-  await expect(list.getByRole("menuitem", { name: "Explorer" })).toBeVisible();
+  await expect(list.getByRole("menuitem", { name: "Explorer" })).toHaveCount(0); // ("Open folder" is in the menu)
   await expect(list.getByRole("menuitem", { name: "Choose a program…" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator(".row-menu")).toHaveCount(0);
