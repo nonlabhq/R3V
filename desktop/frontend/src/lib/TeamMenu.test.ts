@@ -30,4 +30,23 @@ describe("TeamMenu", () => {
       expect(mark!.compareDocumentPosition(b.querySelector(".tname")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
   });
+
+  it("folded: the team's mark opens its home, and the caret beside it the same list of teams", async () => {
+    const pr = props();
+    render(TeamMenu, { ...pr, folded: true, home: true });
+    const mark = screen.getByRole("button", { name: "Band" });
+    expect(mark.getAttribute("aria-current")).toBe("page");
+    expect(mark.textContent!.trim()).toBe("B"); // the mark alone, no name beside it
+    await fireEvent.click(mark);
+    expect(pr.onhome).toHaveBeenCalled();
+    await fireEvent.click(mark, { ctrlKey: true });
+    expect(pr.onhomebehind).toHaveBeenCalled();
+    const caret = screen.getByRole("button", { name: "Switch team" });
+    expect(caret.parentElement).toBe(mark.parentElement); // (over the room beside the mark: placed by its slot)
+    await fireEvent.click(caret);
+    expect(caret.getAttribute("aria-expanded")).toBe("true");
+    await fireEvent.click(screen.getByRole("menu").querySelectorAll(".item")[1]);
+    expect(pr.onteam).toHaveBeenCalledWith("t2", false);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
 });

@@ -869,11 +869,8 @@
         </button>
       </div>
       {#if current}
-        <div class="team-slot">
-          <button class="team-mark" class:on={home}
-            onclick={(e) => (e.ctrlKey || e.metaKey ? openTab(homeRef(teamId)) : goHome())}
-            onmousedown={noAutoscroll} onauxclick={middle(() => openTab(homeRef(teamId)))} title={current.name} aria-label={current.name}><TeamMark team={current} size={36} /></button>
-        </div>
+        <div class="team-slot"><TeamMenu folded {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))}
+          onteam={switchTeam} onsettings={openTeamSettings} /></div>
       {/if}
       <div class="section-slot">
         <button class="ghost fold" onclick={() => fold(false)} title={t("Show the sidebar") + " (Ctrl+\\)"} aria-label={t("Show the sidebar")}>»</button>
@@ -1295,10 +1292,6 @@
   .shell.folded .team-slot, .shell.folded .section-slot { justify-content: center; }
   .shell.folded .section-slot { display: flex; align-items: center; }
   .shell.folded .section-slot .fold { margin: 0; }
-  .team-mark { flex: none !important; width: 36px; height: 36px; padding: 0; border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
-    background: transparent; border-color: transparent; }
-  .team-mark:hover:not(:disabled) { border-color: var(--line-strong); background: transparent; }
-  .team-mark.on { border-color: var(--accent); }
   .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center;
     padding: 0; margin: 0 calc(var(--sp-6) * -1); }
   .folded-row { height: var(--row-h); flex: none; display: flex; align-items: center; justify-content: center; }
