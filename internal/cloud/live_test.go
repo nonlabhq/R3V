@@ -175,6 +175,67 @@ func TestLiveReconnectsAndCatchesUp(t *testing.T) {
 	}
 }
 
+// A team listened to without a project of it here: subscribed to none, its
+// own keys passed on (a project's too, once listened to); after a
+// reconnect, a notice that anything may have changed.
+func TestLiveTeamKeys(t *testing.T) {
+	f := newFakeLive(t)
+	h := testHub()
+	got := make(chan KeyNotice, 8)
+	team := strings.Repeat("1", 32)
+	h.OnKey = func(service, tm string, k KeyNotice) {
+		if service != f.URL || tm != team {
+			t.Errorf("key for %q %q", service, tm)
+		}
+		got <- k
+	}
+	defer h.Close()
+	stop := h.WatchTeam(TeamAddress(f.URL, team))
+	defer stop()
+	select {
+	case subs := <-f.subscribed:
+		if len(subs) != 0 {
+			t.Fatalf("subscribed to %v for the team alone", subs)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("not connected")
+	}
+	next := func(what string) KeyNotice {
+		t.Helper()
+		select {
+		case k := <-got:
+			return k
+		case <-time.After(3 * time.Second):
+			t.Fatalf("no key notice: %s", what)
+		}
+		return KeyNotice{}
+	}
+	f.send(t, `{"type":"key","key":"archived.json","etag":"\"7\""}`)
+	if k := next("archived"); k != (KeyNotice{Key: "archived.json", ETag: `"7"`}) {
+		t.Errorf("notice %+v", k)
+	}
+	pid := strings.Repeat("a", 32)
+	nudge, _, stopP := h.Watch(TeamAddress(f.URL, team), pid)
+	defer stopP()
+	<-f.subscribed
+	drain(nudge)
+	f.send(t, `{"type":"key","project":"`+pid+`","key":"projects/`+pid+`/workspaces/w.json","etag":""}`)
+	if k := next("a workspace"); k != (KeyNotice{Project: pid, Key: "projects/" + pid + "/workspaces/w.json"}) {
+		t.Errorf("notice %+v", k)
+	}
+	quiet(t, "a workspace", nudge)
+
+	select {
+	case k := <-got:
+		t.Fatalf("a notice before reconnecting: %+v", k)
+	default:
+	}
+	f.drop()
+	if k := next("reconnected"); k != (KeyNotice{}) {
+		t.Errorf("after reconnecting: %+v", k)
+	}
+}
+
 func TestLiveTellsAboutTeamChanges(t *testing.T) {
 	f := newFakeLive(t)
 	h := testHub()

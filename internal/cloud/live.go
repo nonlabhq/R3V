@@ -18,7 +18,9 @@ import (
 // open on this computer. A branch moving wakes the watch of that project at
 // once instead of at its next poll; after a reconnect every project is
 // looked at (notices sent meanwhile are lost). Polling stays, slower, as
-// the safety net.
+// the safety net. The team's own keys changing (its record, archived
+// projects, its log…) are told of too, to everyone in the team: a team is
+// listened to without a project of it here (WatchTeam).
 
 // Hub keeps the live connections of this process, one per hosted team.
 type Hub struct {
@@ -32,6 +34,12 @@ type Hub struct {
 	// OnLock is called (on its own goroutine) when someone took or freed a
 	// file lock in one of team's projects.
 	OnLock func(service, team string, n LockNotice)
+	// OnKey is called (on its own goroutine) when a key of team changed: one
+	// of the team's own (Project ""), or a branch, workspace or project.json
+	// of a project listened to. A Key "" after a reconnect: anything may
+	// have (notices sent meanwhile are lost). A hint: the key is to be read
+	// again.
+	OnKey func(service, team string, k KeyNotice)
 
 	mu    sync.Mutex
 	conns map[string]*liveConn // by team address
@@ -83,6 +91,14 @@ func (h *Hub) Watch(teamAddress, pid string) (nudge <-chan struct{}, connected f
 	}
 }
 
+// WatchTeam listens to a hosted team without a project of it (its own keys,
+// records and people: OnKey, OnRecord, OnTeamChange), until stop. Nothing
+// for a team that isn't hosted.
+func (h *Hub) WatchTeam(teamAddress string) (stop func()) {
+	_, _, stop = h.Watch(teamAddress, "")
+	return stop
+}
+
 // Close ends every connection.
 func (h *Hub) Close() {
 	h.mu.Lock()
@@ -100,8 +116,9 @@ type liveConn struct {
 	resub         chan struct{} // the projects wanted changed
 
 	mu        sync.Mutex
-	subs      map[string][]chan struct{} // project -> watches
+	subs      map[string][]chan struct{} // project -> watches ("": the team's own)
 	connected bool
+	sessions  int // connections made (one past the first: a reconnect)
 }
 
 func (c *liveConn) add(pid string, ch chan struct{}) {
@@ -134,7 +151,9 @@ func (c *liveConn) projects() []string {
 	defer c.mu.Unlock()
 	out := make([]string, 0, len(c.subs))
 	for pid := range c.subs {
-		out = append(out, pid)
+		if pid != "" {
+			out = append(out, pid)
+		}
 	}
 	return out
 }
@@ -207,6 +226,14 @@ type liveMsg struct {
 	Path     string   `json:"path"`
 	MemberID string   `json:"memberId"`
 	Shared   bool     `json:"shared"`
+	ETag     string   `json:"etag"`
+}
+
+// KeyNotice is a key the service says changed (ETag "": deleted): a
+// project's (Project its id; Key from the team's folder, projects/<pid>/…)
+// or the team's own (Project ""). All of them zero: anything may have.
+type KeyNotice struct {
+	Project, Key, ETag string
 }
 
 // LockNotice is a file lock taken (Locked) or freed in Project; Shared: freed
@@ -243,8 +270,15 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 	if err := c.subscribe(ctx, ws); err != nil {
 		return false, err
 	}
-	c.setConnected(true)
+	c.mu.Lock()
+	c.connected = true
+	c.sessions++
+	again := c.sessions > 1
+	c.mu.Unlock()
 	c.nudge("") // catch up on what happened while away
+	if f := c.hub.OnKey; f != nil && again {
+		go f(c.service, c.team, KeyNotice{})
+	}
 
 	sctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -293,6 +327,9 @@ func (c *liveConn) session(ctx context.Context) (bool, error) {
 		case "key":
 			if strings.Contains(m.Key, "/branches/") {
 				c.nudge(m.Project)
+			}
+			if f := c.hub.OnKey; f != nil && m.Key != "" {
+				go f(c.service, c.team, KeyNotice{Project: m.Project, Key: m.Key, ETag: m.ETag})
 			}
 		case "team", "access":
 			if f := c.hub.OnTeamChange; f != nil {
