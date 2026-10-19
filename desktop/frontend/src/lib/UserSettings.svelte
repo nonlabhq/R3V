@@ -8,12 +8,17 @@
   import { colorOf, randomColor } from "$shared/palette";
   import { squarePicture } from "$shared/picture";
   import { toast } from "./notify.svelte";
+  import IdentityForm from "./IdentityForm.svelte";
 
-  // The user: their name in the team, and how they show to their teams (a
-  // colour for their initial, or a picture), on all their teams at once.
-  let { team, onchanged, onclose }: {
+  // The user (from their picture at the side bar's bottom, the one way to
+  // it): their name in the team, and how they show to their teams (a
+  // colour for their initial, or a picture; where the build has looks),
+  // on all their teams at once.
+  let { team, author = "", onchanged, onidentity, onclose }: {
     team?: TeamSummary; // the current team
+    author?: string; // this computer's name, suggested when you have none in the team
     onchanged: (p: Profile) => void;
+    onidentity?: (t: TeamSummary) => void; // your name in the team chosen or changed (as who)
     onclose: () => void;
   } = $props();
 
@@ -60,8 +65,9 @@
     renaming = true;
     error = "";
     try {
-      await api.SetIdentity(team.id, team.memberId, name.trim());
+      const saved = await api.SetIdentity(team.id, team.memberId, name.trim());
       toast(t("Renamed for everyone in {team}", { team: team.name }), "ok");
+      if (saved) onidentity?.(saved);
       if (profile) onchanged({ ...profile, name: name.trim() });
     } catch (e) {
       error = errorText(e);
@@ -116,6 +122,7 @@
 
 <Modal title={t("User settings")} width={480} {onclose}>
   {#if profile}
+    {#if profile.available}
     <div class="who">
       <Avatar name={name || profile.name} seed={profile.memberId} color={profile.color} picture={profile.picture} size={72} />
       <div class="pic">
@@ -128,8 +135,15 @@
           data-testid="picture-file" />
       </div>
     </div>
+    {/if}
 
-    {#if team?.memberId}
+    {#if team?.hosted}
+      <section>
+        <h3>{t("Name")}</h3>
+        <strong>{team.memberName}</strong>
+        <span class="hint">{t("Your name comes from your R3V-Cloud account.")}</span>
+      </section>
+    {:else if team?.memberId}
       <section>
         <h3>{t("Name")}</h3>
         <div class="line">
@@ -137,10 +151,19 @@
           <button class="small" onclick={rename} disabled={renaming || !name.trim() || name.trim() === team.memberName}>
             {renaming ? t("Renaming…") : t("Rename")}</button>
         </div>
-        <span class="hint">{t("Your name in {team}.", { team: team.name })}</span>
+        <span class="hint">{t("Your name in {team}.", { team: team.name })} {t("Shown next to the versions you commit, for everyone in the team.")}</span>
+      </section>
+    {:else if team}
+      <section>
+        <h3>{t("Name")}</h3>
+        {#key team.id}
+          <IdentityForm {team} suggested={author} submitLabel={t("Save")}
+            onsaved={(saved) => { toast(t("You're “{name}” in {team}", { name: saved.memberName, team: saved.name }), "ok"); onidentity?.(saved); }} />
+        {/key}
       </section>
     {/if}
 
+    {#if profile.available}
     <section>
       <h3>{t("Colour")}</h3>
       <div class="line">
@@ -150,6 +173,7 @@
       </div>
       <span class="hint">{profile.picture ? t("Shown when your picture can't be.") : t("Your initial shows on this colour.")}</span>
     </section>
+    {/if}
 
     {#if cloud?.available}
       <section>

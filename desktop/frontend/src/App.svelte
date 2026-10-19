@@ -939,16 +939,12 @@
         <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
       <!-- folded: who you are, as your picture -->
-      {#if current?.memberName}
+      {#if current}
         <div class="user folded-user">
-          {#if profile?.available}
-            <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName} · ${t("User settings")}`}
-              aria-label={t("User settings")}>
-              <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} size={28} />
-            </button>
-          {:else}
-            <span class="avatar" title={current.memberName}>{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
-          {/if}
+          <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName || t("No name yet")} · ${t("User settings")}`}
+            aria-label={t("User settings")}>
+            <Avatar name={current.memberName || "?"} seed={current.memberId} color={profile?.color ?? ""} picture={profile?.picture ?? ""} size={28} />
+          </button>
         </div>
       {/if}
       {:else}
@@ -1024,16 +1020,14 @@
         {/if}
         <TeamMenu {overview} {reload} part="notices" onhome={() => goHome()} onsettings={openTeamSettings} />
       </div>
-      <!-- who you are in this team, and the app's settings -->
+      <!-- who you are in this team (the one way to your name, colour and
+           account: User settings), and the app's settings -->
       <div class="user">
-        {#if current?.memberName && profile?.available}
+        {#if current}
           <button class="ghost who" onclick={() => (userSettings = true)} title={t("User settings")}>
-            <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} />
-            <span class="user-name">{current.memberName}</span>
+            <Avatar name={current.memberName || "?"} seed={current.memberId} color={profile?.color ?? ""} picture={profile?.picture ?? ""} />
+            <span class="user-name">{current.memberName || t("No name yet")}</span>
           </button>
-        {:else if current?.memberName}
-          <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
-          <span class="user-name">{current.memberName}</span>
         {/if}
         <button class="ghost keys" onclick={() => (keysHelp = true)} title={t("Keyboard shortcuts") + " (Ctrl+/)"}
           aria-label={t("Keyboard shortcuts")}>⌨</button>
@@ -1277,8 +1271,9 @@
 {/if}
 
 {#if userSettings}
-  <UserSettings team={current} onclose={() => (userSettings = false)}
-    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }} />
+  <UserSettings team={current} author={overview?.author ?? ""} onclose={() => (userSettings = false)}
+    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }}
+    onidentity={async () => { await reload(); loadProfile(); refreshKey++; }} />
 {/if}
 
 {#snippet projectSettings(p: TeamProject, inline: boolean)}
@@ -1304,7 +1299,7 @@
 
 {#if teamSettingsFor && overview}
   {@const tm = overview.teams.find((x) => x.id === teamSettingsFor!.id) ?? teamSettingsFor}
-  <TeamSettings team={tm} author={overview.author} {reload} onclose={() => (teamSettingsFor = null)}
+  <TeamSettings team={tm} {reload} onclose={() => (teamSettingsFor = null)}
     teams={overview.teams} canMove
     offline={tm.id === overview.currentTeam && !!overview.teamError}
     roots={tm.id === overview.currentTeam ? overview.projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root) : []} />
@@ -1370,8 +1365,6 @@
   .section-slot { height: var(--section-h); box-sizing: border-box; flex: none; }
   .user { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-8) calc(var(--sp-10) * -1) calc(var(--sp-12) * -1);
     padding: var(--sp-10) var(--sp-14); border-top: var(--border-width) solid var(--line); }
-  .user .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
   .who { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-2) var(--sp-4);
     margin-left: calc(var(--sp-4) * -1); text-align: left; color: var(--text); }
   .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
