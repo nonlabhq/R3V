@@ -1,12 +1,18 @@
 package desktop
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
+
+	"github.com/nonlabhq/r3v/internal/store"
+	"github.com/nonlabhq/r3v/internal/teams"
 )
 
 // Program is one the project folder can be opened with ("Open in" menu):
@@ -16,8 +22,8 @@ type Program struct {
 	ID   string `json:"id"` // "explorer", "terminal", a codeEditors id, or Path for one chosen
 	Name string `json:"name"`
 	Path string `json:"path"` // its .exe ("" for Explorer)
-	// Chosen: picked with "Choose a program…" (the page remembers it for the
-	// project).
+	// Chosen: picked with "Choose a program…" for the project (kept on this
+	// computer: openWithFile).
 	Chosen bool `json:"chosen"`
 }
 
@@ -203,32 +209,37 @@ func chosenProgram(path string) (Program, bool) {
 
 // OpenPrograms lists what the project folder can be opened with: Explorer,
 // a terminal, the editors on this computer, then the programs chosen for
-// the project (chosen: their paths, as the page keeps them) that still
-// exist. The editors are looked for the first time only (the menu opened).
-func (a *App) OpenPrograms(chosen []string) []Program {
+// the project that still exist (the ones gone are forgotten). The editors
+// are looked for the first time only (the menu opened).
+func (a *App) OpenPrograms(root string) []Program {
 	out := append([]Program(nil), detectedPrograms()...)
-	for _, c := range chosen {
-		if p, ok := chosenProgram(c); ok {
-			out = append(out, p)
-		}
-	}
-	return out
+	return append(out, keptChosen(root)...)
 }
 
-// ChooseProgram asks for a program (.exe) to open projects with ("" when
-// cancelled).
-func (a *App) ChooseProgram(title string) (string, error) {
+// ChooseProgram asks for a program (.exe) to open the project with, and
+// keeps it for the project: the only way a program not detected becomes
+// one OpenFolderWith runs. nil when cancelled.
+func (a *App) ChooseProgram(root, title string) (*Program, error) {
+	if !knownProject(root) {
+		return nil, errors.New("unknown project")
+	}
 	if a.pickFile == nil {
-		return "", errors.New("file picker not available")
+		return nil, errors.New("file picker not available")
 	}
 	path, err := a.pickFile(title)
 	if err != nil || path == "" {
-		return "", err
+		return nil, err
 	}
-	if _, ok := chosenProgram(path); !ok {
-		return "", errors.New("that isn't a program (.exe)")
+	p, ok := chosenProgram(path)
+	if !ok {
+		return nil, errors.New("that isn't a program (.exe)")
 	}
-	return path, nil
+	editOpenWith(root, func(k *openWithKept) {
+		if !slices.ContainsFunc(k.Chosen, func(c string) bool { return samePath(c, path) }) {
+			k.Chosen = append(k.Chosen, path)
+		}
+	})
+	return &p, nil
 }
 
 // launch is how a program is started on a project: Exe with Args (never a
@@ -279,26 +290,42 @@ func launchFor(p Program, root string) launch {
 	return launch{Exe: p.Path, Args: []string{target}, Dir: root}
 }
 
-// OpenFolderWith opens the project folder with a program of OpenPrograms
-// (its id; a chosen one by its path).
+// OpenFolderWith opens the project folder with a program of OpenPrograms:
+// one detected (its id) or one chosen for the project (its path), never
+// any other; it is kept as the project's last picked.
 func (a *App) OpenFolderWith(root, id string) error {
 	if !knownProject(root) {
 		return errors.New("unknown project")
 	}
-	var p Program
-	if c, ok := chosenProgram(id); ok {
-		p = c
-	} else {
-		for _, d := range detectedPrograms() {
-			if d.ID == id {
-				p = d
-			}
-		}
-	}
-	if p.ID == "" {
+	p, ok := allowedProgram(root, id)
+	if !ok {
 		return errors.New("that program isn't on this computer any more")
 	}
-	l := launchFor(p, root)
+	if err := startProgram(launchFor(p, root)); err != nil {
+		return err
+	}
+	editOpenWith(root, func(k *openWithKept) { k.Last = &LastProgram{ID: p.ID, Name: p.Name} })
+	return nil
+}
+
+// allowedProgram is id as a program detected here, or as one chosen for
+// the project that is still there.
+func allowedProgram(root, id string) (Program, bool) {
+	for _, d := range detectedPrograms() {
+		if d.ID == id {
+			return d, true
+		}
+	}
+	for _, c := range keptChosen(root) {
+		if samePath(c.ID, id) {
+			return c, true
+		}
+	}
+	return Program{}, false
+}
+
+// startProgram starts l (faked in tests).
+var startProgram = func(l launch) error {
 	if l.Exe == "" {
 		return shellOpen(l.Dir)
 	}
@@ -309,4 +336,138 @@ func (a *App) OpenFolderWith(root, id string) error {
 		return err
 	}
 	return cmd.Process.Release()
+}
+
+// LastProgram is the program a project's folder was last opened with.
+type LastProgram struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// openWithKept is what "Open in" keeps for a project, on this computer
+// only (never the team's, nor in .r3v.yaml): the programs chosen for it
+// (their .exe paths) and the one last picked.
+type openWithKept struct {
+	Root   string       `json:"root"`
+	Chosen []string     `json:"chosen,omitempty"`
+	Last   *LastProgram `json:"last,omitempty"`
+}
+
+var openWithMu sync.Mutex
+
+func openWithFile() string { return filepath.Join(teams.Dir(), "open-with.json") }
+
+func openWithKey(root string) string { return strings.ToLower(filepath.Clean(root)) }
+
+func samePath(a, b string) bool { return strings.EqualFold(filepath.Clean(a), filepath.Clean(b)) }
+
+func readOpenWith() map[string]openWithKept {
+	all := map[string]openWithKept{}
+	if data, err := os.ReadFile(openWithFile()); err == nil {
+		json.Unmarshal(data, &all)
+	}
+	return all
+}
+
+// editOpenWith changes what is kept for root (written only when changed).
+func editOpenWith(root string, edit func(*openWithKept)) {
+	openWithMu.Lock()
+	defer openWithMu.Unlock()
+	all := readOpenWith()
+	key := openWithKey(root)
+	k, had := all[key]
+	before, _ := json.Marshal(k)
+	edit(&k)
+	if len(k.Chosen) == 0 && k.Last == nil {
+		if !had {
+			return
+		}
+		delete(all, key)
+	} else {
+		k.Root = root
+		if after, _ := json.Marshal(k); had && string(after) == string(before) {
+			return
+		}
+		all[key] = k
+	}
+	data, err := json.Marshal(all)
+	if err != nil {
+		return
+	}
+	os.MkdirAll(filepath.Dir(openWithFile()), 0o700)
+	store.WriteAtomic(openWithFile(), bytes.NewReader(data))
+}
+
+// keptChosen is the programs chosen for root that still exist; the ones
+// gone are forgotten (and the last picked with them).
+func keptChosen(root string) []Program {
+	var out []Program
+	editOpenWith(root, func(k *openWithKept) {
+		var still []string
+		for _, c := range k.Chosen {
+			if p, ok := chosenProgram(c); ok {
+				out = append(out, p)
+				still = append(still, c)
+			}
+		}
+		if k.Last != nil && filepath.IsAbs(k.Last.ID) && !slices.ContainsFunc(still, func(c string) bool { return samePath(c, k.Last.ID) }) {
+			k.Last = nil
+		}
+		k.Chosen = still
+	})
+	return out
+}
+
+// OpenedWith is the program the project's folder was last opened with
+// (nil when none, or a chosen one no longer there).
+func (a *App) OpenedWith(root string) *LastProgram {
+	keptChosen(root) // (a chosen one gone is forgotten first)
+	openWithMu.Lock()
+	defer openWithMu.Unlock()
+	return readOpenWith()[openWithKey(root)].Last
+}
+
+// KeptOpenWith is what the page kept for a project before R3V kept it
+// here (localStorage "r3v.openWith:<root>").
+type KeptOpenWith struct {
+	Last   *LastProgram `json:"last"`
+	Chosen []string     `json:"chosen"`
+}
+
+// ImportOpenWith takes what the page kept, once: for each project R3V
+// knows that has nothing kept here yet, the chosen programs that are still
+// there, and the last picked when it is one of them or of a kind detected.
+func (a *App) ImportOpenWith(kept map[string]KeptOpenWith) error {
+	for root, v := range kept {
+		if !knownProject(root) {
+			continue
+		}
+		var chosen []string
+		for _, c := range v.Chosen {
+			if _, ok := chosenProgram(c); ok && !slices.ContainsFunc(chosen, func(x string) bool { return samePath(x, c) }) {
+				chosen = append(chosen, c)
+			}
+		}
+		var last *LastProgram
+		if l := v.Last; l != nil && l.ID != "" {
+			if slices.ContainsFunc(chosen, func(c string) bool { return samePath(c, l.ID) }) || detectableID(l.ID) {
+				last = &LastProgram{ID: l.ID, Name: l.Name}
+			}
+		}
+		editOpenWith(root, func(k *openWithKept) {
+			if len(k.Chosen) > 0 || k.Last != nil {
+				return // kept here already: that wins
+			}
+			k.Chosen, k.Last = chosen, last
+		})
+	}
+	return nil
+}
+
+// detectableID is an id detect can give.
+func detectableID(id string) bool {
+	if id == "explorer" || id == "terminal" {
+		return true
+	}
+	return slices.ContainsFunc(codeEditors, func(e editor) bool { return e.id == id })
 }

@@ -1922,5 +1922,9 @@
 "Project files": "项目文件",
 "Open the folder in": "用以下程序打开文件夹",
 "Looking for programs…": "正在查找程序…",
-"Choose a program…": "选择程序…"
+"Choose a program…": "选择程序…",
+"Mouse": "鼠标",
+"Middle click · Ctrl+click": "中键点击 · Ctrl+点击",
+"In the sidebar: open a project or team in a new tab": "在侧栏：在新标签页中打开项目或团队",
+"Middle click on a tab": "中键点击标签页"
 }

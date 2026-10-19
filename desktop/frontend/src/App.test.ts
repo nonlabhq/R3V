@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/svelte";
 
 // The window around the projects: tabs and their shortcuts, with the Go
 // bindings mocked (every one resolves to null unless set) and the project
@@ -227,7 +227,11 @@ describe("App: tabs", () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
     await fireEvent.keyDown(window, { key: "/", code: "Slash", ctrlKey: true });
-    expect(await screen.findByRole("dialog", { name: "Keyboard shortcuts" })).toBeTruthy();
+    const help = await screen.findByRole("dialog", { name: "Keyboard shortcuts" });
+    // and what the mouse does: a new tab from the sidebar, a tab closed
+    const lines = [...help.querySelectorAll("dt")].map((d) => `${d.textContent} = ${d.nextElementSibling?.textContent}`);
+    expect(lines).toContain("Middle click · Ctrl+click = In the sidebar: open a project or team in a new tab");
+    expect(lines).toContain("Middle click on a tab = Close the tab");
     // (tabs don't move under a dialog)
     await fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     expect(tabs()).toHaveLength(1);
@@ -286,32 +290,72 @@ describe("App: tabs of more than one team", () => {
   const on = () => screen.getAllByRole("tab").find((t) => t.getAttribute("aria-selected") === "true")?.textContent?.trim();
   const teamMenu = () => document.querySelector<HTMLElement>(".team-menu .caret")!;
   const teamShown = () => document.querySelector<HTMLElement>(".team-menu .switch")!.textContent;
+  const teamItem = (name: string) => within(document.querySelector<HTMLElement>(".team-menu .menu")!).getByRole("button", { name: new RegExp(name) });
 
-  it("keeps a team's tabs when another team is picked, and goes back to it from its tab", async () => {
+  const snap = (name: string) => ({ id: name.toLowerCase(), root: `C:/${name}`, name, icon: "", color: "", status: "downloaded" });
+
+  it("shows a team picked in the team menu in the tab shown, keeps the other tabs, and goes back from them", async () => {
+    localStorage.setItem("r3v.tabs", JSON.stringify([{ team: "a", key: "C:/Song", p: snap("Song") }, { team: "a", key: "C:/Beat", p: snap("Beat") }]));
     render(App);
-    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+    await waitFor(() => expect(on()).toContain("Song"));
     await fireEvent.click(teamMenu());
-    await fireEvent.click(screen.getByRole("button", { name: /Duo/ }));
+    await fireEvent.click(teamItem("Duo"));
     await waitFor(() => expect(teamShown()).toContain("Duo"));
-    // team b's home shows; its project opens in a tab of its own, and team a's stays
+    // team b's home shows in the tab that showed Song; Beat's tab stays
     expect(await screen.findByRole("heading", { name: "Duo" })).toBeTruthy();
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Duo"), expect.stringContaining("Beat")]));
+    expect(on()).toContain("Duo");
+    // its project shows in that tab too
     await fireEvent.click(screen.getAllByRole("button", { name: /^Loop/ })[0]);
-    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Loop")]));
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Loop"), expect.stringContaining("Beat")]));
     expect(on()).toContain("Loop");
-    expect(screen.getAllByRole("tab")[0].title).toBe("Band · Song\nC:/Song");
+    expect(screen.getAllByRole("tab")[1].title).toBe("Band · Beat\nC:/Beat");
     // tabs of two teams: each says which
     expect(document.querySelectorAll(".tab-team")).toHaveLength(2);
     // remembered as one list
     expect(JSON.parse(localStorage.getItem("r3v.tabs")!).map((x: { team: string; key: string }) => `${x.team}:${x.key}`))
-      .toEqual(["a:C:/Song", "b:C:/Loop"]);
+      .toEqual(["b:C:/Loop", "a:C:/Beat"]);
 
     // team a's tab: the sidebar goes to team a, and its project shows
-    await fireEvent.click(screen.getAllByRole("tab")[0]);
+    await fireEvent.click(screen.getAllByRole("tab")[1]);
     await waitFor(() => expect(teamShown()).toContain("Band"));
     expect(api.SelectTeam).toHaveBeenLastCalledWith("a");
+    await waitFor(() => expect(on()).toContain("Beat"));
+    expect(screen.getAllByRole("button", { name: /^Song/ }).length).toBeGreaterThan(0); // team a's list
+    expect(tabs()).toEqual([expect.stringContaining("Loop"), expect.stringContaining("Beat")]);
+  });
+
+  it("goes to the team's home tab when it is open already, from the team menu", async () => {
+    localStorage.setItem("r3v.tabs", JSON.stringify([{ team: "a", key: "C:/Song", p: snap("Song") }, { team: "b", key: "home:" }]));
+    render(App);
     await waitFor(() => expect(on()).toContain("Song"));
-    expect(screen.getAllByRole("button", { name: /^Beat/ }).length).toBeGreaterThan(0); // team a's list
-    expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Loop")]);
+    await fireEvent.click(teamMenu());
+    await fireEvent.click(teamItem("Duo"));
+    await waitFor(() => expect(teamShown()).toContain("Duo"));
+    await waitFor(() => expect(on()).toContain("Duo"));
+    expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Duo")]);
+  });
+
+  it("opens a team's home in a tab behind with a middle click or Ctrl+click in the team menu", async () => {
+    localStorage.setItem("r3v.tabs", JSON.stringify([{ team: "a", key: "C:/Song", p: snap("Song") }]));
+    render(App);
+    await waitFor(() => expect(on()).toContain("Song"));
+    await fireEvent.click(teamMenu());
+    await fireEvent.click(teamItem("Duo"), { ctrlKey: true });
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Duo")]));
+    expect(on()).toContain("Song");
+    expect(teamShown()).toContain("Band");
+    expect(api.SelectTeam).not.toHaveBeenCalled();
+    // (closed again; a middle click opens it the same way)
+    await fireEvent.click(screen.getAllByRole("tab")[1].parentElement!.querySelector(".tab-x")!);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.click(teamMenu());
+    const duo = teamItem("Duo");
+    await fireEvent.mouseDown(duo, { button: 1 });
+    await fireEvent(duo, new MouseEvent("auxclick", { button: 1, bubbles: true }));
+    await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Duo")]));
+    expect(on()).toContain("Song");
+    expect(api.SelectTeam).not.toHaveBeenCalled();
   });
 
   it("closes the shown tab to the next one, on its team", async () => {
@@ -357,6 +401,66 @@ describe("App: tabs of more than one team", () => {
     render(App);
     await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
     expect(localStorage.getItem("r3v.tabs")).not.toContain("C:/Old");
+  });
+});
+
+describe("App: a project's right-click menu", () => {
+  const found = [{ id: "explorer", name: "Explorer", path: "", chosen: false }, { id: "vscode", name: "VS Code", path: "C:/Code.exe", chosen: false },
+    { id: "D:/Apps/My Editor.exe", name: "My Editor", path: "D:/Apps/My Editor.exe", chosen: true }];
+  const rowOf = (name: string) => screen.getAllByRole("button", { name: new RegExp(`^${name}`) })[0];
+  async function menuOf(name: string) {
+    await fireEvent.contextMenu(rowOf(name), { clientX: 20, clientY: 40 });
+    return document.querySelector<HTMLElement>(".row-menu")!;
+  }
+
+  it("opens the folder in the programs the header's Open in lists, or one chosen", async () => {
+    api.ProjectInfo.mockResolvedValue({ tool: "Ableton Live", openable: ["."] });
+    api.OpenPrograms.mockResolvedValue(found);
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    const menu = await menuOf("Song");
+    const sub = within(menu).getByRole("button", { name: /Open the folder in/ });
+    await fireEvent.mouseEnter(sub.parentElement!);
+    const list = await screen.findByRole("menu", { name: "Open the folder in" });
+    await waitFor(() => expect(within(list).getAllByRole("menuitem").map((b) => b.textContent)).toEqual(
+      ["Explorer", "VS Code", "My Editor", "Choose a program…"]));
+    expect(api.OpenPrograms).toHaveBeenCalledWith("C:/Song");
+    await fireEvent.click(within(list).getByRole("menuitem", { name: "My Editor" }));
+    expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Song", "D:/Apps/My Editor.exe");
+    expect(document.querySelector(".row-menu")).toBeNull();
+
+    // Choose a program…: kept for the project by R3V, and the folder opened in it
+    api.ChooseProgram.mockResolvedValue({ id: "D:/Other.exe", name: "Other", path: "D:/Other.exe", chosen: true });
+    const again = await menuOf("Beat");
+    await fireEvent.mouseEnter(within(again).getByRole("button", { name: /Open the folder in/ }).parentElement!);
+    await fireEvent.click(await screen.findByRole("menuitem", { name: "Choose a program…" }));
+    expect(api.ChooseProgram).toHaveBeenCalledWith("C:/Beat", expect.any(String));
+    await waitFor(() => expect(api.OpenFolderWith).toHaveBeenLastCalledWith("C:/Beat", "D:/Other.exe"));
+  });
+});
+
+describe("App: what Open in kept in the page before", () => {
+  it("sends the programs the page kept for projects to R3V once, and forgets them", async () => {
+    localStorage.setItem("r3v.openWith:C:/Song", JSON.stringify({ last: { id: "vscode", name: "VS Code" }, chosen: ["D:/Apps/My Editor.exe", 3] }));
+    localStorage.setItem("r3v.openWith:C:/Beat", "{broken");
+    render(App);
+    await waitFor(() => expect(api.ImportOpenWith).toHaveBeenCalledWith({
+      "C:/Song": { last: { id: "vscode", name: "VS Code" }, chosen: ["D:/Apps/My Editor.exe"] } }));
+    await waitFor(() => expect(localStorage.getItem("r3v.openWith:C:/Song")).toBeNull());
+    expect(localStorage.getItem("r3v.openWith:C:/Beat")).toBeNull();
+    cleanup();
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    expect(api.ImportOpenWith).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps them while R3V can't take them", async () => {
+    localStorage.setItem("r3v.openWith:C:/Song", JSON.stringify({ chosen: ["D:/Apps/My Editor.exe"] }));
+    api.ImportOpenWith.mockRejectedValue(new Error("busy"));
+    render(App);
+    await waitFor(() => expect(api.ImportOpenWith).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 10));
+    expect(localStorage.getItem("r3v.openWith:C:/Song")).not.toBeNull();
   });
 });
 

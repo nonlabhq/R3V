@@ -1,7 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
   import { api, errorText, type Program, type State, type TeamProject, type TeamSummary } from "./api";
-  import { keepOpenWith, programName, readOpenWith } from "./openwith";
+  import { chooseProgram, loadPrograms, openFolderWith, programLabel } from "./openwith";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
   import { toast } from "./notify.svelte";
   import PreuploadIcon from "./PreuploadIcon.svelte";
@@ -30,26 +30,29 @@
   // (when its kind has one), else its folder in the program last picked
   // for it; with neither it opens the menu. The menu: the project's files
   // its tool opens, then the folder in another program (found when the menu
-  // first opens) or one the user chooses. What was picked is remembered on
+  // first opens) or one the user chooses. What was picked is kept by R3V on
   // this computer (openwith.ts).
   let menu = $state(false);
   let programs = $state<Program[] | null>(null);
   let programsFor = "";
-  let saved = $state(0); // kept changed: read again
-  let kept = $derived.by(() => { void saved; return readOpenWith(st.root); });
-  let main = $derived<"tool" | "program" | "menu">(st.openable.length ? "tool" : kept.last ? "program" : "menu");
+  let last = $state<{ id: string; name: string } | null>(null);
+  let lastFor = $state("");
+  $effect(() => {
+    const root = st.root;
+    last = null;
+    lastFor = root;
+    api.OpenedWith(root).then((l) => { if (lastFor === root) last = l ?? null; }).catch(() => {});
+  });
+  let main = $derived<"tool" | "program" | "menu">(st.openable.length ? "tool" : last ? "program" : "menu");
   let wrap: HTMLElement | undefined = $state();
   let toggle: HTMLButtonElement | undefined = $state();
 
-  const shown = (p: { id: string; name: string }) => (p.id === "explorer" ? t("Explorer") : p.name === "Terminal" ? t("Terminal") : p.name);
-  function keep(v: typeof kept) { keepOpenWith(st.root, v); saved++; }
-
   let mainLabel = $derived(main === "tool" ? t("Open in {tool}", { tool: toolName })
-    : main === "program" ? t("Open in {tool}", { tool: shown(kept.last!) }) : t("Open in…"));
+    : main === "program" ? t("Open in {tool}", { tool: programLabel(last!) }) : t("Open in…"));
   let mainTitle = $derived((main === "tool" ? (st.openable.length === 1
       ? t("Open {file} in {tool}", { file: label(st.openable[0]), tool: (st.tool ? t(st.tool) : t("its program")) })
       : t("Open in {tool}", { tool: (st.tool ? t(st.tool) : t("its program")) }))
-    : main === "program" ? t("Open the project folder in {program}", { program: shown(kept.last!) })
+    : main === "program" ? t("Open the project folder in {program}", { program: programLabel(last!) })
     : t("Open the project folder in another program")) + " (F12)");
 
   function first() { requestAnimationFrame(() => wrap?.querySelector<HTMLElement>("[role=menuitem]")?.focus()); }
@@ -57,44 +60,40 @@
   function openMenu() {
     menu = true;
     first();
-    const chosen = kept.chosen, root = st.root;
+    const root = st.root;
     if (programsFor !== root) programs = null; // another project's chosen ones
-    api.OpenPrograms(chosen).then((l) => {
+    loadPrograms(root).then((l) => {
       if (root !== st.root) return;
-      programs = l ?? [];
+      programs = l;
       programsFor = root;
-      // A chosen program no longer there is dropped (and forgotten).
-      const still = programs.filter((p) => p.chosen).map((p) => p.id);
-      if (still.length !== chosen.length) {
-        const last = kept.last && (still.includes(kept.last.id) || !chosen.includes(kept.last.id)) ? kept.last : undefined;
-        keep({ last, chosen: still });
+      // a chosen one no longer there is forgotten, and the last with it
+      if (last && !l.some((p) => p.id === last!.id)) {
+        api.OpenedWith(root).then((x) => { if (root === st.root) last = x ?? null; }).catch(() => {});
       }
-    }).catch((e) => { programs = []; toast(errorText(e), "error"); });
+    });
   }
   function closeMenu(focus = false) { menu = false; if (focus) toggle?.focus(); }
 
   function mainAction() {
     if (main === "tool" && st.openable.length === 1) open(st.openable[0]);
-    else if (main === "program") openWith(kept.last!);
+    else if (main === "program") openWith(last!);
     else if (menu) closeMenu();
     else openMenu();
   }
 
-  function openWith(p: { id: string; name: string }) {
+  async function openWith(p: { id: string; name: string }) {
     closeMenu();
-    keep({ ...kept, last: { id: p.id, name: p.name } });
-    api.OpenFolderWith(st.root, p.id).catch((e) => toast(errorText(e), "error"));
+    const root = st.root;
+    if (await openFolderWith(root, p) && root === st.root) last = { id: p.id, name: p.name };
   }
 
   async function choose() {
     closeMenu();
-    let path: string;
-    try { path = await api.ChooseProgram(t("Choose a program to open the project with")); } catch (e) { toast(errorText(e), "error"); return; }
-    if (!path) return;
-    const chosen = kept.chosen.includes(path) ? kept.chosen : [...kept.chosen, path];
-    keep({ chosen, last: kept.last });
+    const root = st.root;
+    const p = await chooseProgram(root);
+    if (!p || root !== st.root) return;
     programs = null;
-    openWith({ id: path, name: programName(path) });
+    last = { id: p.id, name: p.name };
   }
 
   // ↑ ↓ Home End through the menu, Esc back to the ▾, Tab out closes it.
@@ -172,7 +171,7 @@
             <div class="item faint">{t("Looking for programs…")}</div>
           {:else}
             {#each programs as p (p.id)}
-              <button class="item" role="menuitem" onclick={() => openWith(p)} title={p.path || undefined}>{shown(p)}</button>
+              <button class="item" role="menuitem" onclick={() => openWith(p)} title={p.path || undefined}>{programLabel(p)}</button>
             {/each}
           {/if}
           <div class="sep"></div>
