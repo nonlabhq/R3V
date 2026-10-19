@@ -12,7 +12,8 @@ import (
 )
 
 // Sections (docs/design/sections.md): named groups of a team's projects,
-// in the team's order, a project in at most one. They're read with the
+// a project in at most one (in the team record's order: the frontend
+// orders them as each person dragged them). They're read with the
 // team's projects (each time its list is read, as archived projects are)
 // and kept as last read, so the left panel groups at once and while the
 // team can't be reached. On an R3V Cloud team its admins change them; on
@@ -96,14 +97,6 @@ func (a *App) RenameSection(teamID, sectionID, name string) error {
 func (a *App) DeleteSection(teamID, sectionID string) error {
 	return editSections(teamID, func(b remote.Backend) error {
 		_, err := remote.DeleteSection(b, sectionID)
-		return err
-	})
-}
-
-// MoveSection puts a section at place to among the team's (0 first).
-func (a *App) MoveSection(teamID, sectionID string, to int) error {
-	return editSections(teamID, func(b remote.Backend) error {
-		_, err := remote.MoveSection(b, sectionID, to)
 		return err
 	})
 }

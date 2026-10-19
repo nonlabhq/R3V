@@ -14,7 +14,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote/membucket"
 )
 
-// Sections (docs/design/sections.md): one team-level record, in order, a
+// Sections (docs/design/sections.md): one team-level record, a
 // project in at most one; written with a conditional write, the change
 // made again over someone else's; unknown fields kept; on R3V Cloud only
 // admins write.
@@ -74,10 +74,6 @@ func TestSectionsRecord(t *testing.T) {
 	if _, err := remote.SetProjectSection(b, p1, "ffffffffffffffff"); !errors.Is(err, remote.ErrNoSection) {
 		t.Errorf("no such section: %v", err)
 	}
-	// Order: team-wide, the record's.
-	if changed, err := remote.MoveSection(b, tools.ID, 0); err != nil || !changed {
-		t.Fatalf("move: %v %v", changed, err)
-	}
 	if _, err := remote.RenameSection(b, engine.ID, "Tools"); !errors.Is(err, remote.ErrSectionExists) {
 		t.Errorf("renamed onto another: %v", err)
 	}
@@ -86,7 +82,7 @@ func TestSectionsRecord(t *testing.T) {
 	}
 	remote.SetProjectSection(b, p1, "")
 	got, _ = remote.Sections(b)
-	if names(got) != "Tools:"+p2+" Game:" {
+	if names(got) != "Game: Tools:"+p2 {
 		t.Fatalf("after: %s", names(got))
 	}
 	// Its shape, as other R3Vs and the service read it.
@@ -120,7 +116,7 @@ func TestSectionsRecord(t *testing.T) {
 		}
 		changes[ev.Change]++
 	}
-	want := map[string]int{remote.SectionMade: 2, remote.SectionProjectIn: 3, remote.SectionMoved: 1, remote.SectionRenamed: 1,
+	want := map[string]int{remote.SectionMade: 2, remote.SectionProjectIn: 3, remote.SectionMoved: 0, remote.SectionRenamed: 1,
 		remote.SectionProjectOut: 1, remote.SectionDeleted: 1}
 	for k, n := range want {
 		if changes[k] != n {
