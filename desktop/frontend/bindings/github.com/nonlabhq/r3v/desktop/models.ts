@@ -2252,6 +2252,56 @@ export class Profile {
 }
 
 /**
+ * Program is one the project folder can be opened with ("Open in" menu):
+ * Explorer, a terminal, an editor found on this computer, or a program the
+ * user chose for the project.
+ */
+export class Program {
+    /**
+     * "explorer", "terminal", a codeEditors id, or Path for one chosen
+     */
+    "id": string;
+    "name": string;
+
+    /**
+     * its .exe ("" for Explorer)
+     */
+    "path": string;
+
+    /**
+     * Chosen: picked with "Choose a program…" (the page remembers it for the
+     * project).
+     */
+    "chosen": boolean;
+
+    /** Creates a new Program instance. */
+    constructor($$source: Partial<Program> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("chosen" in $$source)) {
+            this["chosen"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Program instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Program {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Program($$parsedSource as Partial<Program>);
+    }
+}
+
+/**
  * ProjectBytes is a project's part. Removed: the project is gone, its
  * files not yet.
  */

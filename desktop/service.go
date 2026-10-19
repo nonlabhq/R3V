@@ -38,6 +38,7 @@ type App struct {
 	hidden      atomic.Bool             // the window is in the tray or minimised
 	watches     map[string]*folderWatch // guarded by mu
 	pickDir     func(title string) (string, error)
+	pickFile    func(title string) (string, error) // a program (.exe)
 	openURL     func(url string) error
 	quit        func()       // ends the app (to let an update's installer replace it)
 	working     atomic.Int32 // projects open for an operation right now
