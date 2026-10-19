@@ -44,7 +44,8 @@ setup (the first time, in this order):
                                          doesn't recognise, as code and documents, or files as they are)
   init --team NAME [--preset code|none]  make the folder a project of a team this computer has joined
                                          (r3v teams lists them; no connection code needed)
-  remote --team NAME                     connect this project to that team
+  remote --team NAME                     connect this project to that team (or point a copy whose
+                                         team no longer has it at the team it moved to)
   remote <connection-code>               or connect this project to a self-hosted team's storage
                                          (S3-compatible bucket) with its connection code: the person
                                          enters it (it holds the storage keys)
@@ -161,10 +162,8 @@ func Run(args []string) int {
 	if waitErr != nil {
 		return fail("", waitErr)
 	}
-	args, byPerson, waitErr = stripAs(args)
-	if waitErr != nil {
-		return fail("", waitErr)
-	}
+	byPerson = false
+	args = stripAs(args)
 	if len(args) < 1 {
 		if jsonMode {
 			return fail("", usageError("usage: r3v <command> [args] (r3v help)"))

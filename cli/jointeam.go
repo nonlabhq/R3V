@@ -29,13 +29,17 @@ func joinedTeam(name string) (*teams.Team, error) {
 }
 
 // joinTeam makes project r a project of team t (as R3V's Add project
-// does); the caller holds r's lock.
+// does); the caller holds r's lock. A project of another team: only one
+// that team no longer has, moved to t (project.FollowTo).
 func joinTeam(r *project.Repo, t *teams.Team) error {
 	if r.Config.Remote != nil {
 		if teams.NormalizeURL(r.Config.Remote.URL) == t.Remote.URL {
 			return nil
 		}
-		return fmt.Errorf("this project already belongs to another team (%s)", r.Config.Remote.URL)
+		if err := r.FollowTo(t); err != nil {
+			return fmt.Errorf("this project belongs to another team: %w", err)
+		}
+		return nil
 	}
 	if err := r.JoinTeam(t); err != nil {
 		return err

@@ -8,6 +8,7 @@ package teams
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -334,6 +335,23 @@ func NormalizeURL(raw string) string {
 func (s *Store) Find(id string) *Team {
 	for i := range s.Teams {
 		if s.Teams[i].ID == id {
+			return &s.Teams[i]
+		}
+	}
+	return nil
+}
+
+// AddressRef names a team's address without giving it: what another team's
+// log keeps of where a project moved (remote.TeamEvent.MovedToRef).
+func AddressRef(address string) string {
+	sum := sha256.Sum256([]byte(NormalizeURL(address)))
+	return hex.EncodeToString(sum[:8])
+}
+
+// FindByRef returns the team whose address has this AddressRef, or nil.
+func (s *Store) FindByRef(ref string) *Team {
+	for i := range s.Teams {
+		if ref != "" && AddressRef(s.Teams[i].Remote.URL) == ref {
 			return &s.Teams[i]
 		}
 	}

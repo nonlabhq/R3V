@@ -1988,5 +1988,22 @@
 "Move to": "移動先",
 "None": "なし",
 "Show all ({n})": "すべて表示（{n}）",
-"Show less": "表示を減らす"
+"Show less": "表示を減らす",
+"“{name}” is back in {team}, with its history, and your versions are shared": "「{name}」は履歴ごと {team} に戻り、あなたのバージョンも共有しました",
+"“{name}” isn't on {team} any more": "「{name}」はもう {team} にありません",
+"It was removed from {team} on {date} by {name}.": "{date} に {name} が {team} から削除しました。",
+"It was removed from {team} on {date}.": "{date} に {team} から削除されました。",
+"It was removed from {team}.": "{team} から削除されました。",
+"It moved to {team}; this copy still points at {old}.": "{team} に移動しました。このコピーはまだ {old} を指しています。",
+"Your versions stay on this computer.": "あなたのバージョンはこのコンピューターに残っています。",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "このコピーの接続先を {team} にする：まだ共有していないバージョンは、その間に共有されたバージョンの後に共有されます。",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "このコンピューターは {team} に参加していません。参加してから接続先を変更してください。",
+"Or bring it back to {team}, with its history, for everyone in it.": "または、履歴ごと {team} に戻して全員に見えるようにします。",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "{team} に戻せるのはチームのオーナーと管理者だけです。依頼してください。",
+"Bring it back to {team}": "{team} に戻す",
+"Point this copy at {team}": "接続先を {team} にする",
+"This copy is {team}'s now, and your versions are shared there": "このコピーは {team} のものになり、あなたのバージョンもそこで共有しました",
+"New: {kind} can lock too": "新機能：{kind}もロックできます",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V は現在これらを既定でロックします。チームは以前に種類を選んでいるため、追加するまでロックされません。",
+"Add": "追加"
 }

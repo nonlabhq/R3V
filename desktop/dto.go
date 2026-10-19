@@ -308,6 +308,12 @@ type Result struct {
 	// stopped halfway, which putting the files back would replace; nothing
 	// was done. Call again with replace once the user agrees.
 	ChangedSince []string `json:"changedSince"`
+	// Restored: the team had deleted the project (it keeps one a while);
+	// sharing brought it back.
+	Restored bool `json:"restored"`
+	// Deleted: action "deleted": the team deleted the project (moved it
+	// away, or deleted it for everyone); the versions stay here.
+	Deleted *DeletedInfo `json:"deleted"`
 }
 
 // ParkedSet is uncommitted changes kept on this computer while the project

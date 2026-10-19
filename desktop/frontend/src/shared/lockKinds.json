@@ -84,7 +84,8 @@
       "*.stl",
       "*.ply"
     ],
-    "default": true
+    "default": true,
+    "new": true
   },
   {
     "id": "audio",

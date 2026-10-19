@@ -122,29 +122,25 @@ func stripWait(args []string) ([]string, time.Duration, bool, error) {
 // up for an agent: its versions say an agent made them otherwise).
 var byPerson bool
 
-// stripAs takes --as person out of args.
-func stripAs(args []string) ([]string, bool, error) {
+// stripAs takes --as person out of args. Any other --as is left to the
+// command (merge-files --as text).
+func stripAs(args []string) []string {
 	var out []string
-	person := false
 	for i := 0; i < len(args); i++ {
 		name, value, hasValue := strings.Cut(args[i], "=")
-		if name != "--as" && name != "-as" {
-			out = append(out, args[i])
-			continue
-		}
-		if !hasValue {
-			if i+1 >= len(args) {
-				return nil, false, usageError("--as needs who: --as person")
+		if name == "--as" || name == "-as" {
+			if !hasValue && i+1 < len(args) && strings.EqualFold(args[i+1], "person") {
+				byPerson, i = true, i+1
+				continue
 			}
-			i++
-			value = args[i]
+			if hasValue && strings.EqualFold(value, "person") {
+				byPerson = true
+				continue
+			}
 		}
-		if !strings.EqualFold(value, "person") {
-			return nil, false, usageError("--as %q: only --as person (an agent is told by R3V_ACTOR or r3v agent setup)", value)
-		}
-		person = true
+		out = append(out, args[i])
 	}
-	return out, person, nil
+	return out
 }
 
 // detectActor is who runs this command in r's copy: the agent
@@ -782,6 +778,14 @@ func cmdVerify(args []string) (int, error) {
 	if jsonMode {
 		out := verifyOf(rep)
 		out.TeamUnreachable = r.Config.Remote != nil && !rep.TeamChecked
+		if out.OpenProblems > 0 { // (exit 1, as in text: ok must say so too)
+			hint := "show the user error.details.problems; r3v verify --repair brings back what can be"
+			if *repair {
+				hint = "show the user error.details.problems: what --repair couldn't bring back"
+			}
+			return 0, &cliError{Code: "verify_problems", Exit: exitError, Details: out, Hint: hint,
+				Err: fmt.Errorf("%d problem(s) not repaired: %s", out.OpenProblems, out.Summary)}
+		}
 		result("verify", out, nil)
 		return 0, nil
 	}
@@ -833,7 +837,7 @@ type verifyJSON struct {
 	TeamUnreachable bool          `json:"team_unreachable"`
 	Repaired        bool          `json:"repaired"` // --repair was given
 	Problems        []problemJSON `json:"problems"`
-	OpenProblems    int           `json:"open_problems"` // not repaired (text: exit 1)
+	OpenProblems    int           `json:"open_problems"` // not repaired (then exit 1: verify_problems)
 	Summary         string        `json:"summary"`
 }
 

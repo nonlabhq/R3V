@@ -1988,5 +1988,22 @@
 "Move to": "Verschieben nach",
 "None": "Keine",
 "Show all ({n})": "Alle zeigen ({n})",
-"Show less": "Weniger zeigen"
+"Show less": "Weniger zeigen",
+"“{name}” is back in {team}, with its history, and your versions are shared": "„{name}“ ist mit seinem Verlauf zurück in {team}, und deine Versionen sind geteilt",
+"“{name}” isn't on {team} any more": "„{name}“ ist nicht mehr in {team}",
+"It was removed from {team} on {date} by {name}.": "Es wurde am {date} von {name} aus {team} entfernt.",
+"It was removed from {team} on {date}.": "Es wurde am {date} aus {team} entfernt.",
+"It was removed from {team}.": "Es wurde aus {team} entfernt.",
+"It moved to {team}; this copy still points at {old}.": "Es ist zu {team} umgezogen; diese Kopie zeigt noch auf {old}.",
+"Your versions stay on this computer.": "Deine Versionen bleiben auf diesem Computer.",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "Diese Kopie auf {team} umstellen: Deine noch nicht geteilten Versionen werden dort geteilt, nach den Versionen, die dort inzwischen geteilt wurden.",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "Dieser Computer ist {team} nicht beigetreten: Tritt bei und stelle diese Kopie dann um.",
+"Or bring it back to {team}, with its history, for everyone in it.": "Oder hole es mit seinem Verlauf zurück in {team}, für alle im Team.",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "Nur die Inhaber und Admins des Teams können es zurück in {team} holen: Frag eine Person davon.",
+"Bring it back to {team}": "Zurück in {team} holen",
+"Point this copy at {team}": "Auf {team} umstellen",
+"This copy is {team}'s now, and your versions are shared there": "Diese Kopie gehört jetzt zu {team}, und deine Versionen sind dort geteilt",
+"New: {kind} can lock too": "Neu: {kind} können jetzt auch sperren",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V sperrt sie jetzt standardmäßig. Euer Team hat seine Arten vorher selbst gewählt, deshalb sperren sie erst, wenn du sie hinzufügst.",
+"Add": "Hinzufügen"
 }

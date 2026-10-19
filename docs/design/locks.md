@@ -47,7 +47,10 @@ Auto-locked at first (when on): Unreal `.umap .uasset`; Unity `.unity
 `.psd .psb .kra .spp .ma .mb .max .c4d`; models `.fbx .obj .gltf .glb
 .usd .usdc .usda .usdz .abc .dae .3ds .stl .ply` (two people changing one
 lose a side at the merge, as with a `.blend`; off by default before, so a
-team that saved its kinds then keeps its list). Not: `.als` (merged by
+team that saved its kinds then keeps its list; the Workflow tab offers
+its admins "New: 3D models can lock too", added only by their click, "Not
+now" kept per team on that computer: any kind marked `new` in
+`profile.LockKinds` is offered so). Not: `.als` (merged by
 track), audio, images, Godot's text `.tscn .tres` (offered, off).
 
 ## A lock's life

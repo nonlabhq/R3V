@@ -1988,5 +1988,22 @@
 "Move to": "Déplacer vers",
 "None": "Aucune",
 "Show all ({n})": "Tout afficher ({n})",
-"Show less": "Afficher moins"
+"Show less": "Afficher moins",
+"“{name}” is back in {team}, with its history, and your versions are shared": "« {name} » est de retour dans {team}, avec son historique, et vos versions sont partagées",
+"“{name}” isn't on {team} any more": "« {name} » n'est plus dans {team}",
+"It was removed from {team} on {date} by {name}.": "{name} l'a retiré de {team} le {date}.",
+"It was removed from {team} on {date}.": "Il a été retiré de {team} le {date}.",
+"It was removed from {team}.": "Il a été retiré de {team}.",
+"It moved to {team}; this copy still points at {old}.": "Il a été déplacé vers {team} ; cette copie pointe encore vers {old}.",
+"Your versions stay on this computer.": "Vos versions restent sur cet ordinateur.",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "Faire pointer cette copie vers {team} : vos versions pas encore partagées y sont partagées, après celles partagées là-bas entre-temps.",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "Cet ordinateur n'a pas rejoint {team} : rejoignez-la, puis faites pointer cette copie vers elle.",
+"Or bring it back to {team}, with its history, for everyone in it.": "Ou ramenez-le dans {team}, avec son historique, pour toute l'équipe.",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "Seuls les propriétaires et administrateurs de l'équipe peuvent le ramener dans {team} : demandez à l'un d'eux.",
+"Bring it back to {team}": "Le ramener dans {team}",
+"Point this copy at {team}": "Pointer vers {team}",
+"This copy is {team}'s now, and your versions are shared there": "Cette copie appartient maintenant à {team}, et vos versions y sont partagées",
+"New: {kind} can lock too": "Nouveau : {kind} peuvent aussi se verrouiller",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V les verrouille désormais par défaut. Votre équipe a choisi ses types avant, ils ne se verrouillent donc pas tant que vous ne les ajoutez pas.",
+"Add": "Ajouter"
 }

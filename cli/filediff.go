@@ -67,8 +67,11 @@ a picture its size, any other file its size; Nightly):
   diff --files <a> <b>                   two files on disk, any kind (two Live Sets: track by track)
   info <file>                            what a file is (a set's tracks, audio's format, a picture's
                                          size, text's lines) and, in a project, whether R3V keeps it
-  merge-files <base> <ours> <theirs> -o <out> [--strategy fail|ours|theirs|both]
-                                         a 3-way merge of three files, each kind the way it merges
+  merge-files <base> <ours> <theirs> -o <out> [--strategy fail|ours|theirs|both] [--as text|whole]
+                                         a 3-way merge of three files, each kind the way a branch
+                                         merge merges it (the project's rules for <out>, else by its
+                                         name: a scene or a model whole; a name no preset knows, by
+                                         its content); --as text: line by line
                                          (merge-sets: the same, for Live Sets)
 `
 

@@ -1988,5 +1988,22 @@
 "Move to": "이동",
 "None": "없음",
 "Show all ({n})": "모두 보기 ({n})",
-"Show less": "간단히 보기"
+"Show less": "간단히 보기",
+"“{name}” is back in {team}, with its history, and your versions are shared": "“{name}”이(가) 기록과 함께 {team}에 돌아왔고, 내 버전도 공유했습니다",
+"“{name}” isn't on {team} any more": "“{name}”은(는) 더 이상 {team}에 없습니다",
+"It was removed from {team} on {date} by {name}.": "{date}에 {name}님이 {team}에서 제거했습니다.",
+"It was removed from {team} on {date}.": "{date}에 {team}에서 제거되었습니다.",
+"It was removed from {team}.": "{team}에서 제거되었습니다.",
+"It moved to {team}; this copy still points at {old}.": "{team}(으)로 옮겨졌습니다. 이 사본은 아직 {old}을(를) 가리킵니다.",
+"Your versions stay on this computer.": "내 버전은 이 컴퓨터에 그대로 있습니다.",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "이 사본이 {team}을(를) 가리키게 하기: 아직 공유하지 않은 버전은 그사이 공유된 버전 뒤에 공유됩니다.",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "이 컴퓨터는 {team}에 참여하지 않았습니다. 참여한 뒤 이 사본이 가리키게 하세요.",
+"Or bring it back to {team}, with its history, for everyone in it.": "또는 기록과 함께 {team}에 되돌려 모두가 볼 수 있게 합니다.",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "{team}에 되돌릴 수 있는 사람은 팀 소유자와 관리자뿐입니다. 요청하세요.",
+"Bring it back to {team}": "{team}에 되돌리기",
+"Point this copy at {team}": "{team}을(를) 가리키게 하기",
+"This copy is {team}'s now, and your versions are shared there": "이 사본은 이제 {team} 소속이며, 내 버전도 그곳에 공유했습니다",
+"New: {kind} can lock too": "새 기능: {kind}도 잠글 수 있습니다",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V는 이제 기본으로 잠급니다. 팀이 이전에 종류를 직접 골랐기 때문에 추가하기 전에는 잠기지 않습니다.",
+"Add": "추가"
 }

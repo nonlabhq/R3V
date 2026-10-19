@@ -128,8 +128,27 @@ type cliError struct {
 	// Suggestion: the branch meant, when one asked for isn't there.
 	Suggestion string
 	// Path: no_write_access: where R3V may not write.
-	Path string
-	Next []nextJSON // not_connected: how to connect the project
+	Path    string
+	Next    []nextJSON   // not_connected: how to connect the project
+	Deleted *deletedJSON // project_deleted: what happened
+	// Details: what the command found, as its result would have said
+	// (verify_problems: verify's result).
+	Details any
+}
+
+// deletedJSON is what the team's log tells of a project deleted from its
+// team (project_deleted).
+type deletedJSON struct {
+	Project string `json:"project"`
+	Team    string `json:"team"`
+	Time    string `json:"time,omitempty"` // RFC 3339
+	By      string `json:"by,omitempty"`   // a member's name
+	// MovedTo: the team it moved to; MovedToHere: this computer has joined
+	// it (r3v remote --team points this copy there).
+	MovedTo     string `json:"moved_to,omitempty"`
+	MovedToHere bool   `json:"moved_to_here,omitempty"`
+	// NotAllowed: r3v project restore was refused: owners and admins only.
+	NotAllowed bool `json:"not_allowed,omitempty"`
 }
 
 // holderJSON is who holds a project's lock, as it recorded itself (Running
@@ -185,6 +204,10 @@ type errorJSON struct {
 	Path string `json:"path,omitempty"`
 	// Next: what to run (not_connected: the ways to connect the project).
 	Next []nextJSON `json:"next,omitempty"`
+	// Deleted: project_deleted's details.
+	Deleted *deletedJSON `json:"deleted,omitempty"`
+	// Details: what the command found (verify_problems: verify's result).
+	Details any `json:"details,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
 	// having failed after.
 	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
@@ -278,6 +301,10 @@ func classify(err error) *cliError {
 		return &cliError{Code: "project_busy", Exit: exitLater, Err: err, Holder: holderOf(busy.Holder),
 			Hint: "the app or another command is working on the project: try again in a moment (or wait longer: --wait SECONDS)"}
 	}
+	var gone *project.DeletedError
+	if errors.As(err, &gone) {
+		return deletedError(err, gone)
+	}
 	var noBranch *project.NoBranchError
 	if errors.As(err, &noBranch) {
 		return &cliError{Code: "error", Exit: exitError, Err: err, Suggestion: noBranch.Suggestion}
@@ -316,6 +343,41 @@ func classify(err error) *cliError {
 	return &cliError{Code: "error", Exit: exitError, Err: err}
 }
 
+// deletedError is project_deleted, with how to go on: point this copy at
+// the team the project moved to, or (owners and admins) bring it back.
+func deletedError(err error, gone *project.DeletedError) *cliError {
+	d := &deletedJSON{Project: gone.Project, Team: gone.Team, By: gone.By, MovedTo: gone.MovedTo,
+		MovedToHere: gone.MovedToTeam != "", NotAllowed: gone.NotAllowed}
+	if !gone.Time.IsZero() {
+		d.Time = gone.Time.UTC().Format(time.RFC3339)
+	}
+	next := deletedSteps(gone)
+	hint := "the versions stay committed here; ask the user what to do (never on your own)"
+	if len(next) > 0 {
+		hint += ": " + next[0].Why + " (`" + next[0].Command + "`)"
+	}
+	return &cliError{Code: "project_deleted", Exit: exitError, Err: err, Hint: hint, Deleted: d, Next: next}
+}
+
+// deletedSteps are the ways out of project_deleted, the person's to pick:
+// point this copy at the team the project moved to, else bring it back.
+func deletedSteps(gone *project.DeletedError) []nextJSON {
+	var out []nextJSON
+	switch {
+	case gone.MovedToTeam != "":
+		out = append(out, nextJSON{"r3v remote --team " + shellArg(gone.MovedTo),
+			fmt.Sprintf("point this copy at %s, where the project moved: the next commit shares its versions there", gone.MovedTo)})
+	case gone.MovedTo != "":
+		out = append(out, nextJSON{"r3v teams",
+			fmt.Sprintf("the project moved to %s, which this computer hasn't joined: the person joins it in R3V, then points this copy at it", gone.MovedTo)})
+	}
+	if !gone.NotAllowed {
+		out = append(out, nextJSON{"r3v project restore",
+			fmt.Sprintf("or bring it back to %s with its history, for everyone in it (R3V Cloud: owners and admins)", gone.Team)})
+	}
+	return out
+}
+
 // noAccessHint says what to do about a path R3V may not write: its own
 // settings folder can be put elsewhere (R3V_CONFIG_DIR), a project's can't.
 func noAccessHint(path string) string {
@@ -340,11 +402,11 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Deleted: ce.Deleted, Details: ce.Details, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
-	if ce.Code == "merge_conflict" || ce.Code == "no_write_access" { // (how to go on isn't in the message)
+	if ce.Code == "merge_conflict" || ce.Code == "no_write_access" || ce.Code == "project_deleted" { // (how to go on isn't in the message)
 		fmt.Fprintln(os.Stderr, ce.Hint)
 	}
 	for _, s := range ce.Next {

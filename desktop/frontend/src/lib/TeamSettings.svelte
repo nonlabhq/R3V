@@ -227,7 +227,7 @@
 {/snippet}
 
 {#snippet workflow()}
-  {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamWorkflowTab {source} />{/if}
+  {#if offline}<p class="faint small">{t("The team can't be reached right now.")}</p>{:else}<TeamWorkflowTab {source} remember={team.id} />{/if}
 {/snippet}
 
 {#snippet naming()}

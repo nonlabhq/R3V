@@ -247,6 +247,24 @@ func (b *brokerBucket) KeepsLooks() bool { return true }
 // (branchinfo/) and milestones, and tells of their changes.
 func (b *brokerBucket) KeepsBranchRecords() bool { return true }
 
+// RestoreProject brings back a project the team deleted, which the service
+// keeps a while (ProjectRestorer): owners and admins only.
+func (b *brokerBucket) RestoreProject(pid string) error {
+	resp, err := b.call("POST", "/projects/"+url.PathEscape(pid)+"/restore", nil, nil)
+	if err != nil {
+		return err
+	}
+	switch resp.StatusCode {
+	case 200:
+		resp.Body.Close()
+		return nil
+	case 404:
+		resp.Body.Close()
+		return ErrNotFound
+	}
+	return failed(resp, "restore "+pid)
+}
+
 var brokerContents = regexp.MustCompile(`^projects/([0-9a-f]{32})/((?:objects|chunked|snapshots)/.+)$`)
 
 // contents splits a key kept in storage (handed out as URLs) into its

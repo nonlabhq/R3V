@@ -27,6 +27,7 @@ export {
     Combined,
     Conflict,
     ConvertFormat,
+    DeletedInfo,
     DownloadSize,
     DropResult,
     FileVersion,

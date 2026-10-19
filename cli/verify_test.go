@@ -2,8 +2,13 @@ package cli
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nonlabhq/r3v/internal/project"
+	"github.com/nonlabhq/r3v/internal/store"
 )
 
 // verify says what is where: the versions in this branch's history (as
@@ -32,4 +37,38 @@ func TestVerifySaysWhatIsWhere(t *testing.T) {
 		t.Fatalf("summary: %s", v.Summary)
 	}
 	t.Log(v.Summary)
+}
+
+// verify --json with problems not repaired fails (verify_problems, exit 1,
+// as the text output exits), its result in the error's details; repaired,
+// it succeeds.
+func TestVerifyProblemsFail(t *testing.T) {
+	a := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "kick.wav": "kick"})
+	r, err := project.Init(a, "yi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exit, rep := run(t, a, "commit", "-m", "first"); exit != 0 {
+		t.Fatalf("commit: %+v", rep.Error)
+	}
+	kick, _, _ := store.HashFile(filepath.Join(a, "kick.wav"))
+	os.WriteFile(r.Store.Path(kick), []byte("kicx"), 0o644) // a bad sector
+	exit, rep := run(t, a, "verify")
+	if exit != exitError || rep.Error == nil || rep.Error.Code != "verify_problems" || rep.Result != nil {
+		t.Fatalf("verify: %d %+v", exit, rep.Error)
+	}
+	var v verifyJSON
+	if b, _ := json.Marshal(rep.Error.Details); json.Unmarshal(b, &v) != nil || v.OpenProblems != 1 ||
+		len(v.Problems) != 1 || v.Problems[0].Path != "kick.wav" || v.Summary == "" {
+		t.Fatalf("details: %+v", rep.Error.Details)
+	}
+	t.Chdir(a)
+	if code := Run([]string{"verify"}); code != exitError { // (text: as before)
+		t.Fatalf("text: exit %d", code)
+	}
+	exit, rep = run(t, a, "verify", "--repair")
+	json.Unmarshal(rep.Result, &v)
+	if exit != 0 || v.OpenProblems != 0 || len(v.Problems) != 1 || !v.Problems[0].Fixed {
+		t.Fatalf("repaired: %d %s %+v", exit, rep.Result, rep.Error)
+	}
 }

@@ -777,6 +777,15 @@ export function FollowMovedTeam(fromID: string, toID: string): $CancellablePromi
 }
 
 /**
+ * FollowProject points this copy at team teamID, which its project moved
+ * to (DeletedInfo.MovedToTeam); its versions not shared yet are shared
+ * there by the next share or commit.
+ */
+export function FollowProject(root: string, teamID: string): $CancellablePromise<void> {
+    return $Call.ByID(3054197585, root, teamID);
+}
+
+/**
  * ForgetProject removes a project from the list (the folder is untouched).
  */
 export function ForgetProject(root: string): $CancellablePromise<void> {
@@ -1287,6 +1296,17 @@ export function RestoreFileVersion(root: string, file: string, version: string, 
 export function RestorePlan(teamID: string, $from: $models.RestoreSource, run: string): $CancellablePromise<$models.RestorePlan | null> {
     return $Call.ByID(1280551794, teamID, $from, run).then(($result: any) => {
         return $$createType89($result);
+    });
+}
+
+/**
+ * RestoreProject brings the project back to its team, which deleted it,
+ * with its history, and shares the versions here: asked for in the app
+ * (owners and admins).
+ */
+export function RestoreProject(root: string): $CancellablePromise<$models.Result | null> {
+    return $Call.ByID(2449960350, root).then(($result: any) => {
+        return $$createType25($result);
     });
 }
 
