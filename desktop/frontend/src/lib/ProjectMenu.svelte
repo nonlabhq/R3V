@@ -157,7 +157,7 @@
   {/if}
   {#if !p.workspace}
     {#if p.root && p.status !== "missing"}<div class="sep"></div>{/if}
-    {#if sections && onsection && p.id && !p.archived}
+    {#if sections && onsection && p.id && p.shared && !p.archived}
       <div class="sub" role="none" onmouseenter={(e) => showSub(e.currentTarget.firstElementChild as HTMLElement, "move")} onmouseleave={hideSub}>
         <button class="item has-sub" role="menuitem" aria-haspopup="menu" aria-expanded={openSub === "move"}
           onclick={(e) => showSub(e.currentTarget, "move")}>{t("Move to")}<span class="arrow">›</span></button>

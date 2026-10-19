@@ -36,7 +36,7 @@ import { sectionFolds, sectionOrders, sectionShowAll, setSectionOrder } from "./
 const { api } = mocks;
 
 const project = (name: string, section = "", sectionName = "") =>
-  ({ id: name.toLowerCase(), name, root: `C:/${name}`, status: "downloaded", branch: "main", section, sectionName });
+  ({ id: name.toLowerCase(), name, root: `C:/${name}`, status: "downloaded", branch: "main", section, sectionName, shared: true });
 const engine = { id: "s1", name: "Engine", projects: ["beat"] };
 const tools = { id: "s2", name: "Tools", projects: [] as string[] };
 const overview = (canEditSections = true, sections = [engine, tools]) => ({
