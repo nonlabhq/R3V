@@ -14,7 +14,8 @@
   import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
     type TabRef, type TabSnap } from "./lib/tabs";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
-  import { untrack } from "svelte";
+  import { tick, untrack } from "svelte";
+  import { flip } from "svelte/animate";
   import { spinner } from "./lib/spin.svelte";
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
@@ -485,26 +486,41 @@
     window.addEventListener("pointercancel", up);
   }
   // Dragging a project in the sidebar moves it (a drag isn't a click); the
-  // order is kept for its team on this computer.
+  // order is kept for its team on this computer. It follows the pointer and
+  // takes its place among the others as it goes, which slide out of its way
+  // (animate:flip); let go, it settles into that place.
   let projDrag: { key: string; y: number; moved: boolean } | null = null;
   let projDragged = false;
   let dragging = $state(""); // the project being dragged (drawn lifted)
+  let dragDy = $state(0); // how far it is from its place, following the pointer
+  const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // (the dragged one doesn't slide: it is where the pointer is)
+  const slide = (key: string) => ({ duration: dragging === key || reducedMotion() ? 0 : 160 });
   function projDown(e: PointerEvent, key: string) {
     if (e.button !== 0 || (e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
-    const list = (e.currentTarget as HTMLElement).closest("[data-projects]");
+    const row = e.currentTarget as HTMLElement;
+    const list = row.closest<HTMLElement>("[data-projects]");
+    if (!list) return;
+    // Where a row's place is on screen: offsetTop leaves out the slides and
+    // the follow (transforms), so places don't swing while rows move.
+    const place = (el: HTMLElement) => list.getBoundingClientRect().top + el.offsetTop - list.offsetTop - list.scrollTop;
+    const grab = e.clientY - place(row);
     projDrag = { key, y: e.clientY, moved: false };
     const move = (m: PointerEvent) => {
       if (!projDrag) return;
       if (!(m.buttons & 1)) return up();
       if (!projDrag.moved && Math.abs(m.clientY - projDrag.y) < 5) return;
       projDrag.moved = true;
-      dragging = projDrag.key;
-      const rows = [...(list?.querySelectorAll<HTMLElement>("[data-key]") ?? [])];
-      let to = rows.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientY < r.top + r.height / 2; });
-      if (to < 0) to = rows.length;
+      dragging = key;
+      // Before the first other row whose middle is below the dragged one's.
+      const mid = m.clientY - grab + row.offsetHeight / 2;
+      const before = [...list.querySelectorAll<HTMLElement>("[data-key]")]
+        .find((el) => el !== row && mid < place(el) + el.offsetHeight / 2)?.dataset.key;
       const keys = entries.map(orderOf);
-      const moved = moveKey(keys, projDrag.key, to);
+      const at = before ? keys.indexOf(before) : -1;
+      const moved = moveKey(keys, key, at < 0 ? keys.length : at);
       if (moved !== keys) order = moved;
+      tick().then(() => { if (dragging === key) dragDy = m.clientY - grab - place(row); });
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -517,6 +533,7 @@
       }
       projDrag = null;
       dragging = "";
+      dragDy = 0;
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -855,7 +872,8 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
         {#each rows as p (p.root || p.id)}
-          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} onpointerdown={(e) => projDown(e, orderOf(p))}>
+          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p))}
+            style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined} onpointerdown={(e) => projDown(e, orderOf(p))}>
             <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)} title={p.name} aria-label={p.name}>
               <ProjectIcon {p} size={30} />
             </button>
@@ -907,7 +925,11 @@
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each rows as p (p.root || p.id)}
-            {@render row(p)}
+            <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
+              animate:flip={slide(orderOf(p))} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
+              onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
+              {@render row(p)}
+            </li>
           {:else}
             <li class="empty faint">{t("No projects in this team yet.")}</li>
           {/each}
@@ -1086,10 +1108,9 @@
     {/if}
 {/snippet}
 
+<!-- a project's row in the sidebar (in its <li>: animate:flip wants that in the each) -->
 {#snippet row(p: TeamProject)}
   {@const spaces = workspacesOf(p)}
-  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={spaces.length > 0}
-    onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
     <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)}
       class:locked={p.status === "remote" && teamLocked}
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
@@ -1135,7 +1156,6 @@
         {/if}
       </div>
     {/if}
-  </li>
 {/snippet}
 
 
@@ -1294,8 +1314,12 @@
   .folded-proj.on { background: var(--accent-bg); border-color: var(--accent-line); }
   .folded-proj.remote { opacity: .45; }
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
-  .lifted { opacity: .55; }
-  li[data-key], .folded-row { touch-action: none; }
+  /* The project dragged: lifted over the others, where the pointer is; let
+     go, it settles into its place. */
+  li[data-key], .folded-row { touch-action: none; transition: transform .15s ease-out; }
+  .lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
+  .lifted .proj, .lifted .folded-proj { background: var(--panel-2); box-shadow: var(--shadow-pop); }
+  @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row { transition: none; } }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo { position: relative; }
   .logo img { width: 22px; height: 22px; display: block; }

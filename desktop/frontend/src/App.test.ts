@@ -15,6 +15,15 @@ vi.mock("@wailsio/runtime", async (orig) => ({ ...(await orig<typeof import("@wa
   Window: { Minimise: async () => {}, ToggleMaximise: async () => {}, Close: async () => {} } }));
 vi.mock("./lib/ProjectView.svelte", async () => ({ default: (await import("./test/Stub.svelte")).default }));
 
+// jsdom has no Web Animations, which the sidebar's rows slide with: each
+// one ends at once.
+Element.prototype.getAnimations ??= () => [];
+Element.prototype.animate ??= function () {
+  let done: (() => void) | null = null;
+  return { cancel() {}, playState: "finished", effect: null,
+    get onfinish() { return done; }, set onfinish(f: (() => void) | null) { done = f; if (f) setTimeout(f); } } as unknown as Animation;
+};
+
 import App from "./App.svelte";
 const { api } = mocks;
 
@@ -125,6 +134,33 @@ describe("App: tabs", () => {
     await waitFor(() => expect(tabs()).toHaveLength(1));
     expect(screen.queryByText(/checking…/)).toBeNull();
     expect(screen.getByRole("button", { name: "Check the team for new projects" }).classList.contains("spin")).toBe(true);
+  });
+
+  it("moves a dragged project among the others as it goes, following the pointer, and keeps the order", async () => {
+    // (jsdom lays nothing out: rows 40px high, one under the other)
+    const rowOf = (el: HTMLElement) => (el.matches("[data-key]") ? [...el.parentElement!.children].indexOf(el) : 0);
+    const top = vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(function (this: HTMLElement) { return rowOf(this) * 40; });
+    const high = vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(40);
+    try {
+      render(App);
+      await waitFor(() => expect(document.querySelectorAll("li[data-key]")).toHaveLength(2));
+      const keysShown = () => [...document.querySelectorAll<HTMLElement>("li[data-key]")].map((el) => el.dataset.key);
+      expect(keysShown()).toEqual(["song", "beat"]);
+      const song = document.querySelector<HTMLElement>("li[data-key='song']")!;
+      await fireEvent.pointerDown(song, { button: 0, clientY: 20 });
+      await fireEvent.pointerMove(window, { buttons: 1, clientY: 70 }); // past Beat's middle
+      await waitFor(() => expect(keysShown()).toEqual(["beat", "song"]));
+      expect(song.classList.contains("lifted")).toBe(true);
+      // where the pointer is: 50px down from where it took it, its place 40px down
+      await waitFor(() => expect(song.style.transform).toBe("translateY(10px)"));
+      await fireEvent.pointerUp(window);
+      expect(song.classList.contains("lifted")).toBe(false);
+      expect(song.style.transform).toBe("");
+      expect(JSON.parse(localStorage.getItem("r3v.order:t")!)).toEqual(["beat", "song"]);
+    } finally {
+      top.mockRestore();
+      high.mockRestore();
+    }
   });
 
   it("lists the shortcuts (Ctrl+/), and Esc closes the list", async () => {
