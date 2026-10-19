@@ -7,7 +7,7 @@ Two different things:
   project, to a team with maybe other people and another kind of storage
   (its own storage ↔ R3V Cloud, either way). Like transferring a
   repository.
-- **A team moves to R3V Cloud** (designed, not built): the same people and
+- **A team moves to R3V Cloud** (built: the app’s Move to R3V Cloud): the same people and
   projects, kept somewhere else.
 
 Both copy a project's whole history from one storage to another with the
