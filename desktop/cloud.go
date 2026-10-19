@@ -68,7 +68,7 @@ func (a *App) CloudSignIn() (CloudStatus, error) {
 	if err != nil {
 		return CloudStatus{}, err
 	}
-	if err := a.syncTeams(svc); err != nil {
+	if _, err := a.syncTeams(svc); err != nil {
 		return CloudStatus{}, err
 	}
 	a.selectFirstHosted(svc)
@@ -86,22 +86,25 @@ func (a *App) CloudCancelSignIn() {
 }
 
 // syncHosted brings the hosted teams up to date at start (teams joined or
-// left meanwhile) and tells the frontend.
+// left meanwhile) and tells the frontend, then writes the account's name
+// into the member records a rename didn't reach.
 func (a *App) syncHosted() {
 	svc := cloud.Service()
 	if !remote.HostedTeams || !cloud.SignedIn(svc) {
 		return
 	}
-	a.syncTeams(svc)
+	if me, err := a.syncTeams(svc); err == nil {
+		renameMemberRecords(svc, me.User.Name)
+	}
 }
 
 // syncTeams brings the account's teams up to date and tells the frontend.
 // A team the account is no longer in stays, with its projects (nothing is
 // changed in them): their watches stop, and the person is told, once.
-func (a *App) syncTeams(svc string) error {
+func (a *App) syncTeams(svc string) (*cloud.Me, error) {
 	me, err := cloud.SyncTeams(svc)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(me.Lost) > 0 {
 		store, _ := teams.Load()
@@ -125,7 +128,7 @@ func (a *App) syncTeams(svc string) error {
 	if a.emit != nil {
 		a.emit("teams", svc)
 	}
-	return nil
+	return me, nil
 }
 
 // CloudSignOut signs this computer out; hosted teams stay listed, signed out.

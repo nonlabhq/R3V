@@ -72,7 +72,7 @@
         saved = r.team;
         toast(t("Renamed on R3V Cloud, for everyone in your teams there"), "ok");
         if (r.notUpdated?.length)
-          toast(t("{teams} couldn't be reached: rename again later so they show the new name.", { teams: r.notUpdated.join(", ") }), "info", 8000);
+          toast(t("{teams} couldn't be reached: they get the new name the next time R3V starts.", { teams: r.notUpdated.join(", ") }), "info", 8000);
       } else {
         saved = await api.SetIdentity(team.id, team.memberId, name.trim());
         toast(t("Renamed for everyone in {team}", { team: team.name }), "ok");

@@ -1143,7 +1143,6 @@
 "They can't reach the team or its projects any more. What they downloaded stays on their computer.": "Ya no podrá acceder al equipo ni a sus proyectos. Lo que haya descargado se queda en su ordenador.",
 "Removed {name}": "{name} quitado",
 "Signed out of R3V-Cloud: sign in to share and update": "Sesión cerrada en R3V-Cloud: inicia sesión para compartir y actualizar",
-"Your name comes from your R3V-Cloud account.": "Tu nombre viene de tu cuenta de R3V-Cloud.",
 "Leave the team…": "Salir del equipo…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "También sales del equipo en R3V-Cloud: para volver, alguien tendrá que invitarte de nuevo. Las carpetas de los proyectos se quedan en el disco.",
 "The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "La cuenta con la que has iniciado sesión no está (ya) en este equipo. Sus proyectos se quedan aquí tal cual: elimina el equipo en sus ajustes para conservarlos como proyectos locales.",
@@ -1987,6 +1986,6 @@
 "Add project…": "Añadir proyecto…",
 "Add a project or a section": "Añadir un proyecto o una sección",
 "Renamed on R3V Cloud, for everyone in your teams there": "Nombre cambiado en R3V Cloud, para todos en tus equipos de allí",
-"{teams} couldn't be reached: rename again later so they show the new name.": "No se pudo conectar con {teams}: vuelve a cambiar el nombre más tarde para que muestren el nuevo.",
-"Your name on R3V Cloud, in all your teams there.": "Tu nombre en R3V Cloud, en todos tus equipos de allí."
+"Your name on R3V Cloud, in all your teams there.": "Tu nombre en R3V Cloud, en todos tus equipos de allí.",
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "No se pudo conectar con {teams}: recibirán el nuevo nombre la próxima vez que se abra R3V."
 }

@@ -1143,7 +1143,6 @@
 "They can't reach the team or its projects any more. What they downloaded stays on their computer.": "對方將無法再存取這個團隊和其中的專案。已經下載的檔案會留在對方的電腦上。",
 "Removed {name}": "已移除 {name}",
 "Signed out of R3V-Cloud: sign in to share and update": "已登出 R3V-Cloud：請登入才能分享和更新",
-"Your name comes from your R3V-Cloud account.": "你的名字來自 R3V-Cloud 帳號。",
 "Leave the team…": "離開團隊…",
 "You leave the team on R3V-Cloud too: to come back, someone has to invite you again. Project folders stay on disk.": "你也會離開 R3V-Cloud 上的這個團隊：之後要有人重新邀請你才能回來。專案資料夾會留在磁碟上。",
 "The account signed in isn't in this team (any more). Its projects stay here as they are: remove the team in its settings to keep them as local projects.": "目前登入的帳號不在這個團隊裡（或已不在）。它的專案會原樣留在這裡；到團隊設定移除團隊，即可把專案保留為本機專案。",
@@ -1987,6 +1986,6 @@
 "Add project…": "新增專案…",
 "Add a project or a section": "新增專案或分組",
 "Renamed on R3V Cloud, for everyone in your teams there": "已在 R3V Cloud 改名，你在那裡的團隊都會看到",
-"{teams} couldn't be reached: rename again later so they show the new name.": "無法連上 {teams}：請稍後再改一次名，讓那裡顯示新名字。",
-"Your name on R3V Cloud, in all your teams there.": "你在 R3V Cloud 的名字，用於你在那裡的所有團隊。"
+"Your name on R3V Cloud, in all your teams there.": "你在 R3V Cloud 的名字，用於你在那裡的所有團隊。",
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "無法連上 {teams}：下次啟動 R3V 時會同步新名字。"
 }

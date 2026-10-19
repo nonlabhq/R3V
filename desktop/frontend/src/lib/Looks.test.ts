@@ -50,7 +50,6 @@ describe("User settings", () => {
     const onidentity = vi.fn();
     render(UserSettings, { team: team({ hosted: true }), onchanged: () => {}, onidentity, onclose: () => {} });
     const field = await screen.findByRole("textbox", { name: "Name" });
-    expect(screen.queryByText("Your name comes from your R3V-Cloud account.")).toBeNull();
     expect(screen.getByText(/Your name on R3V Cloud, in all your teams there/)).toBeTruthy();
     await fireEvent.input(field, { target: { value: " Yi Chen " } });
     await fireEvent.click(screen.getByRole("button", { name: "Rename" }));
