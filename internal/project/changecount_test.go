@@ -26,10 +26,14 @@ func TestChangeCounts(t *testing.T) {
 	third := mustSnapshot(t, r, "third")
 	ids := []string{third.ID, second.ID, first.ID}
 
-	if got := r.ChangeCounts(ids, time.Nanosecond); len(got) == len(ids) {
+	at := time.Now()
+	countClock = func() time.Time { at = at.Add(time.Millisecond); return at }
+	got := r.ChangeCounts(ids, time.Millisecond)
+	countClock = time.Now
+	if len(got) == len(ids) {
 		t.Fatalf("all counted in no time: %v", got)
 	}
-	got := r.ChangeCounts(ids, 0)
+	got = r.ChangeCounts(ids, 0)
 	for _, id := range ids {
 		changes, err := r.VersionChanges(id)
 		if err != nil {
