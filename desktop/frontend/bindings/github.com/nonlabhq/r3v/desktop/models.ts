@@ -1039,7 +1039,7 @@ export class CloudRename {
  */
 export class CloudStatus {
     /**
-     * Available: this build offers it (the Nightly channel).
+     * Available: this build offers it (remote.HostedTeams).
      */
     "available": boolean;
     "service": string;
