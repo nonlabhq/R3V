@@ -211,6 +211,7 @@ var codes = []struct {
 	{remote.ErrStorageFull, "cloud_quota", exitError, "the team's storage on R3V Cloud is full: delete projects or versions to make room (reading still works); the version stays here, shared once there is room"},
 	{cloud.ErrBetaOnly, "cloud_beta_only", exitError, "R3V Cloud is in a closed beta: ask for an invitation, or join the waitlist at " + cloud.Waitlist},
 	{cloud.ErrOneTeam, "cloud_one_team", exitError, "the beta includes one team of your own: use it, or delete it to make another"},
+	{remote.ErrNotAdmin, "not_admin", exitError, "on an R3V Cloud team only its owners and admins do this: ask one of them"},
 }
 
 // classify gives err its code.

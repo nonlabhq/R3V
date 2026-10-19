@@ -340,6 +340,8 @@ type teamJSON struct {
 	Reachable bool   `json:"reachable"`
 	Incoming  bool   `json:"incoming"` // others saved versions: r3v update
 	Error     string `json:"error,omitempty"`
+	// Archived: the team archived the project (docs/design/archive.md).
+	Archived bool `json:"archived,omitempty"`
 }
 
 type suggestionJSON struct {
@@ -370,6 +372,9 @@ func cmdStatus(args []string) error {
 		out.Team = &teamJSON{Reachable: err == nil, Incoming: incoming}
 		if err != nil {
 			out.Team.Error = err.Error()
+		} else if c, err := r.Client(); err == nil && remote.ProjectArchive {
+			archived, _ := remote.ArchivedProjects(c)
+			_, out.Team.Archived = archived[r.Config.ProjectID]
 		}
 	}
 	if p, err := r.Profile(); err == nil {
