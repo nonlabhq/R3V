@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { closeTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave, type TabRef } from "./tabs";
+import { addTab, closeTab, HOME, homeRef, isHome, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab, snapOf, tabId, teamsOf, toSave, type TabRef } from "./tabs";
 
 const tab = (team: string, key: string): TabRef => ({ team, key });
 const keys = (tabs: TabRef[]) => tabs.map((x) => `${x.team}:${x.key}`);
@@ -73,5 +73,31 @@ describe("tabs", () => {
     // a tab not drawn (its project not listed yet) doesn't throw the place off
     const hidden = tab("A", "hidden");
     expect(moveTab([hidden, a, b], [tabId(a), tabId(b)], tabId(b), 0)).toEqual([b, a, hidden]);
+  });
+
+  it("keeps a team's home as a tab: saved, told apart from projects, never pruned with them", () => {
+    expect(isHome(homeRef("A").key)).toBe(true);
+    expect(isHome("C:/home")).toBe(false);
+    expect(tabId(homeRef("A"))).not.toBe(tabId(homeRef("B")));
+    expect(loadTabs([homeRef("A"), tab("A", "a"), homeRef("A")], [])).toEqual([homeRef("A"), tab("A", "a")]);
+    expect(toSave([homeRef("A")])).toEqual([homeRef("A")]);
+    // the shown team's whole list doesn't have it: it stays; its team gone, it goes
+    expect(keys(pruneTabs([homeRef("A"), homeRef("B")], new Set(["A"]), "A", new Set(["a"])))).toEqual([`A:${HOME}`]);
+  });
+
+  it("opens a tab at the end once", () => {
+    const tabs = [tab("A", "a")];
+    expect(keys(addTab(tabs, tab("A", "b")))).toEqual(["A:a", "A:b"]);
+    expect(addTab(tabs, tab("A", "a"))).toBe(tabs);
+  });
+
+  it("shows another page in a tab, in its place (a left click), or opens one", () => {
+    const tabs = [tab("A", "a"), tab("A", "b"), tab("B", "c")];
+    expect(keys(replaceTab(tabs, tabId(tab("A", "b")), homeRef("A")))).toEqual(["A:a", `A:${HOME}`, "B:c"]);
+    expect(keys(replaceTab(tabs, tabId(tab("A", "a")), tab("A", "d")))).toEqual(["A:d", "A:b", "B:c"]);
+    // open already: the same list (that tab is gone to)
+    expect(replaceTab(tabs, tabId(tab("A", "a")), tab("B", "c"))).toBe(tabs);
+    // no tab shown: a new one
+    expect(keys(replaceTab(tabs, "", tab("A", "d")))).toEqual(["A:a", "A:b", "B:c", "A:d"]);
   });
 });

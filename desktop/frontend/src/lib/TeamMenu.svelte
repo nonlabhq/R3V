@@ -10,12 +10,13 @@
 
   // The team shown: a click on it opens its home (onhome; home: shown now),
   // the caret lists the other teams. onsettings opens a team's settings
-  // (in its home).
+  // (in its home). A middle click or Ctrl+click on the team opens its home
+  // in a tab behind (onhomebehind), as a browser does.
   // part: the team itself, or what it asks of you (signing in, your name,
   // backups…), drawn apart (at the sidebar's foot: the projects don't move).
-  let { overview, reload, home = false, onhome, onsettings, part = "team" }: {
+  let { overview, reload, home = false, onhome, onhomebehind, onsettings, part = "team" }: {
     overview: Overview; reload: () => Promise<void>; home?: boolean;
-    onhome: () => void; onsettings: (team: TeamSummary) => void; part?: "team" | "notices";
+    onhome: () => void; onhomebehind?: () => void; onsettings: (team: TeamSummary) => void; part?: "team" | "notices";
   } = $props();
 
   let open = $state(false);
@@ -169,7 +170,10 @@
   {#if part === "team"}
   <!-- the team (a click opens its home), and the others behind the caret -->
   <div class="current" class:on={home}>
-    <button class="switch" onclick={() => { open = false; onhome(); }} title={current?.address ?? ""} aria-current={home ? "page" : undefined}>
+    <button class="switch" onclick={(e) => { open = false; if ((e.ctrlKey || e.metaKey) && onhomebehind) onhomebehind(); else onhome(); }}
+      onmousedown={(e) => { if (e.button === 1 && onhomebehind) e.preventDefault(); }}
+      onauxclick={(e) => { if (e.button === 1 && onhomebehind) { e.preventDefault(); onhomebehind(); } }}
+      title={current?.address ?? ""} aria-current={home ? "page" : undefined}>
       {#if current}<TeamMark team={current} size={32} />{/if}
       <span class="tt">
         <span class="name">{current?.name ?? tr("No team")}</span>

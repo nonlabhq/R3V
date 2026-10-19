@@ -11,10 +11,11 @@
   import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
   import { linkPick } from "./lib/links.svelte";
   import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
-  import { closeTab, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, snapOf, tabId, teamsOf, toSave,
-    type TabRef, type TabSnap } from "./lib/tabs";
+  import { addTab, closeTab, homeRef, isHome, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab,
+    snapOf, tabId, teamsOf, toSave, type TabRef, type TabSnap } from "./lib/tabs";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
-  import { untrack } from "svelte";
+  import { tick, untrack } from "svelte";
+  import { flip } from "svelte/animate";
   import { spinner } from "./lib/spin.svelte";
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
@@ -106,7 +107,8 @@
   const recall = (k: string) => { try { return localStorage.getItem(k) ?? ""; } catch { return ""; } };
 
   let reloading = $state(false);
-  const turning = spinner(() => reloading);
+  // (it turns while the team is asked, too: what the sidebar shows of it then)
+  const turning = spinner(() => reloading || (!!overview?.currentTeam && !overview.teamChecked));
   let lastReload = 0;
   async function reload() {
     reloading = true;
@@ -268,13 +270,19 @@
   let selectedEntry = $derived(
     entries.find((p) => (selected.root ? p.root === selected.root : !!selected.id && p.id === selected.id && !p.root)));
 
-  // The team's home (a click on the team): shown instead of a project, no
-  // tab picked; its projects, or its settings.
+  // The team's home (a click on the team): shown instead of a project, in a
+  // tab of its own like a project (none once every tab is closed); its
+  // projects, or its settings.
   let home = $state(false);
   let homeSection = $state<"projects" | "settings">("projects");
-  function goHome(section: "projects" | "settings" = "projects") {
+  function showHome(section: "projects" | "settings" = "projects") {
     home = true;
     homeSection = section;
+  }
+  // (in the tab shown, as a left click in the sidebar does)
+  function goHome(section: "projects" | "settings" = "projects") {
+    if (teamId) openHere(homeRef(teamId));
+    showHome(section);
   }
   // A team's settings: the shown team's in its home, another's in a dialog.
   function openTeamSettings(team: TeamSummary) {
@@ -290,22 +298,39 @@
     return Array.isArray(v) ? v.filter((x) => x && typeof x.team === "string" && typeof x.key === "string") : [];
   })());
 
+  // Shows a project of the shown team, in a tab of its own (open already, or
+  // opened at the end).
   function select(p: TeamProject) {
+    openTab(projRef(p));
+    show(p);
+  }
+  // A click on a project in the sidebar: it shows in the tab shown; a middle
+  // click or Ctrl+click opens it in a tab behind, as a browser does.
+  function pick(p: TeamProject, e: MouseEvent) {
+    if (e.ctrlKey || e.metaKey) return openTab(projRef(p));
+    openHere(projRef(p));
+    show(p);
+  }
+  // (a middle click: no autoscroll, and the click's own step)
+  const noAutoscroll = (e: MouseEvent) => { if (e.button === 1) e.preventDefault(); };
+  const middle = (go: () => void) => (e: MouseEvent) => { if (e.button === 1) { e.preventDefault(); go(); } };
+  function show(p: TeamProject) {
     selected = p.root ? { root: p.root } : { id: p.id };
     if (p.root) remember(SELECTED_KEY, p.root);
     home = false;
-    openTab(p);
     if (teamId) {
       recent = [{ team: teamId, key: rowKey(p) }, ...recent.filter((x) => !(x.team === teamId && x.key === rowKey(p)))].slice(0, 12);
       remember(RECENT_KEY, JSON.stringify(recent));
     }
   }
 
-  // Projects open as tabs at the top: one list for every team (remembered;
-  // drag one to move it). The sidebar opens one of its team's, or goes to it
-  // when it is open already; a tab of another team switches the sidebar to
-  // that team first ("the sidebar follows the tab"). Ctrl+T or + opens the
-  // quick launcher (a project or a team's home, of any team).
+  // Projects and teams' homes open as tabs at the top: one list for every
+  // team (remembered; drag one to move it). A click in the sidebar shows one
+  // of its team's in the tab shown (or goes to its tab when it is open
+  // already), a middle click opens it in a tab behind; a tab of another team
+  // switches the sidebar to that team first ("the sidebar follows the
+  // tab"). Ctrl+T or + opens the quick launcher (a project or a team's home,
+  // of any team), in a tab of its own.
   const TABS_KEY = "r3v.tabs";
   const savedTabs = readJSON(TABS_KEY);
   let tabs = $state<TabRef[]>(loadTabs(savedTabs, []));
@@ -342,10 +367,12 @@
   });
   // A tab drawn: the shown team's are drawn from its list (only once it
   // lists them), another team's from the picture kept.
-  type Tab = { id: string; key: string; team: string; p?: TeamProject; snap?: TabSnap };
+  // A team's home: drawn from the team (while it is on this computer).
+  type Tab = { id: string; key: string; team: string; p?: TeamProject; snap?: TabSnap; home?: boolean };
   let tabItems = $derived(tabs.map((x): Tab | null => {
     const id = tabId(x);
     if (isNewTab(x.key)) return null; // (new tabs were before the quick launcher)
+    if (isHome(x.key)) return overview?.teams.some((t) => t.id === x.team) ? { id, key: x.key, team: x.team, home: true } : null;
     if (x.team !== teamId) return x.p ? { id, key: x.key, team: x.team, snap: x.p } : null;
     const p = entries.find((e) => rowKey(e) === x.key);
     return p ? { id, key: x.key, team: x.team, p } : null;
@@ -357,14 +384,24 @@
   const tabTitle = (team: string, p: { name: string; root: string }) =>
     [team ? `${team} · ${p.name}` : p.name, p.root].filter(Boolean).join("\n");
   // (by key: reading the overview again makes new project objects)
-  const activeTab = (x: Tab) => !!x.p && !home && !!selectedEntry && rowKey(selectedEntry) === x.key;
+  const activeTab = (x: Tab) => (x.home ? home && x.team === teamId : !!x.p && !home && !!selectedEntry && rowKey(selectedEntry) === x.key);
   function saveTabs() { remember(TABS_KEY, JSON.stringify(toSave(tabs))); }
   const isOpen = (p: TeamProject) => tabs.some((x) => x.team === teamId && x.key === rowKey(p));
-  function openTab(p: TeamProject) {
+  const projRef = (p: TeamProject): TabRef => ({ team: teamId, key: rowKey(p), p: snapOf(p) });
+  // A tab of its own for ref, at the end, not shown (shown: the caller's).
+  function openTab(ref: TabRef) {
     tabsClosed = false;
-    if (!teamId || isOpen(p)) return;
-    tabs = [...tabs, { team: teamId, key: rowKey(p), p: snapOf(p) }];
-    saveTabs();
+    if (!ref.team) return;
+    const got = addTab(tabs, ref);
+    if (got !== tabs) { tabs = got; saveTabs(); }
+  }
+  // ref in the tab shown instead of what it shows (none shown, or ref open
+  // already: as openTab); the caller shows it.
+  function openHere(ref: TabRef) {
+    tabsClosed = false;
+    if (!ref.team) return;
+    const got = replaceTab(tabs, tabItems.find(activeTab)?.id ?? "", ref);
+    if (got !== tabs) { tabs = got; saveTabs(); }
   }
   // A project's key changed (downloaded, found elsewhere, unlinked): its tab
   // stays where it was.
@@ -400,13 +437,14 @@
       }
     }
     const want = pick.project;
-    if (!want) return goHome();
+    if (!want) { openTab(homeRef(teamId)); return showHome(); }
     const p = entries.find((e) => rowKey(e) === rowKey(want)) ?? entries.find((e) => !!want.id && e.id === want.id);
     if (p) select(p);
   }
   // Another team's tab: that team is shown (as the team menu does), then its
   // project, once the team lists it.
   async function goTab(x: Tab) {
+    if (x.home && x.team === teamId) return showHome();
     if (x.p) return select(x.p);
     switching = true;
     try {
@@ -416,7 +454,9 @@
     } finally {
       switching = false;
     }
-    const p = teamId === x.team ? entries.find((e) => rowKey(e) === x.key) : undefined;
+    if (teamId !== x.team) return;
+    if (x.home) return showHome();
+    const p = entries.find((e) => rowKey(e) === x.key);
     if (p) select(p);
   }
   // Another team shown at once: its projects as this computer knows them
@@ -432,12 +472,12 @@
   function reopenTab() {
     const x = closedTabs.pop();
     if (!x) return;
-    if (x.team === teamId) {
+    if (x.team === teamId && !isHome(x.key)) {
       const p = entries.find((e) => rowKey(e) === x.key);
       if (p) select(p);
-    } else if (teamOf(x.team) && x.p) {
-      if (!tabs.some((y) => tabId(y) === tabId(x))) { tabs = [...tabs, x]; saveTabs(); }
-      goTab({ id: tabId(x), key: x.key, team: x.team, snap: x.p });
+    } else if (teamOf(x.team) && (x.p || isHome(x.key))) {
+      openTab(x);
+      goTab({ id: tabId(x), key: x.key, team: x.team, snap: x.p, home: isHome(x.key) });
     }
   }
   function closeTabOf(x: Tab) {
@@ -451,7 +491,7 @@
     if (!wasActive) return;
     if (n?.p) select(n.p);
     else if (n?.team) { selected = {}; goTab(n); }
-    else { selected = {}; tabsClosed = true; goHome(); }
+    else { selected = {}; tabsClosed = true; showHome(); }
   }
   // Dragging a tab moves it among the others (a drag isn't a click). It
   // ends when the button is let go, wherever, or the drag is cancelled.
@@ -484,26 +524,41 @@
     window.addEventListener("pointercancel", up);
   }
   // Dragging a project in the sidebar moves it (a drag isn't a click); the
-  // order is kept for its team on this computer.
+  // order is kept for its team on this computer. It follows the pointer and
+  // takes its place among the others as it goes, which slide out of its way
+  // (animate:flip); let go, it settles into that place.
   let projDrag: { key: string; y: number; moved: boolean } | null = null;
   let projDragged = false;
   let dragging = $state(""); // the project being dragged (drawn lifted)
+  let dragDy = $state(0); // how far it is from its place, following the pointer
+  const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // (the dragged one doesn't slide: it is where the pointer is)
+  const slide = (key: string) => ({ duration: dragging === key || reducedMotion() ? 0 : 160 });
   function projDown(e: PointerEvent, key: string) {
     if (e.button !== 0 || (e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
-    const list = (e.currentTarget as HTMLElement).closest("[data-projects]");
+    const row = e.currentTarget as HTMLElement;
+    const list = row.closest<HTMLElement>("[data-projects]");
+    if (!list) return;
+    // Where a row's place is on screen: offsetTop leaves out the slides and
+    // the follow (transforms), so places don't swing while rows move.
+    const place = (el: HTMLElement) => list.getBoundingClientRect().top + el.offsetTop - list.offsetTop - list.scrollTop;
+    const grab = e.clientY - place(row);
     projDrag = { key, y: e.clientY, moved: false };
     const move = (m: PointerEvent) => {
       if (!projDrag) return;
       if (!(m.buttons & 1)) return up();
       if (!projDrag.moved && Math.abs(m.clientY - projDrag.y) < 5) return;
       projDrag.moved = true;
-      dragging = projDrag.key;
-      const rows = [...(list?.querySelectorAll<HTMLElement>("[data-key]") ?? [])];
-      let to = rows.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientY < r.top + r.height / 2; });
-      if (to < 0) to = rows.length;
+      dragging = key;
+      // Before the first other row whose middle is below the dragged one's.
+      const mid = m.clientY - grab + row.offsetHeight / 2;
+      const before = [...list.querySelectorAll<HTMLElement>("[data-key]")]
+        .find((el) => el !== row && mid < place(el) + el.offsetHeight / 2)?.dataset.key;
       const keys = entries.map(orderOf);
-      const moved = moveKey(keys, projDrag.key, to);
+      const at = before ? keys.indexOf(before) : -1;
+      const moved = moveKey(keys, key, at < 0 ? keys.length : at);
       if (moved !== keys) order = moved;
+      tick().then(() => { if (dragging === key) dragDy = m.clientY - grab - place(row); });
     };
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -516,6 +571,7 @@
       }
       projDrag = null;
       dragging = "";
+      dragDy = 0;
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -559,7 +615,10 @@
   $effect(() => {
     if (!overview || selectedEntry || tabsClosed || home || switching) return;
     const last = recall(SELECTED_KEY);
-    const pick = untrack(() => tabItems).find((x) => x.p)?.p ?? entries.find((p) => p.root && p.root === last) ??
+    // (the first of its tabs: a project, or its home)
+    const first = untrack(() => tabItems).find((x) => x.p || (x.home && x.team === teamId));
+    if (first?.home) return showHome();
+    const pick = first?.p ?? entries.find((p) => p.root && p.root === last) ??
       entries.find((p) => p.status === "downloaded") ?? entries[0];
     if (pick) select(pick);
   });
@@ -844,7 +903,9 @@
       </div>
       {#if current}
         <div class="team-slot">
-          <button class="team-mark" class:on={home} onclick={() => goHome()} title={current.name} aria-label={current.name}><TeamMark team={current} size={36} /></button>
+          <button class="team-mark" class:on={home}
+            onclick={(e) => (e.ctrlKey || e.metaKey ? openTab(homeRef(teamId)) : goHome())}
+            onmousedown={noAutoscroll} onauxclick={middle(() => openTab(homeRef(teamId)))} title={current.name} aria-label={current.name}><TeamMark team={current} size={36} /></button>
         </div>
       {/if}
       <div class="section-slot">
@@ -854,8 +915,10 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
         {#each rows as p (p.root || p.id)}
-          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} onpointerdown={(e) => projDown(e, orderOf(p))}>
-            <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)} title={p.name} aria-label={p.name}>
+          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p))}
+            style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined} onpointerdown={(e) => projDown(e, orderOf(p))}>
+            <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
+              onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))} title={p.name} aria-label={p.name}>
               <ProjectIcon {p} size={30} />
             </button>
           </div>
@@ -889,7 +952,8 @@
       {/if}
       <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
-      <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onsettings={openTeamSettings} /></div>
+      <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))}
+        onsettings={openTeamSettings} /></div>
 
       <div class="list">
         <div class="section row-h section-slot">
@@ -898,15 +962,19 @@
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
+        <!-- (no line while the team is asked: the turning refresh says so,
+             and the projects stay where they are) -->
         {#if current && overview.teamError}
           <div class="offline" title={overview.teamError}>● {t("Storage not reachable")}</div>
-        {:else if current && !overview.teamChecked}
-          <div class="offline checking">● {t("checking…")}</div>
         {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each rows as p (p.root || p.id)}
-            {@render row(p)}
+            <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
+              animate:flip={slide(orderOf(p))} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
+              onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
+              {@render row(p)}
+            </li>
           {:else}
             <li class="empty faint">{t("No projects in this team yet.")}</li>
           {/each}
@@ -966,14 +1034,17 @@
           onclickcapture={(e) => { if (tabDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each tabItems as x (x.id)}
             {@const proj = x.p ?? x.snap}
-            {@const name = proj?.name ?? ""}
             {@const team = teamOf(x.team)}
-            <div class="tab" class:on={activeTab(x)} onpointerdown={(e) => tabDown(e, x.id)}>
+            {@const name = x.home ? team?.name ?? "" : proj?.name ?? ""}
+            <!-- a middle click closes it, as × does -->
+            <div class="tab" class:on={activeTab(x)} class:home-tab={x.home} onpointerdown={(e) => tabDown(e, x.id)}
+              onmousedown={noAutoscroll} onauxclick={middle(() => closeTabOf(x))}>
+              <!-- a team's home: its team's mark; a project: its icon -->
               <button class="tab-name" role="tab" aria-selected={activeTab(x)}
-                title={proj ? tabTitle(team?.name ?? "", proj) : name}
+                title={x.home ? `${name} · ${t("Team home")}` : proj ? tabTitle(team?.name ?? "", proj) : name}
                 onclick={() => goTab(x)}>
-                {#if proj}<ProjectIcon p={proj} size={16} />{/if}{name}
-                {#if manyTeams && team}<span class="tab-team"><TeamMark {team} size={16} /></span>{/if}
+                {#if x.home}{#if team}<TeamMark {team} size={16} />{/if}{:else if proj}<ProjectIcon p={proj} size={16} />{/if}{name}
+                {#if manyTeams && team && !x.home}<span class="tab-team"><TeamMark {team} size={16} /></span>{/if}
               </button>
               <button class="tab-x" onclick={() => closeTabOf(x)} aria-label={t("Close {name}", { name })}
                 title={activeTab(x) ? t("Close the tab") + " (Ctrl+W)" : t("Close the tab")}>×</button>
@@ -1085,11 +1156,11 @@
     {/if}
 {/snippet}
 
+<!-- a project's row in the sidebar (in its <li>: animate:flip wants that in the each) -->
 {#snippet row(p: TeamProject)}
   {@const spaces = workspacesOf(p)}
-  <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={spaces.length > 0}
-    onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
-    <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={() => select(p)}
+    <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
+      onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))}
       class:locked={p.status === "remote" && teamLocked}
       title={p.status === "remote" ? t("On the team, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
       <ProjectIcon {p} size={24} />
@@ -1134,7 +1205,6 @@
         {/if}
       </div>
     {/if}
-  </li>
 {/snippet}
 
 
@@ -1293,8 +1363,14 @@
   .folded-proj.on { background: var(--accent-bg); border-color: var(--accent-line); }
   .folded-proj.remote { opacity: .45; }
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
-  .lifted { opacity: .55; }
-  li[data-key], .folded-row { touch-action: none; }
+  /* The project dragged: lifted over the others, where the pointer is; let
+     go, it settles into its place. */
+  li[data-key], .folded-row { touch-action: none; transition: transform .15s ease-out; }
+  .lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
+  /* (solid under a dimmed row: the rows it passes don't show through) */
+  li.lifted, .folded-row.lifted { background: var(--bg-sunken); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .lifted .proj, .lifted .folded-proj { background: var(--panel-2); }
+  @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row { transition: none; } }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo { position: relative; }
   .logo img { width: 22px; height: 22px; display: block; }
@@ -1362,7 +1438,6 @@
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }
   .offline { font-size: var(--fs-sm); color: var(--danger); padding: 0 var(--sp-8) var(--sp-4); }
-  .offline.checking { color: var(--faint); }
   .add { width: 100%; margin: var(--sp-8) 0 var(--sp-4); display: flex; flex-direction: column; align-items: center; gap: 0; padding: var(--sp-4) var(--sp-10); line-height: 1.3; }
   .add .hint { font-size: var(--fs-xs); color: var(--faint); font-weight: 400; }
   .pad { padding: 0 var(--sp-8); }
