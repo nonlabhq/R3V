@@ -75,7 +75,7 @@
 </script>
 
 <section>
-  <h3>{t("People")}</h3>
+  <h3 class="band">{t("People")}</h3>
   {#if loadError}
     <p class="error small">{loadError}</p>
   {:else if !people}
@@ -180,7 +180,7 @@
 
 <style>
   section { margin-bottom: var(--sp-18); }
-  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 var(--sp-8); }
+  h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 calc(var(--sp-16) * -1 * var(--bleed)) var(--sp-8); }
   h4 { font-size: var(--fs-md); font-weight: var(--fw-semibold); margin: var(--sp-14) 0 var(--sp-6); }
   .people { list-style: none; margin: 0; padding: 0; }
   .people li { padding: var(--sp-6) 0; border-bottom: 1px solid var(--line-soft); }

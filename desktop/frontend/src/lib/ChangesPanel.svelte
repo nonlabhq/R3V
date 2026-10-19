@@ -609,7 +609,7 @@
   .commit { flex: none; border-top: var(--border-width) solid var(--line); background: var(--panel); padding: var(--sp-12) var(--sp-14) var(--sp-14); }
   .commit :global(textarea) { width: 100%; resize: vertical; min-height: 54px; }
   .head { position: sticky; top: 0; z-index: var(--z-sticky); margin: 0 calc(var(--sp-8) * -1) var(--sp-6) 0; padding: var(--sp-8) var(--sp-8) var(--sp-6) 0;
-    background: var(--panel); border-bottom: var(--border-width) solid var(--line); font-size: var(--fs-sm); color: var(--muted);
+    background: var(--surface-raise); border-bottom: var(--border-width) solid var(--line); font-size: var(--fs-sm); color: var(--muted);
     display: grid; align-items: center; row-gap: var(--sp-4);
     grid-template-columns: 22px 20px minmax(0, 1fr) auto auto;
     grid-template-areas: "chev pick title views views" ". . total discard all"; }
@@ -640,9 +640,9 @@
   li.two { height: 44px; }
   li.two .file { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
   /* (hovered or picked: the whole row, its box too) */
-  li.two::before { content: ""; position: absolute; inset: 2px 0 2px 18px; border-radius: var(--radius); pointer-events: none; }
+  li.two::before { content: ""; position: absolute; inset: 2px 0 2px 18px; border-radius: var(--row-radius); pointer-events: none; }
   li.two:hover::before { background: var(--panel); }
-  li.two:has(.file.on)::before { background: var(--accent-soft); }
+  li.two:has(.file.on)::before { background: var(--select-soft); box-shadow: var(--select-bar); }
   li.two .file:hover, li.two .file.on { background: transparent; }
   li.two > :not(.more) { position: relative; }
   li.two .more { z-index: 1; }

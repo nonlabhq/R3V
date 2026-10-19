@@ -920,7 +920,8 @@
   .node.ms { box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--accent); }
   .node.here.ms { box-shadow: 0 0 0 2px var(--line-strong), 0 0 0 3px var(--panel), 0 0 0 5px var(--accent); }
   /* where your files are now (your changes, else the version you're on): a glow in its branch's colour */
-  .node.now { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 75%, transparent)) drop-shadow(0 0 14px color-mix(in srgb, var(--c) 40%, transparent)); }
+  .node.now { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) calc(75% * var(--glow)), transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--c) calc(40% * var(--glow)), transparent)); }
   .node.incoming { border-style: dashed; color: var(--muted); }
   .node.side, .node.merged { opacity: .75; }
   .node.pending, .node.pending:hover:not(:disabled) { border-style: dashed; color: var(--c); background: transparent; }
@@ -978,7 +979,8 @@
   .mtag { position: absolute; height: 22px; transform: translateY(-50%); display: inline-flex; align-items: center;
     gap: var(--sp-4); padding: 0 var(--sp-8); font-size: var(--fs-xs); white-space: nowrap; z-index: 1;
     --tint: color-mix(in srgb, var(--c) 16%, var(--panel)); /* (opaque: the lines stay under it) */
-    color: var(--c); background: var(--tint); border: var(--border-width) solid transparent; border-radius: var(--radius-pill); }
+    color: var(--c); background: var(--tint); border: var(--border-width) solid transparent; border-radius: var(--tag-radius);
+    box-shadow: inset var(--tag-bar) 0 0 0 var(--c); }
   .mtag:hover:not(:disabled) { background: var(--tint); border-color: var(--c); }
   .mtag b { color: var(--text); font-weight: var(--fw-semibold); }
   .mtag .mname { overflow: hidden; text-overflow: ellipsis; }
@@ -996,8 +998,8 @@
   /* A branch's label: its name (picks its newest version); with settings,
      a ⋯ floats just outside its right end on hover (the label keeps its
      size and frame). */
-  .label { position: absolute; border: var(--border-width) solid var(--line); border-radius: var(--radius);
-    background: var(--panel); line-height: 1.2; }
+  .label { position: absolute; border: var(--border-width) solid var(--tag-line); border-radius: var(--radius);
+    background: var(--surface-raise); line-height: 1.2; box-shadow: inset var(--tag-bar) 0 0 0 var(--c); }
   .label:hover { border-color: var(--c); z-index: 2; }
   .label button { position: absolute; margin: 0; border: none; border-radius: 0; background: transparent; }
   .lpick { inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 var(--sp-8); border-radius: var(--radius) !important; }

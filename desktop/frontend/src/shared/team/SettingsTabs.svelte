@@ -25,19 +25,26 @@
 
 <div class="tabbed">
   <nav class="tabs" aria-label={label}>
-    {#each tabs as x (x.id)}
-      <button class:on={shown === x.id} aria-current={shown === x.id ? "page" : undefined} onclick={() => pick(x.id)}>{x.label}</button>
-    {/each}
+    <div class="band flat-only" aria-hidden="true">{label}</div>
+    <div class="list">
+      {#each tabs as x (x.id)}
+        <button class:on={shown === x.id} aria-current={shown === x.id ? "page" : undefined} onclick={() => pick(x.id)}>{x.label}</button>
+      {/each}
+    </div>
   </nav>
   <div class="content">{@render content(shown)}</div>
 </div>
 
 <style>
-  .tabbed { display: flex; align-items: flex-start; gap: var(--sp-28); }
-  .content { flex: 1; min-width: 0; max-width: 720px; }
-  .tabs { flex: none; width: 160px; display: flex; flex-direction: column; gap: var(--sp-2); position: sticky; top: 0; }
+  /* The R3V look: the tabs beside the page; Flat: two panels, 2px apart,
+     filling the height (bleed 1). */
+  .tabbed { display: flex; align-items: stretch; gap: calc(var(--sp-28) * (1 - var(--bleed)) + var(--pane-gap)); min-height: 100%; }
+  .content { flex: 1; min-width: 0; max-width: calc(720px + 100vw * var(--bleed)); background: var(--surface-head);
+    padding: 0 calc(var(--sp-16) * var(--bleed)) calc(var(--sp-16) * var(--bleed)); }
+  .tabs { flex: none; width: calc(160px + 60px * var(--bleed)); background: var(--surface-head); }
+  .list { display: flex; flex-direction: column; gap: calc(var(--sp-2) * (1 - var(--bleed))); position: sticky; top: 0; padding-top: calc(var(--sp-4) * var(--bleed)); }
   .tabs button { justify-content: flex-start; text-align: left; border: none; background: transparent; color: var(--muted);
-    padding: var(--sp-6) var(--sp-10); border-radius: var(--radius); font-size: var(--fs-base); }
+    padding: var(--sp-6) var(--sp-10) var(--sp-6) calc(var(--sp-10) + var(--sp-4) * var(--bleed)); border-radius: var(--row-radius); font-size: var(--fs-base); }
   .tabs button:hover:not(:disabled) { background: var(--hover-soft); color: var(--text); }
-  .tabs button.on { background: var(--panel-2); color: var(--text); font-weight: var(--fw-semibold); }
+  .tabs button.on, .tabs button.on:hover:not(:disabled) { background: var(--select-bg); box-shadow: var(--select-bar); color: var(--text); font-weight: var(--fw-semibold); }
 </style>

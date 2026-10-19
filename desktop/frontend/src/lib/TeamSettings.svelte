@@ -242,7 +242,7 @@
 
 {#snippet naming()}
   <section>
-    <h3>{t("Name")}</h3>
+    <h3 class="band">{t("Name")}</h3>
     <div class="name-line">
       {#if team.looks && !offline && canLook}
         <LookPicker seed={team.id} name={team.name} icon={team.icon ?? ""} color={team.color ?? ""} picture={team.picture ?? ""} solid
@@ -295,7 +295,7 @@
 {#snippet rest()}
   {#if team.isStorage}
     <section>
-      <h3>{t("Invite teammates")}</h3>
+      <h3 class="band">{t("Invite teammates")}</h3>
       <p class="faint small"><Tx text={t("Send this connection code privately; they choose {join} and paste it. It contains the storage key.")} em={{ join: t("Join a team") }} /></p>
       {#if code}<CodeBox {code} />{/if}
     </section>
@@ -303,7 +303,7 @@
 
   {#if team.canShareSetup}
     <section>
-      <h3>{t("Your setup")}</h3>
+      <h3 class="band">{t("Your setup")}</h3>
       <label class="share"><input type="checkbox" checked={shareSetup} onchange={(e) => toggleShare(e.currentTarget.checked)} />
         {t("Share my setup with the team")}</label>
       <p class="faint small">{t("Your Ableton Live version and the names of your plugins and packs (never files), so a project check can tell who can open a project.")} {t("Turning it off removes it from the team's storage.")}</p>
@@ -353,7 +353,7 @@
 
   {#if team.isStorage && canMove}
     <section>
-      <h3>{t("Move to R3V Cloud")}</h3>
+      <h3 class="band">{t("Move to R3V Cloud")}</h3>
       <div class="move">
         <p class="faint small">{t("R3V Cloud copies the whole team's history from this storage itself, while everyone keeps working; then everyone's projects move over as they are. Nothing is deleted here.")}</p>
         <button onclick={() => (movingTeam = true)}>{t("Move…")}</button>
@@ -363,7 +363,7 @@
 
   {#if team.isStorage}
     <section>
-      <h3>{t("Storage cleanup")}</h3>
+      <h3 class="band">{t("Storage cleanup")}</h3>
       <p class="faint small">{t("Files no version of any project uses — left by deleted projects, or by uploads that stopped — still take space in the bucket. R3V deletes them only once they've been unused for a day and are a week old, so it never takes a file a teammate is sharing right now.")}</p>
       {#if cleanup}
         {@const c = cleanup}
@@ -480,6 +480,8 @@
   .move p { flex: 1; margin: 0; }
   section { margin-bottom: var(--sp-18); }
   h3 { font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 var(--sp-8); }
+  /* (Flat: across the panel) */
+  .inline h3, :global(.tabbed) h3 { margin: 0 calc(var(--sp-16) * -1 * var(--bleed)) var(--sp-8); }
   .small { font-size: var(--fs-md); }
   section > p { margin: 0 0 var(--sp-8); }
   .btns { gap: var(--sp-6); margin-top: var(--sp-8); }

@@ -85,7 +85,7 @@
   </div>
   <div class="list" id="ql-list" role="listbox" bind:this={list}>
     {#each groups as g (g.title)}
-      <div class="group" role="presentation">{g.title}</div>
+      <div class="group band" role="presentation">{g.title}</div>
       {#each g.items as i (i.kind + i.team + (i.kind === "project" ? keyOf(i.p) : ""))}
         {@const n = indexOf(i)}
         <button class="item" class:on={n === at} id="ql-{n}" data-i={n} role="option" aria-selected={n === at}
@@ -111,24 +111,26 @@
 
 <style>
   .scrim { position: fixed; inset: 0; z-index: var(--z-dialog); background: var(--scrim); }
-  .panel { position: fixed; top: 48px; left: 50%; transform: translateX(-50%); z-index: var(--z-dialog); width: 560px; max-width: calc(100vw - 32px);
-    display: flex; flex-direction: column; max-height: min(560px, calc(100vh - 80px)); padding: var(--sp-10);
-    border-radius: var(--radius-xl); background: var(--panel-2); border: var(--border-width) solid var(--line); box-shadow: var(--shadow-pop); }
-  .search { display: flex; align-items: center; gap: var(--sp-8); padding: 0 var(--sp-12); border-radius: var(--radius-lg); background: var(--panel); }
+  /* (Flat: bands across it, the search framed in the accent, the keys on a bar) */
+  .panel { position: fixed; top: 48px; left: 50%; transform: translateX(-50%); z-index: var(--z-dialog); width: calc(560px + 20px * var(--bleed)); max-width: calc(100vw - 32px);
+    display: flex; flex-direction: column; max-height: min(560px, calc(100vh - 80px)); padding: calc(var(--sp-10) * (1 - var(--bleed)));
+    border-radius: var(--radius-xl); background: var(--surface-dialog); border: var(--border-width) solid var(--line); box-shadow: var(--shadow-pop); }
+  .search { display: flex; align-items: center; gap: var(--sp-8); padding: 0 var(--sp-12); border-radius: var(--radius-lg); background: var(--panel);
+    margin: calc(var(--sp-10) * var(--bleed)); box-shadow: inset 0 0 0 calc(var(--border-width) * var(--bleed)) var(--accent); }
   .search svg { width: 16px; height: 16px; flex: none; color: var(--accent); }
   .search input { flex: 1; min-width: 0; border: none; background: transparent; padding: var(--sp-12) 0; font-size: var(--fs-lg); outline: none; box-shadow: none; }
   kbd { flex: none; padding: 0 var(--sp-6); border: var(--border-width) solid var(--line-strong); border-radius: var(--radius); font-size: var(--fs-xs); color: var(--faint); font-family: inherit; }
-  .list { flex: 1; min-height: 0; overflow: auto; margin-top: var(--sp-6); }
+  .list { flex: 1; min-height: 0; overflow: auto; margin-top: calc(var(--sp-6) * (1 - var(--bleed))); }
   .group { padding: var(--sp-10) var(--sp-10) var(--sp-4); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
-  .item { width: 100%; display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-8) var(--sp-10); border: none; border-radius: var(--radius-lg);
+  .item { width: 100%; display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-8) var(--sp-10); border: none; border-radius: var(--row-radius);
     background: transparent; text-align: left; }
   .item:hover:not(:disabled) { background: transparent; }
-  .item.on, .item.on:hover:not(:disabled) { background: var(--accent-bg); }
+  .item.on, .item.on:hover:not(:disabled) { background: var(--select-bg); box-shadow: var(--select-bar); }
   .text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { font-size: var(--fs-sm); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .hint { flex: none; font-size: var(--fs-sm); color: var(--faint); }
   .none { margin: var(--sp-12) var(--sp-10); color: var(--faint); font-size: var(--fs-md); }
-  .foot { display: flex; gap: var(--sp-16); padding: var(--sp-10) var(--sp-10) var(--sp-2); margin-top: var(--sp-6);
-    border-top: var(--border-width) solid var(--line); font-size: var(--fs-xs); color: var(--faint); }
+  .foot { display: flex; gap: var(--sp-16); padding: var(--sp-10) var(--sp-10) calc(var(--sp-2) + var(--sp-8) * var(--bleed)); margin-top: var(--sp-6);
+    border-top: var(--border-width) solid var(--line); font-size: var(--fs-xs); color: var(--faint); background: var(--surface-bar); }
 </style>

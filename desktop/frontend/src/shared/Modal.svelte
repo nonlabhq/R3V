@@ -57,12 +57,14 @@
     position: relative; border: var(--border-width) solid var(--line); border-radius: var(--radius-xl);
     display: flex; flex-direction: column; box-shadow: var(--shadow-dialog);
   }
-  header { display: flex; align-items: center; padding: var(--sp-16) var(--sp-18) var(--sp-8); }
+  /* (Flat: the title and the buttons on bars of their own) */
+  header { display: flex; align-items: center; padding: var(--sp-16) var(--sp-18) calc(var(--sp-8) + var(--sp-6) * var(--bleed)); background: var(--surface-bar);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
   h2 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); flex: 1; }
   .close { padding: var(--sp-2) var(--sp-8); }
-  .body { padding: var(--sp-6) var(--sp-18) var(--sp-12); overflow: auto; }
+  .body { padding: calc(var(--sp-6) + var(--sp-8) * var(--bleed)) var(--sp-18) var(--sp-12); overflow: auto; }
   footer {
     display: flex; justify-content: flex-end; gap: var(--sp-8); padding: var(--sp-12) var(--sp-18);
-    border-top: var(--border-width) solid var(--line);
+    border-top: var(--border-width) solid var(--pane-edge); background: var(--surface-bar); border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   }
 </style>

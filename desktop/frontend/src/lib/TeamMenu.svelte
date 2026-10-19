@@ -306,10 +306,10 @@
   .current { display: flex; align-items: stretch; gap: var(--sp-4); }
   .switch {
     flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-10); text-align: left; padding: var(--sp-8) var(--sp-8);
-    background: transparent; border-color: transparent; border-radius: var(--radius-lg);
+    background: transparent; border-color: transparent; border-radius: var(--row-radius);
   }
-  .switch:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
-  .current.on .switch { background: var(--accent-bg); }
+  .switch:hover:not(:disabled) { background: var(--side-hover); border-color: transparent; }
+  .current.on .switch { background: var(--select-bg); box-shadow: var(--select-bar); }
   .tt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .label { font-size: var(--fs-xs); color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
