@@ -4220,6 +4220,13 @@ export class StepsInfo {
     "hooked": boolean;
 
     /**
+     * Tool is the agent tool the copy is set up for ("": none): another
+     * than Claude Code makes its steps itself (r3v step start and end),
+     * with no hooks to set up.
+     */
+    "tool": string;
+
+    /**
      * Session is the one asked for, or the latest (nil: none yet).
      */
     "session": project$0.Session | null;
@@ -4239,6 +4246,9 @@ export class StepsInfo {
         if (!("hooked" in $$source)) {
             this["hooked"] = false;
         }
+        if (!("tool" in $$source)) {
+            this["tool"] = "";
+        }
         if (!("session" in $$source)) {
             this["session"] = null;
         }
@@ -4254,17 +4264,17 @@ export class StepsInfo {
      */
     static createFrom($$source: any = {}): StepsInfo {
         const $$createField2_0 = $$createType50;
-        const $$createField4_0 = $$createType88;
-        const $$createField5_0 = $$createType90;
+        const $$createField5_0 = $$createType88;
+        const $$createField6_0 = $$createType90;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("settings" in $$parsedSource) {
             $$parsedSource["settings"] = $$createField2_0($$parsedSource["settings"]);
         }
         if ("session" in $$parsedSource) {
-            $$parsedSource["session"] = $$createField4_0($$parsedSource["session"]);
+            $$parsedSource["session"] = $$createField5_0($$parsedSource["session"]);
         }
         if ("sessions" in $$parsedSource) {
-            $$parsedSource["sessions"] = $$createField5_0($$parsedSource["sessions"]);
+            $$parsedSource["sessions"] = $$createField6_0($$parsedSource["sessions"]);
         }
         return new StepsInfo($$parsedSource as Partial<StepsInfo>);
     }
