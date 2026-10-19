@@ -21,7 +21,7 @@ func withAgentLocks(t *testing.T) {
 	was := project.AgentLocks
 	project.AgentLocks = true
 	saved := map[string]func([]string) error{}
-	for _, c := range []string{"lock", "unlock", "locks", "agent"} {
+	for _, c := range []string{"lock", "unlock", "locks"} {
 		saved[c] = extraCommands[c]
 	}
 	agentCommands()
@@ -244,6 +244,7 @@ func TestLockTake(t *testing.T) {
 
 func TestAgentSetup(t *testing.T) {
 	withAgentLocks(t)
+	asAgent(t) // (Claude Code: the tool, untold)
 	dir, _ := agentFolder(t)
 	os.MkdirAll(filepath.Join(dir, ".claude"), 0o755)
 	existing := `{
@@ -315,8 +316,11 @@ func TestAgentSetup(t *testing.T) {
 	if data, _ := os.ReadFile(filepath.Join(dir, ".claude", "settings.local.json")); string(data) != "{broken" {
 		t.Fatal("changed")
 	}
-	if exit, rep := run(t, dir, "agent", "setup", "--tool", "codex"); exit != 2 || rep.Error.Code != "usage" {
-		t.Fatalf("unknown tool: %+v", rep.Error)
+	if exit, rep := run(t, dir, "agent", "setup", "--tool", "Not A Tool"); exit != 2 || rep.Error.Code != "usage" {
+		t.Fatalf("a name that can't be a tool's: %+v", rep.Error)
+	}
+	if id := actor.ReadIdentity(filepath.Join(dir, ".r3v")); id == nil || id.Tool != "claude-code" {
+		t.Fatalf("the copy's identity: %+v", id)
 	}
 }
 

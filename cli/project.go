@@ -31,7 +31,7 @@ func openRepo() (*project.Repo, error) {
 		return nil, err
 	}
 	held = append(held, release)
-	r.Actor = actor.Detect() // (the app never sets it: its versions are a person's)
+	r.Actor = detectActor(r) // (the app never sets it: its versions are a person's)
 	recoverSwitch(r)
 	ensureRules(r)
 	return r, nil
@@ -68,7 +68,7 @@ func openRead() (*project.Repo, error) {
 		return nil, err
 	}
 	held = append(held, release)
-	r.Actor = actor.Detect()
+	r.Actor = detectActor(r)
 	recoverSwitch(r) // (with the lock: reading half-written files would mislead)
 	ensureRules(r)
 	return r, nil
@@ -116,6 +116,41 @@ func stripWait(args []string) ([]string, time.Duration, bool, error) {
 		wait, given = time.Duration(s*float64(time.Second)), true
 	}
 	return out, wait, given, nil
+}
+
+// byPerson: --as person, this command is the person's own (in a copy set
+// up for an agent: its versions say an agent made them otherwise).
+var byPerson bool
+
+// stripAs takes --as person out of args. Any other --as is left to the
+// command (merge-files --as text).
+func stripAs(args []string) []string {
+	var out []string
+	for i := 0; i < len(args); i++ {
+		name, value, hasValue := strings.Cut(args[i], "=")
+		if name == "--as" || name == "-as" {
+			if !hasValue && i+1 < len(args) && strings.EqualFold(args[i+1], "person") {
+				byPerson, i = true, i+1
+				continue
+			}
+			if hasValue && strings.EqualFold(value, "person") {
+				byPerson = true
+				continue
+			}
+		}
+		out = append(out, args[i])
+	}
+	return out
+}
+
+// detectActor is who runs this command in r's copy: the agent
+// actor.Detect finds (R3V_ACTOR, the copy's agent.json, the tool's own
+// variables), nil for a person and with --as person.
+func detectActor(r *project.Repo) *project.Actor {
+	if byPerson {
+		return nil
+	}
+	return actor.Detect(r.Dir)
 }
 
 // busyJSON goes into a reading command's result when it read the project

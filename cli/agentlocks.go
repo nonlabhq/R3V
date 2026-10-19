@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nonlabhq/r3v/internal/actor"
 	"io"
 	"io/fs"
 	"os"
@@ -18,18 +17,17 @@ import (
 
 // Agent locks between the workspaces of a project on this computer
 // (docs/design/agent-workspaces.md, "Locks"): `lock`, `unlock`, `locks`,
-// the Claude Code hook that takes them on first touch, and `agent setup`
-// that installs it. On the Nightly channel while they're new; the hook is
-// in every build, so a project set up by Nightly and opened by Stable
-// isn't stopped (it allows everything there).
+// and the Claude Code hook that takes them on first touch (`agent setup`,
+// in every build, installs it). On the Nightly channel while they're new;
+// the hook is in every build, so a project set up by Nightly and opened by
+// Stable isn't stopped (it allows everything there).
 
 // agentCommands adds the agent lock commands (the Nightly channel's).
 func agentCommands() {
 	extraCommands["lock"] = cmdLock
 	extraCommands["unlock"] = cmdUnlock
 	extraCommands["locks"] = cmdLocks
-	extraCommands["agent"] = cmdAgent
-	for _, c := range []string{"lock", "unlock", "locks", "agent"} {
+	for _, c := range []string{"lock", "unlock", "locks"} {
 		jsonCommands[c] = true
 	}
 }
@@ -470,47 +468,6 @@ func refusedReason(rel string, holders []agentlock.Lock, copies map[string]proje
 		"if it must change now, ask the user (who can break the lock).", rel, strings.Join(who, ", "))
 }
 
-// --- agent setup ----------------------------------------------------------
-
-func cmdAgent(args []string) error {
-	if len(args) == 0 || args[0] != "setup" {
-		return usageError("usage: r3v agent setup [--tool claude-code]")
-	}
-	tool := "claude-code"
-	rest := args[1:]
-	for len(rest) > 0 {
-		switch {
-		case (rest[0] == "--tool" || rest[0] == "-tool") && len(rest) > 1:
-			tool, rest = rest[1], rest[2:]
-		case strings.HasPrefix(rest[0], "--tool="):
-			tool, rest = strings.TrimPrefix(rest[0], "--tool="), rest[1:]
-		default:
-			return usageError("usage: r3v agent setup [--tool claude-code]")
-		}
-	}
-	if tool != "claude-code" {
-		return usageError("r3v agent setup knows claude-code only (for now)")
-	}
-	r, err := openAgent(".")
-	if err != nil {
-		return err
-	}
-	r.RefreshAgentTeamLocks()
-	changed, err := agentsetup.ClaudeCode(r.Root, hookCommand(), !r.IsWorkspace(), r.StepsOn()) // (the guide: in the main copy, committed once)
-	if err != nil {
-		return err
-	}
-	result("agent", map[string]any{"tool": tool, "folder": r.Root, "changed": nonNil(changed)}, func() {
-		if len(changed) == 0 {
-			fmt.Println("already set up")
-		}
-		for _, c := range changed {
-			fmt.Println("wrote " + c)
-		}
-	})
-	return nil
-}
-
 // hookCommand is how Claude Code runs this R3V's hook (see
 // agentsetup.HookCommand).
 func hookCommand() string {
@@ -528,6 +485,6 @@ func openAgent(dir string) (*project.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Actor = actor.Detect()
+	r.Actor = detectActor(r)
 	return r, nil
 }

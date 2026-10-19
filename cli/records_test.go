@@ -19,6 +19,7 @@ func TestCommitActorAndDetails(t *testing.T) {
 	if _, err := project.Init(a, "yi"); err != nil {
 		t.Fatal(err)
 	}
+	asUnknown(t) // (none of the tool running the tests)
 	t.Setenv(actor.EnvTool, "claude-code")
 	t.Setenv(actor.EnvModel, "opus")
 	exit, rep := run(t, a, "commit", "-m", "Fix the renderer", "-m", "Lights were too bright.")

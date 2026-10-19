@@ -24,8 +24,10 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   outputs (`rules: - ignore: "cache/"`); `r3v rules explain <file>` says why a file is tracked.
   `target/` matches at any depth; a pattern with a `/` inside starts at the project folder
   (`**/src-tauri/gen/` for any depth).
-- A new project: `r3v teams`, then `r3v init --team NAME` (Nightly): never ask for a connection code.
+- A new project: `r3v teams`, then `r3v init --team NAME`: never ask for a connection code.
   `connected: false` in `r3v status --json`: the versions stay on this computer; `next` says how to
   connect it (ask the user which team).
+- Once per folder: `r3v agent setup --tool <your tool> [--model <model>]` (`claude-code`, `codex`,
+  `opencode`, `gemini-cli`, `cursor`, `pi`...), so the versions you commit say an agent made them.
 - Never use `--force` without asking, never print connection codes (they hold storage keys), don't
   edit `.r3v/`, and keep it out of formatters and linters (Biome `"!**/.r3v"`, `.prettierignore`).

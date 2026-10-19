@@ -46,7 +46,7 @@ func TestRulesName(t *testing.T) {
 }
 
 // AI agents told only "see r3v -h" read its first lines: they lead to the
-// guide (and agent setup where the build has it) before anything else,
+// guide and agent setup (every build's) before anything else,
 // and the setup section lists the steps in the order a newcomer takes
 // them: sign in, the teams, init or connect, then the agent's setup.
 func TestHelpLeadsAgents(t *testing.T) {
@@ -63,9 +63,8 @@ func TestHelpLeadsAgents(t *testing.T) {
 		if !strings.Contains(top, `"connected"`) || strings.Index(text, "r3v help agents") > strings.Index(text, "everyday") {
 			t.Errorf("top:\n%s", top)
 		}
-		_, agent := extraCommands["agent"]
-		if strings.Contains(top, "agent setup") != agent {
-			t.Errorf("agent setup in the top lines: %v, in this build: %v\n%s", !agent, agent, top)
+		if !strings.Contains(top, "agent setup") {
+			t.Errorf("no agent setup in the top lines:\n%s", top)
 		}
 		at := func(s string) int {
 			i := strings.Index(text, s)
@@ -74,15 +73,8 @@ func TestHelpLeadsAgents(t *testing.T) {
 			}
 			return i
 		}
-		order := []string{"setup (the first time", "\n  login ", "\n  teams ", "\n  init [", "\n  remote <connection-code>"}
-		if teamByName {
-			order = append(order[:4], "\n  init --team NAME", "\n  remote --team NAME", "\n  remote <connection-code>")
-		} else if strings.Contains(text, "--team NAME [") {
-			t.Error("--team in a build without it")
-		}
-		if agent {
-			order = append(order, "\n  agent setup")
-		}
+		order := []string{"setup (the first time", "\n  login ", "\n  teams ", "\n  init [", "\n  init --team NAME",
+			"\n  remote --team NAME", "\n  remote <connection-code>", "\n  clone --team NAME", "\n  agent setup [--tool NAME]"}
 		for i := 1; i < len(order); i++ {
 			if at(order[i-1]) > at(order[i]) {
 				t.Errorf("%q comes before %q", order[i], order[i-1])
@@ -100,15 +92,7 @@ func TestHelpLeadsAgents(t *testing.T) {
 	}
 	t.Run("this build", check)
 	t.Run("Nightly's", func(t *testing.T) {
-		byName(t, true)
 		withAgentLocks(t)
 		check(t)
 	})
-}
-
-// byName turns joining teams by name on or off for a test.
-func byName(t *testing.T, on bool) {
-	was := teamByName
-	teamByName = on
-	t.Cleanup(func() { teamByName = was })
 }

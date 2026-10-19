@@ -236,10 +236,14 @@ A version records who made it, besides the member responsible:
 "actor": {"kind": "agent", "tool": "claude-code", "model": "…", "session": "…"}
 ```
 
-- `agent setup` puts `R3V_ACTOR` (and the workspace) in the agent tool's
-  own environment settings (Claude Code's `env`), which every command it
-  runs inherits; without it, the CLI looks for the variables the tools
-  set themselves. Nothing found: no actor (a person).
+- `R3V_ACTOR` first, then the copy's own identity (`.r3v/agent.json`,
+  written by `agent setup --tool NAME` for any tool), then the variables
+  the tools set themselves; nothing found: no actor (a person). For
+  Claude Code, `agent setup` also puts `R3V_ACTOR` in its own
+  environment settings (`env`), which every command it runs inherits.
+  The order, the tools' variables and their sources, and how a person's
+  own commits in such a folder stay the person's:
+  [agent-identity.md](agent-identity.md).
 - `author_id` stays the member: an agent works for someone.
 - The history marks an agent's versions and can filter them. Format: an
   `omitempty` field of the version record (format 2 readers ignore it),
@@ -253,12 +257,16 @@ way, no format change). The app shows the title, the details unfolded;
 
 ## Setting agents up
 
-`r3v agent setup [--tool claude-code]` in a workspace: writes the hooks
-(`PreToolUse` → `r3v hook pre-tool`, reading the tool call and answering
-allow or deny), `R3V_ACTOR`, and the agents' guide where the tool reads
-them (`.claude/settings.local.json`, this copy's and never tracked;
-`CLAUDE.md` in the main copy, committed); run by `workspace add
---agent claude-code`.
+`r3v agent setup [--tool NAME] [--model MODEL]` (every build since 0.2:
+agents are the 0.3 theme), in the main copy or a workspace: the copy's
+identity (`.r3v/agent.json`), and in the main copy the agents' guide in
+`AGENTS.md` (committed; most tools read it). For Claude Code also the
+hooks (`PreToolUse` → `r3v hook pre-tool`, reading the tool call and
+answering allow or deny), `R3V_ACTOR` (`.claude/settings.local.json`,
+this copy's and never tracked) and `@AGENTS.md` in `CLAUDE.md`; run by
+`workspace add --agent TOOL`. The hooks are Claude Code's only: other
+tools get no first-touch locking (the commit check still refuses a
+locked file).
 
 ## Stopping half-way
 

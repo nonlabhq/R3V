@@ -100,9 +100,9 @@ func TestCommitProjectDeletedFromCloudTeam(t *testing.T) {
 // points it there, and its next commit shares there.
 func TestCopyLeftByAMoveFollowsByRemote(t *testing.T) {
 	shortScan(t)
-	was, wasMove := teamByName, project.MoveProjects
-	teamByName, project.MoveProjects = true, true
-	t.Cleanup(func() { teamByName, project.MoveProjects = was, wasMove })
+	wasMove := project.MoveProjects
+	project.MoveProjects = true
+	t.Cleanup(func() { project.MoveProjects = wasMove })
 	fake := s3test.New("one", "two")
 	t.Cleanup(fake.Close)
 	code := func(b string) string {

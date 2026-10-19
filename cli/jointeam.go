@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -12,17 +11,11 @@ import (
 // A team this computer has joined, named instead of its connection code
 // (init --team, remote --team, clone --team): an agent starts a project
 // on the person's team without ever handling the code, which holds the
-// storage's keys. The keys stay where joining the team put them.
-
-// teamByName: the --team options are in this build (Nightly while new);
-// the usage's setup section lists them then (setupUsage).
-var teamByName = false
+// storage's keys. The keys stay where joining the team put them. In
+// every build since 0.2 (R3V Cloud teams are Stable).
 
 // joinedTeam is the team this computer joined named name (or with that id).
 func joinedTeam(name string) (*teams.Team, error) {
-	if !teamByName {
-		return nil, errors.New("--team needs R3V's Nightly channel; use a connection code")
-	}
 	store, err := teams.Load()
 	if err != nil {
 		return nil, err

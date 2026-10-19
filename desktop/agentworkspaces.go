@@ -116,7 +116,7 @@ func (a *App) AgentWorkspaces(root string) ([]AgentWorkspace, error) {
 			if ws, err := project.Open(s.Folder); err == nil {
 				id = ws.Config.WorkspaceID
 			}
-			w.Tool = agentsetup.ToolOf(s.Folder)
+			w.Tool = agentsetup.CopyTool(s.Folder)
 		}
 		for _, l := range locks {
 			// Its own: by its id; a folder that can't be read, by its branch.

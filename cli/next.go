@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nonlabhq/r3v/internal/actor"
@@ -49,35 +50,22 @@ func shellArg(s string) string {
 }
 
 // connectSteps are the ways to connect the project here to a team: by
-// name to each team this computer has joined (Nightly), else signing in
+// name to each team this computer has joined, else signing in
 // to R3V Cloud or a connection code (the person's to enter: it holds the
 // storage's keys).
 func connectSteps() []nextJSON {
 	joined := usableTeams()
-	var names []string
-	for _, t := range joined {
-		names = append(names, t.Name)
-	}
 	var out []nextJSON
 	switch {
-	case len(joined) > 0 && teamByName:
+	case len(joined) > 0:
 		for _, t := range joined {
 			out = append(out, nextJSON{"r3v remote --team " + shellArg(t.Name),
 				fmt.Sprintf("connect this project to the team %s (this computer has joined it): its versions are shared with the team", t.Name)})
 		}
-	case len(joined) > 0:
-		out = append(out, nextJSON{"r3v remote <connection-code>",
-			"connect this project to a team: this computer has joined " + strings.Join(names, ", ") +
-				"; add the project to one in the R3V app, or the person enters the team's connection code (it holds the storage keys: never ask for it or print it)"})
 	default:
 		if remote.HostedTeams {
-			why := "sign in to R3V Cloud (the person, in the browser): the teams they are in then appear in `r3v teams`"
-			if teamByName {
-				why += ", and `r3v remote --team NAME` connects this project to one"
-			} else {
-				why += "; then add the project to one in the R3V app"
-			}
-			out = append(out, nextJSON{"r3v login", why})
+			out = append(out, nextJSON{"r3v login",
+				"sign in to R3V Cloud (the person, in the browser): the teams they are in then appear in `r3v teams`, and `r3v remote --team NAME` connects this project to one"})
 		}
 		out = append(out, nextJSON{"r3v remote <connection-code>",
 			"or connect it to a self-hosted team's storage with its connection code: the person enters it (it holds the storage keys: never ask for it or print it)"})
@@ -86,24 +74,26 @@ func connectSteps() []nextJSON {
 }
 
 // agentSteps is what an AI agent does once in a project: read the guide
-// when R3V can't tell an agent runs it; set Claude Code up where it can
-// and the copy isn't yet. A person (R3V_ACTOR=none) gets nothing.
+// when R3V can't tell an agent runs it; set the copy up for the tool R3V
+// tells from its variables while it isn't (versions then say so from
+// agent.json, even where the variables don't reach), and Claude Code's
+// hooks while they aren't there. A person (R3V_ACTOR=none) gets nothing.
 func agentSteps(root string) []nextJSON {
-	if strings.EqualFold(strings.TrimSpace(os.Getenv(actor.EnvTool)), actor.None) {
+	if byPerson || strings.EqualFold(strings.TrimSpace(os.Getenv(actor.EnvTool)), actor.None) {
 		return nil
 	}
-	setup := extraCommands["agent"] != nil
-	a := actor.Detect()
+	a, from := actor.Resolve(os.Getenv, actor.ReadIdentity(filepath.Join(root, ".r3v")))
 	if a == nil {
-		why := "if you are an AI agent: how to work with R3V; set R3V_ACTOR to your tool's name so the versions you make say an agent made them"
-		if setup {
-			why = "if you are an AI agent: how to work with R3V, and the one-time `r3v agent setup`"
-		}
-		return []nextJSON{{"r3v help agents", why}}
+		return []nextJSON{{"r3v help agents",
+			"if you are an AI agent: how to work with R3V, and the one-time `r3v agent setup --tool NAME` (NAME: your tool, such as codex, opencode, gemini-cli, cursor, pi) so the versions you make say an agent made them"}}
 	}
-	if setup && a.Tool == agentsetup.ClaudeCodeTool && agentsetup.ToolOf(root) == "" {
+	switch {
+	case a.Tool == agentsetup.ClaudeCodeTool && agentsetup.ToolOf(root) == "":
 		return []nextJSON{{"r3v agent setup",
 			"set Claude Code up in this folder, once: R3V_ACTOR in its settings (the versions you make say an agent made them), its hooks, the agents' guide in AGENTS.md"}}
+	case from == actor.FromTool:
+		return []nextJSON{{"r3v agent setup --tool " + a.Tool,
+			"set this folder up for " + a.Tool + ", once: the versions you make here say so (add --model with the model you run), the agents' guide in AGENTS.md"}}
 	}
 	return nil
 }

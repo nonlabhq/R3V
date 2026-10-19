@@ -364,12 +364,9 @@ func deletedError(err error, gone *project.DeletedError) *cliError {
 func deletedSteps(gone *project.DeletedError) []nextJSON {
 	var out []nextJSON
 	switch {
-	case gone.MovedToTeam != "" && teamByName:
+	case gone.MovedToTeam != "":
 		out = append(out, nextJSON{"r3v remote --team " + shellArg(gone.MovedTo),
 			fmt.Sprintf("point this copy at %s, where the project moved: the next commit shares its versions there", gone.MovedTo)})
-	case gone.MovedToTeam != "":
-		out = append(out, nextJSON{"r3v status",
-			fmt.Sprintf("the project moved to %s: in the R3V app, Share now › Point this copy at %s", gone.MovedTo, gone.MovedTo)})
 	case gone.MovedTo != "":
 		out = append(out, nextJSON{"r3v teams",
 			fmt.Sprintf("the project moved to %s, which this computer hasn't joined: the person joins it in R3V, then points this copy at it", gone.MovedTo)})

@@ -15,11 +15,14 @@ import (
 // asPerson, asAgent and asUnknown set who runs R3V for a test: the person
 // (R3V_ACTOR=none), Claude Code, or a tool R3V can't tell (the agents of
 // the field tests: no R3V_ACTOR, no marker of their own).
-func asPerson(t *testing.T) { t.Setenv(actor.EnvTool, actor.None); t.Setenv("CLAUDECODE", "") }
-func asAgent(t *testing.T)  { t.Setenv(actor.EnvTool, ""); t.Setenv("CLAUDECODE", "1") }
+func asPerson(t *testing.T) { asUnknown(t); t.Setenv(actor.EnvTool, actor.None) }
+func asAgent(t *testing.T)  { asUnknown(t); t.Setenv("CLAUDECODE", "1") }
 func asUnknown(t *testing.T) {
 	t.Setenv(actor.EnvTool, "")
-	t.Setenv("CLAUDECODE", "")
+	t.Setenv(actor.EnvModel, "")
+	for _, v := range actor.Markers() { // (the tool running the tests may set some)
+		t.Setenv(v, "")
+	}
 }
 
 // noTeams gives the test a team store of its own, empty; withTeam adds a
@@ -89,22 +92,10 @@ func TestInitNext(t *testing.T) {
 		noTeams(t)
 		withTeam(t, "Test Band")
 		withTeam(t, "Other")
-		byName(t, true)
 		asPerson(t)
 		got := commands(initIn(t).Next)
 		if !strings.HasPrefix(got, `r3v remote --team "Test Band" | r3v remote --team Other | r3v commit`) {
 			t.Errorf("next: %s", got)
-		}
-	})
-	t.Run("teams, no names", func(t *testing.T) {
-		noTeams(t)
-		withTeam(t, "Test Band")
-		byName(t, false)
-		asPerson(t)
-		next := initIn(t).Next
-		if commands(next) != `r3v remote <connection-code> | r3v commit -m "first version"` ||
-			!strings.Contains(next[0].Why, "Test Band") || !strings.Contains(next[0].Why, "R3V app") {
-			t.Errorf("next: %+v", next)
 		}
 	})
 	t.Run("an agent R3V can't tell", func(t *testing.T) {
@@ -117,20 +108,33 @@ func TestInitNext(t *testing.T) {
 	t.Run("Claude Code", func(t *testing.T) {
 		noTeams(t)
 		asAgent(t)
-		if _, ok := extraCommands["agent"]; !ok {
-			if got := commands(initIn(t).Next); strings.Contains(got, "agent setup") {
-				t.Errorf("agent setup in a build without it: %s", got)
-			}
-		}
-		withAgentLocks(t)
 		got := commands(initIn(t).Next)
 		if !strings.Contains(got, "r3v agent setup | r3v commit") || strings.Contains(got, "help agents") {
 			t.Errorf("next: %s", got)
 		}
 	})
+	t.Run("a tool R3V tells by its variables", func(t *testing.T) {
+		noTeams(t)
+		asUnknown(t)
+		t.Setenv("GEMINI_CLI", "1")
+		got := commands(initIn(t).Next)
+		if !strings.Contains(got, "r3v agent setup --tool gemini-cli | r3v commit") {
+			t.Errorf("next: %s", got)
+		}
+	})
+	t.Run("--as person", func(t *testing.T) {
+		noTeams(t)
+		asAgent(t)
+		dir := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "a.txt": "a"})
+		_, rep := run(t, dir, "init", "--as", "person")
+		var out initJSON
+		json.Unmarshal(rep.Result, &out)
+		if got := commands(out.Next); strings.Contains(got, "agent") {
+			t.Errorf("a person told of agents: %s", got)
+		}
+	})
 	t.Run("init --team", func(t *testing.T) {
 		noTeams(t)
-		byName(t, true)
 		asPerson(t)
 		teamProject(t) // (the person joined the team)
 		store, _ := teams.Load()
@@ -146,7 +150,6 @@ func TestInitNext(t *testing.T) {
 	t.Run("text", func(t *testing.T) {
 		noTeams(t)
 		withTeam(t, "Test Band")
-		byName(t, true)
 		asUnknown(t)
 		dir := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "a.txt": "a"})
 		code, text := runText(t, dir, "init")
@@ -166,7 +169,6 @@ func TestInitNext(t *testing.T) {
 func TestNotConnected(t *testing.T) {
 	noTeams(t)
 	withTeam(t, "Test Band")
-	byName(t, true)
 	asPerson(t)
 	dir := newFolder(t, map[string]string{".r3v.yaml": "presets:\n  ./: none\n", "a.txt": "a"})
 	if exit, rep := run(t, dir, "init"); exit != 0 {
