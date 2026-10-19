@@ -199,6 +199,19 @@ func (r *Repo) TakeAgentLocks(paths []string, kind, session string) (agentlock.R
 	return r.AgentLockList().Take(r.AgentHolder(session), paths, kind, person)
 }
 
+// TakeOverAgentLocks locks paths for this workspace, taking over the locks
+// of others in the way (agentlock.List.TakeOver): their holder is gone.
+// The person's uncommitted changes still refuse an agent.
+func (r *Repo) TakeOverAgentLocks(paths []string, reason, session string) (agentlock.Result, error) {
+	var person []agentlock.Lock
+	if r.agentTool() != "" {
+		if m := r.personCopy(); m != nil {
+			person = r.personHeld(m, paths)
+		}
+	}
+	return r.AgentLockList().TakeOver(r.AgentHolder(session), paths, reason, person)
+}
+
 // UnlockAgent takes back this workspace's own locks and claims on paths.
 func (r *Repo) UnlockAgent(paths []string) ([]agentlock.Lock, error) {
 	return r.AgentLockList().Unlock(r.workspaceID(), paths)
@@ -386,11 +399,62 @@ func (r *Repo) checkAgentLocks(m *Manifest) error {
 }
 
 // releaseMergedLocks frees the locks held for a branch merged here: its
-// conflicts were settled by the merge. Not main's: a workspace merging main
-// in is catching up, not landing.
+// conflicts were settled by the merge. Not a base branch's: a workspace
+// merging its base in is catching up, not landing, and a base branch's
+// locks guard uncommitted work only (releaseCommittedLocks).
 func (r *Repo) releaseMergedLocks(branch string) {
-	if !AgentLocks || branch == "main" || branch == "" {
+	if !AgentLocks || branch == "" || r.isBaseBranch(branch) {
 		return
 	}
 	r.AgentLockList().ReleaseBranch(branch)
+}
+
+// isBaseBranch says whether workspaces merge into branch: main, or the
+// branch any workspace of the project here was made from. A lock held on
+// a base branch is never released by a merge (nothing merges it into
+// anything), so a commit there releases it.
+func (r *Repo) isBaseBranch(branch string) bool {
+	if branch == "main" {
+		return true
+	}
+	list, _ := r.LocalWorkspaces()
+	for _, e := range list {
+		if e.Base == branch {
+			return true
+		}
+	}
+	return false
+}
+
+// releaseCommittedLocks frees, after a commit on a base branch, this
+// copy's locks on files now as committed: a lock there protects
+// uncommitted work, and once it's a version on the branch the others merge
+// from, there's nothing left to protect (a workspace changing it later
+// merges it in first, or decides at the merge). Folder locks stay until
+// unlocked. A stop before this leaves the locks, freed by the next commit
+// here or gone stale.
+func (r *Repo) releaseCommittedLocks(m *Manifest, ix *index) {
+	branch := r.BranchName()
+	if !AgentLocks || !r.isBaseBranch(branch) {
+		return
+	}
+	list := r.AgentLockList()
+	all, err := list.All()
+	if err != nil {
+		return
+	}
+	me := r.workspaceID()
+	files := m.FileMap()
+	var done []string
+	for _, lk := range all {
+		if lk.Workspace != me || lk.Branch != branch || lk.Kind != agentlock.KindLock || strings.HasSuffix(lk.Path, "/") {
+			continue
+		}
+		if !r.changedHere(lk.Path, files, ix) {
+			done = append(done, lk.Path)
+		}
+	}
+	if len(done) > 0 {
+		list.Unlock(me, done)
+	}
 }

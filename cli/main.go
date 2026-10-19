@@ -20,6 +20,9 @@ import (
 
 const usage = `usage: r3v <command> [args]
 
+AI agents: run "r3v help agents" first (how to work with R3V as an agent{{agent-setup}}),
+then make sure the project is on the person's team: "r3v status --json" gives "connected".
+
 everyday (run inside a project folder):
   commit -m TITLE [-m DETAILS] [PATHS]   commit your changes as a version and share it with the team
                                          (PATHS: only the changes in those files and folders)
@@ -32,13 +35,18 @@ everyday (run inside a project folder):
                                          --first-parent: only the main line, merges with how
                                          many versions each brought in
 
-setup:
+setup (the first time, in this order):
+  login [--service URL]                  sign in to R3V Cloud in the browser (the person does): the
+                                         teams they are in appear in r3v teams
+  teams                                  teams this computer is connected to
   init [--author NAME] [--preset code|none]
                                          start tracking this project (--preset: a folder R3V
                                          doesn't recognise, as code and documents, or files as they are)
-  remote <connection-code>               connect this project to team storage (S3-compatible bucket)
-  clone <code> <project> [folder]       download a team's project
-  teams                                  teams this computer is connected to
+{{team-setup}}  remote <connection-code>               or connect this project to a self-hosted team's storage
+                                         (S3-compatible bucket) with its connection code: the person
+                                         enters it (it holds the storage keys)
+  clone <code> <project> [folder]        download a team's project
+{{team-clone}}{{agent-setup-line}}  logout [--service URL]                 sign this computer out of R3V Cloud
   version                                show the R3V version
   connection-code --endpoint URL --bucket NAME --access-key K --secret-key S [--prefix P] [--name TEAM]
                                          create a code for team storage
@@ -112,7 +120,7 @@ const setCommandsAt = "\nset commands:\n"
 // fullUsage is the usage with this build's own sections (extraUsage) among
 // the others, before the Live Sets' and the agents' ones, not after them.
 func fullUsage() string {
-	u := usage
+	u := setupUsage().Replace(usage)
 	i := strings.Index(u, setCommandsAt)
 	if i < 0 {
 		return u + extraUsage
@@ -122,6 +130,31 @@ func fullUsage() string {
 		return u[:i] + extraUsage + u[end:]
 	}
 	return u[:i] + extraUsage + u[i:]
+}
+
+// setupUsage fills in the usage's first lines and its setup section for
+// this build: joining a team by name and setting an agent up are on the
+// Nightly channel while they're new, and an agent reads the setup
+// section in the order a newcomer needs it.
+func setupUsage() *strings.Replacer {
+	team := "                                         (to put it on a team in r3v teams: Add project in the R3V app)\n"
+	if teamByName {
+		team = "  init --team NAME [--preset code|none]  make the folder a project of a team this computer has joined\n" +
+			"                                         (r3v teams lists them; no connection code needed)\n" +
+			"  remote --team NAME                     connect this project to that team\n"
+	}
+	clone := ""
+	if teamByName {
+		clone = "  clone --team NAME <project> [folder]   download a project of a team this computer has joined\n"
+	}
+	agent, agentLine := ", and R3V_ACTOR", ""
+	if _, ok := extraCommands["agent"]; ok {
+		agent = ", the one-time \"r3v agent setup\""
+		agentLine = "  agent setup [--tool claude-code]       an AI agent, once in its project folder: R3V_ACTOR (its versions\n" +
+			"                                         say an agent made them), its hooks, the agents' guide\n"
+	}
+	return strings.NewReplacer("{{agent-setup}}", agent, "{{team-setup}}", team, "{{team-clone}}", clone,
+		"{{agent-setup-line}}", agentLine)
 }
 
 // extraCommands are commands only some builds have (the Nightly channel's),

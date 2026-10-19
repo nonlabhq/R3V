@@ -44,9 +44,11 @@ read, and the app offers to move it.
 
 Auto-locked at first (when on): Unreal `.umap .uasset`; Unity `.unity
 .prefab .asset`; Godot `.scn .res` (binary); Blender `.blend`; source art
-`.psd .psb .kra .spp .ma .mb .max .c4d`. Not: `.als` (merged by track),
-audio, images and models exported from elsewhere, Godot's text `.tscn
-.tres` (offered, off).
+`.psd .psb .kra .spp .ma .mb .max .c4d`; models `.fbx .obj .gltf .glb
+.usd .usdc .usda .usdz .abc .dae .3ds .stl .ply` (two people changing one
+lose a side at the merge, as with a `.blend`; off by default before, so a
+team that saved its kinds then keeps its list). Not: `.als` (merged by
+track), audio, images, Godot's text `.tscn .tres` (offered, off).
 
 ## A lock's life
 

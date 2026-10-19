@@ -212,7 +212,7 @@ func cmdInit(args []string) error {
 		return err
 	}
 	ensureRules(r)
-	fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
+	out := initJSON{Folder: r.Root, Project: r.Config.Name, Author: r.Config.Author}
 	if team != nil {
 		wait := 30 * time.Second
 		if waitGiven {
@@ -226,15 +226,36 @@ func cmdInit(args []string) error {
 		if err := joinTeam(r, team); err != nil {
 			return err
 		}
-		fmt.Printf("it is %s's: r3v commit -m \"first version\" shares it\n", team.Name)
-		return nil
-	}
-	if teamByName {
-		fmt.Println("next: r3v remote --team NAME (r3v teams lists them), then r3v commit -m \"first version\"")
+		out.Team = team.Name
 	} else {
-		fmt.Println("next: r3v remote <connection-code>, then r3v commit -m \"first version\"")
+		out.Next = connectSteps()
 	}
+	out.Next = append(out.Next, agentSteps(r.Root)...)
+	first := nextJSON{`r3v commit -m "first version"`, "commit the first version: shared with the team once the project is connected, on this computer only until then"}
+	if team != nil {
+		first.Why = "commit the first version and share it with " + team.Name
+	}
+	out.Next = append(out.Next, first)
+	result("init", out, func() {
+		fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
+		if team != nil {
+			fmt.Printf("it is %s's project\n", team.Name)
+		} else {
+			fmt.Println("not connected to a team yet: versions committed now stay on this computer")
+		}
+		printNext("next:", out.Next)
+	})
 	return nil
+}
+
+// initJSON is `r3v init --json`: the project made, its team ("" for
+// none) and what to run next.
+type initJSON struct {
+	Folder  string     `json:"folder"`
+	Project string     `json:"project"`
+	Author  string     `json:"author"`
+	Team    string     `json:"team"`
+	Next    []nextJSON `json:"next"`
 }
 
 // statusJSON is `r3v status --json`.
@@ -243,10 +264,14 @@ type statusJSON struct {
 	Branch  string `json:"branch"`
 	Version string `json:"version"` // the version the files are on ("" before the first)
 	// OnOlderVersion: checked out an older version (Latest is the newest).
-	OnOlderVersion bool         `json:"on_older_version"`
-	Latest         string       `json:"latest,omitempty"`
-	Team           *teamJSON    `json:"team"` // null when not in a team
-	Changes        []changeJSON `json:"changes"`
+	OnOlderVersion bool      `json:"on_older_version"`
+	Latest         string    `json:"latest,omitempty"`
+	Team           *teamJSON `json:"team"` // null when not in a team
+	// Connected: the project is in a team (false: its versions stay on
+	// this computer; Next says how to connect it).
+	Connected bool         `json:"connected"`
+	Next      []nextJSON   `json:"next,omitempty"`
+	Changes   []changeJSON `json:"changes"`
 	// InUse: files another program holds (Live writing a Freeze): read once
 	// they are free, counted as in the version you are on until then.
 	InUse []string `json:"in_use"`
@@ -266,6 +291,8 @@ type statusJSON struct {
 }
 
 // warningJSON is a word before committing, never a refusal. Code
+// "not_connected": the project is in no team, what is committed stays on
+// this computer (Reason says so; the other fields are empty). Code
 // "looks_built": a folder new in the changes looks like a build's output
 // (named like a folder the rules leave out, or full of built files or
 // bytes); committed, it stays in the team's storage for good. Kind says
@@ -300,9 +327,13 @@ func builtWarnings(found []project.BuiltFolder) []warningJSON {
 	return out
 }
 
-// printWarnings says what each warning is about, and the rule to add.
+// printWarnings says what each looks_built warning is about, and the rule
+// to add (the others are said where they belong).
 func printWarnings(ws []warningJSON, committed bool) {
 	for _, w := range ws {
+		if w.Code != "looks_built" {
+			continue
+		}
 		files := fmt.Sprintf("%d files", w.Files)
 		if w.Files == 1 {
 			files = "1 file"
@@ -415,6 +446,10 @@ func cmdStatus(args []string) error {
 		return err
 	}
 	out.Warnings = builtWarnings(built)
+	if out.Connected = connected(r); !out.Connected {
+		out.Warnings = append(out.Warnings, notConnected())
+		out.Next = connectSteps()
+	}
 	for _, c := range changes {
 		ch := changeJSON{Path: c.Path, Status: c.Status, From: c.From, Edited: c.Edited}
 		if c.SetDiff != nil {
@@ -441,6 +476,8 @@ func printStatus(r *project.Repo, s statusJSON) {
 	}
 	switch t := s.Team; {
 	case t == nil:
+		fmt.Println("not connected to a team: versions committed here stay on this computer")
+		defer printNext("to connect it:", s.Next)
 	case !t.Reachable:
 		fmt.Printf("team: not reachable (%s)\n", t.Error)
 	case t.Incoming:

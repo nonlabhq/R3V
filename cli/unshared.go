@@ -50,11 +50,11 @@ func printUnshared(us []unsharedJSON) {
 	}
 }
 
-// MarshalJSON keeps a looks_built warning's fields as they always were;
-// other codes carry only theirs.
+// MarshalJSON keeps the other warnings' fields as they always were; an
+// unshared_versions warning carries only its own.
 func (w warningJSON) MarshalJSON() ([]byte, error) {
 	type plain warningJSON
-	if w.Code == "looks_built" {
+	if w.Code != "unshared_versions" {
 		return json.Marshal(plain(w))
 	}
 	return json.Marshal(struct {

@@ -39,7 +39,7 @@ var jsonMode bool
 
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
-	"version": true, "backup": true, "switch": true, "goto": true, "checkout": true, "parked": true,
+	"version": true, "backup": true, "init": true, "switch": true, "goto": true, "checkout": true, "parked": true,
 	"discard": true, "rules": true, "profile": true, "verify": true} // (rules: only rules ignore)
 
 // stripJSON takes --json (or -json) out of args.
@@ -129,6 +129,7 @@ type cliError struct {
 	Suggestion string
 	// Path: no_write_access: where R3V may not write.
 	Path string
+	Next []nextJSON // not_connected: how to connect the project
 }
 
 // holderJSON is who holds a project's lock, as it recorded itself (Running
@@ -182,6 +183,8 @@ type errorJSON struct {
 	Suggestion string `json:"suggestion,omitempty"`
 	// Path: where R3V may not write (no_write_access).
 	Path string `json:"path,omitempty"`
+	// Next: what to run (not_connected: the ways to connect the project).
+	Next []nextJSON `json:"next,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
 	// having failed after.
 	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
@@ -259,8 +262,8 @@ func classify(err error) *cliError {
 		for _, l := range byAgent.Locks {
 			ce.Locks = append(ce.Locks, lockJSONIn(l, byAgent.Copies))
 			if c := byAgent.Copies[l.Workspace]; c.Main && !l.Person {
-				ce.Hint = "the project's main copy holds some of these files (no merge frees its locks): " +
-					"leave them, or ask the user (who can unlock them there, or break the lock)"
+				ce.Hint = "the project's main copy holds some of these files (for work there not committed yet: " +
+					"a commit there frees a file's lock): leave them, or ask the user (who can unlock them there, or break the lock)"
 			}
 		}
 		return ce
@@ -289,7 +292,11 @@ func classify(err error) *cliError {
 	}
 	for _, c := range codes {
 		if errors.Is(err, c.err) {
-			return &cliError{Code: c.code, Exit: c.exit, Err: err, Hint: c.hint}
+			ce := &cliError{Code: c.code, Exit: c.exit, Err: err, Hint: c.hint}
+			if c.err == project.ErrNoRemote {
+				ce.Next = connectSteps()
+			}
+			return ce
 		}
 	}
 	if remote.Transient(err) {
@@ -333,12 +340,15 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
 	if ce.Code == "merge_conflict" || ce.Code == "no_write_access" { // (how to go on isn't in the message)
 		fmt.Fprintln(os.Stderr, ce.Hint)
+	}
+	for _, s := range ce.Next {
+		fmt.Fprintf(os.Stderr, "  %s\n      %s\n", s.Command, s.Why)
 	}
 	return ce.Exit
 }
