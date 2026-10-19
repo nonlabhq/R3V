@@ -865,6 +865,7 @@ func syncResult(res *project.SyncResult) *Result {
 		out.TakenBack = toVersions(res.TakenBack, nil)
 		out.Park = parkingOf(res.Park)
 		out.SameFilesAs = res.SameFilesAs
+		out.Restored = res.Restored
 	}
 	return out
 }

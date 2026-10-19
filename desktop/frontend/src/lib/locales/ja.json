@@ -1988,5 +1988,6 @@
 "Move to": "移動先",
 "None": "なし",
 "Show all ({n})": "すべて表示（{n}）",
-"Show less": "表示を減らす"
+"Show less": "表示を減らす",
+"“{name}” had been deleted from {team}: sharing brought it back, with its history": "「{name}」は {team} から削除されていました。共有で履歴ごと戻しました"
 }

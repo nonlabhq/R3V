@@ -236,7 +236,10 @@ user first).
 `nothing-changed`, `up-to-date`, `ahead`, `fast-forward`, `merged`),
 `saved` (the version committed, or null), `from`, `to`, `merged` (what a merge
 took from each side), `relinked` (sample paths rewritten for this computer),
-`reopen_sets` (sets changed under Live: the user must reopen them).
+`reopen_sets` (sets changed under Live: the user must reopen them),
+`restored` (true: the team had deleted the project, from another copy or
+by moving it to another team, and kept it; sharing brought it back: tell
+the user).
 `commit` also has `warnings`, as `status` has them, about what the
 version just took (a commit is never refused for one). `merge` also has
 `same_files_as` (a version id) when the merge version's files are
@@ -428,6 +431,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |
 | 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
+| 1 | `project_deleted` | the project was deleted from its team (or moved to another) and only an owner or admin can bring it back (by sharing it), or the team no longer keeps it; the versions stay committed here: tell the user |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |
 | 1 | `in_workspace` | only the project's main copy does this (connecting it to a team, moving it): run it there |

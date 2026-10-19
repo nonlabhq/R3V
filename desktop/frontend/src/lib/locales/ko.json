@@ -1988,5 +1988,6 @@
 "Move to": "이동",
 "None": "없음",
 "Show all ({n})": "모두 보기 ({n})",
-"Show less": "간단히 보기"
+"Show less": "간단히 보기",
+"“{name}” had been deleted from {team}: sharing brought it back, with its history": "“{name}”은(는) {team}에서 삭제되어 있었습니다. 공유하면서 기록과 함께 되살렸습니다"
 }

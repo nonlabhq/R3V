@@ -202,6 +202,8 @@ var codes = []struct {
 	{project.ErrNothingToUndo, "nothing_to_undo", exitError, "nothing to do: the branch already is without those changes"},
 	{project.ErrParkedHere, "changes_parked_here", exitError, "bring them back or discard them first: r3v parked"},
 	{project.ErrNotHere, "files_not_here", exitError, "join the team again to get the files"},
+	{project.ErrProjectDeleted, "project_deleted", exitError,
+		"the project was deleted from its team (or moved to another): the versions stay here; tell the user (an owner or admin of the team brings it back by sharing it)"},
 	{project.ErrNotDownloaded, "not_downloaded", exitError, "finish the download first: r3v update (or r3v clone into the same folder)"},
 	{project.ErrWorkspaceNotDone, "workspace_not_merged", exitError,
 		"merge its branch (r3v merge <branch> in the main copy), commit or discard its changes; or --force to lose them"},

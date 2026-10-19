@@ -1988,5 +1988,6 @@
 "Move to": "Verschieben nach",
 "None": "Keine",
 "Show all ({n})": "Alle zeigen ({n})",
-"Show less": "Weniger zeigen"
+"Show less": "Weniger zeigen",
+"“{name}” had been deleted from {team}: sharing brought it back, with its history": "„{name}“ war aus {team} gelöscht: Das Teilen hat es zurückgeholt, mit seinem Verlauf"
 }

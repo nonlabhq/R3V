@@ -271,6 +271,9 @@ func guardLive(r *project.Repo, force bool) error {
 }
 
 func printMerge(res *project.SyncResult) {
+	if res.Restored {
+		fmt.Println("the project had been deleted from the team: sharing brought it back, with its history")
+	}
 	for _, l := range res.MergeLog {
 		fmt.Println("  merged " + l)
 	}
@@ -301,6 +304,9 @@ type syncJSON struct {
 	// SameFilesAs: the merge version has exactly this version's files (the
 	// branch was behind it); its results carry over.
 	SameFilesAs string `json:"same_files_as,omitempty"`
+	// Restored: the team had deleted the project (it keeps one a while);
+	// sharing brought it back.
+	Restored bool `json:"restored,omitempty"`
 }
 
 // commitJSON is r3v commit's result: Warnings as status has them, of what
@@ -313,7 +319,7 @@ type commitJSON struct {
 func syncOf(res *project.SyncResult) syncJSON {
 	return syncJSON{Action: res.Action, From: res.From, To: res.To, Merged: nonNil(res.MergeLog),
 		Relink: nonNil(res.Relinked), ReopenSets: len(res.MergeLog) > 0, KeptWork: res.KeptWork,
-		SameFilesAs: res.SameFilesAs}
+		SameFilesAs: res.SameFilesAs, Restored: res.Restored}
 }
 
 // cmdCommit commits the changes as a version and shares it (merging the

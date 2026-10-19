@@ -407,6 +407,11 @@
     }
   }
 
+  // The team had deleted the project (from another copy, or moved it to
+  // another team) and kept it: the share brought it back.
+  const restoredText = () => t("“{name}” had been deleted from {team}: sharing brought it back, with its history",
+    { name: st?.name ?? folderName, team: st?.teamName || t("the team") });
+
   const saveDone = (r: Result) => {
       const text: Record<string, string> = {
         "published": t("Version committed and shared with the team"),
@@ -432,6 +437,7 @@
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
       if (r.log.length && r.action.startsWith("cancelled")) toast(t("The team's versions were taken in before it stopped") + reopen(), "info", 9000);
+      if (r.restored) toast(restoredText(), "info", 12000);
       if (r.action === "published") autoIcon();
       if (r.action !== "nothing" && r.action !== "cancelled") {
         message = "";
@@ -975,6 +981,7 @@
         else if (r.action === "locked") toast(lockedText(r), "warn", 15000);
         else {
           toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
+          if (r.restored) toast(restoredText(), "info", 12000);
           autoIcon();
         }
       },

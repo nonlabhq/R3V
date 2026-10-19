@@ -3005,6 +3005,12 @@ export class Result {
      */
     "changedSince": string[];
 
+    /**
+     * Restored: the team had deleted the project (it keeps one a while);
+     * sharing brought it back.
+     */
+    "restored": boolean;
+
     /** Creates a new Result instance. */
     constructor($$source: Partial<Result> = {}) {
         if (!("action" in $$source)) {
@@ -3051,6 +3057,9 @@ export class Result {
         }
         if (!("changedSince" in $$source)) {
             this["changedSince"] = [];
+        }
+        if (!("restored" in $$source)) {
+            this["restored"] = false;
         }
 
         Object.assign(this, $$source);

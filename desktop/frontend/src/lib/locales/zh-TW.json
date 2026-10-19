@@ -1988,5 +1988,6 @@
 "Move to": "移到",
 "None": "無",
 "Show all ({n})": "全部顯示（{n}）",
-"Show less": "收合"
+"Show less": "收合",
+"“{name}” had been deleted from {team}: sharing brought it back, with its history": "「{name}」曾從 {team} 刪除：這次分享把它連同歷史一起找回來了"
 }
