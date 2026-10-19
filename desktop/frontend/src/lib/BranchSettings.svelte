@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t, tn } from "./i18n.svelte";
   import { api, errorText, type Branch, type Version } from "./api";
   import Modal from "$shared/Modal.svelte";
   import Swatches from "$shared/Swatches.svelte";
@@ -46,6 +46,9 @@
   // Archiving: with the branches made from it (ArchiveDialog); the versions
   // stay, and archived branches come back from the project's settings.
   const isCurrent = $derived(branches.find((b) => b.name === branch)?.current ?? false);
+  // How many versions are its own (from where it started; Go's
+  // branchVersionCounts).
+  const versions = $derived(branches.find((b) => b.name === branch)?.versions);
   let archiving = $state(false);
 
   async function rename() {
@@ -63,6 +66,7 @@
       <button onclick={rename} disabled={busy || !name.trim() || name.trim() === saved}>{t("Rename")}</button>
     </div>
     <p class="hint">{t("Any words, in any language. Renaming moves nothing: whoever is on it keeps working.")}</p>
+    {#if versions !== undefined}<p class="count">{tn(versions, "{n} version", "{n} versions")}</p>{/if}
   </section>
   <section>
     <h3>{t("Colour")}</h3>
@@ -107,5 +111,6 @@
   .dot { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
   .hint { color: var(--faint); font-size: var(--fs-sm); margin: var(--sp-6) 0 0; }
   .grow { flex: 1; margin: 0; }
+  .count { margin: var(--sp-8) 0 0; font-size: var(--fs-md); color: var(--muted); }
   .line button { flex: none; }
 </style>
