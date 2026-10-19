@@ -1989,5 +1989,18 @@
 "None": "Nessuna",
 "Show all ({n})": "Mostra tutti ({n})",
 "Show less": "Mostra meno",
-"“{name}” had been deleted from {team}: sharing brought it back, with its history": "“{name}” era stato eliminato da {team}: la condivisione l'ha riportato, con la sua cronologia"
+"“{name}” is back in {team}, with its history, and your versions are shared": "“{name}” è tornato in {team} con la sua cronologia, e le tue versioni sono condivise",
+"“{name}” isn't on {team} any more": "“{name}” non è più in {team}",
+"It was removed from {team} on {date} by {name}.": "{name} l'ha rimosso da {team} il {date}.",
+"It was removed from {team} on {date}.": "È stato rimosso da {team} il {date}.",
+"It was removed from {team}.": "È stato rimosso da {team}.",
+"It moved to {team}; this copy still points at {old}.": "È stato spostato in {team}; questa copia punta ancora a {old}.",
+"Your versions stay on this computer.": "Le tue versioni restano su questo computer.",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "Fai puntare questa copia a {team}: le versioni non ancora condivise vengono condivise lì, dopo quelle condivise lì nel frattempo.",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "Questo computer non si è unito a {team}: unisciti, poi fai puntare questa copia lì.",
+"Or bring it back to {team}, with its history, for everyone in it.": "Oppure riportalo in {team}, con la sua cronologia, per tutto il team.",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "Solo i proprietari e gli amministratori del team possono riportarlo in {team}: chiedi a uno di loro.",
+"Bring it back to {team}": "Riporta in {team}",
+"Point this copy at {team}": "Punta a {team}",
+"This copy is {team}'s now, and your versions are shared there": "Questa copia ora è di {team}, e le tue versioni sono condivise lì"
 }

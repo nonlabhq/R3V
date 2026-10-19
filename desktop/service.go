@@ -831,6 +831,9 @@ func conflictResult(r *project.Repo, err error) (*Result, error) {
 	if out, ok := agentLockedResult(r, err); ok {
 		return out, nil
 	}
+	if out, ok := deletedResult(r, err); ok {
+		return out, nil
+	}
 	var c *project.MergeConflictError
 	if !errors.As(err, &c) {
 		return nil, err

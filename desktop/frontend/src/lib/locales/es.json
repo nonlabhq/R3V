@@ -1989,5 +1989,18 @@
 "None": "Ninguna",
 "Show all ({n})": "Mostrar todos ({n})",
 "Show less": "Mostrar menos",
-"“{name}” had been deleted from {team}: sharing brought it back, with its history": "“{name}” se había eliminado de {team}: al compartirlo volvió, con su historial"
+"“{name}” is back in {team}, with its history, and your versions are shared": "“{name}” volvió a {team} con su historial, y tus versiones se compartieron",
+"“{name}” isn't on {team} any more": "“{name}” ya no está en {team}",
+"It was removed from {team} on {date} by {name}.": "{name} lo quitó de {team} el {date}.",
+"It was removed from {team} on {date}.": "Se quitó de {team} el {date}.",
+"It was removed from {team}.": "Se quitó de {team}.",
+"It moved to {team}; this copy still points at {old}.": "Se movió a {team}; esta copia sigue apuntando a {old}.",
+"Your versions stay on this computer.": "Tus versiones siguen en este equipo.",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "Apuntar esta copia a {team}: tus versiones aún no compartidas se comparten allí, después de las que se compartieron allí entretanto.",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "Este equipo no se unió a {team}: únete y luego apunta esta copia allí.",
+"Or bring it back to {team}, with its history, for everyone in it.": "O devuélvelo a {team} con su historial, para todo el equipo.",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "Solo los propietarios y administradores del equipo pueden devolverlo a {team}: pídeselo a uno.",
+"Bring it back to {team}": "Devolver a {team}",
+"Point this copy at {team}": "Apuntar a {team}",
+"This copy is {team}'s now, and your versions are shared there": "Esta copia ahora es de {team}, y tus versiones se compartieron allí"
 }

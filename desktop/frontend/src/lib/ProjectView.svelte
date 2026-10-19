@@ -51,6 +51,8 @@
   import LeaveChangesDialog from "./LeaveChangesDialog.svelte";
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
+  import DeletedProjectDialog from "./DeletedProjectDialog.svelte";
+  import type { DeletedInfo } from "../../bindings/github.com/nonlabhq/r3v/desktop/models";
   import AgentsView from "./AgentsView.svelte";
   import { tokenPx } from "./look.svelte";
 
@@ -386,6 +388,13 @@
         liveBlocked = { run: a, resolutions, set: r.openSet };
       } else if (r.action === "changed-since") {
         recoverAsk = r.changedSince ?? []; // (nothing put back yet: asked first)
+      } else if (r.action === "deleted" && r.deleted) {
+        // The team deleted the project (moved it away): asked what to do.
+        deletedAsk = r.deleted;
+        if (a.name === "save") { // (committed here, not shared)
+          message = "";
+          resetChangesView(root);
+        }
       } else if (r.action === "switch-unfinished") {
         toast(t("Not committed: a switch didn't finish, and some files are from another version. Put the files back first (above), then commit."), "warn", 12000);
       } else if (r.conflicts.length) {
@@ -407,9 +416,9 @@
     }
   }
 
-  // The team had deleted the project (from another copy, or moved it to
-  // another team) and kept it: the share brought it back.
-  const restoredText = () => t("“{name}” had been deleted from {team}: sharing brought it back, with its history",
+  // The team had deleted the project (moved it away, or for everyone): it's
+  // back, as asked (restoreDeleted).
+  const restoredText = () => t("“{name}” is back in {team}, with its history, and your versions are shared",
     { name: st?.name ?? folderName, team: st?.teamName || t("the team") });
 
   const saveDone = (r: Result) => {
@@ -437,7 +446,6 @@
       toast(text[r.action] ?? t("Version committed"), kind, r.action === "cancelled-kept" ? 9000 : undefined);
       if (r.log.length && r.action === "published") toast(t("The team's versions were taken in first; yours comes after them") + reopen(), "info", 9000);
       if (r.log.length && r.action.startsWith("cancelled")) toast(t("The team's versions were taken in before it stopped") + reopen(), "info", 9000);
-      if (r.restored) toast(restoredText(), "info", 12000);
       if (r.action === "published") autoIcon();
       if (r.action !== "nothing" && r.action !== "cancelled") {
         message = "";
@@ -981,8 +989,51 @@
         else if (r.action === "locked") toast(lockedText(r), "warn", 15000);
         else {
           toast(t("“{name}” is shared with {team}", { name: st?.name ?? folderName, team: st?.teamName || t("the team") }), "ok");
-          if (r.restored) toast(restoredText(), "info", 12000);
           autoIcon();
+        }
+      },
+    });
+  }
+
+  // The team deleted the project while this copy points at it: point the
+  // copy at the team it moved to (then share there), or bring it back.
+  let deletedAsk = $state<DeletedInfo | null>(null);
+
+  async function followMoved() {
+    const d = deletedAsk!;
+    deletedAsk = null;
+    busy = "first-share";
+    try {
+      await api.FollowProject(root, d.movedToTeam);
+    } catch (e) {
+      toast(errorText(e), "error", 9000);
+      busy = "";
+      return;
+    }
+    busy = "";
+    onchanged();
+    await run({
+      name: "first-share",
+      call: () => api.ShareVersions(root),
+      done: (r) => {
+        if (r.action === "cancelled-kept") toast(t("Stopped: your versions are on this computer, not shared yet"), "info");
+        else if (r.action === "locked") toast(lockedText(r), "warn", 15000);
+        else toast(t("This copy is {team}'s now, and your versions are shared there", { team: d.movedTo }), "ok", 9000);
+      },
+    });
+  }
+
+  function restoreDeleted() {
+    deletedAsk = null;
+    run({
+      name: "first-share",
+      call: () => api.RestoreProject(root),
+      done: (r) => {
+        if (r.action === "cancelled-kept") toast(t("Stopped: your versions are on this computer, not shared yet"), "info");
+        else if (r.action === "locked") toast(lockedText(r), "warn", 15000);
+        else {
+          toast(restoredText(), "ok", 9000);
+          onchanged();
         }
       },
     });
@@ -1213,6 +1264,10 @@
 
   {#if shareAsk}
     <ShareVersionsDialog {st} onshare={shareVersions} onclose={() => (shareAsk = false)} />
+  {/if}
+
+  {#if deletedAsk}
+    <DeletedProjectDialog d={deletedAsk} onfollow={followMoved} onrestore={restoreDeleted} onclose={() => (deletedAsk = null)} />
   {/if}
 
   {#if checkOpen}

@@ -1989,5 +1989,18 @@
 "None": "无",
 "Show all ({n})": "全部显示（{n}）",
 "Show less": "收起",
-"“{name}” had been deleted from {team}: sharing brought it back, with its history": "“{name}”曾从 {team} 删除：这次共享把它连同历史一起找回来了"
+"“{name}” is back in {team}, with its history, and your versions are shared": "“{name}”已回到 {team}，连同历史；你的版本也已共享",
+"“{name}” isn't on {team} any more": "“{name}”已不在 {team}",
+"It was removed from {team} on {date} by {name}.": "它在 {date} 由 {name} 从 {team} 移除。",
+"It was removed from {team} on {date}.": "它在 {date} 从 {team} 移除。",
+"It was removed from {team}.": "它已从 {team} 移除。",
+"It moved to {team}; this copy still points at {old}.": "它已移到 {team}；这份副本仍指向 {old}。",
+"Your versions stay on this computer.": "你的版本都还在这台电脑上。",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "让这份副本改指向 {team}：还没共享的版本会共享到那里，接在那里期间共享的版本之后。",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "这台电脑还没加入 {team}：先加入，再让这份副本改指向它。",
+"Or bring it back to {team}, with its history, for everyone in it.": "或把它连同历史带回 {team}，让团队所有人都看得到。",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "只有团队的所有者和管理员能把它带回 {team}：请找其中一位。",
+"Bring it back to {team}": "带回 {team}",
+"Point this copy at {team}": "改指向 {team}",
+"This copy is {team}'s now, and your versions are shared there": "这份副本现在属于 {team}，你的版本也已共享到那里"
 }
