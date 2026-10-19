@@ -54,4 +54,31 @@ describe("TeamActivity", () => {
     unmount();
     expect(stop).toHaveBeenCalled();
   });
+
+  it("shows a project's newest alone, with its name at the left, in the latest list (onePerProject)", async () => {
+    const src = { activity: vi.fn(async () => [
+      item({ time: at(1), version: "v5", title: "Sky" }),
+      item({ time: at(2), version: "v4", title: "Trees" }),
+      item({ time: at(3), kind: "member-joined", project: "", projectName: "", by: "m2", byName: "Mia" }),
+      item({ time: at(4), project: "p2", projectName: "Album", version: "a2", title: "Mix", branch: "mix" }),
+      item({ time: at(5), version: "v3", title: "Rocks" }),
+      item({ time: at(6), project: "p3", projectName: "Film", version: "f1", title: "Cut" }),
+    ]) } as unknown as TeamSource;
+    render(TeamActivity, { source: src, latest: 3, onePerProject: true });
+    expect(await screen.findByText("Robin shared “Sky”")).toBeTruthy();
+    const rows = [...document.querySelectorAll("li")];
+    expect(rows.map((r) => r.querySelector(".proj")?.textContent)).toEqual(["Game", "", "Album"]);
+    expect(rows.map((r) => r.querySelector(".line")?.textContent)).toEqual(["Robin shared “Sky”", "Mia joined the team", "Robin shared “Mix”"]);
+    // (the name at the left, so not again on the right: the branch and when)
+    expect(rows[2].querySelector(".meta")?.textContent).toMatch(/^mix · /);
+    expect(rows[0].firstElementChild?.className).toContain("proj");
+  });
+
+  it("keeps every line, the project on the right, without onePerProject", async () => {
+    render(TeamActivity, { source: source(), latest: 5 });
+    expect(await screen.findByText("Robin shared “Harbor lights”")).toBeTruthy();
+    expect(document.querySelectorAll("li")).toHaveLength(3);
+    expect(document.querySelector(".proj")).toBeNull();
+    expect(document.querySelector("li .meta")?.textContent).toMatch(/^Game · main · /);
+  });
 });

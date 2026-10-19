@@ -157,7 +157,7 @@
       {#if !overview.teamError}
         <section class="pane activity">
           <h2 class="band">{t("Team activity")}</h2>
-          <div class="pane-in"><TeamActivity source={appTeamSource(team.id, !!team.hosted)} latest={5} onopen={openVersion} /></div>
+          <div class="pane-in"><TeamActivity source={appTeamSource(team.id, !!team.hosted)} latest={5} onePerProject onopen={openVersion} /></div>
         </section>
       {/if}
       <section class="pane projects">
