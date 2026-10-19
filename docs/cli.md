@@ -4,9 +4,17 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
 While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
+
+`r3v help` starts by sending AI agents to `r3v help agents` (and, on Nightly, the one-time `r3v agent setup`), and its setup section lists the first steps in the order they're taken: `login` (R3V Cloud) and `teams`, then `init` (or `init --team NAME`, Nightly) or connecting a project made before (`remote --team NAME`, Nightly, or `remote <connection code>`), then `agent setup`.
+
+## Getting started: on a team
+
+A project on no team keeps its versions on this computer only. `r3v init` ends with what to run next (`--json`: `next`, `[{"command", "why"}]`): connecting the project to each team this computer has joined (`r3v remote --team NAME`, Nightly; on Stable, the app's **Add project** or a connection code), or, with none, signing in to R3V Cloud (`r3v login`) or a connection code; run by an AI agent, `r3v help agents` or `r3v agent setup` (Nightly, Claude Code, until the folder is set up); then the first commit. With `--team NAME` it is that team's project already, and the connecting steps are left out.
+
+While the project is on no team, `commit` says the version is on this computer only and how to connect it (`--json`: `shared: false`, a `not_connected` warning in `warnings`, and `next`), and so does `status` (`--json`: `connected: false`, the warning and `next`). `update` and `merge` fail with `not_connected`, the same `next` in the error. Once connected, the next commit shares the versions committed before.
 
 ## Team storage (S3-compatible)
 
@@ -19,9 +27,12 @@ The same as **Create a team** in the app, for scripts: checks that the key can r
 ## Everyday commands (inside an Ableton project folder)
 
 ```
-r3v init [--author NAME]          # start tracking this project
+r3v login                         # sign in to R3V Cloud (in the browser): your teams appear in r3v teams
+r3v init [--author NAME]          # start tracking this project (it says what to run next)
 r3v init --preset code            # a folder R3V doesn't recognise: as code and documents (or none: files as they are)
-r3v remote <connection code>      # connect it to the team's storage
+r3v init --team NAME              # Nightly: a project of a team this computer has joined (r3v teams)
+r3v remote --team NAME            # Nightly: connect a project made before to that team
+r3v remote <connection code>      # or connect it to a self-hosted team's storage
 r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
 r3v commit -m "title" -m "details" # a title, then details (a blank line between, as git)
 r3v commit -m "fix the menu" src/menu   # only the changes in those files and folders (the others stay)
