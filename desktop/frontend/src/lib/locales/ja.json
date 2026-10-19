@@ -1908,5 +1908,7 @@
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "残したい内容は先に別の場所へコピーしてください。この操作は取り消せません。",
 "Replace them and put files back": "置き換えてファイルを元に戻す",
 "As in the version you're on · {ago}": "今いるバージョンの状態 · {ago}",
-"An older version · {ago}": "以前のバージョン · {ago}"
+"An older version · {ago}": "以前のバージョン · {ago}",
+"Copy path": "パスをコピー",
+"Copied {path}": "{path} をコピーしました"
 }

@@ -334,4 +334,31 @@ describe("FileExplorer", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Back to now" }));
     expect(document.querySelector(".fp header .asof")!.textContent).toBe("");
   });
+
+  it("copies a file's or folder's path on this computer from its menu", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    api.ProjectFiles.mockResolvedValue([...files, file("Samples/Old.wav", "audio", 100, "deleted")]);
+    await show();
+    await fireEvent.contextMenu(row("notes.txt"));
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    expect(writeText).toHaveBeenCalledWith("C:\\Song\\notes.txt");
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("Copied C:\\Song\\notes.txt", "ok"));
+    expect(screen.queryByRole("menu")).toBeNull();
+    // a folder
+    await fireEvent.contextMenu(folder("Samples"));
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    expect(writeText).toHaveBeenLastCalledWith("C:\\Song\\Samples");
+    // a file deleted since the version you're on: where it would be
+    await fireEvent.click(folder("Samples"));
+    await fireEvent.contextMenu(row("Old.wav"));
+    expect(within(screen.getByRole("menu")).queryByRole("button", { name: "Show in folder" })).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    expect(writeText).toHaveBeenLastCalledWith("C:\\Song\\Samples\\Old.wav");
+    // the clipboard refused: said so
+    writeText.mockRejectedValueOnce(new Error("not allowed"));
+    await fireEvent.contextMenu(row("Old.wav"));
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringMatching(/not allowed/), "error"));
+  });
 });

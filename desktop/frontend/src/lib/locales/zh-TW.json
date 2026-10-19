@@ -1908,5 +1908,7 @@
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "想保留的內容請先複製到別處。這個動作無法復原。",
 "Replace them and put files back": "取代它們並還原檔案",
 "As in the version you're on · {ago}": "你目前所在版本中的樣子 · {ago}",
-"An older version · {ago}": "舊版本 · {ago}"
+"An older version · {ago}": "舊版本 · {ago}",
+"Copy path": "複製路徑",
+"Copied {path}": "已複製 {path}"
 }

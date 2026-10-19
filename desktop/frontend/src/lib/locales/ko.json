@@ -1908,5 +1908,7 @@
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "남기고 싶은 내용은 먼저 다른 곳에 복사하세요. 이 작업은 되돌릴 수 없습니다.",
 "Replace them and put files back": "바꾸고 파일 되돌리기",
 "As in the version you're on · {ago}": "현재 버전의 상태 · {ago}",
-"An older version · {ago}": "이전 버전 · {ago}"
+"An older version · {ago}": "이전 버전 · {ago}",
+"Copy path": "경로 복사",
+"Copied {path}": "{path} 복사됨"
 }

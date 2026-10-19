@@ -1908,5 +1908,7 @@
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "Copie antes para outro lugar o que quiser manter. Isso não pode ser desfeito.",
 "Replace them and put files back": "Substituí-los e restaurar arquivos",
 "As in the version you're on · {ago}": "Como na versão em que você está · {ago}",
-"An older version · {ago}": "Uma versão anterior · {ago}"
+"An older version · {ago}": "Uma versão anterior · {ago}",
+"Copy path": "Copiar caminho",
+"Copied {path}": "{path} copiado"
 }

@@ -1908,5 +1908,7 @@
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "想保留的内容请先复制到别处。此操作无法撤销。",
 "Replace them and put files back": "替换它们并恢复文件",
 "As in the version you're on · {ago}": "你当前所在版本中的样子 · {ago}",
-"An older version · {ago}": "旧版本 · {ago}"
+"An older version · {ago}": "旧版本 · {ago}",
+"Copy path": "复制路径",
+"Copied {path}": "已复制 {path}"
 }
