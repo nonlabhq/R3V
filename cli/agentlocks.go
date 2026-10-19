@@ -42,7 +42,6 @@ AI agents on one computer (Nightly):
   unlock <paths…>                        free this workspace's locks
   locks                                  every agent lock of the project here (stale ones marked) and the
                                          files the person changed
-  agent setup [--tool claude-code]       set an agent tool up in this folder: its hook, R3V_ACTOR, the guide
 `
 
 // lockJSONOf is an agent lock as an error's holder.
