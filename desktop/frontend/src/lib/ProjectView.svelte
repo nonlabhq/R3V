@@ -52,7 +52,7 @@
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
   import AgentsView from "./AgentsView.svelte";
-  import { look } from "./look.svelte";
+  import { tokenPx } from "./look.svelte";
 
   // firstShare: the project was just added (to a team, or this computer).
   // With no versions yet, it asks whether to commit (and share) a first one
@@ -364,13 +364,14 @@
   let overviewWidth = $state(0);
   let graphWidth = $derived(splitPx("graph", 0.36, overviewWidth, 280, 520));
   // The graph's card fills the tab (inset); the details float over its right
-  // part, from graphWidth to the card's edge less GAP. The Flat look sets
-  // them side by side instead: the graph to graphWidth, the details from
-  // there to the edge, the gutter between.
-  let flat = $derived(look() === "flat");
-  let INSET = $derived(flat ? 0 : 16);
-  let GAP = $derived(flat ? 0 : 20);
-  const GUTTER = 2;
+  // part, from graphWidth to the card's edge less GAP. A look without
+  // --detail-float (Flat) sets them side by side instead: the graph to
+  // graphWidth, the details from there to the edge, the gutter (--pane-gap)
+  // between. (From the look's tokens: the markup is the same in both.)
+  let float = $derived(tokenPx("--detail-float") > 0);
+  let INSET = $derived(tokenPx("--pane-inset"));
+  let GAP = $derived(tokenPx("--detail-gap"));
+  let GUTTER = $derived(tokenPx("--pane-gap"));
 
   // Runs an action; handles conflicts (ask, retry with decisions) and a
   // running Live (ask, retry with force).
@@ -1097,7 +1098,7 @@
     <main class:flush={tab !== "history"} class:reading inert={reading}>
       {#if tab === "overview"}
         <div class="overview" bind:clientWidth={overviewWidth}>
-          <div class="graph-pane" style:right={flat ? `${overviewWidth - graphWidth}px` : undefined}>
+          <div class="graph-pane" style:right={float ? undefined : `${overviewWidth - graphWidth}px`}>
             <div class="graph-bar" bind:offsetHeight={graphBarH}>
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
                 onsettings={(key) => (branchSettings = key)} onmilestone={(id) => (graphPick = id)} />
@@ -1138,11 +1139,11 @@
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since, where: placeOf(p) }))}
               {parkedActions} remember={root} top={graphBarH ? graphBarH + GRAPH_BAR_TOP : 0}
-              reserve={flat ? 0 : Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
+              reserve={float ? Math.max(0, overviewWidth - graphWidth - INSET) : 0} panelInset={GAP} />
           </div>
           {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
-          <div class="detail-pane" style:left="{graphWidth + (flat ? GUTTER : 0)}px" style:top="{INSET + GAP}px" style:right="{INSET + GAP}px" style:bottom="{INSET + GAP}px">
-            <div class="band flat-only">{t("Details")}</div>
+          <div class="detail-pane" style:left="{graphWidth + (float ? 0 : GUTTER)}px" style:top="{INSET + GAP}px" style:right="{INSET + GAP}px" style:bottom="{INSET + GAP}px">
+            <div class="band caption details-band">{t("Details")}</div>
             {#if shown === "pending"}
               <div class="pending-h">
                 <strong>{t("Your changes")}</strong>
@@ -1407,6 +1408,8 @@
     border-radius: var(--radius-xl); background: var(--surface-float); backdrop-filter: var(--float-filter); box-shadow: var(--shadow-float); }
   .detail-pane :global(.side), .detail-pane :global(.commit), .detail-pane :global(.head), .detail-pane :global(.detail-h) { background: transparent; }
   .detail-pane :global(.head) { position: static; }
+  /* (Flat: the band across it; this look: a caption at its top) */
+  .details-band { margin: calc(var(--sp-14) * (1 - var(--bleed))) calc(var(--sp-16) * (1 - var(--bleed))) 0; }
   .detail-pane :global(.side), .detail-pane :global(aside) { border-color: var(--line-strong); }
   .pending-h { display: flex; align-items: baseline; gap: var(--sp-10); padding: var(--sp-14) var(--sp-16);
     border-bottom: var(--border-width) solid var(--line-strong); }

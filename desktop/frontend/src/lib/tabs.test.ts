@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addTab, closeTab, HOME, homeRef, isHome, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab, snapOf, tabId, teamsOf, toSave, type TabRef } from "./tabs";
+import { addTab, closeTab, HOME, homeRef, isHome, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab, snapOf, tabId, toSave, type TabRef } from "./tabs";
 
 const tab = (team: string, key: string): TabRef => ({ team, key });
 const keys = (tabs: TabRef[]) => tabs.map((x) => `${x.team}:${x.key}`);
@@ -51,11 +51,6 @@ describe("tabs", () => {
     expect(keys(pruneTabs(tabs, new Set(["A", "B", "C"]), "A", new Set(["a"])))).toEqual(["A:a", "B:b", "C:c", ":new:1"]);
     // the list not whole: only teams gone
     expect(keys(pruneTabs(tabs, new Set(["A", "B"]), "A", null))).toEqual(["A:a", "A:gone", "B:b", ":new:1"]);
-  });
-
-  it("counts the teams tabs are on", () => {
-    expect(teamsOf([tab("A", "a"), tab("A", "b"), tab("", "new:1")])).toBe(1);
-    expect(teamsOf([tab("A", "a"), tab("B", "b")])).toBe(2);
   });
 
   it("shows the next tab, else the one before, when the shown one closes", () => {

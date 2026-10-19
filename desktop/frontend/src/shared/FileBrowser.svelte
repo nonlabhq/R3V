@@ -408,7 +408,7 @@
   <!-- the folder's files, and the file picked -->
   <section class="area-card card-box" style:--panel-w="{panelPx}px" bind:clientWidth={cardW}>
     <div class="files">
-      <div class="band flat-only files-band">{t("Files")}</div>
+      <div class="band caption files-band">{t("Files")}</div>
       <div class="toolbar">
         <input class="filter" type="search" bind:value={filter} placeholder={t("Filter in {folder}", { folder: dir ? baseName(dir) : name })}
           aria-label={t("Filter")} />

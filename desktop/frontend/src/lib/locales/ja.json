@@ -1971,8 +1971,6 @@
 "No section": "セクションなし",
 "Sections": "セクション",
 "Rename…": "名前を変更…",
-"Move up": "上へ移動",
-"Move down": "下へ移動",
 "Delete section…": "セクションを削除…",
 "New section…": "新しいセクション…",
 "No projects in this section yet": "このセクションにはまだプロジェクトがありません",
@@ -1983,9 +1981,12 @@
 "{who} put {project} in the section {section}": "{who} が {project} をセクション {section} に入れました",
 "{who} took {project} out of the section {section}": "{who} が {project} をセクション {section} から外しました",
 "{who} changed the sections": "{who} がセクションを変更しました",
-"Add project…": "プロジェクトを追加…",
 "Add a project or a section": "プロジェクトかセクションを追加",
 "Renamed on R3V Cloud, for everyone in your teams there": "R3V Cloud で名前を変更しました（そこのチーム全員に表示されます）",
 "Your name on R3V Cloud, in all your teams there.": "R3V Cloud でのあなたの名前（そこのすべてのチームで使われます）。",
-"{teams} couldn't be reached: they get the new name the next time R3V starts.": "{teams} に接続できませんでした。次に R3V を起動したときに新しい名前が反映されます。"
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "{teams} に接続できませんでした。次に R3V を起動したときに新しい名前が反映されます。",
+"Move to": "移動先",
+"None": "なし",
+"Show all ({n})": "すべて表示（{n}）",
+"Show less": "表示を減らす"
 }

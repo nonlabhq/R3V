@@ -9,13 +9,16 @@
   // in the team's home (one menu, so both offer the same). Placed on the
   // window (at: where it was asked for), it closes itself on a click
   // elsewhere or Esc (focus back on opener, the button that opened it).
-  let { p, at, opener = null, onsettings, onarchive, onclose }: {
+  // Archiving is in the project's settings only (docs/design/archive.md).
+  let { p, at, opener = null, onsettings, sections, onsection, onclose }: {
     p: TeamProject;
     at: { left: number; top: number };
     opener?: HTMLElement | null;
     onsettings: (p: TeamProject) => void;
-    // Archive project… (docs/design/archive.md; none: not offered here)
-    onarchive?: (p: TeamProject) => void;
+    // Move to › (docs/design/sections.md): the team's sections, in this
+    // person's order, for those who may change them (none: not offered).
+    sections?: { id: string; name: string }[];
+    onsection?: (p: TeamProject, section: string) => void; // ("": none)
     onclose: () => void;
   } = $props();
 
@@ -32,10 +35,10 @@
 
   // A list beside the menu (the project's sets, or the programs to open its
   // folder in), kept open while the pointer crosses over to it.
-  let openSub = $state<"" | "sets" | "programs">("");
+  let openSub = $state<"" | "sets" | "programs" | "move">("");
   let subAt = $state({ left: 0, top: 0 });
   let subTimer: ReturnType<typeof setTimeout> | undefined;
-  function showSub(el: HTMLElement, which: "sets" | "programs") {
+  function showSub(el: HTMLElement, which: "sets" | "programs" | "move") {
     clearTimeout(subTimer);
     const r = el.getBoundingClientRect();
     subAt = { left: Math.min(r.right - 2, window.innerWidth - 220), top: r.top - 6 };
@@ -73,10 +76,17 @@
   const openIn = (rel: string) => then((q) => api.OpenInTool(q.root, rel).catch((e) => toast(errorText(e), "error")));
   const openLabel = (rel: string) => (rel === "." ? p.name : rel);
   const openFolderIn = (prog: Program | null) => then((q) => (prog ? openFolderWith(q.root, prog) : chooseProgram(q.root)));
+  // (a section that isn't there any more: none)
+  let inSection = $derived(sections?.some((s) => s.id === p.section) ? p.section ?? "" : "");
+  function moveTo(id: string) {
+    const was = inSection, move = onsection!; // (read before: closing takes the props away)
+    then((q) => { if (id !== was) move(q, id); });
+  }
 
   // ↑ ↓ Home End through the items shown (a list beside included), → into
   // a list beside, ← back out of it.
-  const items = () => [...(menu?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])];
+  const ITEM = "[role=menuitem], [role=menuitemradio]";
+  const items = () => [...(menu?.querySelectorAll<HTMLElement>(ITEM) ?? [])];
   async function keydown(e: KeyboardEvent) {
     const all = items(), i = all.indexOf(document.activeElement as HTMLElement);
     const go = (j: number) => { e.preventDefault(); all[(j + all.length) % all.length]?.focus(); };
@@ -89,7 +99,7 @@
       e.preventDefault();
       el.click();
       await tick();
-      el.parentElement?.querySelector<HTMLElement>(".submenu [role=menuitem]")?.focus();
+      el.parentElement?.querySelector<HTMLElement>(`.submenu :is(${ITEM})`)?.focus();
     } else if (e.key === "ArrowLeft" && el?.closest(".submenu")) {
       e.preventDefault();
       openSub = "";
@@ -147,10 +157,23 @@
   {/if}
   {#if !p.workspace}
     {#if p.root && p.status !== "missing"}<div class="sep"></div>{/if}
-    <button class="item" role="menuitem" onclick={() => then(onsettings)}>{t("Settings…")}</button>
-    {#if onarchive && p.id && !p.archived}
-      <button class="item" role="menuitem" onclick={() => then(onarchive!)}>{t("Archive project…")}</button>
+    {#if sections && onsection && p.id && !p.archived}
+      <div class="sub" role="none" onmouseenter={(e) => showSub(e.currentTarget.firstElementChild as HTMLElement, "move")} onmouseleave={hideSub}>
+        <button class="item has-sub" role="menuitem" aria-haspopup="menu" aria-expanded={openSub === "move"}
+          onclick={(e) => showSub(e.currentTarget, "move")}>{t("Move to")}<span class="arrow">›</span></button>
+        {#if openSub === "move"}
+          <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" aria-label={t("Move to")}
+            style:left="{subAt.left}px" style:top="{subAt.top}px" onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
+            <button class="item pick" role="menuitemradio" aria-checked={inSection === ""} onclick={() => moveTo("")}>{t("None")}</button>
+            {#if sections.length}<div class="sep"></div>{/if}
+            {#each sections as s (s.id)}
+              <button class="item pick" role="menuitemradio" aria-checked={inSection === s.id} title={s.name} onclick={() => moveTo(s.id)}>{s.name}</button>
+            {/each}
+          </div>
+        {/if}
+      </div>
     {/if}
+    <button class="item" role="menuitem" onclick={() => then(onsettings)}>{t("Settings…")}</button>
   {/if}
 </div>
 
@@ -171,6 +194,9 @@
   .row-menu.submenu { position: fixed; right: auto; min-width: 200px; max-width: 340px; z-index: var(--z-submenu); }
   .row-menu.submenu .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .has-sub[aria-expanded="true"] { background: var(--hover); }
+  /* (the section it's in: a check before it) */
+  .row-menu.submenu .pick { position: relative; padding-left: var(--sp-24); }
+  .pick[aria-checked="true"]::before { content: "✓"; position: absolute; left: var(--sp-8); color: var(--accent); }
   div.item.faint { color: var(--faint); cursor: default; }
   div.item.faint:hover { background: none; }
 </style>

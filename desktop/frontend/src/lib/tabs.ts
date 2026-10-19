@@ -101,9 +101,6 @@ export function replaceTab(tabs: TabRef[], from: string, ref: TabRef): TabRef[] 
   return at < 0 ? [...tabs, ref] : tabs.map((x, i) => (i === at ? ref : x));
 }
 
-/** How many teams the project tabs are on. */
-export const teamsOf = (tabs: TabRef[]) => new Set(tabs.filter((x) => !isNew(x.key)).map((x) => x.team)).size;
-
 /** Closes id; next is the tab to show if it was the one shown: the one
  *  after it, else the one before, else none. */
 export function closeTab(ids: string[], id: string): { ids: string[]; next: string } {

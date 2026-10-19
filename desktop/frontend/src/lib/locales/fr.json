@@ -1971,8 +1971,6 @@
 "No section": "Aucune section",
 "Sections": "Sections",
 "Rename…": "Renommer…",
-"Move up": "Monter",
-"Move down": "Descendre",
 "Delete section…": "Supprimer la section…",
 "New section…": "Nouvelle section…",
 "No projects in this section yet": "Aucun projet dans cette section pour l’instant",
@@ -1983,9 +1981,12 @@
 "{who} put {project} in the section {section}": "{who} a mis {project} dans la section {section}",
 "{who} took {project} out of the section {section}": "{who} a sorti {project} de la section {section}",
 "{who} changed the sections": "{who} a modifié les sections",
-"Add project…": "Ajouter un projet…",
 "Add a project or a section": "Ajouter un projet ou une section",
 "Renamed on R3V Cloud, for everyone in your teams there": "Renommé sur R3V Cloud, pour tout le monde dans tes équipes là-bas",
 "Your name on R3V Cloud, in all your teams there.": "Ton nom sur R3V Cloud, dans toutes tes équipes là-bas.",
-"{teams} couldn't be reached: they get the new name the next time R3V starts.": "{teams} n'a pas pu être joint : il recevra le nouveau nom au prochain démarrage de R3V."
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "{teams} n'a pas pu être joint : il recevra le nouveau nom au prochain démarrage de R3V.",
+"Move to": "Déplacer vers",
+"None": "Aucune",
+"Show all ({n})": "Tout afficher ({n})",
+"Show less": "Afficher moins"
 }

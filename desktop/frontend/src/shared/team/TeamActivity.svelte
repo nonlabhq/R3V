@@ -101,6 +101,18 @@
     if (named && i.branch && (i.kind === "share" || i.kind === "merge")) where.push(i.branch);
     return [...where, ago(i.time)].join(" · ");
   }
+  // Each line's key, the same for the same event from one read to the next
+  // (not its place: a new line on top leaves the others as they are; two
+  // alike told apart by their count).
+  function keyed(list: ActivityItem[]): { i: ActivityItem; k: string }[] {
+    const seen = new Map<string, number>();
+    return list.map((i) => {
+      const base = [i.time, i.kind, i.project, i.version, i.branch, i.by, i.tool, i.section ?? "", i.change ?? ""].join("|");
+      const n = seen.get(base) ?? 0;
+      seen.set(base, n + 1);
+      return { i, k: `${base}|${n}` };
+    });
+  }
   const opens = (i: ActivityItem) => !!onopen && !!i.version && (i.kind === "share" || i.kind === "merge" || i.kind === "branch-made");
 </script>
 
@@ -116,7 +128,9 @@
   </li>
 {/snippet}
 
-<section>
+<!-- (the newest few: their room kept from the start, so what's under them
+     doesn't move as they come or change) -->
+<section style:--rows={latest || undefined} class:latest={!!latest}>
   {#if !latest}
   <div class="filters">
     <select aria-label={t("Project")} bind:value={project}>
@@ -150,13 +164,13 @@
     <p class="faint">{t("Nothing happened in this time.")}</p>
   {:else if latest}
     <ul>
-      {#each newest.slice(0, latest) as i, n (n + i.time)}{@render line(i)}{/each}
+      {#each keyed(newest.slice(0, latest)) as { i, k } (k)}{@render line(i)}{/each}
     </ul>
   {:else}
     {#each byDay as d (d.day)}
       <h4>{d.day}</h4>
       <ul>
-        {#each d.items as i, n (n + i.time)}{@render line(i)}{/each}
+        {#each keyed(d.items) as { i, k } (k)}{@render line(i)}{/each}
       </ul>
     {/each}
   {/if}
@@ -168,7 +182,9 @@
   h4 { margin: var(--sp-14) 0 var(--sp-6); font-size: var(--fs-sm); color: var(--muted); font-weight: var(--fw-semibold); }
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
   li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-12); padding: var(--sp-4) var(--sp-6);
-    border-radius: var(--radius); font-size: var(--fs-md); }
+    border-radius: var(--radius); font-size: var(--fs-md); line-height: 1.5; }
+  /* (room for the newest few, read or not yet: a line each) */
+  section.latest { min-height: calc(var(--rows) * (var(--sp-4) * 2 + var(--fs-md) * 1.5 + var(--sp-2))); }
   li:hover { background: var(--hover-soft); }
   .line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
   button.line { border: none; background: none; padding: 0; color: var(--text); font: inherit; cursor: pointer; }

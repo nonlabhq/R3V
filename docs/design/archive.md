@@ -61,9 +61,10 @@ not a team feature.
 
 ## Where it's done
 
-- The left panel's project menu: **Archive project…**
 - Project settings › General, by the danger zone: **Archive project…**, or
-  **Unarchive** when it is.
+  **Unarchive** when it is. Only there: not in the project's menu (the
+  left panel's right-click, a card's ⋯ in the team's home).
+- The team's home, under Archived: **Unarchive** on each.
 - The confirmation says it in plain words: hidden for everyone in the team,
   nothing deleted, can be brought back.
 - CLI: `r3v project list | archive [--force] | unarchive` in the project's

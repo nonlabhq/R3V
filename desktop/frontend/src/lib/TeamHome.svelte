@@ -13,13 +13,14 @@
   import { appTeamSource } from "./teamSource";
   import { toast } from "./notify.svelte";
   import { errorText } from "./api";
-  import { foldSection, groupBySection, sectionFolds } from "./sections.svelte";
+  import { blockSpan, cardsShown, columnsFor, foldSection, groupBySection, orderedSections, sectionFolds, sectionShowAll,
+    toggleShowAll } from "./sections.svelte";
 
   // A team's home (a click on the team in the sidebar): who's in it, what
   // happened lately, and its projects (those on this computer, then those
   // only on the cloud storage; a project's workspaces counted on it, not
   // listed) or its settings.
-  let { overview, team, projects, open, onopen, onadd, onnewsection, onsettings, onarchive, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
+  let { overview, team, projects, open, onopen, onadd, onnewsection, onsettings, onsection, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
     projects: TeamProject[];
@@ -28,7 +29,7 @@
     onadd: () => void;
     onnewsection?: () => void; // New section… (none: the band's + adds a project)
     onsettings: (p: TeamProject) => void; // a project's settings (from its menu)
-    onarchive?: (p: TeamProject) => void; // Archive project… (in its menu; none: not offered)
+    onsection?: (p: TeamProject, section: string) => void; // Move to › in its menu (none: not offered)
     adding?: boolean;
     reload: () => Promise<void>;
     canMove?: boolean;
@@ -36,25 +37,46 @@
     section?: "projects" | "settings";
   } = $props();
 
+  // The team, by what doesn't change from one read of the team's list to
+  // the next (each gives a new team object): the members and the Activity
+  // are asked again only for another team, not blinking out and back.
+  let teamKey = $derived(team.id);
+  let hosted = $derived(!!team.hosted);
   // The members, asked when the team changes (none while it can't be reached).
   let members = $state<Member[]>([]);
   $effect(() => {
-    const id = team.id;
+    const id = teamKey;
     members = [];
-    api.TeamMembers(id).then((ms) => { if (team.id === id) members = ms ?? []; }).catch(() => {});
+    api.TeamMembers(id).then((ms) => { if (teamKey === id) members = ms ?? []; }).catch(() => {});
   });
 
+  let activitySource = $derived(appTeamSource(teamKey, hosted));
   let kind = $derived(storageKind(team));
   let mains = $derived(projects.filter((p) => !p.workspace));
   // Archived for the team (docs/design/archive.md): listed apart, folded.
   let active = $derived(mains.filter((p) => !p.archived));
   let archived = $derived(mains.filter((p) => p.archived));
-  // Sections (docs/design/sections.md; Nightly): the ungrouped projects
-  // first (here, then on the cloud storage), then each section's, folded
-  // as in the left panel.
-  let grouped = $derived(groupBySection(active, overview.sectionsOn ? overview.sections ?? [] : [], (p) => p.section ?? ""));
-  let here = $derived(grouped[0].items.filter((p) => p.status !== "remote"));
-  let away = $derived(grouped[0].items.filter((p) => p.status === "remote"));
+  // Sections (docs/design/sections.md): each section's projects, in this
+  // person's order and folded as in the left panel, then the ungrouped ones
+  // (here, then on the cloud storage).
+  let sections = $derived(overview.sectionsOn ? orderedSections(team.id, overview.sections ?? []) : []);
+  let grouped = $derived(groupBySection(active, sections, (p) => p.section ?? ""));
+  let loose = $derived(grouped[grouped.length - 1].items);
+  // How many columns of cards the blocks' grid has (its width, followed).
+  let blocksEl = $state<HTMLElement>();
+  let cols = $state(1);
+  $effect(() => {
+    const el = blocksEl;
+    if (!el) return;
+    const measure = () => { cols = columnsFor(el.clientWidth); };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+  let here = $derived(loose.filter((p) => p.status !== "remote"));
+  let away = $derived(loose.filter((p) => p.status === "remote"));
   let archivedOpen = $state(false);
   let unarchiving = $state("");
   async function unarchive(p: TeamProject) {
@@ -157,25 +179,53 @@
       {#if !overview.teamError}
         <section class="pane activity">
           <h2 class="band">{t("Team activity")}</h2>
-          <div class="pane-in"><TeamActivity source={appTeamSource(team.id, !!team.hosted)} latest={5} onePerProject onopen={openVersion} /></div>
+          <div class="pane-in"><TeamActivity source={activitySource} latest={5} onePerProject onopen={openVersion} /></div>
         </section>
       {/if}
       <section class="pane projects">
-        <h2 class="band flat-only">{t("Projects")}<span class="end">{active.length}</span>
+        <h2 class="band">{t("Projects")}<span class="end">{active.length}</span>
           <button class="ghost band-add" onclick={plus} disabled={adding} title={onnewsection ? t("Add a project or a section") : t("Add project")}
             aria-label={onnewsection ? t("Add a project or a section") : t("Add project")} aria-haspopup={onnewsection ? "menu" : undefined}
             aria-expanded={onnewsection ? !!plusMenu : undefined}>+</button></h2>
         <div class="pane-in">
-          <h3>{t("On this computer")}<span class="count">{here.length}</span></h3>
-          <div class="cards">
-            {#each here as p (p.root || p.id)}{@render card(p)}{/each}
-            <button class="card add" onclick={onadd} disabled={adding}>
-              <span class="plus" aria-hidden="true">+</span>
-              <span class="text">
-                <span class="name">{t("Add project")}</span>
-                <span class="meta">{t("Select project folder")}</span>
-              </span>
-            </button>
+          <!-- the sections, each a block as wide as its cards need, side by
+               side while they fit, in order; then the projects in none -->
+          <div class="blocks" style:--cols={cols} bind:this={blocksEl}>
+            {#each grouped.slice(0, -1) as g (g.id)}
+              {@const shut = !!sectionFolds[g.id]}
+              {@const all = !!sectionShowAll[g.id]}
+              {@const shown = cardsShown(g.items.length, cols, all)}
+              <div class="block" data-section={g.id} style:--span={shut ? 1 : blockSpan(g.items.length, cols)}>
+                <h3><button class="fold" aria-expanded={!shut} onclick={() => foldSection(g.id)}>
+                  <span class="caret" aria-hidden="true">{shut ? "▸" : "▾"}</span>{g.name}<span class="count">{g.items.length}</span></button>
+                  {#if !shut && g.items.length > 2 * cols}
+                    <button class="fold more-cards" aria-expanded={all} onclick={() => toggleShowAll(g.id)}>
+                      {all ? t("Show less") : t("Show all ({n})", { n: g.items.length })}</button>
+                  {/if}</h3>
+                {#if !shut}
+                  {#if g.items.length}
+                    <div class="cards" aria-label={g.name}>
+                      {#each g.items.slice(0, shown) as p (p.root || p.id)}{@render card(p)}{/each}
+                    </div>
+                  {:else}
+                    <p class="none">{t("No projects in this section yet")}</p>
+                  {/if}
+                {/if}
+              </div>
+            {/each}
+            <div class="block loose" style:--span={blockSpan(here.length + 1, cols)}>
+              <h3>{t("On this computer")}<span class="count">{here.length}</span></h3>
+              <div class="cards">
+                {#each here as p (p.root || p.id)}{@render card(p)}{/each}
+                <button class="card add" onclick={onadd} disabled={adding}>
+                  <span class="plus" aria-hidden="true">+</span>
+                  <span class="text">
+                    <span class="name">{t("Add project")}</span>
+                    <span class="meta">{t("Select project folder")}</span>
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
           {#if away.length}
             <h3>{t("On the cloud storage")}<span class="count">{away.length}</span>
@@ -184,20 +234,6 @@
               {#each away as p (p.id)}{@render card(p)}{/each}
             </div>
           {/if}
-          {#each grouped.slice(1) as g (g.id)}
-            {@const shut = !!sectionFolds[g.id]}
-            <h3 class="sect"><button class="fold" aria-expanded={!shut} onclick={() => foldSection(g.id)}>
-              <span class="caret" aria-hidden="true">{shut ? "▸" : "▾"}</span>{g.name}<span class="count">{g.items.length}</span></button></h3>
-            {#if !shut}
-              {#if g.items.length}
-                <div class="cards" aria-label={g.name}>
-                  {#each g.items as p (p.root || p.id)}{@render card(p)}{/each}
-                </div>
-              {:else}
-                <p class="none">{t("No projects in this section yet")}</p>
-              {/if}
-            {/if}
-          {/each}
           {#if archived.length}
             <!-- archived for the team (docs/design/archive.md): folded -->
             <h3><button class="fold" aria-expanded={archivedOpen} onclick={() => (archivedOpen = !archivedOpen)}>
@@ -220,7 +256,7 @@
       </section>
     </div>
     {#if menu}
-      <ProjectMenu p={menu.p} at={menu.at} opener={menu.opener} {onsettings} onarchive={team.canArchive ? onarchive : undefined}
+      <ProjectMenu p={menu.p} at={menu.at} opener={menu.opener} {onsettings} sections={onsection ? sections : undefined} {onsection}
         onclose={() => (menu = null)} />
     {/if}
     {#if plusMenu && onnewsection}
@@ -239,8 +275,9 @@
 </div>
 
 <style>
-  /* The R3V look: a page on the window. Flat: the head a panel, the rest
-     panels under it, 2px apart. */
+  /* The R3V look: a page on the window, the Activity and Projects cards on
+     it, each under a plain heading. Flat: the head a panel, the rest panels
+     under it, 2px apart, each under its band. */
   .home { height: 100%; overflow: auto; display: flex; flex-direction: column; gap: var(--pane-gap); background: var(--surface-gutter);
     padding: calc(var(--sp-32) * (1 - var(--bleed))) calc(var(--sp-40) * (1 - var(--bleed))) calc(var(--sp-40) * (1 - var(--bleed))); }
   .head { flex: none; background: var(--surface-head); padding: calc(var(--sp-16) * var(--bleed)) calc(var(--sp-16) * var(--bleed)) 0; }
@@ -259,15 +296,15 @@
     color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: calc(var(--border-width) * -1); }
   .switch button:hover:not(:disabled) { background: transparent; color: var(--text); }
   .switch button.on { color: var(--text); font-weight: var(--fw-semibold); border-bottom-color: var(--accent); }
-  .body { flex: 1 0 auto; display: flex; flex-direction: column; gap: var(--pane-gap); }
+  .body { flex: 1 0 auto; display: flex; flex-direction: column; gap: calc(var(--pane-gap) + var(--sp-16) * (1 - var(--bleed))); }
   .body.settings > :global(*) { flex: 1; }
-  .pane { background: var(--surface-head); }
+  .pane { background: var(--surface-pane); border-radius: var(--pane-radius); box-shadow: var(--shadow-card); }
   .pane.projects { flex: 1 0 auto; }
-  .pane-in { padding: calc(var(--sp-12) * var(--bleed)) calc(var(--sp-16) * var(--bleed)) calc(var(--sp-16) * var(--bleed)); }
-  h2 { display: flex; align-items: baseline; gap: var(--sp-8); margin: var(--sp-20) 0 var(--sp-10); font-size: var(--fs-md);
-    font-weight: var(--fw-semibold); color: var(--muted); }
-  .activity h2 { margin-top: var(--sp-4); }
-  h2 .end { font-size: var(--fs-sm); color: var(--faint); font-weight: normal; }
+  .pane-in { padding: var(--sp-12) var(--sp-16) var(--sp-16); }
+  /* (Flat draws the band; this look a heading in the card) */
+  h2 { display: flex; align-items: baseline; gap: var(--sp-8); margin: calc(var(--sp-16) * (1 - var(--bleed))) 0 0;
+    padding: 0 var(--sp-16); font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--muted); }
+  h2 .end { margin-left: auto; font-size: var(--fs-sm); color: var(--faint); font-weight: normal; }
   .band-add { margin-right: calc(var(--sp-4) * -1); padding: 0 var(--sp-6); font-size: var(--fs-lg); line-height: 18px; color: var(--faint); }
   .band-add:hover:not(:disabled) { color: var(--text); }
   h3 { display: flex; align-items: baseline; gap: var(--sp-8); margin: var(--sp-10) 0 var(--sp-10); font-size: var(--fs-sm);
@@ -299,7 +336,12 @@
     font: inherit; color: inherit; }
   h3 .fold:hover:not(:disabled) { background: transparent; color: var(--text); }
   .caret { font-size: var(--fs-xs); color: var(--faint); }
-  h3.sect { margin-top: var(--sp-20); }
+  /* One grid of card columns (--cols, as many as fit 240px); each block
+     spans --span of them, its cards on the same columns. */
+  .blocks { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: var(--sp-10) var(--sp-12); align-items: start; }
+  .block { grid-column: span var(--span); min-width: 0; }
+  .block .cards { grid-template-columns: repeat(var(--span), minmax(0, 1fr)); }
+  h3 .more-cards { margin-left: auto; font-weight: normal; color: var(--accent-text); }
   .none { margin: 0 0 var(--sp-10); font-size: var(--fs-sm); color: var(--faint); }
   .archived-card { position: relative; min-width: 0; }
   .archived-card .card { padding-right: 110px; }

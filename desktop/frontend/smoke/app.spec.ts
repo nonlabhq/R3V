@@ -206,10 +206,17 @@ test("the folded sidebar's team mark has the team list beside it, on hover", asy
   await page.getByRole("button", { name: "Show the sidebar" }).click();
 });
 
-test("archives a project for the team from its right-click menu, and brings it back from the team's home", async () => {
+test("archives a project for the team from its settings (not its menu), and brings it back from the team's home", async () => {
   const row = () => page.locator("aside").getByRole("button", { name: /^Night Drive/ });
   await row().first().click({ button: "right" });
-  await page.getByRole("menu", { name: "Night Drive" }).getByRole("menuitem", { name: "Archive project…" }).click();
+  const menu = page.getByRole("menu", { name: "Night Drive" });
+  await expect(menu.getByRole("menuitem", { name: "Settings…" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Archive project…" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await row().first().click();
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("navigation", { name: "Project settings" }).getByRole("button", { name: "General" }).click();
+  await page.getByRole("button", { name: "Archive…" }).click();
   const dialog = page.getByRole("dialog", { name: "Archive “Night Drive”?" });
   await expect(dialog).toContainText("Nothing is deleted");
   await dialog.getByRole("button", { name: /^Archive( anyway)?$/ }).click();
@@ -224,13 +231,18 @@ test("archives a project for the team from its right-click menu, and brings it b
   await expect(row().first()).toBeVisible();
 });
 
-test("makes a section, drags a project onto it, sees it grouped in the panel and the team's home, and deletes the section", async () => {
-  await page.getByRole("button", { name: "Switch team" }).first().click();
-  await page.getByRole("button", { name: "New section…" }).click();
+// A new section from the Projects band's + (Project or Section).
+async function newSection(name: string) {
+  await page.locator("aside").getByRole("button", { name: "Add a project or a section" }).click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "Section", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "New section" });
-  await dialog.getByLabel("Section name").fill("Smoke");
+  await dialog.getByLabel("Section name").fill(name);
   await dialog.getByRole("button", { name: "Create" }).click();
   await expect(dialog).toHaveCount(0);
+}
+
+test("makes a section, drags a project onto it, sees it grouped in the panel and the team's home, and deletes the section", async () => {
+  await newSection("Smoke");
   const head = page.locator("aside .sect-h").filter({ hasText: "Smoke" });
   await expect(head).toBeVisible();
   // dragged onto the section's header, in steps
@@ -245,7 +257,32 @@ test("makes a section, drags a project onto it, sees it grouped in the panel and
   await expect(page.locator("aside ul[aria-label='Smoke']").getByText("Moonrise")).toBeVisible();
   // the team's home groups it the same way
   await expect(page.locator(".home .cards[aria-label='Smoke']").getByText("Moonrise")).toBeVisible();
-  // deleted: the project ungrouped again
+  // a second section, dragged by its header above the first (this
+  // computer's order: the team is asked nothing)
+  await newSection("Later");
+  const names = () => page.locator("aside .sect-h .sect-name").allTextContents();
+  await expect.poll(names).toEqual(["Smoke", "Later"]);
+  const later = page.locator("aside .sect-h").filter({ hasText: "Later" });
+  const a = (await later.boundingBox())!, b = (await head.boundingBox())!;
+  await page.mouse.move(a.x + 40, a.y + a.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(a.x + 40, a.y + a.height / 2 + ((b.y - a.y - 10) * i) / 12);
+  await page.mouse.up();
+  await expect.poll(names).toEqual(["Later", "Smoke"]);
+  expect(await page.evaluate(() => Object.keys(localStorage).some((k) => k.startsWith("r3v.sectionOrder:")))).toBe(true);
+  // Moonrise out of its section from its menu: Move to › None
+  await page.locator("aside li[data-key]").filter({ hasText: "Moonrise" }).click({ button: "right" });
+  await page.getByRole("menu", { name: "Moonrise" }).getByRole("menuitem", { name: /Move to/ }).click();
+  const moveTo = page.getByRole("menu", { name: "Move to" });
+  await expect(moveTo.getByRole("menuitemradio", { name: "Smoke" })).toHaveAttribute("aria-checked", "true");
+  await moveTo.getByRole("menuitemradio", { name: "None" }).click();
+  await expect(page.locator("aside ul[aria-label='Smoke']").getByText("Moonrise")).toHaveCount(0);
+  await expect(page.locator("aside ul[data-section='']").getByText("Moonrise")).toBeVisible();
+  await page.locator("aside .sect-h").filter({ hasText: "Later" }).hover();
+  await page.locator("aside .sect-h").filter({ hasText: "Later" }).getByRole("button", { name: "Section menu" }).click();
+  await page.getByRole("menu", { name: "Later" }).getByRole("menuitem", { name: "Delete section…" }).click();
+  await page.getByRole("dialog", { name: "Delete the section “Later”?" }).getByRole("button", { name: "Delete" }).click();
+  // the sections deleted
   await head.hover();
   await head.getByRole("button", { name: "Section menu" }).click();
   await page.getByRole("menu", { name: "Smoke" }).getByRole("menuitem", { name: "Delete section…" }).click();

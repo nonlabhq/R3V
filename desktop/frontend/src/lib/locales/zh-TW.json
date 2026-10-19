@@ -1971,8 +1971,6 @@
 "No section": "不分組",
 "Sections": "分組",
 "Rename…": "重新命名…",
-"Move up": "上移",
-"Move down": "下移",
 "Delete section…": "刪除分組…",
 "New section…": "新增分組…",
 "No projects in this section yet": "這個分組還沒有專案",
@@ -1983,9 +1981,12 @@
 "{who} put {project} in the section {section}": "{who} 把 {project} 放進分組 {section}",
 "{who} took {project} out of the section {section}": "{who} 把 {project} 移出分組 {section}",
 "{who} changed the sections": "{who} 變更了分組",
-"Add project…": "新增專案…",
 "Add a project or a section": "新增專案或分組",
 "Renamed on R3V Cloud, for everyone in your teams there": "已在 R3V Cloud 改名，你在那裡的團隊都會看到",
 "Your name on R3V Cloud, in all your teams there.": "你在 R3V Cloud 的名字，用於你在那裡的所有團隊。",
-"{teams} couldn't be reached: they get the new name the next time R3V starts.": "無法連上 {teams}：下次啟動 R3V 時會同步新名字。"
+"{teams} couldn't be reached: they get the new name the next time R3V starts.": "無法連上 {teams}：下次啟動 R3V 時會同步新名字。",
+"Move to": "移到",
+"None": "無",
+"Show all ({n})": "全部顯示（{n}）",
+"Show less": "收合"
 }
