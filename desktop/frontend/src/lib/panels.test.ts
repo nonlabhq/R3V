@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/svelte";
 
 // The quick launcher, a team's home and the project's Settings tab, with
@@ -108,6 +108,13 @@ describe("ProjectSettings in its tab", () => {
 
 describe("ProjectHeader", () => {
   const st = (openable: string[]) => ({ root: "C:/Song", name: "Song", tool: "Ableton Live", openable }) as never;
+  const code = { root: "C:/Code", name: "Code", tool: "", openable: [] } as never; // a kind with no tool
+  const found = [{ id: "explorer", name: "Explorer", path: "", chosen: false }, { id: "terminal", name: "Terminal", path: "C:/wt.exe", chosen: false },
+    { id: "vscode", name: "VS Code", path: "C:/Code.exe", chosen: false }];
+  const main = () => document.querySelector<HTMLButtonElement>(".split .main")!;
+  const more = () => screen.getByRole("button", { name: "More ways to open the project" });
+  beforeEach(() => localStorage.clear());
+
   it("opens the project in its program with F12, at the far right", async () => {
     render(ProjectHeader, { st: st(["."]) });
     const buttons = [...document.querySelectorAll(".actions > button, .actions > .open-wrap")];
@@ -116,10 +123,98 @@ describe("ProjectHeader", () => {
     expect(api.OpenInTool).toHaveBeenCalledWith("C:/Song", ".");
   });
 
-  it("lists the sets with F12 when there are several", async () => {
+  it("lists the sets with F12 when there are several, above the programs for the folder", async () => {
+    api.OpenPrograms.mockResolvedValue(found);
     render(ProjectHeader, { st: st(["A.als", "B.als"]) });
     await fireEvent.keyDown(window, { key: "F12" });
-    expect(screen.getByRole("menu").textContent).toContain("B.als");
+    const menu = screen.getByRole("menu");
+    expect(menu.textContent).toContain("B.als");
     expect(api.OpenInTool).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getAllByRole("menuitem").map((b) => b.textContent)).toEqual(
+      ["A.als", "B.als", "Explorer", "Terminal", "VS Code", "Choose a program…"]));
+    expect([...menu.querySelectorAll(".menu-h")].map((h) => h.textContent)).toEqual(["Project files", "Open the folder in"]);
+    await fireEvent.click(screen.getByRole("menuitem", { name: "B.als" }));
+    expect(api.OpenInTool).toHaveBeenCalledWith("C:/Song", "B.als");
+  });
+
+  it("with no tool and nothing picked yet, is “Open in…” and opens the menu; the program picked becomes its main action", async () => {
+    api.OpenPrograms.mockResolvedValue(found);
+    render(ProjectHeader, { st: code });
+    expect(main().textContent).toBe("Open in…");
+    await fireEvent.click(main());
+    expect(api.OpenPrograms).toHaveBeenCalledWith([]);
+    expect(screen.getByRole("menu").textContent).not.toContain("Project files");
+    await fireEvent.click(await screen.findByRole("menuitem", { name: "VS Code" }));
+    expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Code", "vscode");
+    expect(screen.queryByRole("menu")).toBeNull();
+    await waitFor(() => expect(main().textContent).toContain("Open in VS Code"));
+    await fireEvent.keyDown(window, { key: "F12" });
+    expect(api.OpenFolderWith).toHaveBeenCalledTimes(2);
+  });
+
+  it("remembers the program per project, on this computer", async () => {
+    localStorage.setItem("r3v.openWith:C:/Code", JSON.stringify({ last: { id: "cursor", name: "Cursor" }, chosen: [] }));
+    render(ProjectHeader, { st: code });
+    expect(main().textContent).toContain("Open in Cursor");
+    await fireEvent.click(main());
+    expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Code", "cursor");
+    cleanup();
+    render(ProjectHeader, { st: { root: "C:/Other", name: "Other", tool: "", openable: [] } as never });
+    expect(main().textContent).toBe("Open in…");
+  });
+
+  it("opens the folder with a program chosen, which then stays in the menu", async () => {
+    api.ChooseProgram.mockResolvedValue("D:/Apps/My Editor.exe");
+    api.OpenPrograms.mockResolvedValue(found);
+    render(ProjectHeader, { st: code });
+    await fireEvent.click(more());
+    await fireEvent.click(await screen.findByRole("menuitem", { name: "Choose a program…" }));
+    await waitFor(() => expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Code", "D:/Apps/My Editor.exe"));
+    expect(main().textContent).toContain("Open in My Editor");
+    expect(JSON.parse(localStorage.getItem("r3v.openWith:C:/Code")!).chosen).toEqual(["D:/Apps/My Editor.exe"]);
+    api.OpenPrograms.mockResolvedValue([...found, { id: "D:/Apps/My Editor.exe", name: "My Editor", path: "D:/Apps/My Editor.exe", chosen: true }]);
+    await fireEvent.click(more());
+    expect(api.OpenPrograms).toHaveBeenLastCalledWith(["D:/Apps/My Editor.exe"]);
+    expect(await screen.findByRole("menuitem", { name: "My Editor" })).toBeTruthy();
+  });
+
+  it("does nothing when choosing a program is cancelled", async () => {
+    api.ChooseProgram.mockResolvedValue("");
+    render(ProjectHeader, { st: code });
+    await fireEvent.click(more());
+    await fireEvent.click(screen.getByRole("menuitem", { name: "Choose a program…" }));
+    await waitFor(() => expect(api.ChooseProgram).toHaveBeenCalled());
+    expect(api.OpenFolderWith).not.toHaveBeenCalled();
+    expect(main().textContent).toBe("Open in…");
+  });
+
+  it("drops a chosen program that is no longer there", async () => {
+    localStorage.setItem("r3v.openWith:C:/Code", JSON.stringify({ last: { id: "D:/Gone.exe", name: "Gone" }, chosen: ["D:/Gone.exe"] }));
+    api.OpenPrograms.mockResolvedValue(found);
+    render(ProjectHeader, { st: code });
+    expect(main().textContent).toContain("Open in Gone");
+    await fireEvent.click(more());
+    await waitFor(() => expect(main().textContent).toBe("Open in…"));
+    expect(screen.queryByRole("menuitem", { name: "Gone" })).toBeNull();
+    expect(JSON.parse(localStorage.getItem("r3v.openWith:C:/Code")!).chosen).toEqual([]);
+  });
+
+  it("moves through the menu with the keyboard; Esc goes back to the ▾", async () => {
+    api.OpenPrograms.mockResolvedValue(found);
+    render(ProjectHeader, { st: code });
+    await fireEvent.click(more());
+    expect(more().getAttribute("aria-expanded")).toBe("true");
+    await screen.findByRole("menuitem", { name: "VS Code" });
+    await waitFor(() => expect(document.activeElement?.textContent).toBe("Explorer"));
+    const menu = screen.getByRole("menu");
+    await fireEvent.keyDown(menu, { key: "ArrowDown" });
+    expect(document.activeElement?.textContent).toBe("Terminal");
+    await fireEvent.keyDown(menu, { key: "End" });
+    expect(document.activeElement?.textContent).toBe("Choose a program…");
+    await fireEvent.keyDown(menu, { key: "ArrowDown" });
+    expect(document.activeElement?.textContent).toBe("Explorer");
+    await fireEvent.keyDown(menu, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(document.activeElement).toBe(more());
   });
 });

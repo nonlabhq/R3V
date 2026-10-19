@@ -1906,5 +1906,16 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "這個檔案在 R3V 停止後有變動：還原檔案會取代它（版本裡沒有它的話會刪除）。",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "這 {n} 個檔案在 R3V 停止後有變動：還原檔案會取代它們（版本裡沒有的會刪除）。",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "想保留的內容請先複製到別處。這個動作無法復原。",
-"Replace them and put files back": "取代它們並還原檔案"
+"Replace them and put files back": "取代它們並還原檔案",
+"Explorer": "檔案總管",
+"Terminal": "終端機",
+"Open in…": "開啟方式…",
+"Open the project folder in {program}": "用 {program} 開啟專案資料夾",
+"Open the project folder in another program": "用其他程式開啟專案資料夾",
+"Choose a program to open the project with": "選擇用來開啟專案的程式",
+"More ways to open the project": "更多開啟專案的方式",
+"Project files": "專案檔案",
+"Open the folder in": "用以下程式開啟資料夾",
+"Looking for programs…": "正在尋找程式…",
+"Choose a program…": "選擇程式…"
 }

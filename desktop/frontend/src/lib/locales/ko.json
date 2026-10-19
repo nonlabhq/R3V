@@ -1906,5 +1906,16 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "이 파일은 R3V가 멈춘 뒤 변경되었습니다: 파일을 되돌리면 이 파일이 바뀝니다(버전에 없으면 삭제됩니다).",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "이 파일 {n}개는 R3V가 멈춘 뒤 변경되었습니다: 파일을 되돌리면 바뀝니다(버전에 없는 파일은 삭제됩니다).",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "남기고 싶은 내용은 먼저 다른 곳에 복사하세요. 이 작업은 되돌릴 수 없습니다.",
-"Replace them and put files back": "바꾸고 파일 되돌리기"
+"Replace them and put files back": "바꾸고 파일 되돌리기",
+"Explorer": "파일 탐색기",
+"Terminal": "터미널",
+"Open in…": "다음에서 열기…",
+"Open the project folder in {program}": "프로젝트 폴더를 {program}에서 열기",
+"Open the project folder in another program": "프로젝트 폴더를 다른 프로그램에서 열기",
+"Choose a program to open the project with": "프로젝트를 열 프로그램 선택",
+"More ways to open the project": "프로젝트를 여는 다른 방법",
+"Project files": "프로젝트 파일",
+"Open the folder in": "폴더 열기 프로그램",
+"Looking for programs…": "프로그램을 찾는 중…",
+"Choose a program…": "프로그램 선택…"
 }

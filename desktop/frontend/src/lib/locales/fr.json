@@ -1906,5 +1906,16 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Ce fichier a changé après l'arrêt de R3V : remettre les fichiers le remplace (ou le supprime, si la version ne l'a pas).",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Ces {n} fichiers ont changé après l'arrêt de R3V : remettre les fichiers les remplace (ou supprime ceux que la version n'a pas).",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "Copiez d'abord ailleurs ce que vous voulez en garder. C'est irréversible.",
-"Replace them and put files back": "Les remplacer et remettre les fichiers"
+"Replace them and put files back": "Les remplacer et remettre les fichiers",
+"Explorer": "Explorateur",
+"Terminal": "Terminal",
+"Open in…": "Ouvrir dans…",
+"Open the project folder in {program}": "Ouvrir le dossier du projet dans {program}",
+"Open the project folder in another program": "Ouvrir le dossier du projet dans un autre programme",
+"Choose a program to open the project with": "Choisir un programme pour ouvrir le projet",
+"More ways to open the project": "Autres façons d’ouvrir le projet",
+"Project files": "Fichiers du projet",
+"Open the folder in": "Ouvrir le dossier dans",
+"Looking for programs…": "Recherche des programmes…",
+"Choose a program…": "Choisir un programme…"
 }
