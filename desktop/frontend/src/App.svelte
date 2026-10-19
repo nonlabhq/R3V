@@ -2,7 +2,8 @@
   import TeamMark from "$shared/TeamMark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type TeamProject, type TeamSummary, type Profile,
+    type SectionView } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -10,7 +11,10 @@
   import TeamHome from "./lib/TeamHome.svelte";
   import QuickLaunch, { type Pick as LaunchPick } from "./lib/QuickLaunch.svelte";
   import { linkPick } from "./lib/links.svelte";
-  import { besideMain, moveKey, readOrder, sortByOrder } from "./lib/order";
+  import { besideMain, moveKey, readOrder, sortByOrder, withGroupOrder } from "./lib/order";
+  import { foldSection, groupBySection, sectionFolds, type Group } from "./lib/sections.svelte";
+  import SectionMenu from "./lib/SectionMenu.svelte";
+  import PromptDialog from "./lib/PromptDialog.svelte";
   import { addTab, closeTab, homeRef, isHome, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab,
     snapOf, tabId, teamsOf, toSave, type TabRef, type TabSnap } from "./lib/tabs";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
@@ -248,6 +252,23 @@
     (!!p.workspace && entries.some((m) => !m.workspace && m.archived && sameRoot(m.root, p.mainRoot)));
   // (the one shown stays, folded or not)
   let rows = $derived(entries.filter((p) => (!wsHidden(p) && !archivedHidden(p)) || p === selectedEntry));
+  // Sections (docs/design/sections.md; Nightly): the panel groups the
+  // projects by the team's sections, the ungrouped first, each section
+  // folding (this computer); an agent's workspace goes with its project.
+  // Those who may (canEditSections) drag a project onto another section.
+  let sections = $derived<SectionView[]>(overview?.sectionsOn ? overview.sections ?? [] : []);
+  let canEditSections = $derived(!!overview?.sectionsOn && !!current?.canEditSections);
+  let movedTo = $state<Record<string, string>>({}); // projects just dropped on a section, until the list says so
+  const mainOf = (p: TeamProject) => (p.workspace ? entries.find((m) => !m.workspace && sameRoot(m.root, p.mainRoot)) : p);
+  const sectionOf = (p: TeamProject) => {
+    const m = mainOf(p);
+    return m?.id && m.id in movedTo ? movedTo[m.id] : m?.section ?? "";
+  };
+  const groupOf = (p: TeamProject) => { const s = sectionOf(p); return sections.some((x) => x.id === s) ? s : ""; };
+  let groups = $derived(groupBySection(rows, sections, sectionOf));
+  // (a folded section still shows the project shown, when it's in it)
+  const groupRows = (g: Group<TeamProject>) => (g.id && sectionFolds[g.id] ? g.items.filter((p) => p === selectedEntry) : g.items);
+  const projectCount = (g: Group<TeamProject>) => g.items.filter((p) => !p.workspace).length;
   let selectedEntry = $derived(
     entries.find((p) => (selected.root ? p.root === selected.root : !!selected.id && p.id === selected.id && !p.root)));
 
@@ -529,19 +550,33 @@
   // The others slide out of the dragged one's way; it doesn't slide: it is
   // where the pointer is.
   const slide = (key: string, held: string) => ({ duration: key === held || reducedMotion() ? 0 : 160 });
-  function projDown(e: PointerEvent, key: string) {
+  // A project is moved among its section's (each section its own order, in
+  // the one kept); dragged onto another section (or the ungrouped ones), it
+  // goes there for the whole team, once let go.
+  let dropOn = $state<string | null>(null); // that section's id ("": ungrouped); null: none
+  function projDown(e: PointerEvent, p: TeamProject) {
     if ((e.target as HTMLElement).closest(".fold-ws")) return;
+    const key = orderOf(p), group = groupOf(p);
     dragSort(e, {
       axis: "y",
       start: () => (dragging = key),
+      pointer: (m) => {
+        if (!canEditSections || !p.id || p.workspace) return;
+        const el = document.elementFromPoint?.(m.clientX, m.clientY)?.closest<HTMLElement>("[data-section]");
+        const over = el ? el.dataset.section ?? "" : null;
+        dropOn = over !== null && over !== group ? over : null;
+      },
       move: (before) => {
-        const keys = entries.map(orderOf);
+        if (dropOn !== null) return; // (it goes elsewhere: this section's order stays)
+        const keys = entries.filter((x) => groupOf(x) === group).map(orderOf);
         const at = before ? keys.indexOf(before) : -1;
         const moved = moveKey(keys, key, at < 0 ? keys.length : at);
-        if (moved !== keys) order = moved;
+        if (moved !== keys) order = withGroupOrder(entries.map(orderOf), moved);
       },
       follow: (d) => (dragDy = d),
       end: (moved) => {
+        const to = dropOn;
+        dropOn = null;
         if (moved) {
           projDragged = true;
           remember(orderKey(teamId), JSON.stringify(order));
@@ -549,8 +584,61 @@
         }
         dragging = "";
         dragDy = 0;
+        if (moved && to !== null) moveToSection(p, to);
       },
     });
+  }
+  async function moveToSection(p: TeamProject, id: string) {
+    movedTo = { ...movedTo, [p.id]: id };
+    try {
+      await api.SetProjectSection(teamId, p.id, id);
+      await reload();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      const { [p.id]: _, ...rest } = movedTo;
+      movedTo = rest;
+    }
+  }
+  // A section's menu (a right click on its header, or its ⋯; the Projects
+  // band's: New section…), and what it asks first.
+  let sectionMenu = $state<{ id: string; at: { left: number; top: number }; opener: HTMLElement | null } | null>(null);
+  let sectionAsk = $state<{ id: string; name: string } | null>(null); // a new one (id ""), or renaming one
+  let sectionDelete = $state<SectionView | null>(null);
+  let sectionBusy = $state(false);
+  function openSectionMenu(id: string, e: MouseEvent, opener: HTMLElement | null = null) {
+    if (!canEditSections) return;
+    e.preventDefault();
+    const r = opener?.getBoundingClientRect();
+    const x = r ? r.right - 200 : e.clientX, y = r ? r.bottom + 4 : e.clientY;
+    sectionMenu = { id, opener, at: { left: Math.max(0, Math.min(x, window.innerWidth - 220)), top: Math.min(y, window.innerHeight - 180) } };
+  }
+  async function sectionCall(f: () => Promise<unknown>): Promise<boolean> {
+    sectionBusy = true;
+    try {
+      await f();
+      await reload();
+      return true;
+    } catch (e) {
+      toast(errorText(e), "error");
+      return false;
+    } finally {
+      sectionBusy = false;
+    }
+  }
+  async function saveSection() {
+    const a = sectionAsk!, name = a.name.trim();
+    if (await sectionCall(() => (a.id ? api.RenameSection(teamId, a.id, name) : api.NewSection(teamId, name)))) sectionAsk = null;
+  }
+  function moveSection(id: string, by: number) {
+    const i = sections.findIndex((s) => s.id === id);
+    sectionCall(() => api.MoveSection(teamId, id, i + by));
+  }
+  async function deleteSection(s: SectionView) {
+    sectionDelete = null;
+    if (await sectionCall(() => api.DeleteSection(teamId, s.id))) {
+      toast(t("Deleted the section “{name}”: its projects are ungrouped", { name: s.name }), "info");
+    }
   }
   // The sidebar folds to the logo and a button to open it again (remembered).
   const SIDEBAR_KEY = "r3v.sidebar";
@@ -896,6 +984,7 @@
       </div>
       {#if current}
         <div class="team-slot"><TeamMenu folded {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))}
+          onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined}
           onteam={switchTeam} onsettings={openTeamSettings} /></div>
       {/if}
       <div class="section-slot">
@@ -904,14 +993,22 @@
       <!-- folded: the projects as their icons -->
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
-        {#each rows as p (p.root || p.id)}
-          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p), dragging)}
-            style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined} onpointerdown={(e) => projDown(e, orderOf(p))}>
-            <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
-              onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))} title={p.name} aria-label={p.name}>
-              <ProjectIcon {p} size={30} />
-            </button>
-          </div>
+        <!-- (each section its own list, a line between: the icons alone) -->
+        {#each groups as g (g.id)}
+          {#if !g.id || groupRows(g).length}
+            <div class="folded-group" class:sect={!!g.id} class:drop={dropOn === g.id} data-section={g.id} title={g.name || undefined}>
+              {#each groupRows(g) as p (p.root || p.id)}
+                <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p), dragging)}
+                  style:pointer-events={dragging === orderOf(p) ? "none" : undefined}
+                  style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined} onpointerdown={(e) => projDown(e, p)}>
+                  <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
+                    onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))} title={p.name} aria-label={p.name}>
+                    <ProjectIcon {p} size={30} />
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
         {/each}
         <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
@@ -939,10 +1036,12 @@
       <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
       <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))} onteam={switchTeam}
+        onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined}
         onsettings={openTeamSettings} /></div>
 
       <div class="list">
-        <div class="section row-h section-slot band">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="section row-h section-slot band" oncontextmenu={(e) => openSectionMenu("", e)}>
           <span>{t("Projects")}</span>
           {#if current}
             <button class="ghost tiny flat-only add-tiny" onclick={addToTeam} disabled={busy === "add"} title={t("Add project")}
@@ -955,18 +1054,41 @@
         {#if current && overview.teamError}
           <div class="offline" title={overview.teamError}>● {t("Storage not reachable")}</div>
         {/if}
+        <!-- the ungrouped projects, then each section (its header folds it;
+             its menu for those who may change the team's sections) -->
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
-          {#each rows as p (p.root || p.id)}
-            <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
-              animate:flip={slide(orderOf(p), dragging)} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
-              onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
-              {@render row(p)}
-            </li>
-          {:else}
-            <li class="empty faint">{t("No projects in this team yet.")}</li>
+        <div class="groups" class:dragging={!!dragging && canEditSections}
+          onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
+          {#each groups as g, gi (g.id)}
+            {#if g.id}
+              {@const shut = !!sectionFolds[g.id]}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div class="sect-h" class:drop={dropOn === g.id} data-section={g.id} oncontextmenu={(e) => openSectionMenu(g.id, e)}>
+                <button class="sect-fold" aria-expanded={!shut} onclick={() => foldSection(g.id)}
+                  title={shut ? t("Show the section's projects") : t("Hide the section's projects")}>
+                  <span class="caret" aria-hidden="true">{shut ? "▸" : "▾"}</span><span class="sect-name">{g.name}</span>
+                  <span class="count">{projectCount(g)}</span>
+                </button>
+                {#if canEditSections}
+                  <button class="ghost tiny sect-more" title={t("Section menu")} aria-label={t("Section menu")} aria-haspopup="menu"
+                    onclick={(e) => openSectionMenu(g.id, e, e.currentTarget)}>⋯</button>
+                {/if}
+              </div>
+            {/if}
+            <ul data-projects data-section={g.id} class:drop={dropOn === g.id} aria-label={g.name || undefined}>
+              {#each groupRows(g) as p (p.root || p.id)}
+                <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
+                  animate:flip={slide(orderOf(p), dragging)} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
+                  style:pointer-events={dragging === orderOf(p) ? "none" : undefined}
+                  onpointerdown={(e) => { if (!p.workspace) projDown(e, p); }} oncontextmenu={(e) => openMenu(p, e)}>
+                  {@render row(p)}
+                </li>
+              {:else}
+                {#if gi === 0 && groups.length === 1}<li class="empty faint">{t("No projects in this team yet.")}</li>{/if}
+              {/each}
+            </ul>
           {/each}
-        </ul>
+        </div>
         <div class="cards-only">
           <button class="add" onclick={addToTeam} disabled={busy === "add" || !current}>
             <span>+ {t("Add project")}</span>
@@ -1171,6 +1293,26 @@
 {/snippet}
 
 
+{#if sectionMenu}
+  {@const id = sectionMenu.id}
+  {@const i = sections.findIndex((s) => s.id === id)}
+  <SectionMenu name={sections[i]?.name ?? ""} at={sectionMenu.at} opener={sectionMenu.opener} first={i === 0} last={i === sections.length - 1}
+    onrename={() => (sectionAsk = { id, name: sections[i]?.name ?? "" })} onmove={(by) => moveSection(id, by)}
+    ondelete={() => (sectionDelete = sections[i] ?? null)} onnew={() => (sectionAsk = { id: "", name: "" })}
+    onclose={() => (sectionMenu = null)} />
+{/if}
+{#if sectionAsk}
+  <PromptDialog title={sectionAsk.id ? t("Rename the section") : t("New section")} label={t("Section name")} bind:value={sectionAsk.name}
+    text={t("Sections group the team's projects in the left panel and the team's home, for everyone in the team.")}
+    confirm={sectionAsk.id ? t("Rename") : t("Create")} busy={sectionBusy} onconfirm={saveSection} onclose={() => (sectionAsk = null)} />
+{/if}
+{#if sectionDelete}
+  {@const s = sectionDelete}
+  <ConfirmDialog title={t("Delete the section “{name}”?", { name: s.name })} danger confirm={t("Delete")}
+    text={t("Its projects stay as they are, ungrouped, for everyone in the team.")}
+    onconfirm={() => deleteSection(s)} onclose={() => (sectionDelete = null)} />
+{/if}
+
 {#if rowMenu && menuFor}
   <ProjectMenu p={menuFor} at={menuAt} onsettings={(p) => (settingsFor = p)} onarchive={canArchive(menuFor) ? (p) => (archiving = p) : undefined}
     onclose={() => (rowMenu = "")} />
@@ -1229,7 +1371,10 @@
     onunlink={() => { settingsFor = null; leaving = { roots: [p.root], go: () => forget(p) }; }}
     onlocate={() => { settingsFor = null; locate(p); }}
     onarchive={canArchive(p) ? () => (archiving = p) : undefined}
-    onunarchive={overview?.archive && current?.canArchive && p.archived ? () => unarchive(p) : undefined} />
+    onunarchive={overview?.archive && current?.canArchive && p.archived ? () => unarchive(p) : undefined}
+    sections={overview?.sectionsOn ? sections : undefined}
+    onsection={canEditSections ? async (id) => { await api.SetProjectSection(teamId, p.id, id); const key = rowKey(p); await reload();
+      if (settingsFor) settingsFor = entries.find((e) => rowKey(e) === key) ?? null; } : undefined} />
 {/snippet}
 
 {#if archiving && current}
@@ -1331,6 +1476,10 @@
   .folded-proj:hover:not(:disabled) { background: var(--side-hover); border-color: transparent; }
   .folded-proj.on { background: var(--select-bg); box-shadow: var(--select-bar); border-color: var(--select-line); }
   .folded-proj.remote { opacity: .45; }
+  .folded-group { display: flex; flex-direction: column; align-items: center; flex: none; min-width: 44px; }
+  /* (a section's icons: a line above) */
+  .folded-group.sect { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: var(--border-width) solid var(--line); }
+  .folded-group.drop { background: var(--accent-bg); border-radius: var(--row-radius); }
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   /* The project dragged: lifted over the others, where the pointer is; let
      go, it settles into its place. */
@@ -1368,6 +1517,20 @@
   .size { margin: 0 0 var(--sp-12); font-size: var(--fs-md); }
   .dl-progress { width: 360px; max-width: 100%; margin: var(--sp-10) auto 0; display: flex; text-align: left; }
   ul { list-style: none; margin: 0; padding: 0; }
+  /* A section: its header (folds it), then its projects. Dragged over,
+     where a project would go is marked; while one is dragged, an empty
+     list keeps a strip to drop on. */
+  .sect-h { position: relative; display: flex; align-items: center; margin-top: var(--sp-8); border-radius: var(--row-radius); }
+  .sect-fold { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); padding: var(--sp-4) var(--sp-28) var(--sp-4) var(--sp-8);
+    border: none; background: transparent; text-align: left; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--muted); }
+  .sect-fold:hover:not(:disabled) { background: var(--side-hover); color: var(--text); }
+  .sect-fold .caret { font-size: var(--fs-xs); color: var(--faint); }
+  .sect-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sect-fold .count { font-weight: normal; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .sect-more { position: absolute; right: var(--sp-4); top: 50%; transform: translateY(-50%); opacity: 0; }
+  .sect-h:hover .sect-more, .sect-more:focus-visible { opacity: 1; }
+  .sect-h.drop, ul.drop { background: var(--accent-bg); box-shadow: inset 0 0 0 var(--border-width) var(--accent); }
+  .groups.dragging ul { min-height: var(--sp-12); }
   li { display: flex; align-items: center; position: relative; }
   .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--row-radius); text-align: left; }
   .proj:hover { background: var(--side-hover); }

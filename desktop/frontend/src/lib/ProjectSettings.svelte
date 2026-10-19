@@ -15,14 +15,15 @@
   import ProjectWorkflow from "./ProjectWorkflow.svelte";
   import SettingsTabs from "$shared/team/SettingsTabs.svelte";
   import { branchLabel, branchLane } from "$shared/branches";
-  import { ago, type BranchList, type ArchivedBranch, type StepsInfo } from "./api";
+  import { ago, type BranchList, type ArchivedBranch, type SectionView, type StepsInfo } from "./api";
 
   // A project's settings: its name, where it is, its branches, its rules,
   // its workflow, and what can be done with it (check it, unlink or delete
   // it). In the project's Settings tab, in tabs down the left as a team's
   // settings are. The actions that need a confirmation of their own are the
   // caller's.
-  let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved, onarchive, onunarchive }: {
+  let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved, onarchive, onunarchive,
+    sections, onsection }: {
     p: TeamProject;
     inline?: boolean;       // in the project's Settings tab, not a dialog
     team?: TeamSummary;     // the project's team (none: on this computer only)
@@ -39,7 +40,26 @@
     // where the build or the project can't.
     onarchive?: () => void;
     onunarchive?: () => void;
+    // The team's sections (docs/design/sections.md; Nightly: none where the
+    // build has none), and putting the project in one ("": none), for
+    // those who may.
+    sections?: SectionView[];
+    onsection?: (id: string) => Promise<void>;
   } = $props();
+  let sectionSaving = $state(false);
+  async function setSection(id: string) {
+    sectionSaving = true;
+    try {
+      await onsection!(id);
+      const s = sections?.find((x) => x.id === id);
+      toast(s ? t("“{name}” is in the section {section} for everyone in the team", { name: p.name, section: s.name })
+        : t("“{name}” is in no section", { name: p.name }), "ok");
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      sectionSaving = false;
+    }
+  }
 
   const here = $derived(p.status === "downloaded");
   let healthOpen = $state(false); // the project check: Live version, samples, plugins
@@ -190,6 +210,19 @@
     <h3>{t("Where")}</h3>
     <dl>
       <dt>{t("Team")}</dt><dd>{team ? team.name : t("This computer only")}</dd>
+      {#if team && sections && p.id && !p.workspace}
+        <dt>{t("Section")}</dt>
+        <dd>
+          {#if onsection}
+            <select aria-label={t("Section")} value={p.section ?? ""} disabled={sectionSaving} onchange={(e) => setSection(e.currentTarget.value)}>
+              <option value="">{t("No section")}</option>
+              {#each sections as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
+            </select>
+          {:else}
+            {p.sectionName || t("No section")}
+          {/if}
+        </dd>
+      {/if}
       {#if p.root}
         <dt>{t("Folder")}</dt>
         <dd class="folder">

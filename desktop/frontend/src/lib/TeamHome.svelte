@@ -12,6 +12,7 @@
   import { appTeamSource } from "./teamSource";
   import { toast } from "./notify.svelte";
   import { errorText } from "./api";
+  import { foldSection, groupBySection, sectionFolds } from "./sections.svelte";
 
   // A team's home (a click on the team in the sidebar): who's in it, what
   // happened lately, and its projects (those on this computer, then those
@@ -46,8 +47,12 @@
   // Archived for the team (docs/design/archive.md): listed apart, folded.
   let active = $derived(mains.filter((p) => !p.archived));
   let archived = $derived(mains.filter((p) => p.archived));
-  let here = $derived(active.filter((p) => p.status !== "remote"));
-  let away = $derived(active.filter((p) => p.status === "remote"));
+  // Sections (docs/design/sections.md; Nightly): the ungrouped projects
+  // first (here, then on the cloud storage), then each section's, folded
+  // as in the left panel.
+  let grouped = $derived(groupBySection(active, overview.sectionsOn ? overview.sections ?? [] : [], (p) => p.section ?? ""));
+  let here = $derived(grouped[0].items.filter((p) => p.status !== "remote"));
+  let away = $derived(grouped[0].items.filter((p) => p.status === "remote"));
   let archivedOpen = $state(false);
   let unarchiving = $state("");
   async function unarchive(p: TeamProject) {
@@ -166,6 +171,20 @@
               {#each away as p (p.id)}{@render card(p)}{/each}
             </div>
           {/if}
+          {#each grouped.slice(1) as g (g.id)}
+            {@const shut = !!sectionFolds[g.id]}
+            <h3 class="sect"><button class="fold" aria-expanded={!shut} onclick={() => foldSection(g.id)}>
+              <span class="caret" aria-hidden="true">{shut ? "▸" : "▾"}</span>{g.name}<span class="count">{g.items.length}</span></button></h3>
+            {#if !shut}
+              {#if g.items.length}
+                <div class="cards" aria-label={g.name}>
+                  {#each g.items as p (p.root || p.id)}{@render card(p)}{/each}
+                </div>
+              {:else}
+                <p class="none">{t("No projects in this section yet")}</p>
+              {/if}
+            {/if}
+          {/each}
           {#if archived.length}
             <!-- archived for the team (docs/design/archive.md): folded -->
             <h3><button class="fold" aria-expanded={archivedOpen} onclick={() => (archivedOpen = !archivedOpen)}>
@@ -262,6 +281,8 @@
     font: inherit; color: inherit; }
   h3 .fold:hover:not(:disabled) { background: transparent; color: var(--text); }
   .caret { font-size: var(--fs-xs); color: var(--faint); }
+  h3.sect { margin-top: var(--sp-20); }
+  .none { margin: 0 0 var(--sp-10); font-size: var(--fs-sm); color: var(--faint); }
   .archived-card { position: relative; min-width: 0; }
   .archived-card .card { padding-right: 110px; }
   .archived-card .card .name { color: var(--muted); }

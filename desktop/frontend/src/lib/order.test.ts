@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { besideMain, moveKey, readOrder, sortByOrder } from "./order";
+import { besideMain, moveKey, readOrder, sortByOrder, withGroupOrder } from "./order";
 
 describe("project order", () => {
   it("sorts by the order dragged, the rest after as they came", () => {
@@ -7,6 +7,11 @@ describe("project order", () => {
     expect(sortByOrder(["a", "b", "c", "d"], id, ["c", "a"])).toEqual(["c", "a", "b", "d"]);
     expect(sortByOrder(["a", "b"], id, [])).toEqual(["a", "b"]);
     expect(sortByOrder(["a", "b"], id, ["gone", "b"])).toEqual(["b", "a"]);
+  });
+
+  it("orders one section's keys in their places, the others as they were", () => {
+    expect(withGroupOrder(["a", "x", "b", "y", "c"], ["c", "a", "b"])).toEqual(["c", "x", "a", "y", "b"]);
+    expect(withGroupOrder(["a", "b"], [])).toEqual(["a", "b"]);
   });
 
   it("moves a key up or down", () => {

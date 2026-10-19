@@ -201,3 +201,33 @@ test("archives a project for the team from its right-click menu, and brings it b
   await page.getByRole("button", { name: "Unarchive" }).click();
   await expect(row().first()).toBeVisible();
 });
+
+test("makes a section, drags a project onto it, sees it grouped in the panel and the team's home, and deletes the section", async () => {
+  await page.getByRole("button", { name: "Switch team" }).first().click();
+  await page.getByRole("button", { name: "New section…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New section" });
+  await dialog.getByLabel("Section name").fill("Smoke");
+  await dialog.getByRole("button", { name: "Create" }).click();
+  await expect(dialog).toHaveCount(0);
+  const head = page.locator("aside .sect-h").filter({ hasText: "Smoke" });
+  await expect(head).toBeVisible();
+  // dragged onto the section's header, in steps
+  const row = page.locator("aside li[data-key]").filter({ hasText: "Moonrise" });
+  const from = (await row.boundingBox())!, to = (await head.boundingBox())!;
+  const x = from.x + from.width / 2, y0 = from.y + from.height / 2, y1 = to.y + to.height / 2;
+  await page.mouse.move(x, y0);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) await page.mouse.move(x, y0 + ((y1 - y0) * i) / 12);
+  await expect(head).toHaveClass(/\bdrop\b/);
+  await page.mouse.up();
+  await expect(page.locator("aside ul[aria-label='Smoke']").getByText("Moonrise")).toBeVisible();
+  // the team's home groups it the same way
+  await expect(page.locator(".home .cards[aria-label='Smoke']").getByText("Moonrise")).toBeVisible();
+  // deleted: the project ungrouped again
+  await head.hover();
+  await head.getByRole("button", { name: "Section menu" }).click();
+  await page.getByRole("menu", { name: "Smoke" }).getByRole("menuitem", { name: "Delete section…" }).click();
+  await page.getByRole("dialog", { name: "Delete the section “Smoke”?" }).getByRole("button", { name: "Delete" }).click();
+  await expect(head).toHaveCount(0);
+  await expect(page.locator("aside li[data-key]").filter({ hasText: "Moonrise" })).toBeVisible();
+});

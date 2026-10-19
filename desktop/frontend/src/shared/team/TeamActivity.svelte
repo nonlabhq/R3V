@@ -59,12 +59,25 @@
       case "project-archived": return t("{who} archived the project {project}", { who, project: i.projectName });
       case "project-unarchived": return t("{who} brought back the project {project}", { who, project: i.projectName });
       case "member-joined": return t("{who} joined the team", { who });
+      case "sections-changed": return sectionText(i, who);
     }
     return i.kind;
   }
+  function sectionText(i: ActivityItem, who: string): string {
+    const section = i.section ?? "", project = i.projectName;
+    switch (i.change) {
+      case "made": return t("{who} made the section {section}", { who, section });
+      case "renamed": return t("{who} renamed the section {was} to {section}", { who, section, was: i.was ?? "" });
+      case "deleted": return t("{who} deleted the section {section}", { who, section });
+      case "moved": return t("{who} moved the section {section}", { who, section });
+      case "project-in": return t("{who} put {project} in the section {section}", { who, section, project });
+      case "project-out": return t("{who} took {project} out of the section {section}", { who, section, project });
+    }
+    return t("{who} changed the sections", { who });
+  }
   // Where (the project, the branch) and when.
   function meta(i: ActivityItem): string {
-    const where = i.projectName && !i.kind.startsWith("project") ? [i.projectName] : [];
+    const where = i.projectName && !i.kind.startsWith("project") && i.kind !== "sections-changed" ? [i.projectName] : [];
     if (where.length && i.branch && (i.kind === "share" || i.kind === "merge")) where.push(i.branch);
     return [...where, ago(i.time)].join(" · ");
   }
