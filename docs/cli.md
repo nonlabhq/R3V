@@ -68,7 +68,7 @@ Keys: `text:<path>#<n>` a hunk (`both`: yours, then theirs), `file:<path>` a who
 ## Branches (advanced)
 
 ```
-r3v branch                    # list branches and their latest versions
+r3v branch [--json]           # list branches and their latest versions
 r3v branch new yi-ideas       # start a branch from your current version
 r3v switch main
 r3v merge yi-ideas --preview  # what would come in and what conflicts

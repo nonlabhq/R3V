@@ -43,15 +43,18 @@ func cmdBranch(args []string) error {
 			return usageError("usage: r3v branch new NAME [--agent]")
 		}
 		name := strings.Join(words, " ")
-		if _, err := r.NewBranchWith(name, project.BranchOptions{Switch: true, Agent: agent}); err != nil {
+		key, err := r.NewBranchWith(name, project.BranchOptions{Switch: true, Agent: agent})
+		if err != nil {
 			return err
 		}
-		what := "branch"
-		if agent {
-			what = "agent branch"
-		}
-		fmt.Printf("created %s %q from your current version and switched to it\n", what, name)
-		fmt.Printf("versions you commit now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
+		result("branch", map[string]any{"op": "new", "key": key, "name": name, "agent": agent, "head": r.Head()}, func() {
+			what := "branch"
+			if agent {
+				what = "agent branch"
+			}
+			fmt.Printf("created %s %q from your current version and switched to it\n", what, name)
+			fmt.Printf("versions you commit now go to this branch; merge back with `r3v switch main` + `r3v merge %q`\n", name)
+		})
 		return nil
 	}
 	// archivedKey finds an archived branch by its key or its name.
@@ -74,7 +77,9 @@ func cmdBranch(args []string) error {
 		if err := r.ArchiveBranch(key); err != nil {
 			return err
 		}
-		fmt.Printf("archived branch %q; its versions stay (`r3v branch unarchive %s` brings it back)\n", key, key)
+		result("branch", map[string]any{"op": "archive", "key": key}, func() {
+			fmt.Printf("archived branch %q; its versions stay (`r3v branch unarchive %s` brings it back)\n", key, key)
+		})
 		return nil
 	}
 	if len(args) >= 2 && args[0] == "unarchive" {
@@ -82,7 +87,9 @@ func cmdBranch(args []string) error {
 		if err := r.UnarchiveBranch(key); err != nil {
 			return err
 		}
-		fmt.Printf("branch %q is back where it was\n", key)
+		result("branch", map[string]any{"op": "unarchive", "key": key}, func() {
+			fmt.Printf("branch %q is back where it was\n", key)
+		})
 		return nil
 	}
 	if len(args) >= 2 && args[0] == "delete" {
@@ -90,7 +97,9 @@ func cmdBranch(args []string) error {
 		if err := r.DeleteBranch(key); err != nil {
 			return err
 		}
-		fmt.Printf("deleted archived branch %q for good; its versions stay where other branches have them\n", key)
+		result("branch", map[string]any{"op": "delete", "key": key}, func() {
+			fmt.Printf("deleted archived branch %q for good; its versions stay where other branches have them\n", key)
+		})
 		return nil
 	}
 	if len(args) == 1 && args[0] == "archived" {
@@ -100,17 +109,19 @@ func cmdBranch(args []string) error {
 		}
 		recs, _ := r.BranchRecords()
 		names := r.MemberNames()
+		items := []archivedItem{}
 		for _, d := range gone {
-			label := d.Key
-			if n := recs[d.Key].Name; n != "" {
-				label = n
-			}
-			by := names[d.By]
-			if by == "" {
-				by = "someone"
-			}
-			fmt.Printf("%-16s %s  archived by %s %s\n", label, short(d.Head), by, d.Time.Local().Format("2006-01-02 15:04"))
+			items = append(items, archivedItem{Key: d.Key, Name: branchLabel(d.Key, recs[d.Key]), Head: d.Head, By: d.By, ByName: names[d.By], Time: d.Time})
 		}
+		result("branch", map[string]any{"archived": items}, func() {
+			for _, d := range items {
+				by := d.ByName
+				if by == "" {
+					by = "someone"
+				}
+				fmt.Printf("%-16s %s  archived by %s %s\n", d.Name, short(d.Head), by, d.Time.Local().Format("2006-01-02 15:04"))
+			}
+		})
 		return nil
 	}
 	if len(args) >= 1 && args[0] == "log" && len(args) <= 2 {
@@ -121,7 +132,7 @@ func cmdBranch(args []string) error {
 		return branchLog(r, name)
 	}
 	if len(args) > 0 {
-		return errors.New("usage: r3v branch [new NAME [--agent] | archive NAME | archived | unarchive NAME | delete NAME | log [NAME]]")
+		return usageError("usage: r3v branch [new NAME [--agent] | archive NAME | archived | unarchive NAME | delete NAME | log [NAME]]")
 	}
 	branches, err := r.Branches()
 	if err != nil {
@@ -129,6 +140,10 @@ func cmdBranch(args []string) error {
 	}
 	recs, _ := r.BranchRecords()
 	var names map[string]string
+	if jsonMode {
+		result("branch", map[string]any{"branches": branchItems(branches, recs, r.MemberNames())}, nil)
+		return nil
+	}
 	for _, b := range branches {
 		mark := "  "
 		if b.Current {
@@ -356,6 +371,14 @@ func branchLog(r *project.Repo, name string) error {
 	moves, names, err := r.BranchLog(name)
 	if err != nil {
 		return err
+	}
+	if jsonMode {
+		items := []branchMoveItem{}
+		for _, m := range moves {
+			items = append(items, branchMoveItem{Branch: m.Branch, From: m.From, To: m.To, By: m.By, ByName: names[m.By], Time: m.Time})
+		}
+		result("branch", map[string]any{"moves": items}, nil)
+		return nil
 	}
 	if len(moves) == 0 {
 		fmt.Println("no branch moves recorded")

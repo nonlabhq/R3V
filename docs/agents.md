@@ -313,6 +313,18 @@ one you're on); `branch archived` lists them; `branch unarchive NAME` brings
 one back; `branch delete NAME` deletes an archived branch for good (ask the
 user first).
 
+`branch --json`: `branches`, each `key`, `name` (what people call it;
+the key when it has no other), `head`, `current`, `kind` (`agent`, or
+none: a person's), `owner` (the member an agent's works for) and
+`owner_name`, `color`, `parent` (the branch it was made from) and `from`
+(the version it started at), `latest` (its latest version, as `log`
+gives one; absent when not on this computer). `branch archived --json`:
+`archived` (`key`, `name`, `head`, `by`, `by_name`, `time`). `branch log
+[NAME] --json`: `moves`, oldest first (`branch`, `from`, `to`, `by`,
+`by_name`, `time`; no `from`: made, no `to`: deleted). `branch new`,
+`archive`, `unarchive`, `delete`: `op` and `key` (`new` also `name`,
+`agent`, `head`).
+
 `commit`, `update` and `merge`: `action` (`published`, `local`,
 `nothing-changed`, `up-to-date`, `ahead`, `fast-forward`, `merged`),
 `saved` (the version committed, or null), `from`, `to`, `merged` (what a merge
