@@ -2002,5 +2002,8 @@
 "Only the team's owners and admins can bring it back to {team}: ask one.": "Nur die Inhaber und Admins des Teams können es zurück in {team} holen: Frag eine Person davon.",
 "Bring it back to {team}": "Zurück in {team} holen",
 "Point this copy at {team}": "Auf {team} umstellen",
-"This copy is {team}'s now, and your versions are shared there": "Diese Kopie gehört jetzt zu {team}, und deine Versionen sind dort geteilt"
+"This copy is {team}'s now, and your versions are shared there": "Diese Kopie gehört jetzt zu {team}, und deine Versionen sind dort geteilt",
+"New: {kind} can lock too": "Neu: {kind} können jetzt auch sperren",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V sperrt sie jetzt standardmäßig. Euer Team hat seine Arten vorher selbst gewählt, deshalb sperren sie erst, wenn du sie hinzufügst.",
+"Add": "Hinzufügen"
 }

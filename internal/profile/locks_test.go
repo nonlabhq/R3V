@@ -87,6 +87,13 @@ func TestDefaultLockKinds(t *testing.T) {
 	if got := DefaultLockKinds(); !reflect.DeepEqual(got, want) {
 		t.Errorf("defaults: %v", got)
 	}
+	// What a team that picked its kinds before is offered: models, a
+	// default since; a new kind is a default too.
+	for _, k := range LockKinds {
+		if k.New != (k.ID == "models") || k.New && !k.Default {
+			t.Errorf("%s: new %v", k.ID, k.New)
+		}
+	}
 	l := ResolveLocking(TeamLocks{On: true, Kinds: DefaultLockKinds()}, FileLocks{})
 	for p, want := range map[string]bool{"a.umap": true, "b.prefab": true, "c.scn": true, "d.tscn": false, "e.psd": true,
 		"f.als": false, "g.wav": false, "h.png": false, "Assets/ship.fbx": true, "i.obj": true, "j.dae": true, "k.glb": true} {

@@ -2002,5 +2002,8 @@
 "Only the team's owners and admins can bring it back to {team}: ask one.": "只有团队的所有者和管理员能把它带回 {team}：请找其中一位。",
 "Bring it back to {team}": "带回 {team}",
 "Point this copy at {team}": "改指向 {team}",
-"This copy is {team}'s now, and your versions are shared there": "这份副本现在属于 {team}，你的版本也已共享到那里"
+"This copy is {team}'s now, and your versions are shared there": "这份副本现在属于 {team}，你的版本也已共享到那里",
+"New: {kind} can lock too": "新功能：{kind}也可以锁定",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V 现在默认锁定它们。你的团队之前自己选过种类，所以要添加后才会锁定。",
+"Add": "添加"
 }

@@ -131,6 +131,9 @@ type cliError struct {
 	Path    string
 	Next    []nextJSON   // not_connected: how to connect the project
 	Deleted *deletedJSON // project_deleted: what happened
+	// Details: what the command found, as its result would have said
+	// (verify_problems: verify's result).
+	Details any
 }
 
 // deletedJSON is what the team's log tells of a project deleted from its
@@ -203,6 +206,8 @@ type errorJSON struct {
 	Next []nextJSON `json:"next,omitempty"`
 	// Deleted: project_deleted's details.
 	Deleted *deletedJSON `json:"deleted,omitempty"`
+	// Details: what the command found (verify_problems: verify's result).
+	Details any `json:"details,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
 	// having failed after.
 	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
@@ -400,7 +405,7 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Deleted: ce.Deleted, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Deleted: ce.Deleted, Details: ce.Details, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())

@@ -4,8 +4,8 @@
 import { t } from "./i18n";
 import kinds from "./lockKinds.json";
 
-/** A kind of file that can lock by itself. default: auto-locked when a team turns locking on. */
-export type LockKind = { id: string; patterns: string[]; default: boolean };
+/** A kind of file that can lock by itself. default: auto-locked when a team turns locking on; new: a default since teams could pick their own (offered to a team that did). */
+export type LockKind = { id: string; patterns: string[]; default: boolean; new?: boolean };
 
 /** The kinds a team picks from, in the order offered. */
 export const LOCK_KINDS: LockKind[] = kinds;

@@ -26,24 +26,29 @@ type LockKind struct {
 	Patterns []string `json:"patterns"`
 	// Default: auto-locked when a team turns locking on.
 	Default bool `json:"default"`
+	// New: a default since after teams could pick their own kinds. A team
+	// that picked keeps its list, so the Workflow tab offers it to the
+	// team's admins (never added without their click). A kind made a
+	// default later is marked so too.
+	New bool `json:"new,omitempty"`
 }
 
 // LockKinds are the kinds of file a team picks from, in the order offered.
 // Live sets aren't one: R3V merges them track by track.
 var LockKinds = []LockKind{
-	{"unreal", []string{"*.umap", "*.uasset"}, true},
-	{"unity", []string{"*.unity", "*.prefab", "*.asset"}, true},
-	{"godot", []string{"*.scn", "*.res"}, true}, // binary scenes and resources
-	{"blender", []string{"*.blend"}, true},
-	{"source-art", []string{"*.psd", "*.psb", "*.kra", "*.spp", "*.ma", "*.mb", "*.max", "*.c4d"}, true},
-	{"godot-text", []string{"*.tscn", "*.tres"}, false},
-	{"images", []string{"*.png", "*.jpg", "*.jpeg", "*.tga", "*.tif", "*.tiff", "*.exr", "*.hdr"}, false},
+	{"unreal", []string{"*.umap", "*.uasset"}, true, false},
+	{"unity", []string{"*.unity", "*.prefab", "*.asset"}, true, false},
+	{"godot", []string{"*.scn", "*.res"}, true, false}, // binary scenes and resources
+	{"blender", []string{"*.blend"}, true, false},
+	{"source-art", []string{"*.psd", "*.psb", "*.kra", "*.spp", "*.ma", "*.mb", "*.max", "*.c4d"}, true, false},
+	{"godot-text", []string{"*.tscn", "*.tres"}, false, false},
+	{"images", []string{"*.png", "*.jpg", "*.jpeg", "*.tga", "*.tif", "*.tiff", "*.exr", "*.hdr"}, false, false},
 	// Models: two people (or agents) changing one lose a side at the merge,
 	// as with a .blend, so they lock by default too.
 	{"models", []string{"*.fbx", "*.obj", "*.gltf", "*.glb", "*.usd", "*.usdc", "*.abc",
-		"*.dae", "*.usda", "*.usdz", "*.3ds", "*.stl", "*.ply"}, true},
-	{"audio", []string{"*.wav", "*.aif", "*.aiff", "*.flac", "*.mp3", "*.ogg"}, false},
-	{"video", []string{"*.mp4", "*.mov", "*.mkv", "*.avi"}, false},
+		"*.dae", "*.usda", "*.usdz", "*.3ds", "*.stl", "*.ply"}, true, true},
+	{"audio", []string{"*.wav", "*.aif", "*.aiff", "*.flac", "*.mp3", "*.ogg"}, false, false},
+	{"video", []string{"*.mp4", "*.mov", "*.mkv", "*.avi"}, false, false},
 }
 
 // DefaultLockKinds are the kinds auto-locked when a team turns locking on.

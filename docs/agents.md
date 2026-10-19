@@ -265,8 +265,9 @@ or R3V's own, as work kept through an update), `folder_lists`,
 `team_only_files` (only in the team's storage), `folder_only_files`,
 `team_checked` (`team_unreachable`: the team's storage couldn't be asked),
 `problems` (`kind`, `id`, `path`, `detail`, `fixed`, `how`),
-`open_problems` (not repaired: `--json` exits 0, read this; the text
-output exits 1) and `summary`. Once versions are shared R3V lets go of
+`open_problems` (not repaired) and `summary`. With problems not repaired
+it fails, as the text output does (exit 1): code `verify_problems`, these
+same fields in `error.details`. Once versions are shared R3V lets go of
 its copies here of files the team's storage has (Live Sets and the rules
 stay) and downloads one when a version needs it: few `local_files` with
 many `team_only_files` is expected, not history lost.
@@ -525,6 +526,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |
 | 1 | `in_workspace` | only the project's main copy does this (connecting it to a team, moving it): run it there |
 | 1 | `workspace_orphaned` | the project's main copy was moved or deleted: the workspace can't be used; make it again |
+| 1 | `verify_problems` | `verify` found problems it didn't repair: `details` holds its result (`problems`, `open_problems`, `summary`, …). Show the user `details.problems`; `verify --repair` brings back what can be (ask the user first) |
 | 1 | `backup_folder_missing` | the backup folder isn't there: ask the user to connect the drive |
 | 1 | `backup_folder_not_empty` | `backup run` needs an empty folder or this team's backup |
 | 1 | `not_a_backup` | the folder holds no R3V backup |
@@ -540,6 +542,13 @@ Codes are stable; messages are for people and may change.
   levels). Saving can upload a lot the first time; later only what changed.
 - Live sets (`.als`) merge track by track; other files merge only when one
   side changed them.
+- `r3v merge-files <base> <ours> <theirs> -o <out>` merges three files on
+  disk the way a branch merge would (the project's rules for `out`, else
+  the presets' by its name; outside a project, a file they don't know by
+  its content: text line by line): a scene or a model changed on both
+  sides is a `merge_conflict`, not lines mixed. `--json` `handler` says how it merged
+  (`text`, `whole`, `unity-yaml`, …); `--as text` merges line by line
+  anyway, only when the user says the file can be.
 - `r3v status` shows what changed inside a modified set
   (`set_changes`); `r3v diff` shows every changed file the way it
   reads (`--version V`, `--from A --to B`), and `r3v diff a.als b.als` compares

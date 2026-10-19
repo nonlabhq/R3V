@@ -218,7 +218,7 @@ r3v verify --repair   # bring back what can be: from the project folder or the t
 
 The app does the same from a project's ⋯ menu in the sidebar (**Check project…**). A file damaged here (a failing disk, say) comes back from a file in the project folder with the same content, or from the team's storage; what has no copy left anywhere is listed with the version it's in.
 
-It says what is where. Versions: every version on this computer, of which those in this branch's history (what `r3v log` lists); the others are other branches' or workspaces' (a version committed `--local` in a workspace, say) or R3V's own (work kept through an update). Files: those stored in `.r3v` (read again), and those only in the team's storage: once a version is shared, R3V lets go of its copy here of files the team's storage has (Live Sets and the rules stay) and downloads one when a version needs it, so few files stored here is expected, not history lost; going back to an old version then needs the team's storage. `--json`: `versions`, `in_history`, `other_versions`, `folder_lists`, `local_files`, `local_bytes`, `team_only_files`, `folder_only_files`, `team_checked`, `problems`, `open_problems`, `summary`.
+It says what is where. Versions: every version on this computer, of which those in this branch's history (what `r3v log` lists); the others are other branches' or workspaces' (a version committed `--local` in a workspace, say) or R3V's own (work kept through an update). Files: those stored in `.r3v` (read again), and those only in the team's storage: once a version is shared, R3V lets go of its copy here of files the team's storage has (Live Sets and the rules stay) and downloads one when a version needs it, so few files stored here is expected, not history lost; going back to an old version then needs the team's storage. `--json`: `versions`, `in_history`, `other_versions`, `folder_lists`, `local_files`, `local_bytes`, `team_only_files`, `folder_only_files`, `team_checked`, `problems`, `open_problems`, `summary`; with problems not repaired it fails (exit 1, code `verify_problems`) with these in `error.details`.
 
 ## Backing up the team
 
@@ -281,9 +281,20 @@ r3v diff --from A --to B [PATHS]            # between two versions
 r3v diff --files <a> <b>                    # two files on disk, any kind
 r3v info <file>                             # what it is (a set's tracks, audio's format, a picture's
                                             # size, text's lines) and whether R3V keeps it
-r3v merge-files <base> <ours> <theirs> -o out [--strategy fail|ours|theirs|both]
+r3v merge-files <base> <ours> <theirs> -o out [--strategy fail|ours|theirs|both] [--as text|whole]
                                             # a 3-way merge, each kind the way it merges
 ```
+
+`merge-files` merges each file the way a branch merge would: with the
+handler the project's rules give `out` when it is in a project, else the one
+the presets give its name (text line by line, a Unity scene with
+UnityYAMLMerge). A kind no handler takes, a `.fbx` say, is merged whole: a
+conflict when both sides changed it. Outside a project, a file no preset
+knows (a `.txt` in an ordinary git repository) goes by its content: text
+line by line, anything else whole. `--as text` merges it line by line
+anyway, `--as whole` chooses it whole. `--json`: `kind` (`text`, `binary`:
+what the files are), `handler` (how they were merged: `text`, `whole`, or a
+preset's, as `unity-yaml`), `out`, `conflicts`, `resolved`.
 
 ## Working with Live Sets directly
 

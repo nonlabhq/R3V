@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/nonlabhq/r3v/ext"
+	"github.com/nonlabhq/r3v/internal/profile"
 )
 
 func TestUnityPreset(t *testing.T) {
@@ -41,6 +42,18 @@ func TestUnityPreset(t *testing.T) {
 	}
 	if r := rules.Running(); len(r) != 1 || r[0] != "unity-editor" {
 		t.Errorf("running: %v", r)
+	}
+	// Outside a project (r3v merge-files), by the name alone, as in one.
+	for name, want := range map[string]string{"Main.unity": "unity-yaml", `C:\tmp\Hero.prefab`: "unity-yaml",
+		"Player.cs": "text", "Hero.fbx": "", "Song.als": "ableton-set"} {
+		if got := profile.HandlerByName(name).Merge; got != want {
+			t.Errorf("by name %s: %q, want %q", name, got, want)
+		}
+	}
+	for name, want := range map[string]bool{"Hero.fbx": true, "Main.unity": true, "Tree.ply": true, "notes.foo": false, "a.txt": false} {
+		if profile.KnownByName(name) != want {
+			t.Errorf("known %s: %v", name, !want)
+		}
 	}
 }
 
