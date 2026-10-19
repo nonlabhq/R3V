@@ -2,7 +2,7 @@
   import TeamMark from "$shared/TeamMark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type Program, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -21,6 +21,7 @@
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
   import TeamMenu from "./lib/TeamMenu.svelte";
+  import ProjectMenu from "./lib/ProjectMenu.svelte";
   import TeamSettings from "./lib/TeamSettings.svelte";
   import VerifyDialog from "./lib/VerifyDialog.svelte";
   import Modal from "$shared/Modal.svelte";
@@ -33,7 +34,7 @@
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
-  import { chooseProgram, loadPrograms, migrateOpenWith, openFolderWith, programLabel } from "./lib/openwith";
+  import { migrateOpenWith } from "./lib/openwith";
   import Tooltip from "./lib/Tooltip.svelte";
   import Avatar from "$shared/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
@@ -66,57 +67,11 @@
     settingsFor = null;
     return p;
   }
-  // The menu's "Open in" (read when the menu opens).
-  let menuInfo = $state<ProjectInfo | null>(null);
-  // A list beside the menu (the project's sets, or the programs to open its
-  // folder in): placed on the window (the sidebar's list scrolls, and would
-  // cut it off), kept open while the pointer crosses over to it.
-  let openSub = $state<"" | "sets" | "programs">("");
-  let subAt = $state({ left: 0, top: 0 });
-  let subTimer: ReturnType<typeof setTimeout> | undefined;
-  function showSub(e: MouseEvent, which: "sets" | "programs") {
-    clearTimeout(subTimer);
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    subAt = { left: Math.min(r.right - 2, window.innerWidth - 220), top: r.top - 6 };
-    openSub = which;
-  }
-  function hideSub() {
-    clearTimeout(subTimer);
-    subTimer = setTimeout(() => (openSub = ""), 180);
-  }
-  // The programs the folder can be opened in (as the header's "Open in"
-  // menu lists them), read when that list first shows.
-  let menuPrograms = $state<Program[] | null>(null);
-  function showPrograms(e: MouseEvent, p: TeamProject) {
-    showSub(e, "programs");
-    if (menuPrograms) return;
-    const key = rowKey(p);
-    // (not Explorer: the menu's own "Open folder" is it)
-    loadPrograms(p.root).then((l) => { if (rowMenu === key) menuPrograms = l.filter((x) => x.id !== "explorer"); });
-  }
-  function openFolderIn(p: TeamProject, prog: Program | null) {
-    rowMenu = "";
-    if (prog) openFolderWith(p.root, prog);
-    else chooseProgram(p.root);
-  }
   function openMenu(p: TeamProject, e: MouseEvent) {
     e.preventDefault();
-    const key = rowKey(p);
-    rowMenu = key;
+    rowMenu = rowKey(p);
     menuAt = { left: Math.min(e.clientX, window.innerWidth - 240), top: Math.min(e.clientY, window.innerHeight - 160) };
-    menuInfo = null;
-    menuPrograms = null;
-    openSub = "";
-    if (rowMenu && p.root && p.status === "downloaded") {
-      api.ProjectInfo(p.root).then((i) => { if (rowMenu === key) menuInfo = i; }).catch(() => {});
-    }
   }
-  const toolName = (tool: string) => (tool === "Ableton Live" ? "Live" : tool ? t(tool) : t("its program"));
-  function openIn(p: TeamProject, rel: string) {
-    rowMenu = "";
-    api.OpenInTool(p.root, rel).catch((e) => toast(errorText(e), "error"));
-  }
-  const openLabel = (p: TeamProject, rel: string) => (rel === "." ? p.name : rel);
 
   const SELECTED_KEY = "r3v.selected";
   const DOWNLOAD_DIR_KEY = "r3v.downloadDir";
@@ -273,6 +228,8 @@
   // beside its project, not dragged)
   const orderOf = (p: TeamProject) => (p.workspace ? p.root : p.id || p.root);
   let entries = $derived(besideMain(sortByOrder(overview?.projects ?? [], orderOf, order)));
+  // the project whose menu is open (right click on its row)
+  let menuFor = $derived(rowMenu ? entries.find((p) => rowKey(p) === rowMenu) : undefined);
   // A project's workspaces, under it in the sidebar, folded away with its
   // toggle (remembered, by the project's folder).
   const sameRoot = (a = "", b = "") => !!a && !!b && a.replace(/[\\/]+$/, "").toLowerCase() === b.replace(/[\\/]+$/, "").toLowerCase();
@@ -567,7 +524,7 @@
   // where the pointer is.
   const slide = (key: string, held: string) => ({ duration: key === held || reducedMotion() ? 0 : 160 });
   function projDown(e: PointerEvent, key: string) {
-    if ((e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
+    if ((e.target as HTMLElement).closest(".fold-ws")) return;
     dragSort(e, {
       axis: "y",
       start: () => (dragging = key),
@@ -868,7 +825,6 @@
       e.preventDefault();
       launching = !launching;
     }
-    if (e.key === "Escape" && rowMenu) { e.preventDefault(); rowMenu = ""; }
     tabKeysDown(e);
     // F5, Ctrl+R: the project list (an open project refreshes itself), never the page.
     if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "r")) {
@@ -876,9 +832,7 @@
       if (overview && !onboarding) reload();
     }
   }}
-  onclick={(e) => {
-    if (rowMenu && !(e.target as HTMLElement).closest(".row-menu")) rowMenu = "";
-  }} />
+ />
 
 {#if !overview || onboarding}
   <div class="bare-bar">{@render winControls()}</div>
@@ -1073,7 +1027,7 @@
       <div class="content-body">
       {#if current && (home || !selectedEntry)}
         <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
-          adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
+          onsettings={(p) => (settingsFor = p)} adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
           <ProjectView root={selectedEntry.root} {refreshKey} teams={overview.teams} onchanged={reload}
@@ -1192,57 +1146,12 @@
         title={wsFolded[p.root] ? t("Show its workspaces") : t("Hide its workspaces")}>
         <span class="caret" aria-hidden="true">{wsFolded[p.root] ? "▸" : "▾"}</span>{spaces.length}</button>
     {/if}
-    {#if rowMenu === rowKey(p)}
-      <div class="row-menu surface-menu" role="menu" style:left="{menuAt.left}px" style:top="{menuAt.top}px">
-        {#if menuInfo && menuInfo.openable.length === 1}
-          <button class="item" onclick={() => openIn(p, menuInfo!.openable[0])}>{t("Open in {tool}", { tool: toolName(menuInfo.tool) })}</button>
-        {:else if menuInfo && menuInfo.openable.length > 1}
-          <div class="sub" role="none" onmouseenter={(e) => showSub(e, "sets")} onmouseleave={hideSub}>
-            <button class="item has-sub" aria-expanded={openSub === "sets"}>
-              {t("Open in {tool}", { tool: toolName(menuInfo.tool) })}<span class="arrow">›</span>
-            </button>
-            {#if openSub === "sets"}
-              <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" style:left="{subAt.left}px" style:top="{subAt.top}px"
-                onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
-                {#each menuInfo.openable as rel}
-                  <button class="item" onclick={() => openIn(p, rel)}>{openLabel(p, rel)}</button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        {#if p.root && p.status !== "missing"}
-          <button class="item" onclick={() => { rowMenu = ""; api.ShowFolder(p.root); }}>{t("Open folder")}</button>
-        {/if}
-        {#if p.root && p.status === "downloaded"}
-          <div class="sub" role="none" onmouseenter={(e) => showPrograms(e, p)} onmouseleave={hideSub}>
-            <button class="item has-sub" aria-haspopup="menu" aria-expanded={openSub === "programs"}
-              onclick={(e) => showPrograms(e, p)}>{t("Open the folder in")}<span class="arrow">›</span></button>
-            {#if openSub === "programs"}
-              <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" aria-label={t("Open the folder in")}
-                style:left="{subAt.left}px" style:top="{subAt.top}px" onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
-                {#if menuPrograms === null}
-                  <div class="item faint">{t("Looking for programs…")}</div>
-                {:else}
-                  {#each menuPrograms as prog (prog.id)}
-                    <button class="item" role="menuitem" title={prog.path || undefined} onclick={() => openFolderIn(p, prog)}>{programLabel(prog)}</button>
-                  {/each}
-                {/if}
-                <div class="sep"></div>
-                <button class="item" role="menuitem" onclick={() => openFolderIn(p, null)}>{t("Choose a program…")}</button>
-              </div>
-            {/if}
-          </div>
-        {/if}
-        {#if !p.workspace}
-          <div class="sep"></div>
-          <button class="item" onclick={() => { rowMenu = ""; settingsFor = p; }}>{t("Settings…")}</button>
-        {/if}
-      </div>
-    {/if}
 {/snippet}
 
 
+{#if rowMenu && menuFor}
+  <ProjectMenu p={menuFor} at={menuAt} onsettings={(p) => (settingsFor = p)} onclose={() => (rowMenu = "")} />
+{/if}
 <Tooltip />
 {#if launching && overview}
   <QuickLaunch teams={overview.teams} current={teamId} {recent} onpick={launch} onclose={() => (launching = false)} />
@@ -1455,24 +1364,6 @@
   .fold-ws:hover { background: var(--hover); color: var(--text); }
   /* (beside the project's button, not in it: a button of its own) */
   .pre-slot { position: absolute; top: 9px; right: 28px; }
-  .row-menu {
-    position: fixed; z-index: var(--z-menu); min-width: 220px; padding: var(--sp-6);
-    border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
-  }
-  .row-menu .item {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; border: none;
-    background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left;
-  }
-  .row-menu .item:hover { background: var(--hover); }
-  .row-menu .sep { height: 1px; background: var(--line); margin: var(--sp-4) var(--sp-2); }
-  .row-menu .sub { position: relative; }
-  .row-menu .has-sub { flex-direction: row; justify-content: space-between; align-items: center; }
-  .row-menu .arrow { color: var(--faint); }
-  .row-menu.submenu { position: fixed; right: auto; min-width: 200px; max-width: 340px; z-index: var(--z-submenu); }
-  .row-menu.submenu .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
-  .row-menu .has-sub[aria-expanded="true"] { background: var(--hover); }
-  .row-menu div.item.faint { color: var(--faint); cursor: default; }
-  .row-menu div.item.faint:hover { background: none; }
   .danger-text { color: var(--danger); }
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }

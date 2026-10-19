@@ -52,7 +52,7 @@ describe("TeamHome", () => {
     render(TeamHome, { overview: { teams: [], currentTeam: "t1", projects: [], author: "", teamChecked: true, teamError: "" } as never,
       team: { id: "t1", name: "Band", address: "s3+https://x.r2.cloudflarestorage.com/b", memberId: "m1" } as never,
       projects: [song, beat, { ...song, root: "C:/Song (lamp)", workspace: true, mainRoot: "C:/Song" }] as never,
-      open: (p: { name: string }) => p.name === "Song", onopen, onadd: vi.fn(), reload: vi.fn(async () => {}) });
+      open: (p: { name: string }) => p.name === "Song", onopen, onadd: vi.fn(), onsettings: vi.fn(), reload: vi.fn(async () => {}) });
     // Those on this computer, then those on the cloud storage only; a workspace counted on its project.
     expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual(
       [expect.stringContaining("On this computer"), expect.stringContaining("On the cloud storage")]);
@@ -64,6 +64,36 @@ describe("TeamHome", () => {
     expect(screen.getByText("open")).toBeTruthy(); // Song only
     await fireEvent.click(screen.getByTitle("Beat"));
     expect(onopen).toHaveBeenCalledWith(beat);
+  });
+
+  it("opens a card's menu from its ⋯ (the sidebar row's menu), with the keyboard too", async () => {
+    api.ProjectInfo.mockResolvedValue({ openable: ["Song.als"], tool: "Ableton Live" });
+    const onopen = vi.fn(), onsettings = vi.fn();
+    const song = project("Song"), beat = project("Beat", "remote");
+    render(TeamHome, { overview: { teams: [], currentTeam: "t1", projects: [], author: "", teamChecked: true, teamError: "" } as never,
+      team: { id: "t1", name: "Band", memberId: "m1" } as never, projects: [song, beat] as never,
+      open: () => false, onopen, onadd: vi.fn(), onsettings, reload: vi.fn(async () => {}) });
+    const [more] = screen.getAllByRole("button", { name: "More" });
+    expect(more.getAttribute("aria-haspopup")).toBe("menu");
+    await fireEvent.click(more);
+    const menu = screen.getByRole("menu", { name: "Song" });
+    expect(onopen).not.toHaveBeenCalled(); // (the ⋯ is beside the card's button, not in it)
+    await waitFor(() => expect(menu.querySelectorAll("[role=menuitem]")[0].textContent).toBe("Open in Live"));
+    expect([...menu.querySelectorAll("[role=menuitem]")].map((b) => b.textContent!.replace("›", "").trim()))
+      .toEqual(["Open in Live", "Open folder", "Open the folder in", "Settings…"]);
+    await waitFor(() => expect(document.activeElement?.textContent).toBe("Open in Live"));
+    await fireEvent.keyDown(document.activeElement!, { key: "End" });
+    expect(document.activeElement?.textContent).toBe("Settings…");
+    await fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(document.activeElement).toBe(more);
+    // a project not on this computer: its settings only; a right click on the card opens it too
+    await fireEvent.contextMenu(screen.getByTitle("Beat"));
+    const items = screen.getByRole("menu", { name: "Beat" }).querySelectorAll("[role=menuitem]");
+    expect([...items].map((b) => b.textContent)).toEqual(["Settings…"]);
+    await fireEvent.click(items[0]);
+    expect(onsettings).toHaveBeenCalledWith(beat);
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 });
 
