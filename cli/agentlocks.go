@@ -37,7 +37,9 @@ func agentCommands() {
 const agentUsage = `
 AI agents on one computer (Nightly):
   lock <paths…> [--claim]                lock files (or folders) for this workspace, all or none; --claim
-                                         only tells other agents (for code)
+                                         only tells other agents (code, which never locks, is claimed)
+  lock --take <paths…> --reason <why>    take over others' locks on paths whose holder is gone (kept
+                                         with the reason)
   lock --break <path>                    take anyone's lock off a path (the person's call)
   unlock <paths…>                        free this workspace's locks
   locks                                  every agent lock of the project here (stale ones marked) and the
@@ -75,30 +77,47 @@ type lockResultJSON struct {
 	Others    []agentlock.Lock `json:"others"`
 	TakenOver []agentlock.Lock `json:"taken_over"`
 	Warnings  []string         `json:"warnings"`
+	// ClaimedInstead: files asked to be locked that never lock (code, which
+	// merges hunk by hunk): claimed, as a lock on them would stop no one.
+	ClaimedInstead []string `json:"claimed_instead"`
 }
+
+const lockUsage = "usage: r3v lock <paths…> [--claim] | r3v lock --take <paths…> --reason <why> | r3v lock --break <path>"
 
 // wideFolder: a folder lock over this many files is said to be too wide
 // (it stops other agents on all of them).
 const wideFolder = 200
 
 func cmdLock(args []string) error {
-	kind, brk := agentlock.KindLock, false
+	kind, brk, take := agentlock.KindLock, false, false
+	reason, hasReason := "", false
 	var paths []string
-	for _, a := range args {
-		switch a {
-		case "--claim", "-claim":
+	for i := 0; i < len(args); i++ {
+		switch a := args[i]; {
+		case a == "--claim" || a == "-claim":
 			kind = agentlock.KindClaim
-		case "--break", "-break":
+		case a == "--break" || a == "-break":
 			brk = true
+		case a == "--take" || a == "-take":
+			take = true
+		case (a == "--reason" || a == "-reason") && i+1 < len(args):
+			i++
+			reason, hasReason = args[i], true
+		case strings.HasPrefix(a, "--reason="):
+			reason, hasReason = strings.TrimPrefix(a, "--reason="), true
 		default:
 			if strings.HasPrefix(a, "-") {
-				return usageError("usage: r3v lock <paths…> [--claim] | r3v lock --break <path>")
+				return usageError(lockUsage)
 			}
 			paths = append(paths, a)
 		}
 	}
-	if len(paths) == 0 || (brk && (len(paths) != 1 || kind == agentlock.KindClaim)) {
-		return usageError("usage: r3v lock <paths…> [--claim] | r3v lock --break <path>")
+	if len(paths) == 0 || (brk && (len(paths) != 1 || kind == agentlock.KindClaim || take)) ||
+		(take && kind == agentlock.KindClaim) || (hasReason && !take) {
+		return usageError(lockUsage)
+	}
+	if take && strings.TrimSpace(reason) == "" {
+		return usageError("r3v lock --take needs --reason <why> (kept with the lock, for whoever held it)")
 	}
 	r, err := openAgent(".")
 	if err != nil {
@@ -123,24 +142,49 @@ func cmdLock(args []string) error {
 		})
 		return nil
 	}
-	out := lockResultJSON{Warnings: []string{}}
+	out := lockResultJSON{Warnings: []string{}, ClaimedInstead: []string{}}
+	var locks, claims []string
 	for _, p := range rels {
 		switch {
+		case kind == agentlock.KindClaim:
+			claims = append(claims, p)
+			continue
 		case strings.HasSuffix(p, "/"):
 			if n := countFiles(r.Abs(p), wideFolder); n >= wideFolder {
 				out.Warnings = append(out.Warnings, fmt.Sprintf("%s holds %d files or more: a lock that wide stops other agents on all of them", p, n))
 			}
-		case kind == agentlock.KindLock && !r.AgentLocked(p):
-			out.Warnings = append(out.Warnings, p+" isn't a file that locks (code merges hunk by hunk): a lock on it stops no one; --claim says you're on it")
+		case !r.AgentLocked(p):
+			// A lock on it would stop no one (neither the hook nor a commit
+			// checks it): a claim is what tells the others.
+			claims = append(claims, p)
+			out.ClaimedInstead = append(out.ClaimedInstead, p)
+			out.Warnings = append(out.Warnings, p+" isn't a file that locks (code merges hunk by hunk): claimed instead, which tells other agents and blocks no one")
+			continue
+		}
+		locks = append(locks, p)
+	}
+	var res agentlock.Result
+	if len(locks) > 0 {
+		if take {
+			res, err = r.TakeOverAgentLocks(locks, reason, "")
+		} else {
+			res, err = r.TakeAgentLocks(locks, agentlock.KindLock, "")
+		}
+		var refused *agentlock.Refused
+		if errors.As(err, &refused) {
+			return &project.ErrLockedByAgent{Locks: refused.Locks}
+		}
+		if err != nil {
+			return err
 		}
 	}
-	res, err := r.TakeAgentLocks(rels, kind, "")
-	var refused *agentlock.Refused
-	if errors.As(err, &refused) {
-		return &project.ErrLockedByAgent{Locks: refused.Locks}
-	}
-	if err != nil {
-		return err
+	if len(claims) > 0 { // after the locks: a refused set leaves nothing
+		cres, err := r.TakeAgentLocks(claims, agentlock.KindClaim, "")
+		if err != nil {
+			return err
+		}
+		res.Taken = append(res.Taken, cres.Taken...)
+		res.Others = append(res.Others, cres.Others...)
 	}
 	out.Taken, out.Others, out.TakenOver = nonNil(res.Taken), nonNil(res.Others), nonNil(res.TakenOver)
 	result("lock", out, func() {
@@ -148,7 +192,11 @@ func cmdLock(args []string) error {
 			fmt.Fprintln(os.Stderr, "warning: "+w)
 		}
 		for _, l := range out.TakenOver {
-			fmt.Printf("took over %s's stale lock on %s\n", l.Who(), l.Path)
+			what := "stale lock"
+			if take && !l.Stale {
+				what = "lock"
+			}
+			fmt.Printf("took over %s's %s on %s\n", l.Who(), what, l.Path)
 		}
 		for _, l := range out.Taken {
 			fmt.Printf("%s %s\n", map[string]string{agentlock.KindLock: "locked", agentlock.KindClaim: "claimed"}[l.Kind], l.Path)
@@ -236,6 +284,9 @@ func cmdLocks(args []string) error {
 			stale := ""
 			if l.Stale {
 				stale = "  (stale: no heartbeat since " + l.Heartbeat.Local().Format("2006-01-02 15:04") + ")"
+			}
+			if l.Reason != "" {
+				stale += "  (taken over from " + l.TakenFrom + ": " + l.Reason + ")"
 			}
 			fmt.Printf("%-5s  %s  %s%s\n", l.Kind, l.Path, who, stale)
 		}

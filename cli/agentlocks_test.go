@@ -148,8 +148,16 @@ func TestLockCommands(t *testing.T) {
 	exit, rep = run(t, dir, "lock", "tex/moss.png", "notes.txt")
 	var res lockResultJSON
 	json.Unmarshal(rep.Result, &res)
-	if exit != 0 || len(res.Taken) != 2 || len(res.Warnings) != 1 || !strings.Contains(res.Warnings[0], "notes.txt") {
+	if exit != 0 || len(res.Taken) != 2 || len(res.Warnings) != 1 || !strings.Contains(res.Warnings[0], "notes.txt") ||
+		len(res.ClaimedInstead) != 1 || res.ClaimedInstead[0] != "notes.txt" {
 		t.Fatalf("lock: %s", rep.Result)
+	}
+	// A file that never locks (code) is claimed, not left as a lock that
+	// stops no one.
+	for _, l := range res.Taken {
+		if want := map[string]string{"tex/moss.png": "lock", "notes.txt": "claim"}[l.Path]; l.Kind != want {
+			t.Fatalf("%s: %s", l.Path, l.Kind)
+		}
 	}
 	if exit, _ := run(t, dir, "lock", "--claim", "tex"); exit != 0 {
 		t.Fatal("claim")
@@ -202,6 +210,35 @@ func TestLockCommands(t *testing.T) {
 	t.Setenv(actor.EnvTool, actor.None)
 	if exit, rep := run(t, dir, "commit", "--local", "-m", "person"); exit != 0 {
 		t.Fatalf("a person's commit: %+v", rep.Error)
+	}
+}
+
+// lock --take: another's lock taken over on purpose, with its reason.
+func TestLockTake(t *testing.T) {
+	withAgentLocks(t)
+	dir, r := agentFolder(t)
+	t.Setenv(actor.EnvTool, "claude-code")
+	r.AgentLockList().Take(otherWS, []string{"tex/rock.png"}, agentlock.KindLock, nil)
+
+	for _, args := range [][]string{{"lock", "--take", "tex/rock.png"}, {"lock", "--take", "tex/rock.png", "--reason", " "},
+		{"lock", "tex/rock.png", "--reason", "x"}, {"lock", "--take", "--claim", "tex/rock.png", "--reason", "x"}} {
+		if exit, rep := run(t, dir, args...); exit != 2 || rep.Error.Code != "usage" {
+			t.Fatalf("%v: %+v", args, rep.Error)
+		}
+	}
+	exit, rep := run(t, dir, "lock", "--take", "tex/rock.png", "notes.txt", "--reason", "its session ended")
+	var res lockResultJSON
+	json.Unmarshal(rep.Result, &res)
+	if exit != 0 || len(res.TakenOver) != 1 || res.TakenOver[0].Workspace != otherWS.Workspace || len(res.ClaimedInstead) != 1 {
+		t.Fatalf("take: %s %+v", rep.Result, rep.Error)
+	}
+	all, _ := r.AgentLockList().All()
+	if len(all) != 2 || all[1].Path != "tex/rock.png" || all[1].Workspace != wsID(t, dir) || all[1].Reason != "its session ended" ||
+		!strings.Contains(all[1].TakenFrom, "textures") {
+		t.Fatalf("recorded: %+v", all)
+	}
+	if _, rep := run(t, dir, "locks"); !strings.Contains(string(rep.Result), `"reason": "its session ended"`) {
+		t.Fatalf("locks: %s", rep.Result)
 	}
 }
 
