@@ -244,7 +244,7 @@ r3v agent setup [--tool claude-code]   # in a project or workspace folder: Claud
 r3v lock <paths…> [--claim]            # lock files or folders for this workspace, all or none
 r3v unlock <paths…>                    # free this workspace's locks
 r3v locks                              # every agent lock here (stale ones marked), and the files the person changed
-r3v lock --take <paths…> --reason <why>  # take over locks whose holder is gone (the reason kept with the lock)
+r3v lock --take <paths…> --reason <why>  # take over locks whose holder is gone, when the user says so (the reason kept with the lock)
 r3v lock --break <path>                # take anyone's lock off a path (the person's call)
 ```
 

@@ -436,9 +436,9 @@ workspace at a time; code is never locked (it merges hunk by hunk).
   minutes is `stale`; the next lock over it takes it. A lock taken over
   also has `reason` and `taken_from` (who held it).
 - `r3v lock --take <paths…> --reason "<why>" --json` takes over others'
-  locks before they are stale, when their holder is gone (its session
-  ended, the user said so): only then, and say why. Files the user changed
-  stay theirs.
+  locks before they are stale. Ask the user first, as for `--break`: only
+  when they say the holder is gone, and give their reason. Otherwise wait
+  for the lock to go stale. Files the user changed stay theirs.
 - `r3v lock --break <path>` is the user's: never break a lock on your own.
 - `lock --json` result: `taken`, `others` (others' claims over the paths),
   `taken_over` (locks replaced: stale ones, or with `--take` any),
