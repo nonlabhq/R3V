@@ -100,6 +100,9 @@ type TeamProject struct {
 	// (OpenWorkspace); MainRoot is the project's main copy.
 	Workspace bool   `json:"workspace"`
 	MainRoot  string `json:"mainRoot"`
+	// Archived: the team archived it (docs/design/archive.md): out of the
+	// left panel, listed under Archived in the team's home.
+	Archived bool `json:"archived"`
 }
 
 type Overview struct {
@@ -112,6 +115,8 @@ type Overview struct {
 	// listed, TeamError says if it couldn't be reached); LocalOverview
 	// doesn't ask it.
 	TeamChecked bool `json:"teamChecked"`
+	// Archive: this build archives projects (Nightly while it's new).
+	Archive bool `json:"archive"`
 }
 
 func teamSummary(t teams.Team) TeamSummary {
@@ -165,7 +170,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		}
 	}
 	ov := &Overview{Author: store.Author, CurrentTeam: store.Current, Teams: []TeamSummary{},
-		Projects: []TeamProject{}}
+		Projects: []TeamProject{}, Archive: remote.ProjectArchive}
 	for _, t := range store.Teams {
 		ov.Teams = append(ov.Teams, teamSummary(t))
 	}
@@ -203,6 +208,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	}
 	if !askTeam {
 		addRemote(lastTeamProjects(t.ID), false)
+		archivedOf(ov.Projects, lastArchived(t.ID))
 		sortProjects(ov.Projects)
 		ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 		return ov, nil
@@ -251,6 +257,13 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		}
 		addRemote(ps, true)
 	}
+	// (unread: as last read, as the team's projects are)
+	if err == nil {
+		if archived, err := remote.ArchivedProjects(b); err == nil {
+			a.followArchived(store, t.ID, archived)
+		}
+	}
+	archivedOf(ov.Projects, lastArchived(t.ID))
 	sortProjects(ov.Projects)
 	ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 	return ov, nil
@@ -305,6 +318,7 @@ func (a *App) AllProjects() ([]TeamProjects, error) {
 			}
 			ps = append(ps, tp)
 		}
+		archivedOf(ps, lastArchived(t.ID))
 		sortProjects(ps)
 		out = append(out, TeamProjects{Team: t.ID, Projects: ps})
 	}

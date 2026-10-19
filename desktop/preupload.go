@@ -128,7 +128,11 @@ func (a *App) preuploadOnSchedule(ctx context.Context) {
 				if t.NoPreupload || !t.Remote.IsStorage() {
 					continue
 				}
+				archived := lastArchived(t.ID) // (not looked at until they're back)
 				for key, root := range store.Projects {
+					if archived[strings.TrimPrefix(key, t.ID+"/")] {
+						continue
+					}
 					if strings.HasPrefix(key, t.ID+"/") && (only == "" || root == only) && ctx.Err() == nil {
 						if !a.preuploadProject(ctx, root) && root == only {
 							// Busy (its team watch reads it as it is added): again
