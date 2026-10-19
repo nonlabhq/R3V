@@ -28,12 +28,12 @@ import (
 // feature. On an R3V Cloud team the service lets only owners and admins
 // write it (ErrNotAdmin); on a team's own storage, anyone in the team.
 
-// ProjectArchive: this build archives projects (Nightly while it's new;
+// ProjectArchive: this build archives projects (every build since 0.2.2;
 // tests turn it off to play an older R3V).
-var ProjectArchive = false
+var ProjectArchive = true
 
-// ErrArchiveNotInBuild: this build doesn't archive projects (Stable).
-var ErrArchiveNotInBuild = errors.New("archiving projects needs R3V's Nightly channel")
+// ErrArchiveNotInBuild: this build doesn't archive projects.
+var ErrArchiveNotInBuild = errors.New("archiving projects needs a newer R3V")
 
 // ErrNoArchive: the team's storage can't keep archived projects.
 var ErrNoArchive = errors.New("this team can't archive projects")

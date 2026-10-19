@@ -59,7 +59,9 @@ keeps and ignores safely (a new field in a record, which every R3V
 rewrites whole with the fields it doesn't know; new keys outside what
 storage cleanup looks at) only adds: older builds work with the team as
 before and just don't show it. Members' and projects' looks are such data
-([looks.md](looks.md)). A team feature is for what an older R3V would
+([looks.md](looks.md)), and so are sections and archived projects
+([sections.md](sections.md), [archive.md](archive.md): an older R3V shows
+the projects ungrouped, archived ones too). A team feature is for what an older R3V would
 misread, lose or delete.
 
 Project kinds a Stable build doesn't know say so too: a `.r3v.yaml` naming a

@@ -253,7 +253,7 @@
     (!!p.workspace && entries.some((m) => !m.workspace && m.archived && sameRoot(m.root, p.mainRoot)));
   // (the one shown stays, folded or not)
   let rows = $derived(entries.filter((p) => (!wsHidden(p) && !archivedHidden(p)) || p === selectedEntry));
-  // Sections (docs/design/sections.md; Nightly): the panel groups the
+  // Sections (docs/design/sections.md): the panel groups the
   // projects by the team's sections, the ungrouped first, each section
   // folding (this computer); an agent's workspace goes with its project.
   // Those who may (canEditSections) drag a project onto another section.
@@ -749,7 +749,7 @@
     }
   }
 
-  // Archiving a project for the team (docs/design/archive.md; Nightly).
+  // Archiving a project for the team (docs/design/archive.md).
   const canArchive = (p: TeamProject) => !!overview?.archive && !!current?.canArchive && !p.workspace && !!p.id && !p.archived;
   async function archived(p: TeamProject) {
     archiving = null;

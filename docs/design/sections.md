@@ -1,6 +1,6 @@
 # Sections
 
-Status: agreed (2026-10-19), built behind Nightly.
+Status: agreed (2026-10-19), built; in every build since 0.2.2.
 
 One level of named groups of a team's projects (Game, Engine, Tools), the
 same for everyone in the team. A project is in one section at most; those

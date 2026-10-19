@@ -130,7 +130,7 @@ func TestArchiveProjectInApp(t *testing.T) {
 	a.stopWatch(root)
 }
 
-// An older R3V (or Stable) knows nothing of it: the project shows as before.
+// An older R3V knows nothing of it: the project shows as before.
 func TestArchiveNotInBuildApp(t *testing.T) {
 	was := remote.ProjectArchive
 	remote.ProjectArchive = false

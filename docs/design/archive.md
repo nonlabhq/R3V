@@ -1,6 +1,6 @@
 # Archiving a project
 
-Status: agreed (2026-10-19), built behind Nightly.
+Status: agreed (2026-10-19), built; in every build since 0.2.2.
 
 A project the team is done with, put away for everyone in the team: out of
 everyone's lists, never deleted. Its versions and stored files stay, and it

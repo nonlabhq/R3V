@@ -129,7 +129,7 @@ func TestSectionsInApp(t *testing.T) {
 	}
 }
 
-// An older R3V (or Stable) has none: the projects show as before.
+// An older R3V has none: the projects show as before.
 func TestSectionsNotInBuildApp(t *testing.T) {
 	was := remote.ProjectSections
 	remote.ProjectSections = false

@@ -320,7 +320,7 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
   committed or parked; `--force` loses them (ask the user first). Its
   branch stays on the team.
 
-`project` (Nightly; archiving a project for the whole team):
+`project` (archiving a project for the whole team):
 `project list`: `projects` (`id`, `name`, `archived`, `archived_by` a
 member id, `archived_at`, `here` the project in this folder). `project
 archive [--force]` and `project unarchive`: `project`, `id`, `archived`,
@@ -331,7 +331,7 @@ refused with `unsaved_changes` or `unshared_versions` unless `--force`
 but owners and admins. Archive or unarchive only when the user asks.
 `status` gives `team.archived: true` for an archived project.
 
-`section` (Nightly; sections group the team's projects, the same for
+`section` (sections group the team's projects, the same for
 everyone in the team): `section list` (or `section`): `sections` in the
 team's order (`id`, `name`, `projects`: `id`, `name`, `here`),
 `ungrouped` (the projects in none) and `here` (the id of this project's

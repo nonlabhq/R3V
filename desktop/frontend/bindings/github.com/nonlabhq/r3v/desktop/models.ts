@@ -1981,13 +1981,14 @@ export class Overview {
     "teamChecked": boolean;
 
     /**
-     * Archive: this build archives projects (Nightly while it's new).
+     * Archive: this build archives projects (every build since 0.2.2).
      */
     "archive": boolean;
 
     /**
      * Sections: the current team's, in its order (as last read when it
-     * isn't asked); SectionsOn: this build has them (Nightly).
+     * isn't asked); SectionsOn: this build has them (every build since
+     * 0.2.2).
      */
     "sections": SectionView[];
     "sectionsOn": boolean;

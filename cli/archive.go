@@ -1,5 +1,3 @@
-//go:build nightly
-
 package cli
 
 import (
@@ -14,13 +12,13 @@ import (
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
-// Archiving a project for the whole team (docs/design/archive.md) is on
-// the Nightly channel while it's new.
+// Archiving a project for the whole team (docs/design/archive.md), in
+// every build since 0.2.2.
 func init() {
 	extraCommands["project"] = cmdProject
 	jsonCommands["project"] = true
 	extraUsage += `
-projects of the team (Nightly):
+projects of the team:
   project list                           the team's projects, archived ones marked
   project archive [--force]              archive this project for the whole team: hidden for everyone,
                                          nothing deleted (its versions stay); refused with uncommitted

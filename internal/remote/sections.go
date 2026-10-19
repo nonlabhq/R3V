@@ -30,12 +30,12 @@ import (
 // service lets only owners and admins write it (ErrNotAdmin), and gives
 // the others a copy without the projects they can't reach.
 
-// ProjectSections: this build groups projects in sections (Nightly while
-// it's new; tests turn it off to play an older R3V).
-var ProjectSections = false
+// ProjectSections: this build groups projects in sections (every build
+// since 0.2.2; tests turn it off to play an older R3V).
+var ProjectSections = true
 
-// ErrSectionsNotInBuild: this build has no sections (Stable).
-var ErrSectionsNotInBuild = errors.New("sections need R3V's Nightly channel")
+// ErrSectionsNotInBuild: this build has no sections.
+var ErrSectionsNotInBuild = errors.New("sections need a newer R3V")
 
 // ErrNoSections: the team's storage can't keep sections.
 var ErrNoSections = errors.New("this team can't keep sections")
