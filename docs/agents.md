@@ -21,7 +21,7 @@ nobody else gets them, and nothing is backed up. Check, once per project:
    (`true`: on a team). `false` (or a new folder): the project's
    versions stay here; `next` lists the ways to connect it:
    - a team this computer has joined (`r3v teams` lists them):
-     `r3v remote --team NAME` (Nightly), or `r3v init --team NAME` for a
+     `r3v remote --team NAME`, or `r3v init --team NAME` for a
      folder that isn't a project yet;
    - none yet: the person signs in to R3V Cloud (`r3v login`, in the
      browser) and the teams they are in appear in `r3v teams`; or the
@@ -32,10 +32,14 @@ nobody else gets them, and nothing is backed up. Check, once per project:
    it is connected is fine: the next commit once connected shares those
    versions.
 2. **Are you set up as an agent?** The versions you make should say an
-   agent made them (`actor` in `log --json`). `r3v agent setup` (Nightly,
-   Claude Code; once per folder) puts `R3V_ACTOR` in the tool's settings,
-   with its hooks and the agents' lines in `AGENTS.md`. Another tool:
-   set `R3V_ACTOR` to its name in the environment it runs commands in.
+   agent made them (`actor` in `log --json`). Once per folder, run
+   `r3v agent setup --tool NAME [--model MODEL]` with your tool's name
+   (`claude-code`, `codex`, `opencode`, `gemini-cli`, `cursor`, `pi`...;
+   left out, the tool R3V tells from its variables): it keeps who you
+   are in this copy (`.r3v/agent.json`: this folder's only, never
+   tracked or shared) and puts the agents' lines in `AGENTS.md` (commit
+   it). For Claude Code it also writes `R3V_ACTOR` and its hooks in
+   `.claude/settings.local.json`, and `@AGENTS.md` in `CLAUDE.md`.
 
 `r3v init` says the same when it makes a project: its text ends with
 what to run next, and `init --json` gives it as `next`: `[{"command",
@@ -61,7 +65,7 @@ same `next` (see Output); `update` and `merge` fail with
   remote <code>`, `r3v clone <code>`): they contain the team's storage
   keys. Don't put them in files, logs or messages, and don't ask the user
   for one: a new project goes on a team this computer has joined, by its
-  name (Nightly): `r3v teams` lists them, `r3v init --team NAME` makes the
+  name: `r3v teams` lists them, `r3v init --team NAME` makes the
   folder that team's project (`remote --team NAME` for one made before,
   `clone --team NAME <project>` to download one).
 - **Don't edit `.r3v/`.** It is R3V's own data; keep it out of formatters,
@@ -118,9 +122,23 @@ A version's message is a title (the first `-m`) and details (each further
 the details.
 
 The versions you make record that an agent made them (`actor`), besides
-the member you work for (`author`): R3V reads `R3V_ACTOR` (the tool's
-name; `R3V_ACTOR_MODEL`, `R3V_ACTOR_SESSION` optional; `none`: a person),
-else the variables tools set themselves (Claude Code's `CLAUDECODE`).
+the member you work for (`author`). Who that agent is, in order:
+
+1. `R3V_ACTOR` in the environment (the tool's name; `R3V_ACTOR_MODEL`,
+   `R3V_ACTOR_SESSION` optional; `none`: a person, whatever else says);
+2. the copy's own identity, `.r3v/agent.json` (`r3v agent setup`);
+3. the variables tools set themselves in the commands they run (Claude
+   Code's `CLAUDECODE`, Codex's `CODEX_THREAD_ID`, opencode's `OPENCODE`,
+   Gemini CLI's `GEMINI_CLI`, Pi's `PI_CODING_AGENT`, and others: see
+   [design/agent-identity.md](design/agent-identity.md)); one of another
+   tool than the copy's wins over 2 (that tool runs here now);
+4. else a person.
+
+The model is `R3V_ACTOR_MODEL`, else the tool's own (Pi's `PI_MODEL`),
+else the copy's when it is the same tool. The person's own commands in a
+folder set up for an agent: `--as person` (any command), or
+`R3V_ACTOR=none` in their shell; the R3V app's versions are always the
+person's.
 
 `commit` merges what teammates shared in the meantime before sharing. When the
 same track (or file) changed on both sides it stops with `merge_conflict`:
@@ -211,6 +229,12 @@ warning's `rule` under `rules:` in `.r3v.yaml`, as the app's "Leave it
 out" does; result `rule` (the line) and `added` (false: it was the last
 rule already, nothing changed). It waits for the project as other writing
 commands do (`--wait`).
+
+`r3v agent setup --json`: `tool`, `model`, `files_written` (relative to
+the folder; `[]`: it was set up already; `changed` is the same list, as
+older R3Vs gave it), `identity` (`tool`, `model`, `file`: what versions
+committed in this copy say when `R3V_ACTOR` doesn't) and `folder`. No
+tool given and none R3V can tell: `usage`.
 
 Reading commands (`status`, `log`, `diff`, `results`, `merge --preview`,
 `branch`, `workspace list`, `rules check`/`explain`) don't wait for the app
@@ -436,10 +460,11 @@ project, on its own branch). Files that can't be merged (textures,
 models, sounds, `.blend`, Unity and Unreal assets) are changed by one
 workspace at a time; code is never locked (it merges hunk by hunk).
 
-- `r3v workspace add --branch NAME --agent claude-code` makes
-  a workspace set up for Claude Code (or `r3v agent setup` in one): its
-  hook and `R3V_ACTOR` go in `.claude/settings.local.json` (that copy's,
-  never tracked). The hook: the
+- `r3v workspace add --branch NAME --agent TOOL` makes a workspace set
+  up for that tool (or `r3v agent setup` in one): its identity in its
+  `.r3v/agent.json`; for Claude Code, its hook and `R3V_ACTOR` in
+  `.claude/settings.local.json` (that copy's, never tracked). The hook
+  (Claude Code's): the
   first time you change such a file it is locked for your workspace; if
   another holds it, the change is refused with who holds it. **Don't
   wait or retry: go on with other work** and tell the user.
