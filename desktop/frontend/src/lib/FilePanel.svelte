@@ -53,6 +53,11 @@
     ? (pickedV.status === "deleted" ? null : { path: pickedV.path || file.path, version: pickedV.version.id, label: label(pickedV) })
     : file.status === "deleted" ? headSide : nowSide);
   let changes = $derived(!picked && isChanged(file) && file.status !== "ignored");
+  // Beside the name while a version is picked: which one the file shows
+  // (the newest is the version you're on, picked over your changes).
+  let asOf = $derived(!pickedV || !history ? "" : history[0] === pickedV
+    ? t("As in the version you're on · {ago}", { ago: ago(pickedV.version.time) })
+    : t("An older version · {ago}", { ago: ago(pickedV.version.time) }));
   let hadOne = $derived(["modified", "deleted", "renamed"].includes(file.status));
 
   const changeText = () => file.status === "renamed"
@@ -108,6 +113,7 @@
   <header>
     <span class="badge"><FileIcon path={file.path} kind={file.kind} /></span>
     <strong class="name" title={file.path}>{baseName(file.path)}</strong>
+    <span class="asof" title={pickedV ? label(pickedV) : undefined}>{asOf}</span>
     <ChangeMark status={file.status} />
   </header>
   {#if lock && !lock.person}
@@ -200,7 +206,9 @@
   header { flex: none; display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-16) var(--sp-18) var(--sp-12); }
   .badge { flex: none; min-width: 22px; height: 18px; padding: 0 var(--sp-4); border-radius: var(--radius-sm); background: var(--hover-strong);
     color: var(--muted); font-size: var(--fs-2xs); font-weight: var(--fw-bold); display: inline-flex; align-items: center; justify-content: center; }
-  .name { flex: 1; min-width: 0; font-size: var(--fs-lg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .name { flex: 0 1 auto; min-width: 0; font-size: var(--fs-lg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* (it takes the room left, so the change mark stays at the right) */
+  .asof { flex: 1 1 0; min-width: 0; font-size: var(--fs-sm); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .lockline { flex: none; display: flex; align-items: center; gap: var(--sp-8); margin: 0 var(--sp-18) var(--sp-10);
     font-size: var(--fs-sm); color: var(--muted); }
   .locktext { flex: 1; min-width: 0; }
@@ -233,7 +241,9 @@
   /* the line from one version to the one before, in the newer one's colour */
   .timeline li:not(:last-child)::before { content: ""; position: absolute; left: calc(var(--sp-8) + 11px); top: 34px; bottom: -10px;
     width: 2px; background: var(--c); opacity: .7; }
-  .timeline li:hover, .timeline li.on { background: var(--hover); }
+  .timeline li:hover { background: var(--hover); }
+  /* the version shown, picked in the accent like a project picked in the side bar */
+  .timeline li.on { background: var(--accent-bg); box-shadow: inset 0 0 0 var(--border-width) var(--accent-line); }
   .row { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent;
     padding: var(--sp-6) var(--sp-8); text-align: left; border-radius: var(--radius-lg); }
   .row:hover:not(:disabled) { background: transparent; }

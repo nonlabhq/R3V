@@ -1906,5 +1906,7 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "这个文件在 R3V 停止后有改动：恢复文件会替换它（版本里没有它的话会删除）。",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "这 {n} 个文件在 R3V 停止后有改动：恢复文件会替换它们（版本里没有的会删除）。",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "想保留的内容请先复制到别处。此操作无法撤销。",
-"Replace them and put files back": "替换它们并恢复文件"
+"Replace them and put files back": "替换它们并恢复文件",
+"As in the version you're on · {ago}": "你当前所在版本中的样子 · {ago}",
+"An older version · {ago}": "旧版本 · {ago}"
 }
