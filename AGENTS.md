@@ -50,6 +50,12 @@ cd desktop/frontend && npm run smoke   # the app's main paths in Edge, after cha
   (colours by role, type sizes, corners, shadows, layers), not raw values;
   a new colour is a new token there. `npm test` fails on a raw colour or an
   undefined token.
+- The two looks (Flat, Cards) differ only through their tokens
+  (`tokens.css`) and the look's stylesheet (`base.css`): a component has
+  one structure for both, with nothing shown, hidden or laid out by look
+  in its markup or script (`npm test` fails on `flat-only`/`cards-only`
+  or a reading of the look outside `lib/look.svelte.ts`; `npm run smoke`
+  compares the screens' roles and names in both).
 - Match the surrounding code: short doc comments that say why, no
   boilerplate.
 - `go vet` and `gofmt` clean.
