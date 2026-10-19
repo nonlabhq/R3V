@@ -44,3 +44,71 @@ func TestRulesName(t *testing.T) {
 		t.Errorf("profile help: %v\n%s", ok, text)
 	}
 }
+
+// AI agents told only "see r3v -h" read its first lines: they lead to the
+// guide (and agent setup where the build has it) before anything else,
+// and the setup section lists the steps in the order a newcomer takes
+// them: sign in, the teams, init or connect, then the agent's setup.
+func TestHelpLeadsAgents(t *testing.T) {
+	check := func(t *testing.T) {
+		code, text := runText(t, t.TempDir(), "-h")
+		if code != 0 {
+			t.Fatalf("-h: %d", code)
+		}
+		lines := strings.Split(text, "\n")
+		if len(lines) < 4 || !strings.Contains(lines[2], `run "r3v help agents" first`) {
+			t.Fatalf("the first lines don't send agents to the guide:\n%s", strings.Join(lines[:min(5, len(lines))], "\n"))
+		}
+		top := strings.Join(lines[:4], "\n")
+		if !strings.Contains(top, `"connected"`) || strings.Index(text, "r3v help agents") > strings.Index(text, "everyday") {
+			t.Errorf("top:\n%s", top)
+		}
+		_, agent := extraCommands["agent"]
+		if strings.Contains(top, "agent setup") != agent {
+			t.Errorf("agent setup in the top lines: %v, in this build: %v\n%s", !agent, agent, top)
+		}
+		at := func(s string) int {
+			i := strings.Index(text, s)
+			if i < 0 {
+				t.Fatalf("no %q in the usage", s)
+			}
+			return i
+		}
+		order := []string{"setup (the first time", "\n  login ", "\n  teams ", "\n  init [", "\n  remote <connection-code>"}
+		if teamByName {
+			order = append(order[:4], "\n  init --team NAME", "\n  remote --team NAME", "\n  remote <connection-code>")
+		} else if strings.Contains(text, "--team NAME [") {
+			t.Error("--team in a build without it")
+		}
+		if agent {
+			order = append(order, "\n  agent setup")
+		}
+		for i := 1; i < len(order); i++ {
+			if at(order[i-1]) > at(order[i]) {
+				t.Errorf("%q comes before %q", order[i], order[i-1])
+			}
+		}
+		if strings.Contains(text, "{{") {
+			t.Error("a placeholder left in the usage")
+		}
+		if !strings.Contains(text, "\n  project archive") || !strings.Contains(text, "\n  move-team") {
+			t.Error("a section of every build's lost from the usage")
+		}
+		if help, ok := helpFor("login", nil); !ok || strings.Count(help, "login [") != 1 {
+			t.Errorf("login --help:\n%s", help)
+		}
+	}
+	t.Run("this build", check)
+	t.Run("Nightly's", func(t *testing.T) {
+		byName(t, true)
+		withAgentLocks(t)
+		check(t)
+	})
+}
+
+// byName turns joining teams by name on or off for a test.
+func byName(t *testing.T, on bool) {
+	was := teamByName
+	teamByName = on
+	t.Cleanup(func() { teamByName = was })
+}

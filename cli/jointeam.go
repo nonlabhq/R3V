@@ -14,15 +14,9 @@ import (
 // on the person's team without ever handling the code, which holds the
 // storage's keys. The keys stay where joining the team put them.
 
-// teamByName: the --team options are in this build (Nightly while new).
+// teamByName: the --team options are in this build (Nightly while new);
+// the usage's setup section lists them then (setupUsage).
 var teamByName = false
-
-const teamByNameUsage = `
-a team this computer has joined, by name (no connection code; Nightly):
-  init --team NAME [--preset code|none]  make the folder a project of that team (r3v teams lists them)
-  remote --team NAME                     connect this project to that team
-  clone --team NAME <project> [folder]   download one of its projects
-`
 
 // joinedTeam is the team this computer joined named name (or with that id).
 func joinedTeam(name string) (*teams.Team, error) {

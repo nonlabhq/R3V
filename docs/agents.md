@@ -12,9 +12,41 @@ is no separate push. (`save`, `snapshot` and `checkout`, the names of
 `commit`, `commit --local` and `goto` before, still work.) Coming from Git: [git-users.md](git-users.md); the
 words: [glossary.md](glossary.md).
 
+## Before you start
+
+A project that isn't on a team keeps every version on this one computer:
+nobody else gets them, and nothing is backed up. Check, once per project:
+
+1. **Is it a project, on a team?** `r3v status --json`: `connected`
+   (`true`: on a team). `false` (or a new folder): the project's
+   versions stay here; `next` lists the ways to connect it:
+   - a team this computer has joined (`r3v teams` lists them):
+     `r3v remote --team NAME` (Nightly), or `r3v init --team NAME` for a
+     folder that isn't a project yet;
+   - none yet: the person signs in to R3V Cloud (`r3v login`, in the
+     browser) and the teams they are in appear in `r3v teams`; or the
+     person connects a self-hosted team with its connection code
+     (`r3v remote <code>`). Never ask for the code or print it.
+
+   Ask the user which team when there's more than one. Committing before
+   it is connected is fine: the next commit once connected shares those
+   versions.
+2. **Are you set up as an agent?** The versions you make should say an
+   agent made them (`actor` in `log --json`). `r3v agent setup` (Nightly,
+   Claude Code; once per folder) puts `R3V_ACTOR` in the tool's settings,
+   with its hooks and the agents' lines in `AGENTS.md`. Another tool:
+   set `R3V_ACTOR` to its name in the environment it runs commands in.
+
+`r3v init` says the same when it makes a project: its text ends with
+what to run next, and `init --json` gives it as `next`: `[{"command",
+"why"}]`, in order (connect, set up, the first commit). `commit` and
+`status` in a project on no team add a warning `not_connected` and the
+same `next` (see Output); `update` and `merge` fail with
+`not_connected`, its `next` in `error`.
+
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `project`, `section`, `lock` and `locks`, and
+- **Use `--json`** with `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `project`, `section`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -163,11 +195,12 @@ when a field changes meaning; new fields may appear any time.
 | `version` | the version the files are on (`""` before the first) |
 | `on_older_version`, `latest` | on an older version; `r3v goto latest` goes back |
 | `team` | `null` without a team, else `reachable`, `incoming` (others shared versions: update), `error` |
+| `connected` | `false`: the project is on no team, its versions stay on this computer; then `next` (`[{"command", "why"}]`) lists the ways to connect it (see Before you start) |
 | `changes` | `path`, `status` (`added`, `modified`, `deleted`, `renamed` with `from`, `untracked`: still on disk but the rules leave it out), `set_changes` (for Live sets: tracks, devices, clips changed, one line each), `weight` (for Live sets, the biggest kind of change: `noise` a plugin re-saving its own state, `tidy` names/colors/order/groups, `mix`, `sound` devices, `arrangement` clips/notes/tracks/tempo) |
 | `base` | in a workspace, when the branch it was made from has versions this branch hasn't: `branch` (its name) and `behind` (how many); `r3v merge <branch>` brings them in (`update` gets this branch's only). Also in `update --json` |
 | `suggestions` | tool projects found in folders the rules don't cover: `r3v rules preset <folder> <preset>` |
 | `in_use` | files another program holds (Live writing a Freeze file): not read yet, they count as in the version you're on; run `status` again once they're free |
-| `warnings` | worth a look before committing (never a refusal): `code`, and its fields. Code `looks_built`: a folder new in the changes looks like a build's output, named like a folder the rules leave out (`target-dx12/` beside `target/`) or holding 50 built files (`.obj`, `.pdb`, `.rlib`…) or 200 MB (then `folder` is where most of those are: `tools/out/`, not all of a new `tools/`); `folder`, `kind` (why: `name`, named like `like`, the ignored folder, e.g. `"Backup/"`; `built`, built files; `size`, new bytes), `reason` (the same in English, for people), `files`, `bytes`, `rule` (the line for `.r3v.yaml`'s `rules:`, e.g. `ignore: "target-*/"`) and `pattern` (its pattern) |
+| `warnings` | worth a look before committing (never a refusal): `code`, and its fields; check `code` before using the others. Code `not_connected`: the project is on no team (`reason` says so, the other fields are empty). Code `looks_built`: a folder new in the changes looks like a build's output, named like a folder the rules leave out (`target-dx12/` beside `target/`) or holding 50 built files (`.obj`, `.pdb`, `.rlib`…) or 200 MB (then `folder` is where most of those are: `tools/out/`, not all of a new `tools/`); `folder`, `kind` (why: `name`, named like `like`, the ignored folder, e.g. `"Backup/"`; `built`, built files; `size`, new bytes), `reason` (the same in English, for people), `files`, `bytes`, `rule` (the line for `.r3v.yaml`'s `rules:`, e.g. `ignore: "target-*/"`) and `pattern` (its pattern) |
 
 Committed, a folder stays in the team's storage for good (ignoring it
 later only helps later versions). On a `looks_built` warning, run `r3v
@@ -238,7 +271,10 @@ user first).
 took from each side), `relinked` (sample paths rewritten for this computer),
 `reopen_sets` (sets changed under Live: the user must reopen them).
 `commit` also has `warnings`, as `status` has them, about what the
-version just took (a commit is never refused for one). `merge` also has
+version just took (a commit is never refused for one), and `shared`:
+`false` when the versions are on this computer only (`--local`, or a
+project on no team: then a `not_connected` warning and `next`, the ways
+to connect it and the commit that shares them once connected). `merge` also has
 `same_files_as` (a version id) when the merge version's files are
 exactly that version's: the branch hadn't moved since it parted.
 
@@ -426,7 +462,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `not_a_merge` | `undo-merge` takes a merge version: `r3v log --first-parent` lists them |
 | 1 | `nothing_to_discard` | `discard <path>...`: nothing changed in those paths |
 | 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |
-| 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer) |
+| 1 | `not_connected` | the project is not in a team (`commit` still commits on this computer): `next` lists the ways to connect it; ask the user which team |
 | 1 | `files_not_here` | an old version's files are only in the team's storage |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |

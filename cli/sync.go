@@ -304,10 +304,14 @@ type syncJSON struct {
 }
 
 // commitJSON is r3v commit's result: Warnings as status has them, of what
-// the version took.
+// the version took. Shared: the project's versions are in the team's
+// storage (false: on this computer only, with --local or in no team; Next
+// then says how to connect it).
 type commitJSON struct {
 	syncJSON
 	Warnings []warningJSON `json:"warnings"`
+	Shared   bool          `json:"shared"`
+	Next     []nextJSON    `json:"next,omitempty"`
 }
 
 func syncOf(res *project.SyncResult) syncJSON {
@@ -388,22 +392,32 @@ func cmdCommit(args []string) error {
 		out.Saved = &v
 	}
 	// (after the fact: a commit isn't refused for it; status warned before)
-	warned := commitJSON{syncJSON: out, Warnings: []warningJSON{}}
+	warned := commitJSON{syncJSON: out, Warnings: []warningJSON{}, Shared: connected(r) && out.Action != "local"}
 	if m != nil {
 		warned.Warnings = builtWarnings(r.BuiltFoldersIn(m))
+	}
+	if !connected(r) {
+		warned.Warnings = append(warned.Warnings, notConnected())
+		warned.Next = append(connectSteps(), nextJSON{`r3v commit -m "..."`,
+			"once connected, the next commit shares the versions committed here with the team"})
 	}
 	result("commit", warned, func() {
 		defer printWarnings(warned.Warnings, true)
 		switch out.Action {
 		case "local":
-			if *local && r.Config.Remote != nil {
+			if connected(r) {
 				fmt.Printf("committed version %s on this computer: your next commit shares it\n", short(m.ID))
-			} else {
-				fmt.Printf("committed version %s on this computer (not connected to a team; see `r3v remote`)\n", short(m.ID))
+				return
 			}
+			fmt.Printf("committed version %s on this computer only: it is not shared, this project is not connected to a team\n", short(m.ID))
+			printNext("to share it:", warned.Next)
 			return
 		case "nothing-changed":
 			fmt.Println("nothing changed")
+			if !connected(r) {
+				fmt.Println("(this project is not connected to a team: its versions are on this computer only)")
+				printNext("to share them:", warned.Next)
+			}
 			return
 		}
 		if m != nil {
