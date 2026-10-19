@@ -43,6 +43,10 @@ func readCounts(path string) map[string]int {
 	return m
 }
 
+// countClock is ChangeCounts' clock: a test's moves on with each reading
+// (Windows' clock may not, over a few quick counts).
+var countClock = time.Now
+
 // ChangeCounts are the change counts of the versions ids, those not known
 // yet worked out in order (give the newest first: the graph shows them
 // first) for at most budget (none: all of them). Versions left out, or
@@ -56,14 +60,14 @@ func (r *Repo) ChangeCounts(ids []string, budget time.Duration) map[string]int {
 		pc = &projectCounts{m: readCounts(r.changedPath())}
 		counts.by[r.CommonDir()] = pc
 	}
-	start := time.Now()
+	start := countClock()
 	out := make(map[string]int, len(ids))
 	for _, id := range ids {
 		if n, ok := pc.m[id]; ok {
 			out[id] = n
 			continue
 		}
-		if budget > 0 && time.Since(start) > budget {
+		if budget > 0 && countClock().Sub(start) > budget {
 			continue
 		}
 		n, err := r.countChanged(id)
