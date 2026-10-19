@@ -1,5 +1,3 @@
-//go:build nightly
-
 package cli
 
 import (
@@ -13,13 +11,13 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
-// Sections grouping the team's projects (docs/design/sections.md) are on
-// the Nightly channel while they're new.
+// Sections grouping the team's projects (docs/design/sections.md), in
+// every build since 0.2.2.
 func init() {
 	extraCommands["section"] = cmdSection
 	jsonCommands["section"] = true
 	extraUsage += `
-sections of the team's projects (Nightly):
+sections of the team's projects:
   section [list]                         the team's sections in order, with their projects
   section new NAME                       add a section (last)
   section rename NAME NEW-NAME           rename a section

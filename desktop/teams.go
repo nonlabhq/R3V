@@ -125,10 +125,11 @@ type Overview struct {
 	// listed, TeamError says if it couldn't be reached); LocalOverview
 	// doesn't ask it.
 	TeamChecked bool `json:"teamChecked"`
-	// Archive: this build archives projects (Nightly while it's new).
+	// Archive: this build archives projects (every build since 0.2.2).
 	Archive bool `json:"archive"`
 	// Sections: the current team's, in its order (as last read when it
-	// isn't asked); SectionsOn: this build has them (Nightly).
+	// isn't asked); SectionsOn: this build has them (every build since
+	// 0.2.2).
 	Sections   []SectionView `json:"sections"`
 	SectionsOn bool          `json:"sectionsOn"`
 }

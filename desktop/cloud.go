@@ -8,17 +8,17 @@ import (
 	"sync"
 
 	"github.com/nonlabhq/r3v/internal/cloud"
+	"github.com/nonlabhq/r3v/internal/remote"
 	"github.com/nonlabhq/r3v/internal/teams"
-	"github.com/nonlabhq/r3v/internal/version"
 )
 
-// R3V-Cloud, the hosted service, from the app (Nightly while it's built):
+// R3V-Cloud, the hosted service, from the app (every build since 0.2):
 // signing in, creating and joining teams, and managing a hosted team's
 // people, invitations and project access.
 
 // CloudStatus is where the app stands with the service.
 type CloudStatus struct {
-	// Available: this build offers it (the Nightly channel).
+	// Available: this build offers it (remote.HostedTeams).
 	Available bool   `json:"available"`
 	Service   string `json:"service"`
 	SignedIn  bool   `json:"signedIn"`
@@ -29,7 +29,7 @@ type CloudStatus struct {
 // in (asking the service only when signed in).
 func (a *App) CloudStatus() CloudStatus {
 	svc := cloud.Service()
-	s := CloudStatus{Available: version.Channel == "nightly", Service: svc, SignedIn: cloud.SignedIn(svc)}
+	s := CloudStatus{Available: remote.HostedTeams, Service: svc, SignedIn: cloud.SignedIn(svc)}
 	if s.Available && s.SignedIn {
 		if me, err := cloud.GetMe(svc); err == nil {
 			s.Email = me.User.Email
@@ -47,7 +47,7 @@ var signIn struct {
 // the team list. It waits until the person is done in the browser (or
 // CloudCancelSignIn).
 func (a *App) CloudSignIn() (CloudStatus, error) {
-	if version.Channel != "nightly" {
+	if !remote.HostedTeams {
 		return CloudStatus{}, cloud.ErrNotInBuild
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -89,7 +89,7 @@ func (a *App) CloudCancelSignIn() {
 // left meanwhile) and tells the frontend.
 func (a *App) syncHosted() {
 	svc := cloud.Service()
-	if version.Channel != "nightly" || !cloud.SignedIn(svc) {
+	if !remote.HostedTeams || !cloud.SignedIn(svc) {
 		return
 	}
 	a.syncTeams(svc)
