@@ -55,6 +55,25 @@ func (s *BucketBackend) Bucket() Bucket { return s.b }
 // so only a project's own writers may write its contents).
 type PerProject interface{ ContentsPerProject() bool }
 
+// ProjectRestorer is storage that keeps a project deleted from the team a
+// while (the hosted service: its records and contents, out of everyone's
+// reach), so that it can be brought back: until then writing its record
+// is answered ErrNotFound.
+type ProjectRestorer interface{ RestoreProject(pid string) error }
+
+// RestoreProject brings back project pid, deleted from b's team and kept
+// there: ErrForbidden for those who may not, ErrNotFound when it isn't
+// kept (or wasn't deleted), errors.ErrUnsupported on storage that deletes
+// for good.
+func RestoreProject(b Backend, pid string) error {
+	if s, ok := b.(*BucketBackend); ok {
+		if pr, ok := s.b.(ProjectRestorer); ok {
+			return pr.RestoreProject(pid)
+		}
+	}
+	return errors.ErrUnsupported
+}
+
 // ThroughService reports whether b's contents go through a service (a
 // hosted team's: each transfer asks it for a URL first, so more of them
 // at once keep the line busy).

@@ -48,6 +48,28 @@ their app shows as no longer on the team. Authors stay as their versions
 name them (no member of the other team is needed). The branch log and
 workspaces stay behind; names, colours, deleted branches and milestones go.
 
+### Copies left on the first team
+
+Other copies of the project (another member's, or a second folder on
+this computer: the app follows one folder per project and team) still
+belong to the first team. R3V Cloud keeps a deleted project 30 days, out
+of everyone's reach, its records and versions as they were, and refuses
+writing its `project.json` (404) until an owner or admin restores it. A
+share from such a copy (Share now, a commit, `r3v commit`) takes that 404
+as the project deleted and kept: it restores it (an owner's or admin's
+share), then shares as usual. In between:
+
+| stopped | the first team | this copy | next |
+|---|---|---|---|
+| before restoring | deleted, kept | versions not shared ("Share now") | the next share restores it |
+| restored, before the branch moved | has it again, as it was | versions not shared ("Share now") | the next share shares them (nothing sent twice: by hash) |
+| shared | has it, with this copy's versions | shared | — |
+
+A member who may not restore it is told so (`project_deleted`; the
+versions stay committed here); so is anyone once the team no longer keeps
+it (on storage of the team's own, deleting is for good and a share makes
+the project anew).
+
 # A team moves to R3V Cloud
 
 (Designed with the maintainer, 2026-10-08; part 1 being built, part 2
