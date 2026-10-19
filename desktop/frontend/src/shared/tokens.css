@@ -205,6 +205,64 @@
   --shadow-card: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 24px 60px -14px rgba(0, 0, 0, .8);
   --dot-grid: rgba(255, 255, 255, .07); /* the dots on a card, 18px apart */
 
+  /* Panels and their parts, which the two looks lay out differently (the
+     look is data-look on <html>): this one floats cards on the window; the
+     Flat look below sets flat panels side by side, 2px apart, each under a
+     header band. Components read these, so both looks come out of the same
+     markup. */
+  --surface-gutter: var(--bg);       /* the window around and between panels */
+  --surface-side: var(--bg-sunken);  /* the side bar */
+  --surface-titlebar: var(--bg-sunken); /* the window's tabs */
+  --surface-pane: var(--panel);      /* a panel */
+  --surface-head: transparent;       /* a page's head (a project's name, its tabs) */
+  --surface-band: transparent;       /* a panel's header band */
+  --surface-bar: transparent;        /* the bars at a dialog's top and bottom */
+  --surface-well: var(--bg);         /* fields, and cards sunk into a panel */
+  --surface-graph: var(--panel);     /* under the version graph */
+  --button-line: var(--line);        /* a button's frame */
+  --button-line-hover: var(--line-strong);
+  --pane-inset: 16px;                /* floating cards' room from the window around them */
+  --pane-gap: 0px;                   /* between panels side by side */
+  --pane-edge: var(--line);          /* the line this look draws there instead */
+  --pane-radius: var(--radius-card);
+  --surface-card: var(--panel);      /* a card holding panels (Files' list and file) */
+  --surface-tile: var(--panel);      /* a tile in a grid (a project in a team's home) */
+  --pane-pad: var(--sp-8);           /* round a list in a panel */
+  --bleed: 0;                        /* 1: bands reach their panel's edges (it scales their negative margins) */
+  --band-h: 28px;
+  --side-band-gap: 0px;              /* under the side bar's bands */
+  --flat-only: none;                 /* (a display) what only the Flat look shows: */
+  --cards-only: block;               /* ...and what only this one does */
+  /* What is picked (a project, a row, a folder, a menu item): one style
+     everywhere, a background and a mark (a box-shadow) on its left, or on
+     top for the tabs at the top. */
+  --select-bg: var(--accent-bg);
+  --select-soft: var(--accent-soft);  /* (where this look picks in a lighter tint) */
+  --select-bar: inset 0 0 0 transparent;
+  --select-bar-top: inset 0 0 0 transparent;
+  --select-line: var(--accent-line); /* (where a picked thing has a frame) */
+  --row-radius: var(--radius-lg);    /* a row in a list (a project, a file) */
+  --side-hover: var(--panel);        /* a row of the side bar (or a tab) under the pointer */
+  /* The tabs: the window's (projects open) and a page's (Versions, Files). */
+  --titlebar-h: 40px;
+  --titlebar-pad: var(--sp-8);
+  --surface-tab: var(--bg);          /* the tab shown */
+  --tab-h: 32px;
+  --tab-radius: var(--radius);
+  --tab-fs: var(--fs-base);
+  --tab-case: none;                  /* (a text-transform) */
+  --tab-spacing: 0;
+  /* Branch names and milestones on the graph: a tag, and the bar of
+     colour on its left. */
+  --tag-radius: var(--radius-pill);
+  --tag-line: var(--line);
+  --surface-raise: var(--panel);     /* a step up from a panel: tags on the graph, a list's head */
+  --tag-bar: 0px;
+  --glow: 1;                         /* where you are on the graph glows (0: not) */
+  /* The ground under the version graph. */
+  --graph-ground: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.4px);
+  --graph-ground-size: 18px 18px;
+
   /* Layers. */
   --z-sticky: 3;
   --z-dropdown: 20;
@@ -213,4 +271,93 @@
   --z-dialog: 50;
   --z-toast: 60;
   --z-blocking: 100;
+}
+
+/* The Flat look ("01g"): flat panels 2px apart, each under a 28px header
+   band; square corners, no shadows or blur; one step smaller type. The
+   brand, the palette and the change colours stay as above. */
+:root[data-look="flat"] {
+  --bg-sunken: #111112;
+  --bg: #0c0c0d;
+  --panel: #19191b;
+  --panel-2: #26262a;
+  --panel-3: #2e2e33;
+  --hover-soft: #2e2e33;
+  --hover: #202023;
+  --hover-strong: #2e2e33;
+  --line-soft: rgba(255, 255, 255, .05);
+  --line: rgba(255, 255, 255, .07);
+  --line-strong: rgba(255, 255, 255, .12);
+
+  --fs-sm: 11.5px;
+  --fs-md: 12.5px;
+  --fs-base: 13px;
+  --fs-lg: 16px;
+  --fs-xl: 17px;
+  --fs-2xl: 20px;
+
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
+  --radius-card: 0px;
+
+  --shadow-pop: 0 8px 22px rgba(0, 0, 0, .55);
+  --shadow-dialog: 0 12px 40px rgba(0, 0, 0, .6);
+  --scrim: rgba(0, 0, 0, .6);
+  --scrim-blur: none;
+  --surface-menu: #202023;
+  --surface-dialog: #202023;
+  --surface-filter: none;
+  --surface-float: #19191b;
+  --float-filter: none;
+  --shadow-float: none;
+  --shadow-card: none;
+
+  --surface-gutter: #0c0c0d;
+  --surface-side: #19191b;
+  --surface-titlebar: #0c0c0d;
+  --surface-pane: #19191b;
+  --surface-head: #19191b;
+  --surface-band: #202023;
+  --surface-bar: #26262a;
+  --surface-well: #111112;
+  --surface-graph: #111112;
+  --button-line: transparent;
+  --button-line-hover: transparent;
+  --pane-inset: 0px;
+  --pane-gap: 2px;
+  --pane-edge: transparent;
+  --pane-radius: 0px;
+  --surface-card: transparent;
+  --surface-tile: #111112;
+  --pane-pad: 0px;
+  --bleed: 1;
+  --side-band-gap: var(--sp-6);
+  --flat-only: flex;
+  --cards-only: none;
+  --select-bg: color-mix(in srgb, var(--accent) 11%, transparent);
+  --select-soft: color-mix(in srgb, var(--accent) 11%, transparent);
+  --select-bar: inset 2px 0 0 var(--accent);
+  --select-bar-top: inset 0 2px 0 var(--accent);
+  --select-line: transparent;
+  --row-radius: 0px;
+  --side-hover: #202023;
+  --titlebar-h: 34px;
+  --titlebar-pad: 0px;
+  --surface-tab: #19191b;
+  --tab-h: 34px;
+  --tab-radius: 0px;
+  --tab-fs: 12px;
+  --tab-case: uppercase;
+  --tab-spacing: .06em;
+  --tag-radius: 2px;
+  --tag-line: transparent;
+  --surface-raise: #202023;
+  --tag-bar: 3px;
+  --glow: 0;
+  --graph-ground: linear-gradient(rgba(255, 255, 255, .022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .022) 1px, transparent 1px);
+  --graph-ground-size: 40px 40px;
 }
