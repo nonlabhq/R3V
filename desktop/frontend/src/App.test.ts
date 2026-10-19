@@ -223,6 +223,45 @@ describe("App: tabs", () => {
     }
   });
 
+  it("moves a dragged tab among the others, following the pointer, keeps the order, and a click still switches tabs", async () => {
+    // (jsdom lays nothing out: tabs 100px wide, side by side)
+    const colOf = (el: HTMLElement) => (el.matches(".tab") ? [...el.parentElement!.querySelectorAll(".tab")].indexOf(el) : 0);
+    const left = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) { return colOf(this) * 100; });
+    const wide = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(100);
+    try {
+      render(App);
+      await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song")]));
+      await fireEvent.click(inSidebar("Beat"), { ctrlKey: true });
+      await waitFor(() => expect(tabs()).toEqual([expect.stringContaining("Song"), expect.stringContaining("Beat")]));
+      const song = screen.getAllByRole("tab")[0].closest<HTMLElement>(".tab")!;
+      await fireEvent.pointerDown(song, { button: 0, clientX: 50 });
+      await fireEvent.pointerMove(window, { buttons: 1, clientX: 53 }); // (not a drag yet)
+      expect(song.classList.contains("lifted")).toBe(false);
+      await fireEvent.pointerMove(window, { buttons: 1, clientX: 160 }); // past Beat's middle
+      expect(tabs()).toEqual([expect.stringContaining("Beat"), expect.stringContaining("Song")]);
+      expect(song.classList.contains("lifted")).toBe(true);
+      // where the pointer is: 110px right of where it took it, its place 100px right
+      expect(song.style.transform).toBe("translateX(10px)");
+      await fireEvent.pointerUp(window);
+      expect(song.classList.contains("lifted")).toBe(false);
+      expect(song.style.transform).toBe("");
+      expect(JSON.parse(localStorage.getItem("r3v.tabs")!).map((x: { key: string }) => x.key)).toEqual(["C:/Beat", "C:/Song"]);
+      expect(on()).toContain("Song"); // (the drag didn't switch tabs)
+      await new Promise((r) => setTimeout(r)); // (the click a drag ends with is past)
+      // a press that doesn't go anywhere is a click
+      const beat = screen.getAllByRole("tab")[0];
+      await fireEvent.pointerDown(beat, { button: 0, clientX: 50 });
+      await fireEvent.pointerMove(window, { buttons: 1, clientX: 52 });
+      await fireEvent.pointerUp(window);
+      await fireEvent.click(beat);
+      expect(on()).toContain("Beat");
+      expect(tabs()).toEqual([expect.stringContaining("Beat"), expect.stringContaining("Song")]);
+    } finally {
+      left.mockRestore();
+      wide.mockRestore();
+    }
+  });
+
   it("lists the shortcuts (Ctrl+/), and Esc closes the list", async () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));

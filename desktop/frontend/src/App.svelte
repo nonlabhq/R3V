@@ -14,8 +14,9 @@
   import { addTab, closeTab, homeRef, isHome, isNew as isNewTab, loadTabs, moveTab, oldTabs, pruneTabs, refreshSnaps, renameTab, replaceTab,
     snapOf, tabId, teamsOf, toSave, type TabRef, type TabSnap } from "./lib/tabs";
   import ProjectIcon from "$shared/ProjectIcon.svelte";
-  import { tick, untrack } from "svelte";
+  import { untrack } from "svelte";
   import { flip } from "svelte/animate";
+  import { dragSort } from "./lib/dragsort";
   import { spinner } from "./lib/spin.svelte";
   import KeptSamples from "./lib/KeptSamples.svelte";
   import Onboarding from "./lib/Onboarding.svelte";
@@ -532,89 +533,61 @@
     else if (n?.team) { selected = {}; goTab(n); }
     else { selected = {}; tabsClosed = true; showHome(); }
   }
-  // Dragging a tab moves it among the others (a drag isn't a click). It
-  // ends when the button is let go, wherever, or the drag is cancelled.
-  let tabDrag: { key: string; x: number; moved: boolean } | null = null;
+  // Dragging a tab moves it among the others, as a project in the sidebar
+  // (lib/dragsort); the order is kept with the tabs.
   let tabDragged = false;
-  let tabsEl = $state<HTMLElement>();
+  let tabDragging = $state(""); // the tab being dragged (drawn lifted)
+  let tabDx = $state(0); // how far it is from its place, following the pointer
   function tabDown(e: PointerEvent, key: string) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".tab-x")) return;
-    tabDrag = { key, x: e.clientX, moved: false };
-    const move = (m: PointerEvent) => {
-      if (!tabDrag) return;
-      if (!(m.buttons & 1)) return up();
-      if (!tabDrag.moved && Math.abs(m.clientX - tabDrag.x) < 5) return;
-      tabDrag.moved = true;
-      const els = [...(tabsEl?.querySelectorAll<HTMLElement>(".tab") ?? [])];
-      let to = els.findIndex((el) => { const r = el.getBoundingClientRect(); return m.clientX < r.left + r.width / 2; });
-      if (to < 0) to = els.length;
-      const moved = moveTab(tabs, tabItems.map((x) => x.id), tabDrag.key, to);
-      if (moved !== tabs) tabs = moved;
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", up);
-      if (tabDrag?.moved) { tabDragged = true; saveTabs(); setTimeout(() => (tabDragged = false)); }
-      tabDrag = null;
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
+    if ((e.target as HTMLElement).closest(".tab-x")) return;
+    dragSort(e, {
+      axis: "x",
+      start: () => (tabDragging = key),
+      move: (before) => {
+        const ids = tabItems.map((x) => x.id);
+        const moved = moveTab(tabs, ids, key, before ? ids.indexOf(before) : ids.length);
+        if (moved !== tabs) tabs = moved;
+      },
+      follow: (d) => (tabDx = d),
+      end: (moved) => {
+        if (moved) { tabDragged = true; saveTabs(); setTimeout(() => (tabDragged = false)); }
+        tabDragging = "";
+        tabDx = 0;
+      },
+    });
   }
-  // Dragging a project in the sidebar moves it (a drag isn't a click); the
-  // order is kept for its team on this computer. It follows the pointer and
-  // takes its place among the others as it goes, which slide out of its way
-  // (animate:flip); let go, it settles into that place.
-  let projDrag: { key: string; y: number; moved: boolean } | null = null;
+  // Dragging a project in the sidebar moves it (a drag isn't a click; see
+  // lib/dragsort); the order is kept for its team on this computer. Let go,
+  // it settles into its place.
   let projDragged = false;
   let dragging = $state(""); // the project being dragged (drawn lifted)
   let dragDy = $state(0); // how far it is from its place, following the pointer
   const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // (the dragged one doesn't slide: it is where the pointer is)
-  const slide = (key: string) => ({ duration: dragging === key || reducedMotion() ? 0 : 160 });
+  // The others slide out of the dragged one's way; it doesn't slide: it is
+  // where the pointer is.
+  const slide = (key: string, held: string) => ({ duration: key === held || reducedMotion() ? 0 : 160 });
   function projDown(e: PointerEvent, key: string) {
-    if (e.button !== 0 || (e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
-    const row = e.currentTarget as HTMLElement;
-    const list = row.closest<HTMLElement>("[data-projects]");
-    if (!list) return;
-    // Where a row's place is on screen: offsetTop leaves out the slides and
-    // the follow (transforms), so places don't swing while rows move.
-    const place = (el: HTMLElement) => list.getBoundingClientRect().top + el.offsetTop - list.offsetTop - list.scrollTop;
-    const grab = e.clientY - place(row);
-    projDrag = { key, y: e.clientY, moved: false };
-    const move = (m: PointerEvent) => {
-      if (!projDrag) return;
-      if (!(m.buttons & 1)) return up();
-      if (!projDrag.moved && Math.abs(m.clientY - projDrag.y) < 5) return;
-      projDrag.moved = true;
-      dragging = key;
-      // Before the first other row whose middle is below the dragged one's.
-      const mid = m.clientY - grab + row.offsetHeight / 2;
-      const before = [...list.querySelectorAll<HTMLElement>("[data-key]")]
-        .find((el) => el !== row && mid < place(el) + el.offsetHeight / 2)?.dataset.key;
-      const keys = entries.map(orderOf);
-      const at = before ? keys.indexOf(before) : -1;
-      const moved = moveKey(keys, key, at < 0 ? keys.length : at);
-      if (moved !== keys) order = moved;
-      tick().then(() => { if (dragging === key) dragDy = m.clientY - grab - place(row); });
-    };
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", up);
-      if (projDrag?.moved) {
-        projDragged = true;
-        remember(orderKey(teamId), JSON.stringify(order));
-        setTimeout(() => (projDragged = false));
-      }
-      projDrag = null;
-      dragging = "";
-      dragDy = 0;
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
+    if ((e.target as HTMLElement).closest(".fold-ws, .row-menu")) return;
+    dragSort(e, {
+      axis: "y",
+      start: () => (dragging = key),
+      move: (before) => {
+        const keys = entries.map(orderOf);
+        const at = before ? keys.indexOf(before) : -1;
+        const moved = moveKey(keys, key, at < 0 ? keys.length : at);
+        if (moved !== keys) order = moved;
+      },
+      follow: (d) => (dragDy = d),
+      end: (moved) => {
+        if (moved) {
+          projDragged = true;
+          remember(orderKey(teamId), JSON.stringify(order));
+          setTimeout(() => (projDragged = false));
+        }
+        dragging = "";
+        dragDy = 0;
+      },
+    });
   }
   // The sidebar folds to the logo and a button to open it again (remembered).
   const SIDEBAR_KEY = "r3v.sidebar";
@@ -955,7 +928,7 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="folded-list" data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
         {#each rows as p (p.root || p.id)}
-          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p))}
+          <div class="folded-row" data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} animate:flip={slide(orderOf(p), dragging)}
             style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined} onpointerdown={(e) => projDown(e, orderOf(p))}>
             <button class="folded-proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
               onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))} title={p.name} aria-label={p.name}>
@@ -1011,7 +984,7 @@
         <ul data-projects onclickcapture={(e) => { if (projDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each rows as p (p.root || p.id)}
             <li data-key={orderOf(p)} class:lifted={dragging === orderOf(p)} class:ws={p.workspace} class:has-ws={workspacesOf(p).length > 0}
-              animate:flip={slide(orderOf(p))} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
+              animate:flip={slide(orderOf(p), dragging)} style:transform={dragging === orderOf(p) ? `translateY(${dragDy}px)` : undefined}
               onpointerdown={(e) => { if (!p.workspace) projDown(e, orderOf(p)); }} oncontextmenu={(e) => openMenu(p, e)}>
               {@render row(p)}
             </li>
@@ -1070,14 +1043,16 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="titlebar" ondblclick={(e) => { if (!(e.target as HTMLElement).closest(".tab, button")) win(() => Window.ToggleMaximise()); }}>
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="tabs" role="tablist" tabindex="-1" aria-label={t("Open projects")} bind:this={tabsEl}
+        <div class="tabs" role="tablist" tabindex="-1" aria-label={t("Open projects")}
           onclickcapture={(e) => { if (tabDragged) { e.stopPropagation(); e.preventDefault(); } }}>
           {#each tabItems as x (x.id)}
             {@const proj = x.p ?? x.snap}
             {@const team = teamOf(x.team)}
             {@const name = x.home ? team?.name ?? "" : proj?.name ?? ""}
             <!-- a middle click closes it, as × does -->
-            <div class="tab" class:on={activeTab(x)} class:home-tab={x.home} onpointerdown={(e) => tabDown(e, x.id)}
+            <div class="tab" class:on={activeTab(x)} class:home-tab={x.home} class:lifted={tabDragging === x.id} data-key={x.id}
+              animate:flip={slide(x.id, tabDragging)} style:transform={tabDragging === x.id ? `translateX(${tabDx}px)` : undefined}
+              onpointerdown={(e) => tabDown(e, x.id)}
               onmousedown={noAutoscroll} onauxclick={middle(() => closeTabOf(x))}>
               <!-- a team's home: its team's mark; a project: its icon -->
               <button class="tab-name" role="tab" aria-selected={activeTab(x)}
@@ -1425,12 +1400,14 @@
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   /* The project dragged: lifted over the others, where the pointer is; let
      go, it settles into its place. */
-  li[data-key], .folded-row { touch-action: none; transition: transform .15s ease-out; }
-  .lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
+  li[data-key], .folded-row, .tab { touch-action: none; transition: transform .15s ease-out; }
+  /* (as specific as the rule above: the one dragged never lags the pointer) */
+  li[data-key].lifted, .folded-row.lifted, .tab.lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
   /* (solid under a dimmed row: the rows it passes don't show through) */
   li.lifted, .folded-row.lifted { background: var(--bg-sunken); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
   .lifted .proj, .lifted .folded-proj { background: var(--panel-2); }
-  @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row { transition: none; } }
+  .tab.lifted:not(.on) { background: var(--panel); }
+  @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row, .tab { transition: none; } }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo { position: relative; }
   .logo img { width: 22px; height: 22px; display: block; }
