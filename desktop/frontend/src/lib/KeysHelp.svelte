@@ -16,6 +16,10 @@
       ["Ctrl+\\", t("Show or hide the sidebar")],
       ["F5 · Ctrl+R", t("Read the project again")],
     ] },
+    { title: t("Mouse"), keys: [
+      [t("Middle click · Ctrl+click"), t("In the sidebar: open a project or team in a new tab")],
+      [t("Middle click on a tab"), t("Close the tab")],
+    ] },
     { title: t("Lists of files and changes"), keys: [
       ["↑ ↓ · Home End", t("Pick the next, previous, first or last")],
       ["→ ←", t("Open or close a folder; in the Files tab, go into it or up")],

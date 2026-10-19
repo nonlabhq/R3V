@@ -227,7 +227,11 @@ describe("App: tabs", () => {
     render(App);
     await waitFor(() => expect(tabs()).toHaveLength(1));
     await fireEvent.keyDown(window, { key: "/", code: "Slash", ctrlKey: true });
-    expect(await screen.findByRole("dialog", { name: "Keyboard shortcuts" })).toBeTruthy();
+    const help = await screen.findByRole("dialog", { name: "Keyboard shortcuts" });
+    // and what the mouse does: a new tab from the sidebar, a tab closed
+    const lines = [...help.querySelectorAll("dt")].map((d) => `${d.textContent} = ${d.nextElementSibling?.textContent}`);
+    expect(lines).toContain("Middle click · Ctrl+click = In the sidebar: open a project or team in a new tab");
+    expect(lines).toContain("Middle click on a tab = Close the tab");
     // (tabs don't move under a dialog)
     await fireEvent.keyDown(window, { key: "w", ctrlKey: true });
     expect(tabs()).toHaveLength(1);
