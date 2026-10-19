@@ -160,6 +160,10 @@ type lockJSON struct {
 	Workspace string `json:"workspace,omitempty"`
 	Branch    string `json:"branch,omitempty"`
 	Actor     string `json:"actor,omitempty"`
+	// Folder, MainCopy: files_locked_by_agent: the holder's copy here (the
+	// project's main copy: main_copy true).
+	Folder   string `json:"folder,omitempty"`
+	MainCopy bool   `json:"main_copy,omitempty"`
 }
 
 func (e *cliError) Error() string { return e.Err.Error() }
@@ -251,9 +255,13 @@ func classify(err error) *cliError {
 	var byAgent *project.ErrLockedByAgent
 	if errors.As(err, &byAgent) {
 		ce := &cliError{Code: "files_locked_by_agent", Exit: exitError, Err: err,
-			Hint: "another workspace here holds these files: leave them, or ask the user (who can break the lock)"}
+			Hint: "another copy of the project here holds these files: leave them, or ask the user (who can break the lock)"}
 		for _, l := range byAgent.Locks {
-			ce.Locks = append(ce.Locks, lockJSONOf(l))
+			ce.Locks = append(ce.Locks, lockJSONIn(l, byAgent.Copies))
+			if c := byAgent.Copies[l.Workspace]; c.Main && !l.Person {
+				ce.Hint = "the project's main copy holds some of these files (no merge frees its locks): " +
+					"leave them, or ask the user (who can unlock them there, or break the lock)"
+			}
 		}
 		return ce
 	}

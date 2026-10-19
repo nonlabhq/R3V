@@ -32,14 +32,78 @@ func (r *Repo) agentTool() string {
 	return ""
 }
 
-// ErrLockedByAgent is a commit refused because another workspace (an
-// agent's, or the person's changes) holds files it changes.
+// ErrLockedByAgent is a commit refused because another copy of the
+// project on this computer (an agent's workspace, or the person's changes)
+// holds files it changes.
 type ErrLockedByAgent struct {
 	Locks []agentlock.Lock
+	// Copies: the project's copies here by workspace id, to say which
+	// holds a lock (the main copy, or a workspace's folder).
+	Copies map[string]LockCopy
+}
+
+// LockCopy is a copy of the project on this computer that may hold locks.
+type LockCopy struct {
+	Folder string
+	Main   bool // the project's main copy, not a workspace
 }
 
 func (e *ErrLockedByAgent) Error() string {
-	return "files held by another workspace: " + (&agentlock.Refused{Locks: e.Locks}).Error()
+	var b strings.Builder
+	b.WriteString("files locked by another copy of this project: ")
+	for i, l := range e.Locks {
+		if i > 0 {
+			b.WriteString("; ")
+		}
+		b.WriteString(l.Path + " is " + HolderOf(l, e.Copies))
+	}
+	return b.String()
+}
+
+// HolderOf says who holds l, and where: "locked by claude-code in the
+// project's main copy (workspace 8e314ecc) on branch main". Without its
+// copy in copies, its workspace id alone.
+func HolderOf(l agentlock.Lock, copies map[string]LockCopy) string {
+	where := "workspace " + short8(l.Workspace)
+	if c, ok := copies[l.Workspace]; ok {
+		if c.Main {
+			where = "the project's main copy (" + where + ")"
+		} else if c.Folder != "" {
+			where += " (" + c.Folder + ")"
+		}
+	}
+	if l.Person {
+		return "changed, not committed, by the person in " + where
+	}
+	who := "an agent"
+	if l.Actor != "" {
+		who = "agent " + l.Actor
+	}
+	s := "locked by " + who + " in " + where
+	if l.Branch != "" {
+		s += " on branch " + l.Branch
+	}
+	return s
+}
+
+func short8(id string) string { return id[:min(8, len(id))] }
+
+// LockedByAgent is the refusal for locks others hold, saying where each
+// holder is.
+func (r *Repo) LockedByAgent(locks []agentlock.Lock) *ErrLockedByAgent {
+	return &ErrLockedByAgent{Locks: locks, Copies: r.LockCopies()}
+}
+
+// LockCopies are this project's copies on this computer by workspace id
+// (this one included).
+func (r *Repo) LockCopies() map[string]LockCopy {
+	out := map[string]LockCopy{}
+	for _, o := range append([]*Repo{r}, r.otherCopies()...) {
+		if id := o.Config.WorkspaceID; id != "" {
+			out[id] = LockCopy{Folder: o.Root, Main: !o.IsWorkspace()}
+		}
+	}
+	return out
 }
 
 // AgentLockList is the project's agent lock list on this computer, beside
@@ -316,7 +380,7 @@ func (r *Repo) checkAgentLocks(m *Manifest) error {
 	_, err := r.TakeAgentLocks(changed, agentlock.KindLock, "")
 	var refused *agentlock.Refused
 	if errors.As(err, &refused) {
-		return &ErrLockedByAgent{Locks: refused.Locks}
+		return r.LockedByAgent(refused.Locks)
 	}
 	return err
 }

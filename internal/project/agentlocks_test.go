@@ -189,3 +189,26 @@ func TestReleaseMergedLocks(t *testing.T) {
 
 // claudeCode is the actor an agent's commands have (the CLI sets it).
 var claudeCode = &Actor{Kind: "agent", Tool: "claude-code"}
+
+// The refusal says who holds each file, and where: "the project's main
+// copy" when it's main, not "another workspace".
+func TestLockedByAgentSaysWho(t *testing.T) {
+	r := agentProject(t)
+	id := r.workspaceID()
+	copies := r.LockCopies()
+	if c := copies[id]; !c.Main || c.Folder != r.Root {
+		t.Fatalf("this copy: %+v", copies)
+	}
+	err := r.LockedByAgent([]agentlock.Lock{
+		{Path: "Assets/Scenes/Main.unity", Workspace: id, Branch: "main", Actor: "claude-code"},
+		{Path: "tex/", Workspace: other.Workspace, Branch: other.Branch, Actor: other.Actor},
+		{Path: "models/ship.glb", Workspace: id, Branch: "main", Person: true},
+	})
+	want := "files locked by another copy of this project: " +
+		"Assets/Scenes/Main.unity is locked by agent claude-code in the project's main copy (workspace " + id[:8] + ") on branch main; " +
+		"tex/ is locked by agent claude-code in workspace 01234567 on branch renderer; " +
+		"models/ship.glb is changed, not committed, by the person in the project's main copy (workspace " + id[:8] + ")"
+	if err.Error() != want {
+		t.Fatalf("got  %s\nwant %s", err, want)
+	}
+}
