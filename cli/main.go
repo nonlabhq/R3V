@@ -95,6 +95,8 @@ for programs and AI agents:
   --wait SECONDS                         how long a command waits for the app or another command
                                          working on the project (default 10); reading commands
                                          (status, log...) read without waiting
+  R3V_CONFIG_DIR=<folder>                keep R3V's own settings (teams joined, their keys) there,
+                                         not in %APPDATA%\R3V: for a sandbox that can't write it
   help agents [--snippet]                how AI agents use R3V (or lines for a project's
                                          AGENTS.md)
   help rules                             the project's rules (.r3v.yaml): what is tracked,

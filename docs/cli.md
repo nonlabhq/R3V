@@ -4,9 +4,11 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore`, `verify` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
-While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
+While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so. A file R3V may not write at all (a sandbox, a read-only folder) is not someone working: that fails at once, naming the path (`no_write_access`).
+
+**R3V's own settings** (the teams this computer joined and their keys, `teams.json`; the app's lists of projects; logs) are in `%APPDATA%\R3V`. `R3V_CONFIG_DIR=<folder>` keeps them in that folder instead: for a sandbox, a CI job or an agent that may only write in its workspace. Projects are unaffected (each keeps its own `.r3v`). The teams joined in the usual folder aren't in a new one: copy `teams.json` over (the same Windows user can read its keys), or join again; an R3V Cloud sign-in stays in Windows' Credential Manager.
 
 ## Team storage (S3-compatible)
 

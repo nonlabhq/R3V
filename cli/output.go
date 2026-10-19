@@ -315,7 +315,7 @@ func noAccessHint(path string) string {
 	if dir := teams.Dir(); inFolder(path, dir) {
 		return "R3V keeps its settings (teams, keys) in " + dir + " and may not write there (a sandbox, or a read-only folder): " +
 			"trying again won't help. Give it write access, or set R3V_CONFIG_DIR to a folder it can write " +
-			"(teams joined in the usual folder aren't there: join with a connection code again)"
+			"(teams joined in the usual folder aren't there: the user copies teams.json into it, or joins again)"
 	}
 	return "R3V may not write there (a sandbox, or a read-only folder): trying again won't help; the user must give it write access"
 }

@@ -480,6 +480,13 @@ Codes are stable; messages are for people and may change.
   two sets on disk.
 - `r3v watch` keeps running and reports teammates' new versions; it is
   for people (no `--json`).
+- R3V keeps its own settings (teams joined, their keys) in
+  `%APPDATA%\R3V`. In a sandbox that can't write there, commands that
+  change them (`init --team`, `remote --team`, joining a team) fail with
+  `no_write_access`: set `R3V_CONFIG_DIR` to a folder you may write (in
+  your workspace, outside the project) and ask the user to copy
+  `teams.json` into it, or to give R3V access. Never retry on
+  `no_write_access`; `project_busy` alone means someone is working.
 - The CLI is `r3v` on PATH after installing the app (a new terminal sees
   it); otherwise `%LOCALAPPDATA%\Programs\R3V\bin\r3v.exe` (or
   `R3V Pro\bin`). `where r3v` shows which one runs.
