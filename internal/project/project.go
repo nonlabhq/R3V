@@ -101,8 +101,11 @@ type Repo struct {
 	profErr error
 	// agentLocking: what locks between workspaces (AgentLocking), once read.
 	agentLocking *profile.Locking
-	// restored: a share brought the project back to its team, which had
-	// deleted it (restoreProject); Share says so.
+	// RestoreDeleted: the next share may bring the project back to its team,
+	// which deleted it (deleted.go). Only when the person asked: a share
+	// never does it on its own.
+	RestoreDeleted bool
+	// restored: a share brought it back (Share says so).
 	restored bool
 }
 

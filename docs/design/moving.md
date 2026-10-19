@@ -52,23 +52,49 @@ workspaces stay behind; names, colours, deleted branches and milestones go.
 
 Other copies of the project (another member's, or a second folder on
 this computer: the app follows one folder per project and team) still
-belong to the first team. R3V Cloud keeps a deleted project 30 days, out
-of everyone's reach, its records and versions as they were, and refuses
-writing its `project.json` (404) until an owner or admin restores it. A
-share from such a copy (Share now, a commit, `r3v commit`) takes that 404
-as the project deleted and kept: it restores it (an owner's or admin's
-share), then shares as usual. In between:
+belong to the first team. Moving logs `project-removed` in the first
+team's log with `movedTo` (the other team's name) and `movedToRef` (a
+hash of its address: a computer that joined it knows it; the address
+stays out of the first team's storage). Older R3Vs logged neither.
+
+A share from such a copy (Share now, a commit, `r3v commit`) finds the
+project gone from the team's list with a `project-removed` record (or, on
+R3V Cloud, which keeps a deleted project 30 days out of reach, its
+`project.json` refused: 404), and stops: `DeletedError` (CLI
+`project_deleted`), saying when, by whom and where it moved, as the log
+tells; with no `movedTo`, the teams this computer joined are asked which
+has the project (all at once, 10 seconds at most). The versions stay
+committed here. It was deleted on purpose: nothing is brought back or
+pointed elsewhere without the person asking. The app asks:
+
+- **Point this copy at <team>** (it moved to a team this computer joined,
+  which has the project; CLI `r3v remote --team <team>`): the folder
+  becomes that team's, as moving it from here would have made it. The
+  next share shares its versions there; when that team's branch moved
+  on meanwhile, as any share does (replayed after, or merged): nothing
+  forced, nothing lost.
+- **Bring it back to <first team>** (owners and admins on R3V Cloud; CLI
+  `r3v project restore`): R3V Cloud's restore (`POST
+  /v1/teams/:team/projects/:pid/restore`) brings its records and versions
+  back as they were; a team's own storage deleted it for good, and the
+  share makes it anew. Members are told to ask an admin.
+
+Pointing a copy elsewhere, stopped half-way:
+
+| stopped | registry (`teams.json`) | the folder (`.r3v/config.json`) | next |
+|---|---|---|---|
+| before | the first team | the first team | the share says `project_deleted` again |
+| registered for the other team | both teams | the first team | pointing it again finishes it |
+| the folder the other team's | both teams | the other team | nothing: the folder says its team; the first team's entry goes next time, or stays harmless |
+| done | the other team | the other team | sharing shares the versions there |
+
+Bringing it back, stopped half-way:
 
 | stopped | the first team | this copy | next |
 |---|---|---|---|
-| before restoring | deleted, kept | versions not shared ("Share now") | the next share restores it |
-| restored, before the branch moved | has it again, as it was | versions not shared ("Share now") | the next share shares them (nothing sent twice: by hash) |
+| before restoring | deleted, kept | versions not shared | asking again restores it |
+| restored, before the branch moved | has it again, as it was | versions not shared ("Share now") | an ordinary share shares them (nothing sent twice: by hash) |
 | shared | has it, with this copy's versions | shared | — |
-
-A member who may not restore it is told so (`project_deleted`; the
-versions stay committed here); so is anyone once the team no longer keeps
-it (on storage of the team's own, deleting is for good and a share makes
-the project anew).
 
 # A team moves to R3V Cloud
 

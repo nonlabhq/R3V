@@ -453,36 +453,6 @@ func (r *Repo) publish(c remote.Backend, old string) error {
 	return r.publishTo(c, r.BranchName(), old)
 }
 
-// ErrProjectDeleted: the project was deleted from its team (from another
-// copy, moved to another team, or deleted for everyone) while this copy
-// still belongs to it, and sharing can't bring it back. Its versions stay
-// here.
-var ErrProjectDeleted = errors.New("this project was deleted from the team")
-
-// restoreProject brings the project back to its team, which deleted it and
-// keeps it a while (a hosted team, 30 days): a share from a copy still the
-// team's says the project is wanted there. Its records and versions come
-// back as they were; the share goes on from them.
-func (r *Repo) restoreProject(c remote.Backend) error {
-	pid := r.Config.ProjectID
-	err := remote.RestoreProject(c, pid)
-	switch {
-	case err == nil:
-		r.restored = true
-		return nil
-	case errors.Is(err, remote.ErrForbidden):
-		return fmt.Errorf("%w: only its owners and admins can bring it back (sharing it from this copy does); the versions stay here", ErrProjectDeleted)
-	case errors.Is(err, remote.ErrNotFound):
-		// Not deleted any more (brought back meanwhile), or not kept: as new.
-		if err := c.PutProject(remote.Project{ID: pid, Name: r.Config.Name}); !errors.Is(err, remote.ErrNotFound) {
-			return err
-		}
-	case !errors.Is(err, errors.ErrUnsupported):
-		return err
-	}
-	return fmt.Errorf("%w and can't be brought back; the versions stay here", ErrProjectDeleted)
-}
-
 // publishTo uploads everything HEAD needs and moves branch from old to HEAD.
 func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 	head := r.Head()
@@ -502,15 +472,12 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 		if bs, err := c.Branches(r.Config.ProjectID); err != nil || len(bs) == 0 {
 			ps, err := c.Projects()
 			if err != nil || !slices.ContainsFunc(ps, func(p remote.Project) bool { return p.ID == r.Config.ProjectID }) {
-				err := c.PutProject(remote.Project{ID: r.Config.ProjectID, Name: r.Config.Name})
-				if errors.Is(err, remote.ErrNotFound) {
-					// A hosted team deleted it and keeps it a while: back.
-					err = r.restoreProject(c)
-				}
-				if err != nil {
+				// Not on the team: new to it, or deleted from it (moved
+				// away, or deleted for everyone), which only an asked-for
+				// restore undoes (deleted.go).
+				if err := r.addToTeam(c, err == nil); err != nil {
 					return err
 				}
-				remote.LogTeamEvent(c, remote.TeamEvent{Kind: remote.EventProjectAdded, Project: r.Config.ProjectID, Name: r.Config.Name})
 			}
 		}
 	}
