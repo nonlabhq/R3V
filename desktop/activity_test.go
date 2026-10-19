@@ -102,10 +102,12 @@ func TestTeamActivityOfAHostedTeam(t *testing.T) {
 
 	// An older service: the team's logs, as before.
 	f.Old.Store(true)
+	f.ResetRequests()
 	items, err = a.TeamActivity(hosted.ID, 7)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("requests: 1 from /events, %d from the logs (%v)", f.Total(), f.Requests())
 	kinds := map[string]int{}
 	for _, it := range items {
 		kinds[it.Kind]++
