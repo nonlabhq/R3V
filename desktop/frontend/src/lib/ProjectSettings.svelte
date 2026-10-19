@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { t } from "./i18n.svelte";
+  import { t, tn } from "./i18n.svelte";
   import { api, errorText, type ProjectInfo, type Progress, type TeamProject, type TeamSummary } from "./api";
   import Modal from "$shared/Modal.svelte";
   import RulesWindow from "./RulesWindow.svelte";
@@ -13,12 +13,15 @@
   import ProjectCheck from "./ProjectCheck.svelte";
   import MoveProjectDialog from "./MoveProjectDialog.svelte";
   import ProjectWorkflow from "./ProjectWorkflow.svelte";
+  import SettingsTabs from "$shared/team/SettingsTabs.svelte";
   import { branchLabel, branchLane } from "$shared/branches";
   import { ago, type BranchList, type ArchivedBranch, type StepsInfo } from "./api";
 
-  // A project's settings: its name, where it is, its rules, and what can be
-  // done with it (check it, unlink or delete it). The actions that
-  // need a confirmation of their own are the caller's.
+  // A project's settings: its name, where it is, its branches, its rules,
+  // its workflow, and what can be done with it (check it, unlink or delete
+  // it). In the project's Settings tab, in tabs down the left as a team's
+  // settings are. The actions that need a confirmation of their own are the
+  // caller's.
   let { p, team, teams = [], progress = null, inline = false, onclose, onrenamed, oncheck, ondelete, onunlink, onlocate, onmoved }: {
     p: TeamProject;
     inline?: boolean;       // in the project's Settings tab, not a dialog
@@ -96,6 +99,7 @@
   let branchOpen = $state<string | null>(null);
   let moving = $state(false); // the move dialog open
   let archived = $state<ArchivedBranch[]>([]);
+  let archivedOpen = $state(false); // the archived ones listed (folded to their count)
   const loadBranches = () => {
     api.BranchList(p.root).then((l) => (branchList = l)).catch(() => {});
     api.ArchivedBranches(p.root).then((d) => (archived = d ?? [])).catch(() => {});
@@ -142,6 +146,15 @@
 
   let rulesOpen = $state(false);
   let unlinkSure = $state(false);
+  // The tabs, those with something in them: General (name, where it is,
+  // checks, the danger zone), then Branches, Rules and Workflow.
+  type Tab = "general" | "branches" | "rules" | "workflow";
+  const hasBranches = $derived(!!branchList?.names && !!branchList.branches.length);
+  const hasWorkflow = $derived(here && !!info && (!!steps?.available || !!team?.hosted));
+  let tabs = $derived<{ id: Tab; label: string }[]>([{ id: "general", label: t("General") },
+    ...(hasBranches ? [{ id: "branches" as Tab, label: t("Branches") }] : []),
+    ...(here && info ? [{ id: "rules" as Tab, label: t("Rules") }] : []),
+    ...(hasWorkflow ? [{ id: "workflow" as Tab, label: t("Workflow") }] : [])]);
   const presetName = (preset: string) => ({ ableton: t("Ableton Live project"), unity: t("Unity project"),
     unreal: t("Unreal project"), godot: t("Godot project"), design: t("Design files"), code: t("Code and documents"), none: t("Files as they are") } as Record<string, string>)[preset] ?? preset;
 </script>
@@ -150,7 +163,7 @@
 {#if rulesOpen}
   <RulesWindow root={p.root} onclose={() => { rulesOpen = false; api.ProjectInfo(p.root).then((i) => (info = i)).catch(() => {}); }} />
 {:else}
-{#snippet body()}
+{#snippet naming()}
   <section>
     <h3>{t("Name")}</h3>
     <div class="line">
@@ -166,39 +179,9 @@
     </div>
     <p class="hint">{team ? t("Project name shared by the whole team.") : t("Project name in R3V.")} {t("Local folder keeps its name.")}</p>
   </section>
+{/snippet}
 
-  {#if branchList?.names && branchList.branches.length}
-    <section>
-      <h3>{t("Branches")}</h3>
-      <ul class="branches">
-        {#each branchList.branches as b (b.name)}
-          <li>
-            <button class="ghost brow" onclick={() => (branchOpen = b.name)} title={t("Branch settings")}>
-              <span class="bdot" style:--c="var(--lane-{branchLane(branchList.branches, b.name)})"></span>
-              <span class="bname">{branchLabel(branchList.branches, b.name)}</span>
-              {#if b.current}<span class="here">{t("you're on it")}</span>{/if}
-              <span class="faint">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
-            </button>
-          </li>
-        {/each}
-      </ul>
-      {#if archived.length}
-        <h4>{t("Archived branches")}</h4>
-        <ul class="branches">
-          {#each archived as d (d.name)}
-            <li class="drow">
-              <span class="bdot gone" style:--c="var(--lane-{branchLane([d], d.name)})"></span>
-              <span class="bname">{d.label || d.name}</span>
-              <span class="faint">{d.by ? t("archived by {name} {when}", { name: d.by, when: ago(d.time) }) : t("archived {when}", { when: ago(d.time) })}</span>
-              <button class="small" onclick={() => restore(d)} disabled={!!restoring}>{restoring === d.name ? t("Unarchiving…") : t("Unarchive")}</button>
-              <button class="small danger-text" onclick={() => (forgetting = d)} disabled={!!restoring}>{t("Delete…")}</button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
-  {/if}
-
+{#snippet place()}
   <section>
     <h3>{t("Where")}</h3>
     <dl>
@@ -218,58 +201,103 @@
       {#if p.id}<dt>{t("Project ID")}</dt><dd class="mono faint">{p.id}</dd>{/if}
     </dl>
   </section>
+{/snippet}
 
-  {#if here && info}
-    <section>
-      <h3>{t("Rules")}</h3>
-      <p class="hint"><Tx text={t("Which files R3V tracks, set in the project's {file}. The file is committed with the project, so everyone uses the same rules.")} code={{ file: ".r3v.yaml" }} /></p>
-      <ul class="applied">
-        {#each info.rules.applied as a}
-          <li><strong>{presetName(a.preset)}</strong>
-            <span class="faint">{a.folder ? t("in {folder}", { folder: `${a.folder}/` }) : t("the project folder")}{a.detected ? ` · ${t("detected")}` : ""}</span></li>
-        {:else}
-          <li class="faint">{t("Files as they are: every file is tracked.")}</li>
+{#snippet branchesPart()}
+  {#if branchList}
+  <section>
+    <h3>{t("Branches")}</h3>
+    <ul class="branches">
+      {#each branchList.branches as b (b.name)}
+        <li>
+          <button class="ghost brow" onclick={() => (branchOpen = b.name)} title={t("Branch settings")}>
+            <span class="bdot" style:--c="var(--lane-{branchLane(branchList.branches, b.name)})"></span>
+            <span class="bname">{branchLabel(branchList.branches, b.name)}</span>
+            {#if b.current}<span class="here">{t("you're on it")}</span>{/if}
+            <span class="faint">{[tn(b.versions, "{n} version", "{n} versions"), ...(b.latest ? [b.latest.author, ago(b.latest.time)] : [])].join(" · ")}</span>
+          </button>
+        </li>
+      {/each}
+    </ul>
+    {#if archived.length}
+      <button class="ghost fold" aria-expanded={archivedOpen} onclick={() => (archivedOpen = !archivedOpen)}>
+        {t("Archived ({n})", { n: archived.length })}<span class="chev" aria-hidden="true">›</span></button>
+      {#if archivedOpen}
+      <ul class="branches" aria-label={t("Archived branches")}>
+        {#each archived as d (d.name)}
+          <li class="drow">
+            <span class="bdot gone" style:--c="var(--lane-{branchLane([d], d.name)})"></span>
+            <span class="bname">{d.label || d.name}</span>
+            <span class="faint">{d.by ? t("archived by {name} {when}", { name: d.by, when: ago(d.time) }) : t("archived {when}", { when: ago(d.time) })}</span>
+            <button class="small" onclick={() => restore(d)} disabled={!!restoring}>{restoring === d.name ? t("Unarchiving…") : t("Unarchive")}</button>
+            <button class="small danger-text" onclick={() => (forgetting = d)} disabled={!!restoring}>{t("Delete…")}</button>
+          </li>
         {/each}
       </ul>
-      {#if info.rules.error}<p class="error">⚠ {info.rules.error}</p>{/if}
-      <div class="line">
-        <button class="primary" onclick={() => (rulesOpen = true)}>{t("Rules…")}</button>
-        <button onclick={openRules}>{t("Edit as text")}</button>
-        <button class="ghost" onclick={() => api.OpenURL("https://github.com/nonlabhq/R3V/blob/main/docs/profiles.md")}>{t("Guide ↗")}</button>
-      </div>
-    </section>
-
-    <!-- (the team's workflow, the project's own over it: file locking on R3V
-         Cloud teams, agents' settings where this build has agents) -->
-    {#if steps?.available || team?.hosted}<ProjectWorkflow root={p.root} />{/if}
-    {#if steps?.available}
-      {#if !steps.settings.off && !steps.hooked}
-        <section>
-          <div class="action">
-            <div><strong>{t("Claude Code here doesn't make steps yet")}</strong>
-              <p class="hint">{t("An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).")}</p></div>
-            <button onclick={setUpSteps} disabled={hooking}>{t("Set up")}</button>
-          </div>
-        </section>
       {/if}
     {/if}
-
-    <section>
-      <h3>{t("Health")}</h3>
-      <!-- (what a project check looks at: a Live project's; other kinds have none yet) -->
-      {#if info?.tool === "Ableton Live"}
-        <div class="action">
-          <div><strong>{t("Project check")}</strong><p class="hint">{t("Check the project: Live version, samples, plugins")}</p></div>
-          <button onclick={() => (healthOpen = true)}>{t("Check…")}</button>
-        </div>
-      {/if}
-      <div class="action">
-        <div><strong>{t("Check project…")}</strong><p class="hint">{t("Reads its whole history again, looking for damage.")}</p></div>
-        <button onclick={oncheck}>{t("Check…")}</button>
-      </div>
-    </section>
+  </section>
   {/if}
+{/snippet}
 
+{#snippet rulesPart()}
+  {#if info}
+  <section>
+    <h3>{t("Rules")}</h3>
+    <p class="hint"><Tx text={t("Which files R3V tracks, set in the project's {file}. The file is committed with the project, so everyone uses the same rules.")} code={{ file: ".r3v.yaml" }} /></p>
+    <ul class="applied">
+      {#each info.rules.applied as a}
+        <li><strong>{presetName(a.preset)}</strong>
+          <span class="faint">{a.folder ? t("in {folder}", { folder: `${a.folder}/` }) : t("the project folder")}{a.detected ? ` · ${t("detected")}` : ""}</span></li>
+      {:else}
+        <li class="faint">{t("Files as they are: every file is tracked.")}</li>
+      {/each}
+    </ul>
+    {#if info.rules.error}<p class="error">⚠ {info.rules.error}</p>{/if}
+    <div class="line">
+      <button class="primary" onclick={() => (rulesOpen = true)}>{t("Rules…")}</button>
+      <button onclick={openRules}>{t("Edit as text")}</button>
+      <button class="ghost" onclick={() => api.OpenURL("https://github.com/nonlabhq/R3V/blob/main/docs/profiles.md")}>{t("Guide ↗")}</button>
+    </div>
+  </section>
+  {/if}
+{/snippet}
+
+{#snippet workflowPart()}
+  <!-- (the team's workflow, the project's own over it: file locking on R3V
+       Cloud teams, agents' settings where this build has agents) -->
+  {#if steps?.available || team?.hosted}<ProjectWorkflow root={p.root} />{/if}
+  {#if steps?.available}
+    {#if !steps.settings.off && !steps.hooked}
+      <section>
+        <div class="action">
+          <div><strong>{t("Claude Code here doesn't make steps yet")}</strong>
+            <p class="hint">{t("An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).")}</p></div>
+          <button onclick={setUpSteps} disabled={hooking}>{t("Set up")}</button>
+        </div>
+      </section>
+    {/if}
+  {/if}
+{/snippet}
+
+{#snippet healthPart()}
+  <section>
+    <h3>{t("Health")}</h3>
+    <!-- (what a project check looks at: a Live project's; other kinds have none yet) -->
+    {#if info?.tool === "Ableton Live"}
+      <div class="action">
+        <div><strong>{t("Project check")}</strong><p class="hint">{t("Check the project: Live version, samples, plugins")}</p></div>
+        <button onclick={() => (healthOpen = true)}>{t("Check…")}</button>
+      </div>
+    {/if}
+    <div class="action">
+      <div><strong>{t("Check project…")}</strong><p class="hint">{t("Reads its whole history again, looking for damage.")}</p></div>
+      <button onclick={oncheck}>{t("Check…")}</button>
+    </div>
+  </section>
+{/snippet}
+
+{#snippet danger()}
   <section class="danger-zone">
     <h3>{t("Danger zone")}</h3>
     {#if p.root}
@@ -299,10 +327,39 @@
       </div>
     {/if}
   </section>
+{/snippet}
 
+<!-- (in a dialog: everything on one page, as before the tabs) -->
+{#snippet body()}
+  {@render naming()}
+  {#if hasBranches}{@render branchesPart()}{/if}
+  {@render place()}
+  {#if here && info}
+    {@render rulesPart()}
+    {@render workflowPart()}
+    {@render healthPart()}
+  {/if}
+  {@render danger()}
 {/snippet}
 {#if inline}
-  <div class="inline">{@render body()}</div>
+  <div class="inline">
+    <SettingsTabs {tabs} label={t("Project settings")} remember="r3v.projectSettingsTab">
+      {#snippet content(tab)}
+        {#if tab === "branches"}
+          {@render branchesPart()}
+        {:else if tab === "rules"}
+          {@render rulesPart()}
+        {:else if tab === "workflow"}
+          {@render workflowPart()}
+        {:else}
+          {@render naming()}
+          {@render place()}
+          {#if here && info}{@render healthPart()}{/if}
+          {@render danger()}
+        {/if}
+      {/snippet}
+    </SettingsTabs>
+  </div>
 {:else}
 <Modal title={t("Project settings")} {onclose} width={600}>
   {@render body()}
@@ -352,7 +409,10 @@
   .bname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .here { font-size: var(--fs-xs); color: var(--accent); }
   .brow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
-  h4 { margin: var(--sp-12) 0 var(--sp-4); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
+  .fold { display: flex; align-items: center; gap: var(--sp-6); margin: var(--sp-12) 0 var(--sp-4); padding: var(--sp-4) var(--sp-8);
+    font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: var(--fw-semibold); }
+  .fold .chev { transition: transform .15s; }
+  .fold[aria-expanded="true"] .chev { transform: rotate(90deg); }
   .drow { display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-4) var(--sp-8); }
   .drow .faint { margin-left: auto; color: var(--faint); font-size: var(--fs-sm); white-space: nowrap; }
   .drow .bname { color: var(--muted); }

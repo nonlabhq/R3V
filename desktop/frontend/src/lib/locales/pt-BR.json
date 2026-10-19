@@ -1906,5 +1906,6 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Este arquivo mudou depois que o R3V parou: restaurar os arquivos o substitui (ou o apaga, se a versão não o tiver).",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Estes {n} arquivos mudaram depois que o R3V parou: restaurar os arquivos os substitui (ou apaga os que a versão não tem).",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "Copie antes para outro lugar o que quiser manter. Isso não pode ser desfeito.",
-"Replace them and put files back": "Substituí-los e restaurar arquivos"
+"Replace them and put files back": "Substituí-los e restaurar arquivos",
+"Archived ({n})": "Arquivados ({n})"
 }

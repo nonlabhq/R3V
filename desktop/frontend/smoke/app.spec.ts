@@ -114,7 +114,12 @@ test("lists the shortcuts, and Esc closes the list", async () => {
 
 test("opens the project's settings", async () => {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  await expect(page.getByText(/rules|Rules/).first()).toBeVisible();
+  const tabs = page.getByRole("navigation", { name: "Project settings" });
+  await tabs.getByRole("button", { name: "Rules" }).click();
+  await expect(page.getByRole("button", { name: "Rules…" })).toBeVisible();
+  await tabs.getByRole("button", { name: "Branches" }).click();
+  await expect(page.getByText(/^\d+ versions? · /).first()).toBeVisible(); // (each branch's count)
+  await tabs.getByRole("button", { name: "General" }).click(); // (remembered: the next visit opens there)
 });
 
 test("opens the team's home, and a project from the quick launcher", async () => {

@@ -2,7 +2,9 @@
   import type { Snippet } from "svelte";
 
   // A settings page in tabs down the left (a team's: General, Workflow,
-  // Activity, Usage): the tab picked is remembered on this computer.
+  // Activity, Usage): the tab picked is remembered on this computer. A tab
+  // that isn't there (yet: its page still loading) shows the first one
+  // meanwhile, and is shown once it comes.
   let { tabs, label, remember, content }: {
     tabs: { id: K; label: string }[];
     label: string;        // what the tab list is called (for screen readers)
@@ -12,8 +14,9 @@
 
   // svelte-ignore state_referenced_locally
   let tab = $state<K>((() => {
-    try { const v = localStorage.getItem(remember) as K; return tabs.some((x) => x.id === v) ? v : tabs[0].id; } catch { return tabs[0].id; }
+    try { return (localStorage.getItem(remember) as K) || tabs[0].id; } catch { return tabs[0].id; }
   })());
+  const shown = $derived(tabs.some((x) => x.id === tab) ? tab : tabs[0].id);
   function pick(x: K) {
     tab = x;
     try { localStorage.setItem(remember, x); } catch { /* not remembered */ }
@@ -23,10 +26,10 @@
 <div class="tabbed">
   <nav class="tabs" aria-label={label}>
     {#each tabs as x (x.id)}
-      <button class:on={tab === x.id} aria-current={tab === x.id ? "page" : undefined} onclick={() => pick(x.id)}>{x.label}</button>
+      <button class:on={shown === x.id} aria-current={shown === x.id ? "page" : undefined} onclick={() => pick(x.id)}>{x.label}</button>
     {/each}
   </nav>
-  <div class="content">{@render content(tab)}</div>
+  <div class="content">{@render content(shown)}</div>
 </div>
 
 <style>

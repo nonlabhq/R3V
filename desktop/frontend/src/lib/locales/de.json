@@ -1906,5 +1906,6 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Diese Datei wurde geändert, nachdem R3V angehalten hat: Beim Zurücksetzen wird sie ersetzt (oder gelöscht, wenn die Version sie nicht hat).",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Diese {n} Dateien wurden geändert, nachdem R3V angehalten hat: Beim Zurücksetzen werden sie ersetzt (oder gelöscht, wenn die Version sie nicht hat).",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "Kopiere zuerst, was du davon behalten willst, an einen anderen Ort. Das lässt sich nicht rückgängig machen.",
-"Replace them and put files back": "Ersetzen und Dateien zurücksetzen"
+"Replace them and put files back": "Ersetzen und Dateien zurücksetzen",
+"Archived ({n})": "Archiviert ({n})"
 }
