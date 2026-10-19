@@ -226,7 +226,19 @@ func (s *BucketBackend) PutProject(p Project) error {
 
 // DeleteProject removes project.json first, so the project leaves the list
 // even if deleting the rest is interrupted.
-func (s *BucketBackend) DeleteProject(pid string) error {
+func (s *BucketBackend) DeleteProject(pid string) error { return s.deleteProject(pid, TeamEvent{}) }
+
+// DeleteMovedProject removes project pid from b's team as moved to another
+// team (named to, its address's AddressRef ref): the team's log says where,
+// for the copies still the team's.
+func DeleteMovedProject(b Backend, pid, to, ref string) error {
+	if s, ok := b.(*BucketBackend); ok {
+		return s.deleteProject(pid, TeamEvent{MovedTo: to, MovedToRef: ref})
+	}
+	return b.DeleteProject(pid)
+}
+
+func (s *BucketBackend) deleteProject(pid string, ev TeamEvent) error {
 	if !validHex(pid, 32) {
 		return errors.New("invalid project id")
 	}
@@ -237,7 +249,8 @@ func (s *BucketBackend) DeleteProject(pid string) error {
 	if err := s.delete(projectDir(pid) + "project.json"); err != nil {
 		return err
 	}
-	s.logTeam(TeamEvent{Kind: EventProjectRemoved, Project: pid, Name: was.Name})
+	ev.Kind, ev.Project, ev.Name = EventProjectRemoved, pid, was.Name
+	s.logTeam(ev)
 	keys, err := s.list(projectDir(pid))
 	if err != nil {
 		return err
