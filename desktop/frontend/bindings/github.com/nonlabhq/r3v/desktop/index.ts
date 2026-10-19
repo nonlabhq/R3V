@@ -33,6 +33,8 @@ export {
     HunkSide,
     HunkText,
     IgnoreOption,
+    KeptOpenWith,
+    LastProgram,
     LinkTarget,
     LockItem,
     LockOutcome,

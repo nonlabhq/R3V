@@ -32,6 +32,7 @@
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
+  import { migrateOpenWith } from "./lib/openwith";
   import Tooltip from "./lib/Tooltip.svelte";
   import Avatar from "$shared/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
@@ -814,6 +815,7 @@
     });
     api.Autostart().then((on) => (autostart = on)).catch(() => {});
     loadProfile();
+    migrateOpenWith();
     api.Version().then((v) => (appVersion = v)).catch(() => {});
     api.Edition().then((e) => (edition = e)).catch(() => {});
     api.Channel().then((c) => (nightly = c.build === "nightly")).catch(() => {});

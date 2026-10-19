@@ -114,7 +114,6 @@ describe("ProjectHeader", () => {
     { id: "vscode", name: "VS Code", path: "C:/Code.exe", chosen: false }];
   const main = () => document.querySelector<HTMLButtonElement>(".split .main")!;
   const more = () => screen.getByRole("button", { name: "More ways to open the project" });
-  beforeEach(() => localStorage.clear());
 
   it("opens the project in its program with F12, at the far right", async () => {
     render(ProjectHeader, { st: st(["."]) });
@@ -143,7 +142,7 @@ describe("ProjectHeader", () => {
     render(ProjectHeader, { st: code });
     expect(main().textContent).toBe("Open in…");
     await fireEvent.click(main());
-    expect(api.OpenPrograms).toHaveBeenCalledWith([]);
+    expect(api.OpenPrograms).toHaveBeenCalledWith("C:/Code");
     expect(screen.getByRole("menu").textContent).not.toContain("Project files");
     await fireEvent.click(await screen.findByRole("menuitem", { name: "VS Code" }));
     expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Code", "vscode");
@@ -153,10 +152,10 @@ describe("ProjectHeader", () => {
     expect(api.OpenFolderWith).toHaveBeenCalledTimes(2);
   });
 
-  it("remembers the program per project, on this computer", async () => {
-    localStorage.setItem("r3v.openWith:C:/Code", JSON.stringify({ last: { id: "cursor", name: "Cursor" }, chosen: [] }));
+  it("opens the folder in the program R3V kept for the project", async () => {
+    api.OpenedWith.mockImplementation(async (root: string) => (root === "C:/Code" ? { id: "cursor", name: "Cursor" } : null));
     render(ProjectHeader, { st: code });
-    expect(main().textContent).toContain("Open in Cursor");
+    await waitFor(() => expect(main().textContent).toContain("Open in Cursor"));
     await fireEvent.click(main());
     expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Code", "cursor");
     cleanup();
@@ -165,22 +164,23 @@ describe("ProjectHeader", () => {
   });
 
   it("opens the folder with a program chosen, which then stays in the menu", async () => {
-    api.ChooseProgram.mockResolvedValue("D:/Apps/My Editor.exe");
+    const mine = { id: "D:/Apps/My Editor.exe", name: "My Editor", path: "D:/Apps/My Editor.exe", chosen: true };
+    api.ChooseProgram.mockResolvedValue(mine);
     api.OpenPrograms.mockResolvedValue(found);
     render(ProjectHeader, { st: code });
     await fireEvent.click(more());
     await fireEvent.click(await screen.findByRole("menuitem", { name: "Choose a program…" }));
     await waitFor(() => expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Code", "D:/Apps/My Editor.exe"));
+    expect(api.ChooseProgram).toHaveBeenCalledWith("C:/Code", expect.any(String));
     expect(main().textContent).toContain("Open in My Editor");
-    expect(JSON.parse(localStorage.getItem("r3v.openWith:C:/Code")!).chosen).toEqual(["D:/Apps/My Editor.exe"]);
-    api.OpenPrograms.mockResolvedValue([...found, { id: "D:/Apps/My Editor.exe", name: "My Editor", path: "D:/Apps/My Editor.exe", chosen: true }]);
+    api.OpenPrograms.mockResolvedValue([...found, mine]);
     await fireEvent.click(more());
-    expect(api.OpenPrograms).toHaveBeenLastCalledWith(["D:/Apps/My Editor.exe"]);
+    expect(api.OpenPrograms).toHaveBeenLastCalledWith("C:/Code");
     expect(await screen.findByRole("menuitem", { name: "My Editor" })).toBeTruthy();
   });
 
   it("does nothing when choosing a program is cancelled", async () => {
-    api.ChooseProgram.mockResolvedValue("");
+    api.ChooseProgram.mockResolvedValue(null);
     render(ProjectHeader, { st: code });
     await fireEvent.click(more());
     await fireEvent.click(screen.getByRole("menuitem", { name: "Choose a program…" }));
@@ -190,14 +190,15 @@ describe("ProjectHeader", () => {
   });
 
   it("drops a chosen program that is no longer there", async () => {
-    localStorage.setItem("r3v.openWith:C:/Code", JSON.stringify({ last: { id: "D:/Gone.exe", name: "Gone" }, chosen: ["D:/Gone.exe"] }));
-    api.OpenPrograms.mockResolvedValue(found);
+    // (R3V forgets it once it lists the programs)
+    let last: unknown = { id: "D:/Gone.exe", name: "Gone" };
+    api.OpenedWith.mockImplementation(async () => last);
+    api.OpenPrograms.mockImplementation(async () => { last = null; return found; });
     render(ProjectHeader, { st: code });
-    expect(main().textContent).toContain("Open in Gone");
+    await waitFor(() => expect(main().textContent).toContain("Open in Gone"));
     await fireEvent.click(more());
     await waitFor(() => expect(main().textContent).toBe("Open in…"));
     expect(screen.queryByRole("menuitem", { name: "Gone" })).toBeNull();
-    expect(JSON.parse(localStorage.getItem("r3v.openWith:C:/Code")!).chosen).toEqual([]);
   });
 
   it("moves through the menu with the keyboard; Esc goes back to the ▾", async () => {

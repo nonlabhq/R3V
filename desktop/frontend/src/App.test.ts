@@ -400,6 +400,31 @@ describe("App: tabs of more than one team", () => {
   });
 });
 
+describe("App: what Open in kept in the page before", () => {
+  it("sends the programs the page kept for projects to R3V once, and forgets them", async () => {
+    localStorage.setItem("r3v.openWith:C:/Song", JSON.stringify({ last: { id: "vscode", name: "VS Code" }, chosen: ["D:/Apps/My Editor.exe", 3] }));
+    localStorage.setItem("r3v.openWith:C:/Beat", "{broken");
+    render(App);
+    await waitFor(() => expect(api.ImportOpenWith).toHaveBeenCalledWith({
+      "C:/Song": { last: { id: "vscode", name: "VS Code" }, chosen: ["D:/Apps/My Editor.exe"] } }));
+    await waitFor(() => expect(localStorage.getItem("r3v.openWith:C:/Song")).toBeNull());
+    expect(localStorage.getItem("r3v.openWith:C:/Beat")).toBeNull();
+    cleanup();
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    expect(api.ImportOpenWith).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps them while R3V can't take them", async () => {
+    localStorage.setItem("r3v.openWith:C:/Song", JSON.stringify({ chosen: ["D:/Apps/My Editor.exe"] }));
+    api.ImportOpenWith.mockRejectedValue(new Error("busy"));
+    render(App);
+    await waitFor(() => expect(api.ImportOpenWith).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 10));
+    expect(localStorage.getItem("r3v.openWith:C:/Song")).not.toBeNull();
+  });
+});
+
 describe("App: the user", () => {
   it("opens User settings from the user area (Nightly), and shows their picture there", async () => {
     api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "b2",
