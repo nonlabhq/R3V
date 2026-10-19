@@ -18,6 +18,11 @@ type Event struct {
 	ByName      string `json:"byName"`
 	Tool        string `json:"tool"`
 	Model       string `json:"model"`
+	// Section, Change and Was: a sections-changed item's (see the app's
+	// ActivityItem), when the service names them.
+	Section string `json:"section"`
+	Change  string `json:"change"`
+	Was     string `json:"was"`
 }
 
 // Events asks the service for a team's Activity of the last days, newest

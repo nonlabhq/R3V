@@ -15,6 +15,9 @@ export type DragSort = {
   move(before: string | undefined): void;
   /** How far the item is drawn from its place, to stay under the pointer. */
   follow(d: number): void;
+  /** Where the pointer is, before each move (to drop the item elsewhere:
+   * a project on another section). */
+  pointer?(m: PointerEvent): void;
   /** Let go; moved: it was dragged (not a click). */
   end(moved: boolean): void;
 };
@@ -42,6 +45,7 @@ export function dragSort(e: PointerEvent, o: DragSort) {
     if (!(m.buttons & 1)) return up();
     if (!moved && Math.abs(at(m) - p0) < DRAG_START) return;
     if (!moved) { moved = true; o.start(); }
+    o.pointer?.(m);
     // Before the first other item whose middle is past the dragged one's.
     const mid = at(m) - grab + size(item) / 2;
     const before = [...list.querySelectorAll<HTMLElement>(":scope > [data-key]")]

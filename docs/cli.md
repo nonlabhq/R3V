@@ -153,6 +153,21 @@ Archiving hides the project for everyone in the team; nothing is deleted
 uncommitted changes or versions not shared it's refused unless `--force`.
 On an R3V Cloud team only its owners and admins archive.
 
+## Sections (Nightly)
+
+```sh
+r3v section list              # the team's sections in order, with their projects
+r3v section new Engine        # add a section (last)
+r3v section add Engine        # put this project in it
+r3v section remove            # take this project out of its section
+r3v section rename Engine Game
+r3v section delete Game       # its projects become ungrouped
+```
+
+Sections group the team's projects in the app's left panel and the team's
+home, the same for everyone in the team; a project is in one at most. On
+an R3V Cloud team only its owners and admins change them.
+
 ## Results (Nightly)
 
 ```

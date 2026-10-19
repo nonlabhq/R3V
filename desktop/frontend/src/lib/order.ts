@@ -42,6 +42,15 @@ export function moveKey(keys: string[], key: string, to: number): string[] {
   return out;
 }
 
+// withGroupOrder gives all's order with the keys of one group (a section)
+// in group's order, in the places they had: each section keeps its own
+// order, in one list.
+export function withGroupOrder(all: string[], group: string[]): string[] {
+  const inGroup = new Set(group);
+  let i = 0;
+  return all.map((k) => (inGroup.has(k) ? group[i++] : k));
+}
+
 // readOrder takes what was saved: strings only.
 export function readOrder(saved: unknown): string[] {
   return Array.isArray(saved) ? saved.filter((k): k is string => typeof k === "string") : [];

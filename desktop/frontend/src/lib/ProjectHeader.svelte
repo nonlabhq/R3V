@@ -9,14 +9,14 @@
   import type { Snippet } from "svelte";
 
   // The top of a project's page: its icon, then its team (a click: the
-  // team's settings) over its name; in the middle the notice slot (transfers, the team's new
+  // team's settings) and its section, if it's in one, over its name; in the middle the notice slot (transfers, the team's new
   // versions: its size kept, so what comes and goes moves nothing); and
   // opening it in its tool or another program. (Branches are above the Overview's graph;
   // settings, and the project check, are a tab; refreshing is F5.)
   let { st, team, entry, onteamsettings, notice }: {
     st: State;
     team?: TeamSummary; // none: on this computer only
-    entry?: Pick<TeamProject, "id" | "icon" | "color" | "picture">; // the team's look for it
+    entry?: Pick<TeamProject, "id" | "icon" | "color" | "picture"> & { sectionName?: string }; // the team's look for it, its section
     onteamsettings?: (team: TeamSummary) => void;
     notice?: Snippet;
   } = $props();
@@ -134,6 +134,9 @@
         {:else}
           <span class="team-name" title={team.name}>{team.name}</span>
         {/if}
+        {#if entry?.sectionName}
+          <span class="where-sep" aria-hidden="true">/</span><span class="section-name" title={t("Section")}>{entry.sectionName}</span>
+        {/if}
       </div>
     {/if}
     <h1>{st.name}{#if preuploads[st.root]} <PreuploadIcon p={preuploads[st.root]} />{/if}</h1>
@@ -184,6 +187,8 @@
   .team-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; border: none; background: none;
     font-size: inherit; color: var(--muted); text-align: left; }
   button.team-name:hover:not(:disabled) { background: none; color: var(--text); text-decoration: underline; }
+  .where-sep { color: var(--faint); }
+  .section-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
   h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   h1 { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-semibold); line-height: 1.3; }
   .actions { display: flex; gap: var(--sp-8); flex: none; }

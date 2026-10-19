@@ -16,10 +16,12 @@
   // backups…), drawn apart (at the sidebar's foot: the projects don't move).
   // folded: the sidebar folded, the team as its mark alone; the caret shows
   // on hover (or focus) beside it, over the empty space, moving nothing.
-  let { overview, reload, home = false, onhome, onhomebehind, onteam, onsettings, part = "team", folded = false }: {
+  // onnewsection: New section… for the team shown (docs/design/sections.md;
+  // none: not offered).
+  let { overview, reload, home = false, onhome, onhomebehind, onteam, onsettings, onnewsection, part = "team", folded = false }: {
     overview: Overview; reload: () => Promise<void>; home?: boolean;
     onhome: () => void; onhomebehind?: () => void; onteam?: (id: string, behind: boolean) => void;
-    onsettings: (team: TeamSummary) => void; part?: "team" | "notices"; folded?: boolean;
+    onsettings: (team: TeamSummary) => void; onnewsection?: () => void; part?: "team" | "notices"; folded?: boolean;
   } = $props();
 
   let open = $state(false);
@@ -261,6 +263,12 @@
       <button class="item" onclick={() => { open = false; connecting = true; }}>
         <span class="check">+</span>{tr("Join/Create a Team…")}
       </button>
+      {#if onnewsection && current}
+        <div class="sep"></div>
+        <button class="item" onclick={() => { open = false; onnewsection(); }}>
+          <span class="check"></span>{tr("New section…")}
+        </button>
+      {/if}
     </div>
   {/if}
 </div>

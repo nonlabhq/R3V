@@ -26,6 +26,8 @@ const (
 	// A project archived for the team, or brought back (archived.go).
 	EventProjectArchived   = "project-archived"
 	EventProjectUnarchived = "project-unarchived"
+	// The team's sections changed (sections.go): Change says how.
+	EventSectionsChanged = "sections-changed"
 )
 
 // TeamEvent is one thing that happened to the team.
@@ -36,6 +38,11 @@ type TeamEvent struct {
 	Member  string    `json:"member,omitempty"`  // the member who joined
 	By      string    `json:"by,omitempty"`      // who did it (a member id)
 	Time    time.Time `json:"time"`
+	// Section and Change: for sections-changed, the section's name (then)
+	// and what happened to it (SectionMade, ...); Name is the project's,
+	// or a renamed section's name before.
+	Section string `json:"section,omitempty"`
+	Change  string `json:"change,omitempty"`
 }
 
 // TeamLogger is a backend that keeps the team log.

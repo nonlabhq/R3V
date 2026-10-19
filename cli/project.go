@@ -342,6 +342,8 @@ type teamJSON struct {
 	Error     string `json:"error,omitempty"`
 	// Archived: the team archived the project (docs/design/archive.md).
 	Archived bool `json:"archived,omitempty"`
+	// Section: the team's section the project is in (docs/design/sections.md).
+	Section string `json:"section,omitempty"`
 }
 
 type suggestionJSON struct {
@@ -375,6 +377,12 @@ func cmdStatus(args []string) error {
 		} else if c, err := r.Client(); err == nil && remote.ProjectArchive {
 			archived, _ := remote.ArchivedProjects(c)
 			_, out.Team.Archived = archived[r.Config.ProjectID]
+		}
+		if c, err := r.Client(); err == nil && out.Team.Error == "" && remote.ProjectSections {
+			ss, _ := remote.Sections(c)
+			if i := remote.FindSection(ss, remote.SectionOf(ss, r.Config.ProjectID)); i >= 0 {
+				out.Team.Section = ss[i].Name
+			}
 		}
 	}
 	if p, err := r.Profile(); err == nil {

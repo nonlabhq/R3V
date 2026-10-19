@@ -152,7 +152,8 @@ already, plus a small team log for what it doesn't.
   the branch log's way: one record per event, never changed
   (`teamlog/<time>-<random>.json`: `{kind, project?, member?, by, time}`;
   kinds `project-added`, `project-removed`, `member-joined`; and
-  `project-archived`, `project-unarchived`: see archive.md). Written by
+  `project-archived`, `project-unarchived`: see archive.md;
+  `sections-changed`: see sections.md). Written by
   this R3V after the step succeeded, as well as it can. An older R3V
   doesn't write them; that's data it never reads, so no team feature is
   needed. What happened before the log existed isn't shown.

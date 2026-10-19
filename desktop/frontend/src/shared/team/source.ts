@@ -55,8 +55,11 @@ export interface TeamWorkflowData {
 
 /** One thing that happened in the team. kind: share, merge, branch-made,
  * branch-deleted, project-added, project-removed, project-archived,
- * project-unarchived, member-joined. tool and
- * model: the AI agent that made the version, for its member (by). */
+ * project-unarchived, sections-changed, member-joined. tool and
+ * model: the AI agent that made the version, for its member (by).
+ * section, change, was: for sections-changed, the section's name, what
+ * happened (made, renamed, deleted, moved, project-in, project-out) and
+ * its name before a rename (older sources have none). */
 export interface ActivityEntry {
   time: string;
   kind: string;
@@ -69,6 +72,9 @@ export interface ActivityEntry {
   byName: string;
   tool: string;
   model: string;
+  section?: string;
+  change?: string;
+  was?: string;
 }
 
 /** A team's usage: on its own storage counted (counted: when; "" never),

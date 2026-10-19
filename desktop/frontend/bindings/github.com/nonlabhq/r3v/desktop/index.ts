@@ -66,6 +66,7 @@ export {
     RulesInfo,
     RulesState,
     SampleSpot,
+    SectionView,
     SessionSummary,
     SetTrackChange,
     SetView,

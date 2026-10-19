@@ -14,14 +14,15 @@ import (
 // A team's Activity (docs/design/team-settings.md): what happened, newest
 // first, from what its storage keeps: the projects' branch logs (shares,
 // merges, branches made and deleted) and the team log (projects added,
-// removed, archived and brought back, members joining). An R3V Cloud team's
-// service makes the same from them (GET …/events).
+// removed, archived and brought back, sections changed, members joining).
+// An R3V Cloud team's service makes the same from them (GET …/events).
 
 // ActivityItem is one thing that happened.
 type ActivityItem struct {
 	Time string `json:"time"`
 	// Kind: share, merge, branch-made, branch-deleted, project-added,
-	// project-removed, project-archived, project-unarchived, member-joined.
+	// project-removed, project-archived, project-unarchived,
+	// sections-changed, member-joined.
 	Kind        string `json:"kind"`
 	Project     string `json:"project"`     // its id ("" for a member joining)
 	ProjectName string `json:"projectName"` // as it is now, else as it was
@@ -33,6 +34,12 @@ type ActivityItem struct {
 	// Tool and Model: the AI agent that made the version, for its member.
 	Tool  string `json:"tool"`
 	Model string `json:"model"`
+	// Section, Change and Was: for sections-changed, the section's name,
+	// what happened (made, renamed, deleted, moved, project-in,
+	// project-out), and its name before a rename.
+	Section string `json:"section"`
+	Change  string `json:"change"`
+	Was     string `json:"was"`
 }
 
 // activityMax bounds what one read gives (the newest).
@@ -100,6 +107,16 @@ func (a *App) TeamActivity(teamID string, days int) ([]ActivityItem, error) {
 		switch ev.Kind {
 		case remote.EventMemberJoined:
 			it.By, it.ByName = ev.Member, ev.Name
+		case remote.EventSectionsChanged:
+			it.Section, it.Change = ev.Section, ev.Change
+			if ev.Change == remote.SectionRenamed {
+				it.Was = ev.Name
+			} else if ev.Project != "" {
+				it.ProjectName = projectName[ev.Project]
+				if it.ProjectName == "" {
+					it.ProjectName = ev.Name
+				}
+			}
 		default:
 			it.ProjectName = projectName[ev.Project]
 			if it.ProjectName == "" {

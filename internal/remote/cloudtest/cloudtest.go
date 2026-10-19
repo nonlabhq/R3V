@@ -343,8 +343,8 @@ func (f *Fake) Locks(pid string) map[string]string {
 }
 
 // adminsOnly: team-level keys only owners and admins write, as the
-// service has it (the archived projects' record).
-func adminsOnly(k string) bool { return k == "archived.json" }
+// service has it (the archived projects' record, the sections).
+func adminsOnly(k string) bool { return k == "archived.json" || k == "sections.json" }
 
 func branchKey(k string) (pid string, ok bool) {
 	parts := strings.Split(k, "/")
