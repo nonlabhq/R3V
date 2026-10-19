@@ -1983,5 +1983,7 @@
 "{who} moved the section {section}": "{who} 移动了分组 {section}",
 "{who} put {project} in the section {section}": "{who} 把 {project} 放进分组 {section}",
 "{who} took {project} out of the section {section}": "{who} 把 {project} 移出分组 {section}",
-"{who} changed the sections": "{who} 更改了分组"
+"{who} changed the sections": "{who} 更改了分组",
+"Add project…": "添加项目…",
+"Add a project or a section": "添加项目或分组"
 }

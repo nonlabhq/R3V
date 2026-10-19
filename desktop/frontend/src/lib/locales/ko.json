@@ -1983,5 +1983,7 @@
 "{who} moved the section {section}": "{who} 님이 섹션 {section}을(를) 옮겼습니다",
 "{who} put {project} in the section {section}": "{who} 님이 {project}을(를) 섹션 {section}에 넣었습니다",
 "{who} took {project} out of the section {section}": "{who} 님이 {project}을(를) 섹션 {section}에서 뺐습니다",
-"{who} changed the sections": "{who} 님이 섹션을 바꿨습니다"
+"{who} changed the sections": "{who} 님이 섹션을 바꿨습니다",
+"Add project…": "프로젝트 추가…",
+"Add a project or a section": "프로젝트 또는 섹션 추가"
 }

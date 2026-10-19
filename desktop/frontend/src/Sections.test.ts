@@ -168,6 +168,36 @@ describe("Sections in the left panel", () => {
     }
   });
 
+  it("asks at the Projects band's + whether to add a project or a new section, for those who may", async () => {
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.click(within(aside()).getByRole("button", { name: "Add a project or a section" }));
+    let menu = await screen.findByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Add project…", "New section…"]);
+    await fireEvent.click(within(menu).getByRole("menuitem", { name: "Add project…" }));
+    await waitFor(() => expect(api.ChooseFolder).toHaveBeenCalled());
+    expect(screen.queryByRole("menu")).toBeNull();
+    await fireEvent.click(within(aside()).getByRole("button", { name: "Add a project or a section" }));
+    menu = await screen.findByRole("menu");
+    await fireEvent.click(within(menu).getByRole("menuitem", { name: "New section…" }));
+    expect(await screen.findByRole("dialog", { name: "New section" })).toBeTruthy();
+  });
+
+  it("adds a project straight from the + for those who may not change sections, and without sections", async () => {
+    for (const o of [overview(false), { ...overview(), sectionsOn: false }]) {
+      api.LocalOverview.mockResolvedValue(o);
+      api.Overview.mockResolvedValue(o);
+      api.ChooseFolder.mockClear();
+      render(App);
+      await waitFor(() => expect(tabs()).toHaveLength(1));
+      expect(within(aside()).queryByRole("button", { name: "Add a project or a section" })).toBeNull();
+      await fireEvent.click(within(aside()).getByRole("button", { name: "Add project" }));
+      await waitFor(() => expect(api.ChooseFolder).toHaveBeenCalled());
+      expect(screen.queryByRole("menu")).toBeNull();
+      cleanup();
+    }
+  });
+
   it("has no sections in a build without them", async () => {
     api.LocalOverview.mockResolvedValue({ ...overview(), sectionsOn: false });
     api.Overview.mockResolvedValue({ ...overview(), sectionsOn: false });
@@ -196,6 +226,30 @@ describe("TeamHome's sections", () => {
     await fireEvent.click(screen.getByRole("button", { name: /Engine/ }));
     expect(screen.queryByTitle("C:/Beat")).toBeNull();
     expect(screen.getByTitle("C:/Song")).toBeTruthy();
+  });
+
+  it("puts a + at the end of the Projects band: a choice with sections to change, else a project", async () => {
+    const onadd = vi.fn(), onnewsection = vi.fn();
+    render(TeamHome, home({ onadd, onnewsection }));
+    const band = document.querySelector<HTMLElement>("h2.band.flat-only")!;
+    expect(band.lastElementChild?.textContent).toBe("+");
+    await fireEvent.click(within(band).getByRole("button", { name: "Add a project or a section" }));
+    let menu = await screen.findByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map((m) => m.textContent)).toEqual(["Add project…", "New section…"]);
+    await fireEvent.click(within(menu).getByRole("menuitem", { name: "New section…" }));
+    expect(onnewsection).toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
+    await fireEvent.click(within(band).getByRole("button", { name: "Add a project or a section" }));
+    menu = await screen.findByRole("menu");
+    await fireEvent.click(within(menu).getByRole("menuitem", { name: "Add project…" }));
+    expect(onadd).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    const add = vi.fn();
+    render(TeamHome, home({ onadd: add }));
+    await fireEvent.click(within(document.querySelector<HTMLElement>("h2.band.flat-only")!).getByRole("button", { name: "Add project" }));
+    expect(add).toHaveBeenCalled();
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 });
 

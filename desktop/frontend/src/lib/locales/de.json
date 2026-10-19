@@ -1983,5 +1983,7 @@
 "{who} moved the section {section}": "{who} hat den Abschnitt {section} verschoben",
 "{who} put {project} in the section {section}": "{who} hat {project} in den Abschnitt {section} gelegt",
 "{who} took {project} out of the section {section}": "{who} hat {project} aus dem Abschnitt {section} genommen",
-"{who} changed the sections": "{who} hat die Abschnitte geändert"
+"{who} changed the sections": "{who} hat die Abschnitte geändert",
+"Add project…": "Projekt hinzufügen…",
+"Add a project or a section": "Ein Projekt oder einen Abschnitt hinzufügen"
 }

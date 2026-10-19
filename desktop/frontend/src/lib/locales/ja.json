@@ -1983,5 +1983,7 @@
 "{who} moved the section {section}": "{who} がセクション {section} を移動しました",
 "{who} put {project} in the section {section}": "{who} が {project} をセクション {section} に入れました",
 "{who} took {project} out of the section {section}": "{who} が {project} をセクション {section} から外しました",
-"{who} changed the sections": "{who} がセクションを変更しました"
+"{who} changed the sections": "{who} がセクションを変更しました",
+"Add project…": "プロジェクトを追加…",
+"Add a project or a section": "プロジェクトかセクションを追加"
 }

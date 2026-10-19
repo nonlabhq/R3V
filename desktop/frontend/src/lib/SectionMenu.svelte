@@ -4,9 +4,10 @@
 
   // A section's menu in the left panel (a right click on its header, or its
   // ⋯), for those who may change the team's sections; without a section
-  // (the panel's Projects band), New section… alone. Placed on the window,
-  // it closes on a click elsewhere or Esc (focus back on opener).
-  let { name = "", at, opener = null, first = false, last = false, onrename, onmove, ondelete, onnew, onclose }: {
+  // (the panel's Projects band), New section… alone; from a + (onadd), Add
+  // project… first. Placed on the window, it closes on a click elsewhere or
+  // Esc (focus back on opener).
+  let { name = "", at, opener = null, first = false, last = false, onrename, onmove, ondelete, onadd, onnew, onclose }: {
     name?: string; // the section's ("": none, New section… only)
     at: { left: number; top: number };
     opener?: HTMLElement | null;
@@ -15,6 +16,7 @@
     onrename?: () => void;
     onmove?: (by: -1 | 1) => void;
     ondelete?: () => void;
+    onadd?: () => void;
     onnew: () => void;
     onclose: () => void;
   } = $props();
@@ -58,6 +60,7 @@
     <button class="item danger-text" role="menuitem" onclick={() => then(ondelete!)}>{t("Delete section…")}</button>
     <div class="sep"></div>
   {/if}
+  {#if onadd}<button class="item" role="menuitem" onclick={() => then(onadd)}>{t("Add project…")}</button>{/if}
   <button class="item" role="menuitem" onclick={() => then(onnew)}>{t("New section…")}</button>
 </div>
 
