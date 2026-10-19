@@ -229,7 +229,8 @@ type State struct {
 	// stopped halfway (R3V closed, a file in use); nil normally. The
 	// project is still on Head (OlderVersion or the latest).
 	Unfinished *Version `json:"unfinished"`
-	// Parking: switches keep uncommitted changes (Nightly); Parked the sets
+	// Parking: switches keep uncommitted changes (every build since 0.3);
+	// Parked the sets
 	// kept, oldest first.
 	Parking bool        `json:"parking"`
 	Parked  []ParkedSet `json:"parked"`

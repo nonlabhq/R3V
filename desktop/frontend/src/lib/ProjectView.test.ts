@@ -516,7 +516,7 @@ describe("ProjectView: versions", () => {
     await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", true, false));
   });
 
-  it("parks uncommitted changes when going to a version (Nightly)", async () => {
+  it("parks uncommitted changes when going to a version", async () => {
     await show({ parking: true, changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     api.VersionFiles.mockResolvedValue([]);
     await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));

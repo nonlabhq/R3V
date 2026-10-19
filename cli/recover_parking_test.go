@@ -1,5 +1,3 @@
-//go:build nightly
-
 package cli
 
 import (
@@ -10,7 +8,7 @@ import (
 	"testing"
 )
 
-// A goto parking uncommitted changes (Nightly), killed half-way: the next
+// A goto parking uncommitted changes, killed half-way: the next
 // command puts the files back with the changes, as they were.
 func TestKilledGotoWithChangesRecovered(t *testing.T) {
 	dir, fake, one, two, before, _ := switchedProject(t)

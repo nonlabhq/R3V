@@ -21,10 +21,10 @@ import (
 // brings them back. They stay on this computer: a version never shared,
 // named by a record in .r3v/parked.
 
-// Parking: switches keep uncommitted changes instead of refusing (the
-// Nightly channel while it's new; parking_nightly.go). Off, a switch with
-// changes fails with ErrDirty, as before.
-var Parking = false
+// Parking: switches keep uncommitted changes instead of refusing (in every
+// build since 0.3). Off, as an older R3V has it (tests), a switch with
+// changes fails with ErrDirty.
+var Parking = true
 
 const parkedDir = "parked"
 

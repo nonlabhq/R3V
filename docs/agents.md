@@ -85,8 +85,8 @@ same `next` (see Output); `update` and `merge` fail with
   finished (see Output; a commit ends the task left open too). Don't run `r3v step back` yourself (it changes
   the files of the copy, the person's edits included).
 - **Don't commit unfinished work to merge it later.** A branch is merged
-  whole: what isn't finished stays uncommitted (switching away parks it,
-  Nightly: `r3v parked`), or is finished before the branch is merged.
+  whole: what isn't finished stays uncommitted (switching away parks it:
+  `r3v parked`), or is finished before the branch is merged.
   A version whose title says `WIP`, `draft`, `do not merge` or `not for
   merge` is left out of the merge's description and marked `wip` in
   `merge --preview`: don't merge such a branch without asking the user.
@@ -104,7 +104,7 @@ same `next` (see Output); `update` and `merge` fail with
   keeps those in files it doesn't touch (as Git does).
 - Every version keeps the branch it was made on (`log --json`:
   `made_on`); merging another branch always makes a version.
-- Switching with uncommitted changes parks them (Nightly); they come back
+- Switching with uncommitted changes parks them; they come back
   on return (`switch --json`: `parked`, `restored`).
 - Branches are archived (`branch archive`), not deleted; only an archived
   branch is deleted for good (`branch delete`: ask the user).
@@ -426,8 +426,8 @@ it again finishes it. Result as `commit`'s. Ask the user before undoing a
 teammate's merge.
 
 `switch <branch>` and `goto <version|latest>`: `branch`, `to` (the version
-the files are on), `older` (an older version), `relinked`. On the Nightly
-channel, uncommitted changes don't stop them: they are **parked** on this
+the files are on), `older` (an older version), `relinked`. Uncommitted
+changes don't stop them: they are **parked** on this
 computer at the place they were made (a branch's latest, or an older
 version) and come back when the project returns there. `parked` (the
 changes left behind: `branch`, `at` (the older version, else none), `base`,

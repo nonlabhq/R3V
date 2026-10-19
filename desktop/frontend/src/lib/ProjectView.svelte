@@ -797,7 +797,7 @@
     });
   }
 
-  // --- parked changes (Nightly): kept with the place they were made ---
+  // --- parked changes: kept with the place they were made ---
 
   // A parked set's id in the graph.
   const parkKey = (p: ParkedSet) => `parked:${p.branch}@${p.at}`;

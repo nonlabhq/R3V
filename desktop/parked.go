@@ -4,7 +4,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
-// Parked changes (Nightly, see docs/design/parking.md): switching keeps
+// Parked changes (see docs/design/parking.md): switching keeps
 // uncommitted changes with the place they were made.
 
 func parkedSet(p *project.Parked) *ParkedSet {

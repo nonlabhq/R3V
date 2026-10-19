@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// parking turns Parking on for a test (as Nightly has it).
+// parking turns Parking on or off for a test (off: an older R3V).
 func parking(t *testing.T, on bool) {
 	t.Helper()
 	was := Parking
@@ -96,6 +96,23 @@ func TestParkedWhileOnAnOlderVersion(t *testing.T) {
 	_ = clean
 }
 
+// Parking is in every build since 0.3 (Stable too): a switch with changes
+// parks them, without a test turning it on.
+func TestParkingInEveryBuild(t *testing.T) {
+	if !Parking {
+		t.Fatal("parking is off in this build")
+	}
+	r, v1, _ := twoLocal(t)
+	changesOn(t, r)
+	if _, _, err := r.GoTo(v1.ID, false); err != nil {
+		t.Fatalf("going with changes: %v", err)
+	}
+	if sets := r.ParkedSets(); len(sets) != 1 || sets[0].Files != 3 {
+		t.Fatalf("parked: %+v", sets)
+	}
+}
+
+// Off, as an older R3V has it, a switch with changes still asks.
 func TestParkingOffAsks(t *testing.T) {
 	parking(t, false)
 	r, v1, _ := twoLocal(t)

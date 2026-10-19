@@ -1,6 +1,7 @@
 # Parked changes
 
-Status: built, Nightly (`project.Parking`); on this computer only.
+Status: built, in every build since 0.3 (`project.Parking`); on this
+computer only.
 
 Changes not committed shouldn't stop anyone going elsewhere: to another
 branch, to an older version to listen, and back. Today a switch with
@@ -112,16 +113,18 @@ it's done.
 - **Branch deleted** (by you, or a teammate): its set is kept and shown
   as `Parked · from <name>` on its base, Bring changes here or Discard.
 
-Behind Nightly: Stable keeps "discard or commit" (a Stable test checks a
-switch with changes still asks). A Stable R3V opening a project with
-parked sets ignores `.r3v/parked/` and keeps the set versions (it removes
-only the kept work it names in `kept-work`). One gap: `PruneObjects`
-could drop the local copy of a parked file the team's storage holds only
-as a preupload, which storage cleanup may later remove. So the prune rule
-(keep what `.r3v/parked/` names) goes into both channels, in the release
-before parking: every R3V from then on keeps them. Only an R3V older than
-that, opened on a project with parked sets, has the gap; updates never
-go back to one by themselves.
+Nightly first, in every build since 0.3. An older R3V (parking off: it
+keeps "discard or commit") opening a project with parked sets ignores
+`.r3v/parked/` and keeps the set versions (it removes only the kept work
+it names in `kept-work`, and its kept-work cleanup leaves parked versions
+alone). One gap: `PruneObjects` could drop the local copy of a parked file
+the team's storage holds only as a preupload, which storage cleanup may
+later remove. So the prune rule (keep what `.r3v/parked/` names) went into
+both channels with parking itself (0.1.34): every R3V since keeps them.
+Only an R3V older than that, opened on a project with parked sets, has the
+gap; updates never go back to one by themselves. What reaches the team is
+a copy's workspace record listing the branches it has changes parked on
+(`parked`), a field older R3Vs ignore: no team feature.
 
 ## Stopping half-way
 
@@ -159,6 +162,6 @@ Tests: `parked_test.go` (each stop above; killed at every file written).
    interruption tests.
 2. CLI: `switch` / `goto` keep by default, `--json` fields, `r3v parked`
    (list, bring changes here, discard).
-3. App: switching without the discard/commit question (Nightly), notices,
+3. App: switching without the discard/commit question, notices,
    graph node and card; locales.
-4. Stable test, smoke, docs (`docs/agents.md`, user docs).
+4. Tests in every build, smoke, docs (`docs/agents.md`, user docs).
