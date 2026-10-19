@@ -346,7 +346,7 @@
 "Now (not committed)": "Maintenant (non validé)",
 "Now on “{version}”": "Vous êtes sur « {version} »",
 "Now working on “{branch}”": "Vous travaillez maintenant sur « {branch} »",
-"On the team, not on this computer yet": "Dans l’équipe, pas encore sur cet ordinateur",
+"On the cloud storage, not on this computer yet": "Dans le stockage cloud, pas encore sur cet ordinateur",
 "Only on this computer": "Seulement sur cet ordinateur",
 "Only this file changes; commit it when you're happy.": "Seul ce fichier change ; validez-le quand vous êtes satisfait.",
 "Open": "Ouvrir",

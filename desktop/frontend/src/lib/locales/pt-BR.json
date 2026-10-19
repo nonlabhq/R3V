@@ -346,7 +346,7 @@
 "Now (not committed)": "Agora (sem commit)",
 "Now on “{version}”": "Agora em “{version}”",
 "Now working on “{branch}”": "Agora trabalhando em “{branch}”",
-"On the team, not on this computer yet": "Na equipe, ainda não neste computador",
+"On the cloud storage, not on this computer yet": "No armazenamento em nuvem, ainda não neste computador",
 "Only on this computer": "Só neste computador",
 "Only this file changes; commit it when you're happy.": "Só este arquivo muda; faça commit quando estiver satisfeito.",
 "Open": "Abrir",

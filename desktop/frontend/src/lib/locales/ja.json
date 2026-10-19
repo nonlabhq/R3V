@@ -346,7 +346,7 @@
 "Now (not committed)": "現在（未コミット）",
 "Now on “{version}”": "「{version}」に移動しました",
 "Now working on “{branch}”": "「{branch}」で作業中",
-"On the team, not on this computer yet": "チームにあり、このコンピューターにはまだありません",
+"On the cloud storage, not on this computer yet": "クラウドストレージ上にあり、このコンピューターにはまだありません",
 "Only on this computer": "このコンピューターのみ",
 "Only this file changes; commit it when you're happy.": "このファイルだけが変わります。納得したらコミットしてください。",
 "Open": "開く",

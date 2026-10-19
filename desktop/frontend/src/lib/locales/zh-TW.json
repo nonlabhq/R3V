@@ -346,7 +346,7 @@
 "Now (not committed)": "現在（未提交）",
 "Now on “{version}”": "目前在「{version}」",
 "Now working on “{branch}”": "目前在「{branch}」上工作",
-"On the team, not on this computer yet": "在團隊上，還沒在這台電腦上",
+"On the cloud storage, not on this computer yet": "在雲端儲存空間，還沒在這台電腦上",
 "Only on this computer": "只在這台電腦上",
 "Only this file changes; commit it when you're happy.": "只有這個檔案會改變；滿意後再提交。",
 "Open": "開啟",
