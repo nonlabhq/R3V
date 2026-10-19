@@ -347,6 +347,9 @@ func cmdMergeBranch(args []string) error {
 				reopen = "; reopen the set in Live"
 			}
 			fmt.Printf("merged %s into %s and shared it (%s)%s\n", pos[0], r.BranchName(), short(res.To), reopen)
+			if res.KeptWork {
+				fmt.Println("your uncommitted changes are kept as they were (still uncommitted, not in the merge)")
+			}
 		}
 	})
 	return nil

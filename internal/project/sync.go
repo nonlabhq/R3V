@@ -928,7 +928,8 @@ func (r *Repo) Update(opts MergeOptions) (*SyncResult, error) {
 // integrate brings version target (and its history) into the workspace: a
 // fast forward when HEAD is behind, otherwise a merge version with message.
 // keepWork: uncommitted changes don't stop a fast forward; they are merged
-// into the new files and stay uncommitted (updateKeepingWork).
+// into the new files and stay uncommitted (updateKeepingWork). A merge
+// version keeps them when it touches none of them (mergeKeepingWork).
 // another: target is another branch's; it comes in as a merge version even
 // when it could fast-forward, so the branch's line stays its own
 // (docs/design/branch-tree.md).
@@ -961,7 +962,8 @@ func (r *Repo) integrate(c remote.Backend, target string, opts MergeOptions, mes
 					return r.updateKeepingWork(c, head, target, opts, res)
 				}
 			}
-			return nil, fmt.Errorf("%w (%d file(s)); save a version first", ErrDirty, len(changes))
+			// A merge version: the changes stay when it touches none of them.
+			return r.mergeKeepingWork(c, head, target, opts, message, changes, res)
 		}
 	}
 	res.Action = "fast-forward"

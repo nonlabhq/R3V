@@ -299,7 +299,8 @@ type syncJSON struct {
 	// ReopenSets: sets changed under Live: they must be reopened there.
 	ReopenSets bool `json:"reopen_sets"`
 	// KeptWork: uncommitted changes were kept through an update (merged
-	// with the team's versions, still uncommitted).
+	// with the team's versions, still uncommitted) or a merge (that didn't
+	// touch them; not in the merge version).
 	KeptWork bool `json:"kept_work,omitempty"`
 	// SameFilesAs: the merge version has exactly this version's files (the
 	// branch was behind it); its results carry over.

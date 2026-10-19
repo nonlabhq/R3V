@@ -118,6 +118,14 @@ then each version's title (oldest first, at most 10; titles saying `WIP`,
 `draft`, `do not merge` or `not for merge` left out). The app's merge
 preview starts with the same text, yours to change.
 
+`r3v merge` with changes not committed goes ahead, as `git merge` does,
+when what comes in writes or deletes none of those files: the merge
+version is made without them, and they stay as they were, uncommitted.
+When it would touch one, it refuses before changing anything and names
+the files (`--json`: `unsaved_changes`, `details.files`); a change of
+`.r3v.yaml` coming in touches them all. The app does the same. Stopped
+half-way, putting the files back gives the changes back with them.
+
 `r3v undo-merge <version>` (Nightly) takes back a merge without rewriting
 the history: a new version on your branch without what it brought in.
 What changed since the merge stays; where the same thing changed again it

@@ -364,7 +364,12 @@ func (r *Repo) mergeVersion(c remote.Backend, target, message string, opts Merge
 	if err != nil || res.Action == "up-to-date" || res.Action == "ahead" {
 		return res, err
 	}
-	_, shared, err := r.Save("", opts)
+	var shared *SyncResult
+	if res.KeptWork { // the changes kept around the merge stay uncommitted: it is shared as it is
+		shared, err = r.Share(opts)
+	} else {
+		_, shared, err = r.Save("", opts)
+	}
 	if err != nil {
 		return res, err
 	}
@@ -485,7 +490,8 @@ func (r *Repo) previewTarget(c remote.Backend, target string, another bool) (*Pr
 	p.Action = "merge"
 	switch {
 	case behind && another:
-		// Merging refuses uncommitted changes: the files will be target's.
+		// The merge version's files will be target's (uncommitted changes
+		// a merge keeps aren't in it).
 		p.SameFilesAs = target
 	case behind:
 		p.Action = "fast-forward"

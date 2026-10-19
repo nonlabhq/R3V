@@ -100,7 +100,8 @@ same `next` (see Output); `update` and `merge` fail with
 - A conflict is a track of a Live set, a hunk of a text file or a whole
   file, never markers in a file: decide each (`--resolve <key>=<choice>`),
   or all at once (`--strategy ours|theirs|both`).
-- `update` never runs by itself, and keeps uncommitted changes.
+- `update` never runs by itself, and keeps uncommitted changes; `merge`
+  keeps those in files it doesn't touch (as Git does).
 - Every version keeps the branch it was made on (`log --json`:
   `made_on`); merging another branch always makes a version.
 - Switching with uncommitted changes parks them (Nightly); they come back
@@ -197,6 +198,16 @@ committed yet stay as they are (still not committed) and the team's versions are
 into the files; when you and a teammate changed the same file or track it
 stops with `merge_conflict` first (`--strategy` decides). `result.kept_work`
 is true when uncommitted changes were kept.
+
+`merge <branch>` (and an `update` that must merge versions committed
+here with the team's) works with changes not committed, as Git does, when
+what comes in writes or deletes none of the files changed (changed,
+added, deleted or moved): the merge version is made without them and they
+stay as they are, uncommitted (`kept_work`: true). When it would touch
+one, it stops with `unsaved_changes` before changing anything, the files
+in `error.details.files` (a change of `.r3v.yaml` coming in touches them
+all): commit those (`r3v commit -m "..." FILES`) or ask the user, then
+merge again.
 
 ## Output
 
@@ -572,7 +583,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 6 | `newer_version_needed` | the team uses a newer R3V: the user must update |
 | 6 | `needs_nightly` | a Unity/Unreal/Godot (…) project: the user must switch R3V to the Nightly channel |
 | 6 | `team_needs_features` | the team turned on features this R3V lacks: update, or switch to Nightly |
-| 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared |
+| 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared. From `merge` (or such an `update`): `details.files`, the uncommitted files it would write or delete (the others are kept) |
 | 1 | `on_older_version` | on an older version: `r3v goto latest` |
 | 1 | `switch_unfinished` | a switch stopped half-way and its files aren't put back (see `unfinished`): nothing was committed. Run any command to let R3V finish or roll back the step; if it reports `changed_since_switch`, ask the user, then `r3v goto <version> --force` (replacing those files) or the app's offer |
 | 1 | `unshared_versions` | `r3v commit -m ...` shares them. (Also a warning's code, never a refusal, in `merge` and `update`: another copy here has versions not shared) |
