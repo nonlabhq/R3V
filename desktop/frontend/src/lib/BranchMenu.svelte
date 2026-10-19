@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t } from "./i18n.svelte";
-  import { ago, type State } from "./api";
+  import { type State } from "./api";
+  import { howLongAgo } from "$shared/text";
   import { branchLabel, branchLane } from "$shared/branches";
   import AgentBadge from "$shared/AgentBadge.svelte";
 
@@ -35,7 +36,7 @@
       <div class="menu-h">{t("Current branch")}</div>
       <div class="item current">
         <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, st.branch)})"></span>{label(st.branch)}</span>
-        <span class="faint meta">{current?.latest ? `${current.latest.author} · ${ago(current.latest.time)}` : ""}</span>
+        <span class="faint meta">{current?.latest ? `${current.latest.author} · ${howLongAgo(current.latest.time)}` : ""}</span>
         {#if st.branchNames && onsettings}
           <button class="ghost gear" title={t("Branch settings")} aria-label={t("Branch settings")}
             onclick={() => { open = false; onsettings(st.branch); }}>⋯</button>
@@ -47,7 +48,7 @@
         <div class="row">
           <button class="item" onclick={() => { open = false; onswitch(b.name); }}>
             <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, b.name)})"></span>{label(b.name)}{#if b.kind === "agent"} <AgentBadge tool={b.latest?.actor?.tool ?? ""} compact title={t("An agent's branch")} />{/if}</span>
-            <span class="faint meta">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
+            <span class="faint meta">{b.latest ? `${b.latest.author} · ${howLongAgo(b.latest.time)}` : ""}</span>
           </button>
           {#if st.branchNames && onsettings}
             <button class="ghost gear" title={t("Branch settings")} aria-label={t("Branch settings")}
@@ -73,7 +74,7 @@
           {#each st.milestones as m (m.id)}
             <button class="item" onclick={() => { open = false; onmilestone(m.version); }} title={m.note}>
               <span class="bn">⚑ {m.name}</span>
-              <span class="faint meta">{ago(m.time)}</span>
+              <span class="faint meta">{howLongAgo(m.time)}</span>
             </button>
           {/each}
         </div>
@@ -90,7 +91,7 @@
     font-size: var(--fs-md); line-height: 1.25; }
   .cap { font-size: var(--fs-2xs); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
   .menu {
-    position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-dropdown); min-width: 320px; max-width: 420px; padding: var(--sp-6);
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-dropdown); min-width: 260px; max-width: 340px; padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
   .menu-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-6) var(--sp-8) var(--sp-2); }

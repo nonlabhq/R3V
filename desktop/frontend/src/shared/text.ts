@@ -23,6 +23,23 @@ export function formatBytes(n: number): string {
 
 /** How long ago iso was, in the language in use ("5 min ago", "5 分鐘前"…);
  * a date and time after a day. */
+/** howLongAgo is ago in words all the way ("3 days ago", "2 wk. ago", "last
+ * year"), never a date: short whatever the date, for tight places. */
+export function howLongAgo(iso: string): string {
+  const t = Date.parse(iso);
+  if (isNaN(t)) return "";
+  const s = Math.max(0, (Date.now() - t) / 1000);
+  const rel = new Intl.RelativeTimeFormat(language(), { numeric: "auto", style: "short" });
+  const day = 86400;
+  if (s < 60) return rel.format(0, "second");
+  if (s < 3600) return rel.format(-Math.floor(s / 60), "minute");
+  if (s < day) return rel.format(-Math.floor(s / 3600), "hour");
+  if (s < 7 * day) return rel.format(-Math.floor(s / day), "day");
+  if (s < 30 * day) return rel.format(-Math.floor(s / (7 * day)), "week");
+  if (s < 365 * day) return rel.format(-Math.floor(s / (30 * day)), "month");
+  return rel.format(-Math.floor(s / (365 * day)), "year");
+}
+
 export function ago(iso: string): string {
   const t = Date.parse(iso);
   if (isNaN(t)) return "";
