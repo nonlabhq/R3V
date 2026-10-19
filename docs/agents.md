@@ -522,6 +522,12 @@ Codes are stable; messages are for people and may change.
   levels). Saving can upload a lot the first time; later only what changed.
 - Live sets (`.als`) merge track by track; other files merge only when one
   side changed them.
+- `r3v merge-files <base> <ours> <theirs> -o <out>` merges three files on
+  disk the way a branch merge would (the project's rules for `out`, else
+  the presets' by its name): a scene or a model changed on both sides is a
+  `merge_conflict`, not lines mixed. `--json` `handler` says how it merged
+  (`text`, `whole`, `unity-yaml`, …); `--as text` merges line by line
+  anyway, only when the user says the file can be.
 - `r3v status` shows what changed inside a modified set
   (`set_changes`); `r3v diff` shows every changed file the way it
   reads (`--version V`, `--from A --to B`), and `r3v diff a.als b.als` compares

@@ -280,9 +280,18 @@ r3v diff --from A --to B [PATHS]            # between two versions
 r3v diff --files <a> <b>                    # two files on disk, any kind
 r3v info <file>                             # what it is (a set's tracks, audio's format, a picture's
                                             # size, text's lines) and whether R3V keeps it
-r3v merge-files <base> <ours> <theirs> -o out [--strategy fail|ours|theirs|both]
+r3v merge-files <base> <ours> <theirs> -o out [--strategy fail|ours|theirs|both] [--as text|whole]
                                             # a 3-way merge, each kind the way it merges
 ```
+
+`merge-files` merges each file the way a branch merge would: with the
+handler the project's rules give `out` when it is in a project, else the one
+the presets give its name (text line by line, a Unity scene with
+UnityYAMLMerge). A kind no handler takes, a `.fbx` say, is merged whole: a
+conflict when both sides changed it. `--as text` merges it line by line
+anyway, `--as whole` chooses it whole. `--json`: `kind` (`text`, `binary`:
+what the files are), `handler` (how they were merged: `text`, `whole`, or a
+preset's, as `unity-yaml`), `out`, `conflicts`, `resolved`.
 
 ## Working with Live Sets directly
 

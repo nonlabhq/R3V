@@ -587,6 +587,26 @@ func (p *Profile) Handler(rel string) Handler {
 	return Handler{}
 }
 
+// HandlerByName is the handler a file gets by its name alone, for a file
+// outside any project (r3v merge-files): the first preset that names one
+// for it, by priority then name, so a .unity scene is Unity's whatever
+// folder it is in (zero when none does).
+func HandlerByName(name string) Handler {
+	base := path.Base(filepath.ToSlash(name))
+	names := Names()
+	sort.SliceStable(names, func(i, j int) bool { return builtin[names[i]].Priority > builtin[names[j]].Priority })
+	for _, n := range names {
+		for _, h := range builtin[n].Handlers {
+			for _, pat := range h.Files {
+				if !strings.Contains(strings.Trim(pat, "/"), "/") && matchPath(pat, base, false) {
+					return h
+				}
+			}
+		}
+	}
+	return Handler{}
+}
+
 // Running lists the running-tool checks of the presets in use (e.g.
 // "ableton-live").
 func (p *Profile) Running() []string {
