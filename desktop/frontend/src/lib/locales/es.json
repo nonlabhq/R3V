@@ -1812,7 +1812,7 @@
 "Shown instead of the icon": "Se muestra en lugar del icono",
 "The team's initial": "La inicial del equipo",
 "On this computer": "En este equipo",
-"On the team only": "Solo en el equipo",
+"On the cloud storage": "En el almacenamiento en la nube",
 "Open one to download it to this computer": "Abre uno para descargarlo a este equipo",
 "Claude Code here doesn't make steps yet": "Claude Code aún no hace pasos aquí",
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "Un agente que trabaja en esta misma carpeta (no en un espacio de trabajo) hace pasos cuando los hooks de R3V están en su configuración (.claude/settings.local.json, nunca versionado).",

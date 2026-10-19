@@ -1812,7 +1812,7 @@
 "Shown instead of the icon": "代替圖示顯示",
 "The team's initial": "團隊的首字母",
 "On this computer": "在這台電腦上",
-"On the team only": "只在團隊裡",
+"On the cloud storage": "在雲端儲存空間",
 "Open one to download it to this computer": "打開即可下載到這台電腦",
 "Claude Code here doesn't make steps yet": "這裡的 Claude Code 還沒有記錄步驟",
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "直接在這個資料夾（不是工作區）工作的 agent，在 R3V 的 hook 加進它的設定（.claude/settings.local.json，不納入版本）後就會記錄步驟。",

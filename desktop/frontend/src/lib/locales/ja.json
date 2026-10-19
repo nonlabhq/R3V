@@ -1812,7 +1812,7 @@
 "Shown instead of the icon": "アイコンの代わりに表示",
 "The team's initial": "チームの頭文字",
 "On this computer": "このコンピューター",
-"On the team only": "チームのみ",
+"On the cloud storage": "クラウドストレージ上",
 "Open one to download it to this computer": "開くとこのコンピューターにダウンロードできます",
 "Claude Code here doesn't make steps yet": "ここの Claude Code はまだステップを記録していません",
 "An agent working in this folder itself (not in a workspace) makes steps once R3V's hooks are in its settings (.claude/settings.local.json, never versioned).": "このフォルダー自体（ワークスペースではなく）で作業するエージェントは、R3V の hook が設定（.claude/settings.local.json、バージョン管理されない）に入るとステップを記録します。",

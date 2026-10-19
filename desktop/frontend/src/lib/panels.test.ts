@@ -53,9 +53,9 @@ describe("TeamHome", () => {
       team: { id: "t1", name: "Band", address: "s3+https://x.r2.cloudflarestorage.com/b", memberId: "m1" } as never,
       projects: [song, beat, { ...song, root: "C:/Song (lamp)", workspace: true, mainRoot: "C:/Song" }] as never,
       open: (p: { name: string }) => p.name === "Song", onopen, onadd: vi.fn(), reload: vi.fn(async () => {}) });
-    // Those on this computer, then those on the team only; a workspace counted on its project.
+    // Those on this computer, then those on the cloud storage only; a workspace counted on its project.
     expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual(
-      [expect.stringContaining("On this computer"), expect.stringContaining("On the team only")]);
+      [expect.stringContaining("On this computer"), expect.stringContaining("On the cloud storage")]);
     expect(screen.getAllByTitle(/Song/)).toHaveLength(1);
     expect(screen.getByTitle("C:/Song").textContent).toContain("1 workspace");
     expect(screen.getByRole("heading", { name: "Band" })).toBeTruthy();

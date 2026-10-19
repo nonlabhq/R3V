@@ -9,7 +9,7 @@
   import { linkPick } from "./links.svelte";
 
   // A team's home (a click on the team in the sidebar): who's in it, and its
-  // projects (those on this computer, then those still only on the team; a
+  // projects (those on this computer, then those only on the cloud storage; a
   // project's workspaces counted on it, not listed) or its settings. Not a
   // tab: the tabs show no tab picked.
   let { overview, team, projects, open, onopen, onadd, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
@@ -96,7 +96,7 @@
       </button>
     </div>
     {#if away.length}
-      <h2>{t("On the team only")}<span class="count">{away.length}</span>
+      <h2>{t("On the cloud storage")}<span class="count">{away.length}</span>
         <span class="hint">{t("Open one to download it to this computer")}</span></h2>
       <div class="cards">
         {#each away as p (p.id)}{@render card(p)}{/each}
