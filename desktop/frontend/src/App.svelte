@@ -1367,7 +1367,9 @@
      go, it settles into its place. */
   li[data-key], .folded-row { touch-action: none; transition: transform .15s ease-out; }
   .lifted { z-index: var(--z-sticky); transition: none; cursor: grabbing; }
-  .lifted .proj, .lifted .folded-proj { background: var(--panel-2); box-shadow: var(--shadow-pop); }
+  /* (solid under a dimmed row: the rows it passes don't show through) */
+  li.lifted, .folded-row.lifted { background: var(--bg-sunken); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); }
+  .lifted .proj, .lifted .folded-proj { background: var(--panel-2); }
   @media (prefers-reduced-motion: reduce) { li[data-key], .folded-row { transition: none; } }
   .logo { border: none; background: transparent; padding: var(--sp-6); border-radius: var(--radius); }
   .logo { position: relative; }
