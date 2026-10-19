@@ -2007,5 +2007,8 @@
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V 現在預設會鎖定它們。你的團隊之前自己選過種類，所以要加入後才會鎖定。",
 "Add": "加入",
 "This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "這次合併會改動你有未提交變更的檔案（{files}）。請先提交它們，再合併。",
-"Your uncommitted changes are kept, still uncommitted.": "你未提交的變更都保留著，仍未提交。"
+"Your uncommitted changes are kept, still uncommitted.": "你未提交的變更都保留著，仍未提交。",
+"AI agents": "AI 代理",
+"A short guide in the project tells AI agents (Claude Code, Codex and others) that it is versioned with R3V and how to work in it.": "專案裡的一份簡短指引會告訴 AI 代理（Claude Code、Codex 等）：這個專案用 R3V 做版本管理，以及如何在其中工作。",
+"Set up AI agents…": "設定 AI 代理…"
 }

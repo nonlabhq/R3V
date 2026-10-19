@@ -75,6 +75,13 @@ whose `kind` and `owner` (an agent's branch) every R3V since 0.1.80
 keeps when it rewrites one. The agents' Workflow settings are the
 `workflow` team feature already.
 
+Parked changes (in every build since 0.3, [parking.md](parking.md)) need
+none: a parked set is a version never shared, named by a record in
+`.r3v/parked/` on this computer, whose contents every R3V since 0.1.34
+keeps when it tidies (local pruning and the kept-work cleanup leave them
+alone). The team sees only a copy's workspace record naming the branches
+it has changes parked on (`parked`), a field older R3Vs ignore.
+
 Project kinds a Stable build doesn't know say so too: a `.r3v.yaml` naming a
 preset only Nightly has fails with "needs R3V's Nightly channel" (CLI:
 `needs_nightly`, exit 6). Unity, Unreal, Godot, code and design files are in

@@ -50,8 +50,7 @@ app's **Go to this version**) leaves you "on an older version" of your
 branch: you can look, start a branch from there, or **make it the latest
 version** (a new version with its files). `r3v goto latest` goes back.
 
-**No stash: changes are parked.** On the Nightly channel, switching branch
-or going to a version with uncommitted changes parks them with the place
+**No stash: changes are parked.** Switching branch or going to a version with uncommitted changes parks them with the place
 they were made (a branch's latest, or an older version) and brings them
 back when you return, merged with what came since. `r3v parked` lists
 them; `parked bring` brings a set into the branch you're on.

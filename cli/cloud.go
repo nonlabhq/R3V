@@ -11,8 +11,8 @@ import (
 	"github.com/nonlabhq/r3v/internal/cloud"
 )
 
-// Signing in to R3V-Cloud, the hosted service (the Nightly channel adds
-// these commands: cloud_nightly.go).
+// Signing in to R3V-Cloud, the hosted service (every build since 0.2:
+// cloud_cmds.go adds these commands).
 
 func cmdLogin(args []string) error {
 	fs := flag.NewFlagSet("login", flag.ContinueOnError)

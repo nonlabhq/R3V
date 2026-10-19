@@ -15,7 +15,7 @@ import (
 // names a version: the version is kept for good (storage cleanup never
 // deletes one), so a milestone always leads to it. Renaming or removing a
 // milestone touches nothing else. Like branch records, milestones only add
-// to what a team stores, and are built in Nightly only (BranchRecords).
+// to what a team stores, and are in every build since 0.1.81 (BranchRecords).
 
 // Milestone is a version given a name.
 type Milestone struct {

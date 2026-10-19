@@ -11,7 +11,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/profile"
 )
 
-// A preset merging .ts as text, as the code preset (Nightly) does.
+// A preset merging .ts as text, as the code preset does.
 func init() {
 	if err := profile.RegisterPreset([]byte("name: zz-hunks\npriority: -9\nhandlers:\n  - files: [\"*.ts\", \"*.json\"]\n    merge: text\n")); err != nil {
 		panic(err)

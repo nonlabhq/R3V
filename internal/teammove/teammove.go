@@ -1,5 +1,5 @@
 // Package teammove moves a team from its own storage to R3V Cloud
-// (docs/design/moving.md, Nightly): this computer plans and finishes;
+// (docs/design/moving.md): this computer plans and finishes;
 // R3V Cloud's service copies the contents in the background.
 //
 //  1. Start, then Copy: the service gets a read-only key, the old members

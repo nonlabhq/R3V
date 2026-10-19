@@ -1,7 +1,7 @@
 # Looks: pictures, icons and colours
 
-Status: built, Nightly only (`remote.Looks`, set in
-`internal/remote/looks_nightly.go`); hosted teams too.
+Status: built, in every build since 0.1.81 (`remote.Looks`); hosted teams
+too.
 
 How people and projects show, the same for the whole team:
 
@@ -99,19 +99,19 @@ Looks only add to what a team stores, and every R3V since 0.1.0 works
 with them as before: it rewrites records whole keeping the fields it
 doesn't know, its storage cleanup never looks under `pictures/`, and it
 shows initials. So they are not a team feature (see
-[channels.md](channels.md)): a Nightly member picking a colour never stops
-Stable teammates. (A test build turned a `looks` feature on; every build
+[channels.md](channels.md)): a member picking a colour never stops
+teammates on an older R3V. (A test build turned a `looks` feature on; every build
 knows the name, so such a team still opens.)
 
-Stable doesn't reach looks: `remote.Looks` is false, `SetMemberLook`,
-`SetProjectLook` and the pictures refuse (`ErrLooksNotInBuild`), the app's
-`Profile` says `available: false` and the sidebar stays as it was
-(`looks_stable_test.go` in `internal/remote` and `desktop`).
+Without looks (an R3V before them, as tests play it: `remote.Looks`
+false), `SetMemberLook`, `SetProjectLook` and the pictures refuse
+(`ErrLooksNotInBuild`), the app's `Profile` says `available: false` and
+the sidebar stays as it was.
 
 ## On this computer
 
 - `teams.json`: `look: {color, picture}` (the picture by its SHA-256).
-  Stable keeps it untouched. Each team's own look, as it last gave it:
+  An older R3V keeps it untouched. Each team's own look, as it last gave it:
   `teams[].look: {icon, color, picture}` (the sidebar shows every team's
   without asking them).
 - `pictures/<sha256>` in the settings folder: your picture, and teammates'

@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 
 // The team's settings page (docs/design/team-settings.md): in tabs
-// (General, Activity, Usage; Workflow on Nightly, whose settings are its
-// own: agents', R3V Cloud's file locks); with the Go bindings mocked.
+// (General, Activity, Usage, Workflow, whose settings are its own:
+// agents', R3V Cloud's file locks); with the Go bindings mocked.
 const mocks = vi.hoisted(() => {
   const fns: Record<string, ReturnType<typeof vi.fn>> = {};
   const api = new Proxy(fns, { get: (o, k: string) => (o[k] ??= vi.fn(async () => null)) });

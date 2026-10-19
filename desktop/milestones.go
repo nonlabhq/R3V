@@ -9,7 +9,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
-// Milestones (Nightly, see remote.Milestone): asked with the team's state
+// Milestones (see remote.Milestone): asked with the team's state
 // (TeamState), kept for the times the page is shown without asking.
 
 // Milestone is a version given a name, for the page.

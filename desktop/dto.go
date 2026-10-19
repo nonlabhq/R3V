@@ -229,8 +229,8 @@ type State struct {
 	// stopped halfway (R3V closed, a file in use); nil normally. The
 	// project is still on Head (OlderVersion or the latest).
 	Unfinished *Version `json:"unfinished"`
-	// Parking: switches keep uncommitted changes (Nightly); Parked the sets
-	// kept, oldest first.
+	// Parking: switches keep uncommitted changes (every build since 0.3);
+	// Parked the sets kept, oldest first.
 	Parking bool        `json:"parking"`
 	Parked  []ParkedSet `json:"parked"`
 	// CloudFolder names the syncing service whose folder holds the project
@@ -250,7 +250,7 @@ type State struct {
 	TakenBack []Version `json:"takenBack"`
 	History   []Version `json:"history"`
 	Branches  []Branch  `json:"branches"`
-	// BranchNames: the team keeps branch names and colours (Nightly): any
+	// BranchNames: the team keeps branch names and colours: any
 	// name, renaming and colours are offered.
 	BranchNames bool `json:"branchNames"`
 	// BranchGone: from TeamState (TeamPart.BranchGone).

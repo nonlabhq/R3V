@@ -514,7 +514,7 @@ describe("App: what Open in kept in the page before", () => {
 });
 
 describe("App: the user", () => {
-  it("opens User settings from the user area (Nightly), and shows their picture there", async () => {
+  it("opens User settings from the user area, and shows their picture there", async () => {
     api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "b2",
       picture: "data:image/png;base64,AAAA", notShared: [] });
     render(App);
@@ -524,11 +524,37 @@ describe("App: the user", () => {
     expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
   });
 
-  it("opens User settings from your picture where looks aren't (Stable) too: the one way to your name", async () => {
+  it("opens User settings from your picture where looks aren't (an older R3V) too: the one way to your name", async () => {
     api.Profile.mockResolvedValue({ available: false, name: "Yi", memberId: "m1", color: "", picture: "", notShared: [] });
     render(App);
     await fireEvent.click(await screen.findByRole("button", { name: /Yi/ }));
     expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Upload picture…" })).toBeNull(); // (no looks: no picture or colour)
+  });
+});
+
+// A project just added offers the guide for AI agents, but not an Ableton
+// Live one: its Project settings offer it instead.
+describe("App: adding a project", () => {
+  const add = async (tool: string) => {
+    api.ChooseFolder.mockResolvedValue("C:/New");
+    api.AddProjectToTeam.mockResolvedValue(project("New"));
+    api.AgentGuide.mockResolvedValue("");
+    api.ProjectInfo.mockResolvedValue({ tool, openable: ["."] });
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    await fireEvent.click(screen.getAllByRole("button", { name: "Add project" })[0]);
+    await waitFor(() => expect(api.AgentGuide).toHaveBeenCalledWith("C:/New"));
+  };
+
+  it("offers the guide for AI agents", async () => {
+    await add("Unity");
+    expect(await screen.findByRole("dialog", { name: "Add a guide for AI agents?" })).toBeTruthy();
+  });
+
+  it("doesn't for an Ableton Live project", async () => {
+    await add("Ableton Live");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole("dialog", { name: "Add a guide for AI agents?" })).toBeNull();
   });
 });

@@ -14,8 +14,8 @@ import (
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
-// withAgentLocks turns agent locks and their commands on for a test (the
-// Nightly channel has them).
+// withAgentLocks turns agent locks and their commands on for a test (every
+// build since 0.3 has them).
 func withAgentLocks(t *testing.T) {
 	t.Helper()
 	was := project.AgentLocks

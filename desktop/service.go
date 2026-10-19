@@ -585,7 +585,7 @@ type TeamPart struct {
 	// Capabilities of the team's backend (locks, presence…): the app shows
 	// what goes with them only when it has them.
 	Capabilities remote.Capabilities `json:"capabilities"`
-	// BranchNames: the team keeps branch names and colours (Nightly): they
+	// BranchNames: the team keeps branch names and colours: they
 	// can be renamed and coloured.
 	BranchNames bool `json:"branchNames"`
 	// BranchGone: the branch you are on was deleted from the team (nil

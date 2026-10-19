@@ -39,7 +39,7 @@
     head: string;      // the version you are on
     incoming?: Set<string>; // versions not downloaded yet (dashed)
     pending?: number;  // files changed and not committed (0: no dot for them)
-    // Changes parked elsewhere (Nightly): a dashed tag beside the version they were made on.
+    // Changes parked elsewhere: a dashed tag beside the version they were made on.
     parked?: { key: string; base: string; files: number; since: string; where: string }[];
     selected: string;  // a version id, or "pending"
     onselect: (id: string) => void;

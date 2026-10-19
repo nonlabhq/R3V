@@ -31,9 +31,8 @@ import (
 // Looks only add to what a team stores: every R3V rewrites a record whole,
 // keeping the fields it doesn't know, and older ones never look under
 // pictures/, so an R3V without looks works with the team as before and
-// shows initials. They are not a team feature, so a Nightly member picking
-// a colour never shuts Stable teammates out. They are built in Nightly
-// only (looks_nightly.go).
+// shows initials. They are not a team feature, so a member picking a colour
+// never shuts teammates on an older R3V out. In every build since 0.1.81.
 
 // FeatureLooks is the team feature a test build of looks turned on; teams
 // that have it still open everywhere (see init).
@@ -58,7 +57,7 @@ const (
 )
 
 var (
-	// ErrLooksNotInBuild: this build has no looks (Stable).
+	// ErrLooksNotInBuild: this build has no looks (an older R3V, tests).
 	ErrLooksNotInBuild = errors.New("pictures, icons and colours need R3V's Nightly channel")
 	// ErrNoLooks: the team's storage can't keep looks (storage keeping
 	// contents per project that isn't a hosted team's).

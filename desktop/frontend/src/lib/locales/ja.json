@@ -2007,5 +2007,8 @@
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V は現在これらを既定でロックします。チームは以前に種類を選んでいるため、追加するまでロックされません。",
 "Add": "追加",
 "This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "このマージは、未コミットの変更があるファイルを変更します（{files}）。先にそれらをコミットしてから、マージしてください。",
-"Your uncommitted changes are kept, still uncommitted.": "未コミットの変更はそのまま残ります（未コミットのまま）。"
+"Your uncommitted changes are kept, still uncommitted.": "未コミットの変更はそのまま残ります（未コミットのまま）。",
+"AI agents": "AI エージェント",
+"A short guide in the project tells AI agents (Claude Code, Codex and others) that it is versioned with R3V and how to work in it.": "プロジェクト内の短いガイドが、AI エージェント（Claude Code、Codex など）に、このプロジェクトが R3V でバージョン管理されていることと、その中での作業方法を伝えます。",
+"Set up AI agents…": "AI エージェントを設定…"
 }

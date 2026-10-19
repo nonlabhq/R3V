@@ -46,6 +46,7 @@
   import UserSettings from "./lib/UserSettings.svelte";
   import KindDialog from "./lib/KindDialog.svelte";
   import ConfirmDialog from "$shared/ConfirmDialog.svelte";
+  import AgentGuideDialog from "./lib/AgentGuideDialog.svelte";
   import ArchiveProjectDialog from "./lib/ArchiveProjectDialog.svelte";
 
 
@@ -190,7 +191,7 @@
   const pct = (st: UpdateState) => (st.total > 0 ? Math.round((st.done / st.total) * 100) : 0);
   // The settings' "Check for updates": now, and say when there's none.
   let appSettings = $state(false);
-  // The user's colour and picture (Nightly), and their settings.
+  // The user's colour and picture, and their settings.
   let profile = $state<Profile | null>(null);
   let userSettings = $state(false);
   function loadProfile() { api.Profile().then((p) => (profile = p)).catch(() => {}); }
@@ -439,7 +440,7 @@
   }
   // From the quick launcher: a team's home, or a project (its team shown
   // first).
-  // r3v:// links (R3V Cloud's web app; Nightly): a team, a project, a
+  // r3v:// links (R3V Cloud's web app): a team, a project, a
   // version, opened as the quick launcher opens them; what this computer
   // hasn't is said.
   async function openLinks() {
@@ -845,24 +846,15 @@
   // A project just added: the guide for AI agents offered when it
   // has none (AGENTS.md: committed with its first version).
   // theirs: the project has an AGENTS.md (or CLAUDE.md) of its own, without
-  // R3V's part: offered at its end.
+  // R3V's part: offered at its end. Not for an Ableton Live project, where
+  // few use agents: its Project settings offer it (Workflow).
   let guideAsk = $state<{ root: string; theirs: boolean } | null>(null);
   async function offerGuide(root: string) {
     try {
-      const has = await api.AgentGuide(root);
-      if (has !== "has") guideAsk = { root, theirs: has === "theirs" };
+      const [has, info] = await Promise.all([api.AgentGuide(root), api.ProjectInfo(root).catch(() => null)]);
+      if (has !== "has" && info?.tool !== "Ableton Live") guideAsk = { root, theirs: has === "theirs" };
     } catch {
       // (offered again in the Agents tab)
-    }
-  }
-  async function addGuide() {
-    const root = guideAsk!.root;
-    guideAsk = null;
-    try {
-      const written = await api.AddAgentGuide(root);
-      toast(t("Added {files}: they go with the project's first version.", { files: written.join(", ") }), "ok", 8000);
-    } catch (e) {
-      toast(errorText(e), "error");
     }
   }
 
@@ -1370,12 +1362,7 @@
 {/if}
 
 {#if guideAsk}
-  <ConfirmDialog title={guideAsk.theirs ? t("Add R3V's part to the project's guide for AI agents?") : t("Add a guide for AI agents?")}
-    confirm={t("Add the guide")} cancel={t("Not now")}
-    text={guideAsk.theirs
-      ? t("This project has its own AGENTS.md (or CLAUDE.md). R3V's part goes at its end, the rest left as it is: that the project is versioned with R3V and how to work in it (commit, settle conflicts, work beside other agents).")
-      : t("AGENTS.md (with a line in CLAUDE.md that reads it) tells AI agents, Claude Code, Codex and others, that this project is versioned with R3V and how to work in it: commit, settle conflicts, work beside other agents. It's committed with the project.")}
-    onconfirm={addGuide} onclose={() => (guideAsk = null)} />
+  <AgentGuideDialog root={guideAsk.root} theirs={guideAsk.theirs} added onclose={() => (guideAsk = null)} />
 {/if}
 
 {#if kindAsk}

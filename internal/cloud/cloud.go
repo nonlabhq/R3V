@@ -23,8 +23,8 @@ import (
 	"github.com/nonlabhq/r3v/internal/version"
 )
 
-// Default is the service R3V signs in to unless told otherwise; Nightly
-// builds use the test service while R3V-Cloud is built (default_nightly.go).
+// Default is the service R3V signs in to unless told otherwise (Service;
+// the end-to-end runs name the test service).
 var Default = "https://api.r3v.so"
 
 // Service is the service to use: R3V_CLOUD_URL, or Default.
@@ -75,8 +75,8 @@ func SignedIn(service string) bool {
 
 var client = &http.Client{Timeout: 30 * time.Second}
 
-// ErrNotInBuild: this build has no hosted teams (Stable; see
-// remote.HostedTeams). Every way to the service stops here.
+// ErrNotInBuild: this build has no hosted teams (an older R3V's, as tests
+// play it; see remote.HostedTeams). Every way to the service stops here.
 var ErrNotInBuild = errors.New("R3V-Cloud is in the Nightly build for now")
 
 // invitation: an invitation's token in a path (kept out of errors).

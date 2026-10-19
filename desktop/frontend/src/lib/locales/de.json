@@ -2007,5 +2007,8 @@
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V sperrt sie jetzt standardmäßig. Euer Team hat seine Arten vorher selbst gewählt, deshalb sperren sie erst, wenn du sie hinzufügst.",
 "Add": "Hinzufügen",
 "This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "Diese Zusammenführung ändert Dateien, in denen du nicht übernommene Änderungen hast ({files}). Übernimm sie zuerst, dann führe zusammen.",
-"Your uncommitted changes are kept, still uncommitted.": "Deine nicht übernommenen Änderungen bleiben erhalten, weiterhin nicht übernommen."
+"Your uncommitted changes are kept, still uncommitted.": "Deine nicht übernommenen Änderungen bleiben erhalten, weiterhin nicht übernommen.",
+"AI agents": "KI-Agenten",
+"A short guide in the project tells AI agents (Claude Code, Codex and others) that it is versioned with R3V and how to work in it.": "Eine kurze Anleitung im Projekt sagt KI-Agenten (Claude Code, Codex und anderen), dass es mit R3V versioniert wird und wie sie darin arbeiten.",
+"Set up AI agents…": "KI-Agenten einrichten…"
 }

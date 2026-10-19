@@ -516,7 +516,7 @@ describe("ProjectView: versions", () => {
     await waitFor(() => expect(api.GoToVersion).toHaveBeenCalledWith(ROOT, "h0", true, false));
   });
 
-  it("parks uncommitted changes when going to a version (Nightly)", async () => {
+  it("parks uncommitted changes when going to a version", async () => {
     await show({ parking: true, changes: [change("Song.als")], history: [version("h1", "v2", { parents: ["h0"] }), version("h0", "v1", { parents: [] })] });
     api.VersionFiles.mockResolvedValue([]);
     await fireEvent.click(screen.getByRole("option", { name: /^v1,/ }));
@@ -562,7 +562,7 @@ describe("ProjectView: tabs", () => {
   });
 });
 
-describe("ProjectView: agents (Nightly)", () => {
+describe("ProjectView: agents", () => {
   const ws = (over: Record<string, unknown> = {}) => ({ folder: "C:/Projects/Song (renderer)", branch: "b-r1", label: "renderer",
     base: "main", baseLabel: "main", created: "2026-10-10T08:00:00Z", ahead: 2, behind: 0, changes: 0, parked: 0,
     lastActivity: new Date().toISOString(), missing: false, locks: [], tool: "claude-code", owner: "", stale: false, opened: false, ...over });

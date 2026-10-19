@@ -8,7 +8,7 @@
   // Moving a team from its own storage to R3V Cloud (docs/design/moving.md):
   // what it means (sizes, people), where to, which projects, a read-only
   // key for the service; then the copy in the background while everyone
-  // works on, and once it's copied, finishing (a short freeze). Nightly.
+  // works on, and once it's copied, finishing (a short freeze).
   let { team, teams, reload, onclose }: {
     team: TeamSummary;      // the one moving (on its own storage)
     teams: TeamSummary[];   // where it can go: hosted teams here

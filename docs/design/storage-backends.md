@@ -144,7 +144,7 @@ Every branch move is also recorded (`projects/<pid>/branchlog/<time>-<random>.js
 branch, from, to, member, time), one new key per move, after the move
 succeeded: storage itself keeps only where branches are now.
 
-## Hosted service mode (R3V-Cloud, Nightly, in progress)
+## Hosted service mode (R3V-Cloud, in every build since 0.2)
 
 A hosted team is reached through another `Bucket`, the broker bucket
 (`internal/remote/broker.go`, addresses `r3v-cloud+https://…/v1/teams/<team>`),

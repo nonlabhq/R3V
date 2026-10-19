@@ -103,9 +103,6 @@ func findParked(r *project.Repo, ref string) (*project.Parked, error) {
 }
 
 func cmdParked(args []string) error {
-	if !project.Parking {
-		return errors.New("parked changes are on the Nightly channel")
-	}
 	r, err := openRepo()
 	if err != nil {
 		return err
