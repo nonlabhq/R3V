@@ -159,6 +159,7 @@ when the work is done (`r3v merge renderer`).
 r3v project list              # the team's projects, archived ones marked
 r3v project archive           # put this project away for the whole team
 r3v project unarchive         # bring it back
+r3v project restore           # bring back a project its team deleted (moved away), with its history, and share the versions here (R3V Cloud: owners and admins)
 ```
 
 Archiving hides the project for everyone in the team; nothing is deleted

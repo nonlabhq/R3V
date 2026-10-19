@@ -118,7 +118,8 @@ func (r *Repo) MoveToTeam(t *teams.Team, opts MoveOptions) error {
 	if opts.Copy {
 		return nil
 	}
-	if err := c.DeleteProject(pid); err != nil {
+	// (the team's log says where it went, for the copies left on it)
+	if err := remote.DeleteMovedProject(c, pid, t.Name, teams.AddressRef(t.Remote.URL)); err != nil {
 		return fmt.Errorf("the other team has it, but this one couldn't let it go (move it again): %w", err)
 	}
 	if _, err := teams.Update(func(s *teams.Store) error {

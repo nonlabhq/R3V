@@ -1988,5 +1988,19 @@
 "Move to": "Mover para",
 "None": "Nenhuma",
 "Show all ({n})": "Mostrar todos ({n})",
-"Show less": "Mostrar menos"
+"Show less": "Mostrar menos",
+"“{name}” is back in {team}, with its history, and your versions are shared": "“{name}” voltou para {team} com o histórico, e suas versões foram compartilhadas",
+"“{name}” isn't on {team} any more": "“{name}” não está mais em {team}",
+"It was removed from {team} on {date} by {name}.": "{name} o removeu de {team} em {date}.",
+"It was removed from {team} on {date}.": "Foi removido de {team} em {date}.",
+"It was removed from {team}.": "Foi removido de {team}.",
+"It moved to {team}; this copy still points at {old}.": "Foi movido para {team}; esta cópia ainda aponta para {old}.",
+"Your versions stay on this computer.": "Suas versões continuam neste computador.",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "Apontar esta cópia para {team}: suas versões ainda não compartilhadas são compartilhadas lá, depois das que foram compartilhadas lá nesse meio-tempo.",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "Este computador não entrou em {team}: entre e depois aponte esta cópia para lá.",
+"Or bring it back to {team}, with its history, for everyone in it.": "Ou traga-o de volta para {team}, com o histórico, para toda a equipe.",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "Só os proprietários e administradores da equipe podem trazê-lo de volta para {team}: peça a um deles.",
+"Bring it back to {team}": "Trazer de volta para {team}",
+"Point this copy at {team}": "Apontar para {team}",
+"This copy is {team}'s now, and your versions are shared there": "Esta cópia agora é de {team}, e suas versões foram compartilhadas lá"
 }

@@ -141,7 +141,8 @@ func setupUsage() *strings.Replacer {
 	if teamByName {
 		team = "  init --team NAME [--preset code|none]  make the folder a project of a team this computer has joined\n" +
 			"                                         (r3v teams lists them; no connection code needed)\n" +
-			"  remote --team NAME                     connect this project to that team\n"
+			"  remote --team NAME                     connect this project to that team (or point a copy whose\n" +
+			"                                         team no longer has it at the team it moved to)\n"
 	}
 	clone := ""
 	if teamByName {

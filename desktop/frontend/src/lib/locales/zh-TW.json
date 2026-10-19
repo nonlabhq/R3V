@@ -1988,5 +1988,19 @@
 "Move to": "移到",
 "None": "無",
 "Show all ({n})": "全部顯示（{n}）",
-"Show less": "收合"
+"Show less": "收合",
+"“{name}” is back in {team}, with its history, and your versions are shared": "「{name}」已回到 {team}，連同歷史；你的版本也已分享",
+"“{name}” isn't on {team} any more": "「{name}」已不在 {team}",
+"It was removed from {team} on {date} by {name}.": "它在 {date} 由 {name} 從 {team} 移除。",
+"It was removed from {team} on {date}.": "它在 {date} 從 {team} 移除。",
+"It was removed from {team}.": "它已從 {team} 移除。",
+"It moved to {team}; this copy still points at {old}.": "它已移到 {team}；這份副本仍指向 {old}。",
+"Your versions stay on this computer.": "你的版本都還在這台電腦上。",
+"Point this copy at {team}: your versions not shared yet are shared there, after the versions shared there meanwhile.": "讓這份副本改指向 {team}：還沒分享的版本會分享到那裡，接在那裡期間分享的版本之後。",
+"This computer hasn't joined {team}: join it, then point this copy at it.": "這台電腦還沒加入 {team}：先加入，再讓這份副本改指向它。",
+"Or bring it back to {team}, with its history, for everyone in it.": "或把它連同歷史帶回 {team}，讓團隊所有人都看得到。",
+"Only the team's owners and admins can bring it back to {team}: ask one.": "只有團隊的擁有者和管理員能把它帶回 {team}：請找其中一位。",
+"Bring it back to {team}": "帶回 {team}",
+"Point this copy at {team}": "改指向 {team}",
+"This copy is {team}'s now, and your versions are shared there": "這份副本現在屬於 {team}，你的版本也已分享到那裡"
 }

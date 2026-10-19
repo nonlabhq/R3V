@@ -43,6 +43,12 @@ type TeamEvent struct {
 	// or a renamed section's name before.
 	Section string `json:"section,omitempty"`
 	Change  string `json:"change,omitempty"`
+	// MovedTo and MovedToRef: a project-removed by moving the project to
+	// another team: that team's name then, and a hash of its address
+	// (teams.AddressRef: a computer that joined it knows it, the address
+	// itself stays out of this team's storage).
+	MovedTo    string `json:"movedTo,omitempty"`
+	MovedToRef string `json:"movedToRef,omitempty"`
 }
 
 // TeamLogger is a backend that keeps the team log.

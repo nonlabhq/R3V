@@ -101,6 +101,12 @@ type Repo struct {
 	profErr error
 	// agentLocking: what locks between workspaces (AgentLocking), once read.
 	agentLocking *profile.Locking
+	// RestoreDeleted: the next share may bring the project back to its team,
+	// which deleted it (deleted.go). Only when the person asked: a share
+	// never does it on its own.
+	RestoreDeleted bool
+	// restored: a share brought it back (Share says so).
+	restored bool
 }
 
 // ErrNotRepo is returned when no .r3v directory is found.

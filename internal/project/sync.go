@@ -472,10 +472,12 @@ func (r *Repo) publishTo(c remote.Backend, branch, old string) error {
 		if bs, err := c.Branches(r.Config.ProjectID); err != nil || len(bs) == 0 {
 			ps, err := c.Projects()
 			if err != nil || !slices.ContainsFunc(ps, func(p remote.Project) bool { return p.ID == r.Config.ProjectID }) {
-				if err := c.PutProject(remote.Project{ID: r.Config.ProjectID, Name: r.Config.Name}); err != nil {
+				// Not on the team: new to it, or deleted from it (moved
+				// away, or deleted for everyone), which only an asked-for
+				// restore undoes (deleted.go).
+				if err := r.addToTeam(c, err == nil); err != nil {
 					return err
 				}
-				remote.LogTeamEvent(c, remote.TeamEvent{Kind: remote.EventProjectAdded, Project: r.Config.ProjectID, Name: r.Config.Name})
 			}
 		}
 	}
@@ -887,6 +889,9 @@ type SyncResult struct {
 	// SameFilesAs: a merge whose version has exactly the merged version's
 	// files (HEAD was behind it); its results carry over (Results).
 	SameFilesAs string
+	// Restored: the team had deleted the project (kept a while); the share
+	// brought it back.
+	Restored bool
 }
 
 // Update brings the workspace up to date with the team branch: a fast
@@ -1163,6 +1168,8 @@ func (r *Repo) Share(opts MergeOptions) (*SyncResult, error) {
 		return nil, err
 	}
 	res := &SyncResult{}
+	r.restored = false
+	defer func() { res.Restored = r.restored }()
 	// published: a move of the branch was sent; a conflict after it may be
 	// that move, which got through with its answer lost.
 	published := false
