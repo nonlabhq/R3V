@@ -297,4 +297,68 @@ describe("FileExplorer", () => {
     await fireEvent.click(within(items[1]).getByRole("button", { name: /Restore/ }));
     expect(props.onrestore).toHaveBeenCalledWith("Song.als", "h1", "First", "Song.als");
   });
+
+  it("marks the version picked in a file's history, and says beside its name which one it shows", async () => {
+    api.FileHistory.mockResolvedValue([
+      { version: version("h2", "Bass line", "Mia", "2026-10-06T09:00:00Z"), status: "modified", path: "notes.txt", from: "" },
+      { version: version("h1", "First", "Yi", "2026-10-01T09:00:00Z"), status: "added", path: "notes.txt", from: "" },
+    ]);
+    await show();
+    await fireEvent.click(row("notes.txt"));
+    await screen.findByText("current");
+    const items = within(document.querySelector<HTMLElement>(".timeline")!).getAllByRole("listitem");
+    const note = () => document.querySelector(".fp header .asof")!.textContent;
+    expect(note()).toBe("");
+    await fireEvent.click(within(items[1]).getByRole("button", { pressed: false, name: /First/ }));
+    expect(items[1].classList.contains("on")).toBe(true);
+    expect(items[0].classList.contains("on")).toBe(false);
+    expect(note()).toMatch(/^An older version · /);
+    expect(document.querySelector(".fp header .asof")!.getAttribute("title")).toBe("“First”");
+    // back to the current one (unchanged: the newest is now): no note
+    await fireEvent.click(within(items[0]).getByRole("button", { name: /Bass line/ }));
+    expect(items[1].classList.contains("on")).toBe(false);
+    expect(note()).toBe("");
+  });
+
+  it("says when the version picked is the one you're on, over your changes", async () => {
+    api.FileHistory.mockResolvedValue([
+      { version: version("h2", "Bass line", "Mia", "2026-10-06T09:00:00Z"), status: "modified", path: "Song.als", from: "" },
+    ]);
+    await show();
+    await fireEvent.click(row("Song.als")); // (modified)
+    await screen.findByText("current");
+    const item = within(document.querySelector<HTMLElement>(".timeline")!).getByRole("listitem");
+    await fireEvent.click(within(item).getByRole("button", { name: /Bass line/ }));
+    expect(item.classList.contains("on")).toBe(true);
+    expect(document.querySelector(".fp header .asof")!.textContent).toMatch(/^As in the version you're on · /);
+    await fireEvent.click(screen.getByRole("button", { name: "Back to now" }));
+    expect(document.querySelector(".fp header .asof")!.textContent).toBe("");
+  });
+
+  it("copies a file's or folder's path on this computer from its menu", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    api.ProjectFiles.mockResolvedValue([...files, file("Samples/Old.wav", "audio", 100, "deleted")]);
+    await show();
+    await fireEvent.contextMenu(row("notes.txt"));
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    expect(writeText).toHaveBeenCalledWith("C:\\Song\\notes.txt");
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("Copied C:\\Song\\notes.txt", "ok"));
+    expect(screen.queryByRole("menu")).toBeNull();
+    // a folder
+    await fireEvent.contextMenu(folder("Samples"));
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    expect(writeText).toHaveBeenLastCalledWith("C:\\Song\\Samples");
+    // a file deleted since the version you're on: where it would be
+    await fireEvent.click(folder("Samples"));
+    await fireEvent.contextMenu(row("Old.wav"));
+    expect(within(screen.getByRole("menu")).queryByRole("button", { name: "Show in folder" })).toBeNull();
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    expect(writeText).toHaveBeenLastCalledWith("C:\\Song\\Samples\\Old.wav");
+    // the clipboard refused: said so
+    writeText.mockRejectedValueOnce(new Error("not allowed"));
+    await fireEvent.contextMenu(row("Old.wav"));
+    await fireEvent.click(screen.getByRole("button", { name: "Copy path" }));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringMatching(/not allowed/), "error"));
+  });
 });

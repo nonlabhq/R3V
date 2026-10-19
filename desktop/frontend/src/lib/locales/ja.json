@@ -1906,5 +1906,9 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "このファイルは R3V が止まった後に変更されました：ファイルを元に戻すと置き換えられます（バージョンにない場合は削除されます）。",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "これら {n} 個のファイルは R3V が止まった後に変更されました：ファイルを元に戻すと置き換えられます（バージョンにないものは削除されます）。",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "残したい内容は先に別の場所へコピーしてください。この操作は取り消せません。",
-"Replace them and put files back": "置き換えてファイルを元に戻す"
+"Replace them and put files back": "置き換えてファイルを元に戻す",
+"As in the version you're on · {ago}": "今いるバージョンの状態 · {ago}",
+"An older version · {ago}": "以前のバージョン · {ago}",
+"Copy path": "パスをコピー",
+"Copied {path}": "{path} をコピーしました"
 }

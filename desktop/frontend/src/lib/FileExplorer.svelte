@@ -186,6 +186,19 @@
     menu = null;
     api.ShowFile(root, p).catch((e) => toast(errorText(e), "error"));
   }
+  // Where a file or folder is on this computer, as Windows writes it (a
+  // deleted file: where it would be), for pasting into other programs.
+  const absPath = (p: string) => (root.replace(/[\\/]+$/, "") + (p ? "/" + p : "")).replace(/\//g, "\\");
+  async function copyPath(p: string) {
+    menu = null;
+    const abs = absPath(p);
+    try {
+      await navigator.clipboard.writeText(abs);
+      toast(t("Copied {path}", { path: abs }), "ok");
+    } catch (e) {
+      toast(errorText(e), "error");
+    }
+  }
 
 </script>
 
@@ -221,6 +234,7 @@
       <button class="item" onclick={() => showInFolder(m.path)}>{t("Show in folder")}</button>
       <button class="item" onclick={() => { renameAsk = { path: m.path, dir: m.dir }; menu = null; }}>{t("Rename")}<span class="faint key">F2</span></button>
     {/if}
+    <button class="item" onclick={() => copyPath(m.path)}>{t("Copy path")}</button>
     {#if f?.kind === "audio" && f.status !== "deleted"}
       {@const n = toConvert(m.path).length}
       <button class="item" onclick={() => { converting = toConvert(m.path); menu = null; }}>{n > 1 ? t("Convert {n} samples…", { n }) : t("Convert…")}</button>

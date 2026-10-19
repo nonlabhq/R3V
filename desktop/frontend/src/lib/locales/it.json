@@ -1906,5 +1906,9 @@
 "This file changed after R3V stopped: putting the files back replaces it (or deletes it, when the version doesn't have it).": "Questo file è cambiato dopo che R3V si è fermato: rimettere i file lo sostituisce (o lo elimina, se la versione non lo ha).",
 "These {n} files changed after R3V stopped: putting the files back replaces them (or deletes those the version doesn't have).": "Questi {n} file sono cambiati dopo che R3V si è fermato: rimettere i file li sostituisce (o elimina quelli che la versione non ha).",
 "Copy what you want to keep of them somewhere else first. This can't be undone.": "Copia prima altrove ciò che vuoi tenere. Non si può annullare.",
-"Replace them and put files back": "Sostituiscili e rimetti i file"
+"Replace them and put files back": "Sostituiscili e rimetti i file",
+"As in the version you're on · {ago}": "Come nella versione in cui sei · {ago}",
+"An older version · {ago}": "Una versione precedente · {ago}",
+"Copy path": "Copia percorso",
+"Copied {path}": "{path} copiato"
 }
