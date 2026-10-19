@@ -2,14 +2,15 @@
   import { t, tn } from "../i18n";
   import { errorText } from "../text";
   import { notify as toast } from "../notify";
-  import { lockKindName } from "../lockKinds";
+  import { LOCK_KINDS, lockKindName } from "../lockKinds";
   import type { AgentDefaults, TeamSource, TeamWorkflowData } from "./source";
 
   // A team's Workflow tab (docs/design/team-settings.md): file locking (R3V
   // Cloud teams) and the defaults for agents, what projects do unless they
   // set their own; the projects that do, put back to the team's in one go.
-  // Owners and admins change them on R3V Cloud; everyone sees.
-  let { source, onlocks }: { source: TeamSource; onlocks?: (on: boolean) => void } = $props();
+  // Owners and admins change them on R3V Cloud; everyone sees. remember:
+  // the team's key on this computer, where "Not now" on a new kind is kept.
+  let { source, onlocks, remember = "" }: { source: TeamSource; onlocks?: (on: boolean) => void; remember?: string } = $props();
 
   let v = $state<TeamWorkflowData | null>(null);
   let error = $state("");
@@ -39,7 +40,31 @@
     await source.setLocks(on, kinds);
     onlocks?.(on);
   });
-  const toggleKind = (id: string, on: boolean) => setLocks(true, on ? [...v!.kinds, id] : v!.kinds.filter((k) => k !== id));
+  const toggleKind = (id: string, on: boolean) => {
+    if (!on) dismiss(id); // (taken off on purpose: not offered back as new)
+    return setLocks(true, on ? [...v!.kinds, id] : v!.kinds.filter((k) => k !== id));
+  };
+
+  // Kinds R3V locks by default since teams could pick their own (new): a
+  // team that picked keeps its list, so its admins are offered each, added
+  // only by their click. Not for a team on manual locks only.
+  const dismissKey = $derived(remember ? `r3v.lockKinds.dismissed:${remember}` : "");
+  let dismissed = $state<string[]>([]);
+  $effect(() => {
+    try {
+      dismissed = dismissKey ? JSON.parse(localStorage.getItem(dismissKey) ?? "[]") : [];
+    } catch {
+      dismissed = [];
+    }
+  });
+  function dismiss(id: string) {
+    if (dismissed.includes(id)) return;
+    dismissed = [...dismissed, id];
+    try { if (dismissKey) localStorage.setItem(dismissKey, JSON.stringify(dismissed)); } catch { /* (this time only) */ }
+  }
+  let offered = $derived(v?.canEdit && v.locks && v.locksOn && v.kinds.length
+    ? LOCK_KINDS.filter((k) => k.default && k.new && v!.all.some((a) => a.id === k.id) && !v!.kinds.includes(k.id) && !dismissed.includes(k.id)).map((k) => k.id)
+    : []);
   const setAgent = (k: keyof AgentDefaults, on: boolean) => change(() => source.setAgents({ ...v!.agents, [k]: on }));
   async function clear(pick: "locks" | "agents") {
     try {
@@ -76,6 +101,16 @@
         {t("File locking")}</label>
       <p class="hint">{t("Off: no locks. On: anyone can lock a file or folder (right-click › Lock), and a change to a file someone else holds can't be shared until it's unlocked. With auto-lock, the kinds of file ticked below lock by themselves when someone changes them; none ticked: manual locks only.")}</p>
       {#if v.locksOn}
+        {#each offered as id (id)}
+          <div class="news" role="status">
+            <div><strong>{t("New: {kind} can lock too", { kind: lockKindName(id) })}</strong>
+              <p class="hint">{t("R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.")}</p></div>
+            <div class="news-actions">
+              <button class="primary" disabled={saving} onclick={() => toggleKind(id, true)}>{t("Add")}</button>
+              <button disabled={saving} onclick={() => dismiss(id)}>{t("Not now")}</button>
+            </div>
+          </div>
+        {/each}
         <h4>{t("Auto-lock")}</h4>
         <div class="kinds">
           {#each v.all as k (k.id)}
@@ -135,4 +170,10 @@
   .own ul { margin: var(--sp-6) 0; padding-left: var(--sp-20); }
   .own button { font-size: var(--fs-sm); padding: var(--sp-4) var(--sp-10); }
   .error { color: var(--danger); }
+  .news { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-12); margin: var(--sp-8) 0;
+    padding: var(--sp-8) var(--sp-12); background: var(--info-bg); border: var(--border-width) solid var(--info-line); border-radius: var(--radius); }
+  .news strong { font-weight: var(--fw-medium); font-size: var(--fs-md); color: var(--info-text); }
+  .news .hint { margin-bottom: 0; }
+  .news-actions { display: flex; gap: var(--sp-6); flex-shrink: 0; }
+  .news-actions button { font-size: var(--fs-sm); padding: var(--sp-4) var(--sp-10); }
 </style>

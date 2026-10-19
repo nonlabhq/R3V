@@ -1988,5 +1988,8 @@
 "Move to": "Verschieben nach",
 "None": "Keine",
 "Show all ({n})": "Alle zeigen ({n})",
-"Show less": "Weniger zeigen"
+"Show less": "Weniger zeigen",
+"New: {kind} can lock too": "Neu: {kind} können jetzt auch sperren",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V sperrt sie jetzt standardmäßig. Euer Team hat seine Arten vorher selbst gewählt, deshalb sperren sie erst, wenn du sie hinzufügst.",
+"Add": "Hinzufügen"
 }

@@ -1988,5 +1988,8 @@
 "Move to": "Mover para",
 "None": "Nenhuma",
 "Show all ({n})": "Mostrar todos ({n})",
-"Show less": "Mostrar menos"
+"Show less": "Mostrar menos",
+"New: {kind} can lock too": "Novo: {kind} também podem ser bloqueados",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "O R3V agora os bloqueia por padrão. Sua equipe escolheu os tipos antes, então eles não bloqueiam até você adicioná-los.",
+"Add": "Adicionar"
 }

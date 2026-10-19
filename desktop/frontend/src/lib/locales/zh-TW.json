@@ -1988,5 +1988,8 @@
 "Move to": "移到",
 "None": "無",
 "Show all ({n})": "全部顯示（{n}）",
-"Show less": "收合"
+"Show less": "收合",
+"New: {kind} can lock too": "新功能：{kind}也可以鎖定",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V 現在預設會鎖定它們。你的團隊之前自己選過種類，所以要加入後才會鎖定。",
+"Add": "加入"
 }

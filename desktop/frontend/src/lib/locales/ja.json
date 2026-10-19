@@ -1988,5 +1988,8 @@
 "Move to": "移動先",
 "None": "なし",
 "Show all ({n})": "すべて表示（{n}）",
-"Show less": "表示を減らす"
+"Show less": "表示を減らす",
+"New: {kind} can lock too": "新機能：{kind}もロックできます",
+"R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "R3V は現在これらを既定でロックします。チームは以前に種類を選んでいるため、追加するまでロックされません。",
+"Add": "追加"
 }

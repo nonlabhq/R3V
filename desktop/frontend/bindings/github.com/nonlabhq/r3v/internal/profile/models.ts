@@ -104,6 +104,14 @@ export class LockKind {
      */
     "default": boolean;
 
+    /**
+     * New: a default since after teams could pick their own kinds. A team
+     * that picked keeps its list, so the Workflow tab offers it to the
+     * team's admins (never added without their click). A kind made a
+     * default later is marked so too.
+     */
+    "new"?: boolean;
+
     /** Creates a new LockKind instance. */
     constructor($$source: Partial<LockKind> = {}) {
         if (!("id" in $$source)) {
