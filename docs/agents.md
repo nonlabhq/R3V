@@ -14,7 +14,7 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `project`, `lock` and `locks`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `project`, `section`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -331,6 +331,20 @@ refused with `unsaved_changes` or `unshared_versions` unless `--force`
 but owners and admins. Archive or unarchive only when the user asks.
 `status` gives `team.archived: true` for an archived project.
 
+`section` (Nightly; sections group the team's projects, the same for
+everyone in the team): `section list` (or `section`): `sections` in the
+team's order (`id`, `name`, `projects`: `id`, `name`, `here`),
+`ungrouped` (the projects in none) and `here` (the id of this project's
+section, "" for none). `section new NAME`, `rename NAME NEW-NAME`, `delete
+NAME` (its projects become ungrouped), `add NAME` (puts the project in this
+folder in it, out of any other) and `remove` (takes it out of its
+section): `section` (as it is now; none after `remove`), `project` and
+`id` (add, remove), `changed` (false: it already was so). A section is
+found by its name (case aside) or id: `no_section` when there's none,
+`section_exists` when a new name is taken. On R3V Cloud teams only owners
+and admins change sections (`not_admin`). Change them only when the user
+asks. `status` gives `team.section` (its name).
+
 `backup run [folder]` (back up the whole team's storage into a folder; only
 adds): `team`, `kind` (`folder`, or `s3` for a bucket set up in the app),
 `folder` (where), `run` (its record: `<folder>/runs/<run>.json`),
@@ -405,7 +419,9 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `cloud_quota` | the team's storage on R3V Cloud is full: the versions stay committed here; tell the user (they delete projects or versions, or get more room), `commit` again later |
 | 1 | `cloud_beta_only` | R3V Cloud is in a closed beta: making a team needs an invitation; tell the user (the waitlist: https://r3v.so/waitlist) |
 | 1 | `cloud_one_team` | the beta gives one team of the user's own, and it exists: use it |
-| 1 | `not_admin` | on an R3V Cloud team only its owners and admins do this (archiving a project): tell the user |
+| 1 | `not_admin` | on an R3V Cloud team only its owners and admins do this (archiving a project, changing sections): tell the user |
+| 1 | `no_section` | the team has no section of that name: `r3v section list` |
+| 1 | `section_exists` | another section has that name: pick another, or use that one |
 | 1 | `not_a_merge` | `undo-merge` takes a merge version: `r3v log --first-parent` lists them |
 | 1 | `nothing_to_discard` | `discard <path>...`: nothing changed in those paths |
 | 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |
