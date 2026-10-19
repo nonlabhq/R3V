@@ -284,6 +284,28 @@
     if (teamId) openHere(homeRef(teamId));
     showHome(section);
   }
+  // A team picked in the team menu: its home in the tab shown, as a left
+  // click in the sidebar does (or its home's tab, open already); behind (a
+  // middle click or Ctrl+click), its home in a tab behind.
+  async function switchTeam(id: string, behind: boolean) {
+    if (behind) return openTab(homeRef(id));
+    const from = tabItems.find(activeTab)?.id ?? "";
+    if (id !== teamId) {
+      switching = true;
+      try {
+        await showTeam(id);
+      } catch (e) {
+        toast(errorText(e), "error");
+        return;
+      } finally {
+        switching = false;
+      }
+    }
+    tabsClosed = false;
+    const got = replaceTab(tabs, from, homeRef(id));
+    if (got !== tabs) { tabs = got; saveTabs(); }
+    showHome();
+  }
   // A team's settings: the shown team's in its home, another's in a dialog.
   function openTeamSettings(team: TeamSummary) {
     if (team.id === overview?.currentTeam) goHome("settings");
@@ -952,7 +974,7 @@
       {/if}
       <button class="ghost fold" onclick={() => fold(true)} title={t("Hide the sidebar") + " (Ctrl+\\)"} aria-label={t("Hide the sidebar")}>«</button>
       </div>
-      <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))}
+      <div class="team-slot"><TeamMenu {overview} {reload} {home} onhome={() => goHome()} onhomebehind={() => openTab(homeRef(teamId))} onteam={switchTeam}
         onsettings={openTeamSettings} /></div>
 
       <div class="list">

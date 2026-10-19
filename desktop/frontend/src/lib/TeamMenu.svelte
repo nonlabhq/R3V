@@ -14,9 +14,10 @@
   // in a tab behind (onhomebehind), as a browser does.
   // part: the team itself, or what it asks of you (signing in, your name,
   // backups…), drawn apart (at the sidebar's foot: the projects don't move).
-  let { overview, reload, home = false, onhome, onhomebehind, onsettings, part = "team" }: {
+  let { overview, reload, home = false, onhome, onhomebehind, onteam, onsettings, part = "team" }: {
     overview: Overview; reload: () => Promise<void>; home?: boolean;
-    onhome: () => void; onhomebehind?: () => void; onsettings: (team: TeamSummary) => void; part?: "team" | "notices";
+    onhome: () => void; onhomebehind?: () => void; onteam?: (id: string, behind: boolean) => void;
+    onsettings: (team: TeamSummary) => void; part?: "team" | "notices";
   } = $props();
 
   let open = $state(false);
@@ -76,9 +77,11 @@
     api.CloudCancelSignIn();
   }
 
-  // Another team: its home.
-  async function select(id: string) {
+  // Another team: its home (onteam: where it shows is the page's; behind: a
+  // middle click or Ctrl+click, in a tab behind).
+  async function select(id: string, behind = false) {
     open = false;
+    if (onteam) return onteam(id, behind);
     try {
       if (id !== overview.currentTeam) {
         await api.SelectTeam(id);
@@ -231,7 +234,9 @@
   {#if open}
     <div class="menu surface-menu" role="menu">
       {#each overview.teams as t (t.id)}
-        <button class="item" onclick={() => select(t.id)}>
+        <button class="item" onclick={(e) => select(t.id, !!onteam && (e.ctrlKey || e.metaKey))}
+          onmousedown={(e) => { if (e.button === 1 && onteam) e.preventDefault(); }}
+          onauxclick={(e) => { if (e.button === 1 && onteam) { e.preventDefault(); select(t.id, true); } }}>
           <span class="check">{t.id === overview.currentTeam ? "✓" : ""}</span>
           <span class="tname">{t.name}</span>
         </button>
