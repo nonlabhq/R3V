@@ -43,7 +43,7 @@ func TestLooksBuiltWarnings(t *testing.T) {
 	if exit != 0 {
 		t.Fatalf("status: %+v", rep.Error)
 	}
-	check("status", st.Warnings)
+	check("status", builtOnly(st.Warnings))
 	if _, text := runText(t, a, "status"); !strings.Contains(text, "note: build-win/ is named like build/, which the rules leave out (2 files,") {
 		t.Errorf("status text:\n%s", text)
 	}
@@ -54,21 +54,33 @@ func TestLooksBuiltWarnings(t *testing.T) {
 	if exit != 0 || cm.Saved == nil {
 		t.Fatalf("commit refused: %s %+v", rep.Result, rep.Error)
 	}
-	check("commit", cm.Warnings)
+	check("commit", builtOnly(cm.Warnings))
 
 	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("two"), 0o644)
 	_, rep = run(t, a, "status")
 	st = statusJSON{}
 	json.Unmarshal(rep.Result, &st)
-	if st.Warnings == nil || len(st.Warnings) != 0 {
+	if st.Warnings == nil || len(builtOnly(st.Warnings)) != 0 {
 		t.Errorf("status after: %s", rep.Result)
 	}
 	_, rep = run(t, a, "commit", "-m", "notes")
 	cm = commitJSON{}
 	json.Unmarshal(rep.Result, &cm)
-	if cm.Warnings == nil || len(cm.Warnings) != 0 {
+	if cm.Warnings == nil || len(builtOnly(cm.Warnings)) != 0 {
 		t.Errorf("commit after: %s", rep.Result)
 	}
+}
+
+// builtOnly are the looks_built warnings among ws (these projects are on
+// no team: not_connected comes too).
+func builtOnly(ws []warningJSON) []warningJSON {
+	out := []warningJSON{}
+	for _, w := range ws {
+		if w.Code == "looks_built" {
+			out = append(out, w)
+		}
+	}
+	return out
 }
 
 // What a looks_built warning's pattern is for: `r3v rules ignore` adds it
@@ -86,7 +98,7 @@ func TestRulesIgnore(t *testing.T) {
 	_, rep := run(t, a, "status")
 	var st statusJSON
 	json.Unmarshal(rep.Result, &st)
-	if len(st.Warnings) != 1 || st.Warnings[0].Pattern != "Backup-*/" {
+	if st.Warnings = builtOnly(st.Warnings); len(st.Warnings) != 1 || st.Warnings[0].Pattern != "Backup-*/" {
 		t.Fatalf("warnings %+v", st.Warnings)
 	}
 	if _, text := runText(t, a, "status"); !strings.Contains(text, `r3v rules ignore "Backup-*/"`) {
@@ -117,7 +129,7 @@ func TestRulesIgnore(t *testing.T) {
 	_, rep = run(t, a, "status")
 	st = statusJSON{}
 	json.Unmarshal(rep.Result, &st)
-	if len(st.Warnings) != 0 {
+	if len(builtOnly(st.Warnings)) != 0 {
 		t.Errorf("warnings after the rule: %+v", st.Warnings)
 	}
 	for _, c := range st.Changes {

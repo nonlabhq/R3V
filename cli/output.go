@@ -36,7 +36,7 @@ var jsonMode bool
 
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
-	"version": true, "backup": true, "switch": true, "goto": true, "checkout": true, "parked": true,
+	"version": true, "backup": true, "init": true, "switch": true, "goto": true, "checkout": true, "parked": true,
 	"discard": true, "rules": true, "profile": true} // (rules: only rules ignore)
 
 // stripJSON takes --json (or -json) out of args.
@@ -124,6 +124,7 @@ type cliError struct {
 	Holder    *holderJSON // project_busy: who holds the project
 	// Suggestion: the branch meant, when one asked for isn't there.
 	Suggestion string
+	Next       []nextJSON // not_connected: how to connect the project
 }
 
 // holderJSON is who holds a project's lock, as it recorded itself (Running
@@ -171,6 +172,8 @@ type errorJSON struct {
 	Holder    *holderJSON    `json:"holder,omitempty"`
 	// Suggestion: the closest branch to one asked for that isn't there.
 	Suggestion string `json:"suggestion,omitempty"`
+	// Next: what to run (not_connected: the ways to connect the project).
+	Next []nextJSON `json:"next,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
 	// having failed after.
 	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
@@ -269,7 +272,11 @@ func classify(err error) *cliError {
 	}
 	for _, c := range codes {
 		if errors.Is(err, c.err) {
-			return &cliError{Code: c.code, Exit: c.exit, Err: err, Hint: c.hint}
+			ce := &cliError{Code: c.code, Exit: c.exit, Err: err, Hint: c.hint}
+			if c.err == project.ErrNoRemote {
+				ce.Next = connectSteps()
+			}
+			return ce
 		}
 	}
 	if remote.Transient(err) {
@@ -296,12 +303,15 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Next: ce.Next, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
 	if ce.Code == "merge_conflict" { // the conflicts are in the message; how to go on is not
 		fmt.Fprintln(os.Stderr, ce.Hint)
+	}
+	for _, s := range ce.Next {
+		fmt.Fprintf(os.Stderr, "  %s\n      %s\n", s.Command, s.Why)
 	}
 	return ce.Exit
 }
