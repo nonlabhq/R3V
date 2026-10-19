@@ -238,6 +238,7 @@
           onmousedown={(e) => { if (e.button === 1 && onteam) e.preventDefault(); }}
           onauxclick={(e) => { if (e.button === 1 && onteam) { e.preventDefault(); select(t.id, true); } }}>
           <span class="check">{t.id === overview.currentTeam ? "✓" : ""}</span>
+          <TeamMark team={t} size={18} />
           <span class="tname">{t.name}</span>
         </button>
       {/each}
