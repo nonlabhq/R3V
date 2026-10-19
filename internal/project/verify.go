@@ -30,10 +30,21 @@ type Problem struct {
 
 // VerifyReport is what Verify checked and found.
 type VerifyReport struct {
-	Versions int   // version records checked
-	Folders  int   // trees checked
-	Files    int   // stored files re-read
-	Bytes    int64 // their size
+	Versions int // version records checked: every one on this computer
+	// InHistory: of them, those in this branch's history, as `log` lists
+	// them; the others are other branches' or copies' (versions shared
+	// with this computer's workspaces, one committed --local there),
+	// or R3V's own (work kept through an update, versions put again after
+	// the team's).
+	InHistory int
+	Folders   int   // trees checked
+	Files     int   // stored files re-read: those kept on this computer
+	Bytes     int64 // their size
+	// TeamOnly: files the versions need that only the team's storage has
+	// (as after sharing: the team's copy is kept, this one let go, and a
+	// version downloads them when it needs them); InFolder: files only in
+	// the project folder (a sample used where it is).
+	TeamOnly, InFolder int
 	// TeamChecked: the team's storage was asked about the files only it
 	// has (false without a team, or when it couldn't be reached).
 	TeamChecked bool
@@ -89,6 +100,19 @@ func (r *Repo) Verify(repair bool) (*VerifyReport, error) {
 		if id != "" && !r.HasSnapshot(id) {
 			rep.Problems = append(rep.Problems, Problem{Kind: "version", ID: id,
 				Detail: "the version the project is on is missing"})
+		}
+	}
+	history := map[string]bool{}
+	for _, id := range []string{r.Latest(), r.Head()} {
+		if anc, err := r.ancestors(id); id != "" && err == nil {
+			for a := range anc {
+				history[a] = true
+			}
+		}
+	}
+	for _, id := range ids {
+		if history[id] {
+			rep.InHistory++
 		}
 	}
 
@@ -195,6 +219,7 @@ func (r *Repo) Verify(repair bool) (*VerifyReport, error) {
 			onTeam = append(onTeam, h)
 		case r.localCopy(h) != "":
 			// in the project folder only (e.g. a sample used as it is)
+			rep.InFolder++
 		case c != nil:
 			// never downloaded (a teammate's version): fine when the team has it
 			onTeam = append(onTeam, h)
@@ -217,6 +242,7 @@ func (r *Repo) Verify(repair bool) (*VerifyReport, error) {
 	}
 	for _, h := range onTeam {
 		if !teamLacks[h] {
+			rep.TeamOnly++
 			continue
 		}
 		p := Problem{Kind: "file", ID: h, Path: paths[h], Detail: "only in the team's storage, which doesn't have it"}
@@ -409,7 +435,19 @@ func (rep *VerifyReport) Summary() string {
 			open++
 		}
 	}
-	checked := fmt.Sprintf("%d versions, %d folder lists and %d stored files checked", rep.Versions, rep.Folders, rep.Files)
+	// What is where, so few files here doesn't read as history lost.
+	checked := fmt.Sprintf("%d versions", rep.Versions)
+	if other := rep.Versions - rep.InHistory; other > 0 {
+		checked += fmt.Sprintf(" (%d in this branch's history, as `r3v log` lists it; %d other: another branch's or workspace's, or kept by R3V)",
+			rep.InHistory, other)
+	}
+	checked += fmt.Sprintf(", %d folder lists and %d stored files kept on this computer checked", rep.Folders, rep.Files)
+	if rep.TeamOnly > 0 {
+		checked += fmt.Sprintf("; %d more files only in the team's storage (as expected once shared: downloaded when a version needs them)", rep.TeamOnly)
+	}
+	if rep.InFolder > 0 {
+		checked += fmt.Sprintf("; %d only in the project folder", rep.InFolder)
+	}
 	switch {
 	case len(rep.Problems) == 0:
 		return "No problems: " + checked + "."

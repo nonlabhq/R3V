@@ -4,9 +4,19 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore`, `verify` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
-While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
+While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so. A file R3V may not write at all (a sandbox, a read-only folder) is not someone working: that fails at once, naming the path (`no_write_access`).
+
+**R3V's own settings** (the teams this computer joined and their keys, `teams.json`; the app's lists of projects; logs) are in `%APPDATA%\R3V`. `R3V_CONFIG_DIR=<folder>` keeps them in that folder instead: for a sandbox, a CI job or an agent that may only write in its workspace. Projects are unaffected (each keeps its own `.r3v`). The teams joined in the usual folder aren't in a new one: copy `teams.json` over (the same Windows user can read its keys), or join again; an R3V Cloud sign-in stays in Windows' Credential Manager.
+
+`r3v help` starts by sending AI agents to `r3v help agents` (and, on Nightly, the one-time `r3v agent setup`), and its setup section lists the first steps in the order they're taken: `login` (R3V Cloud) and `teams`, then `init` (or `init --team NAME`, Nightly) or connecting a project made before (`remote --team NAME`, Nightly, or `remote <connection code>`), then `agent setup`.
+
+## Getting started: on a team
+
+A project on no team keeps its versions on this computer only. `r3v init` ends with what to run next (`--json`: `next`, `[{"command", "why"}]`): connecting the project to each team this computer has joined (`r3v remote --team NAME`, Nightly; on Stable, the app's **Add project** or a connection code), or, with none, signing in to R3V Cloud (`r3v login`) or a connection code; run by an AI agent, `r3v help agents` or `r3v agent setup` (Nightly, Claude Code, until the folder is set up); then the first commit. With `--team NAME` it is that team's project already, and the connecting steps are left out.
+
+While the project is on no team, `commit` says the version is on this computer only and how to connect it (`--json`: `shared: false`, a `not_connected` warning in `warnings`, and `next`), and so does `status` (`--json`: `connected: false`, the warning and `next`). `update` and `merge` fail with `not_connected`, the same `next` in the error. Once connected, the next commit shares the versions committed before.
 
 ## Team storage (S3-compatible)
 
@@ -19,9 +29,12 @@ The same as **Create a team** in the app, for scripts: checks that the key can r
 ## Everyday commands (inside an Ableton project folder)
 
 ```
-r3v init [--author NAME]          # start tracking this project
+r3v login                         # sign in to R3V Cloud (in the browser): your teams appear in r3v teams
+r3v init [--author NAME]          # start tracking this project (it says what to run next)
 r3v init --preset code            # a folder R3V doesn't recognise: as code and documents (or none: files as they are)
-r3v remote <connection code>      # connect it to the team's storage
+r3v init --team NAME              # Nightly: a project of a team this computer has joined (r3v teams)
+r3v remote --team NAME            # Nightly: connect a project made before to that team
+r3v remote <connection code>      # or connect it to a self-hosted team's storage
 r3v commit -m "added drums"       # commit a version and share it (merges the team's versions first)
 r3v commit -m "title" -m "details" # a title, then details (a blank line between, as git)
 r3v commit -m "fix the menu" src/menu   # only the changes in those files and folders (the others stay)
@@ -192,6 +205,8 @@ r3v commit --local -m "message"      # commit a version on this computer only
 
 On an older version, newer versions are kept. Committing, getting updates and merging wait until you go back to the latest version; to continue from the older one, start a branch there (`r3v branch new NAME`). An exported copy has no R3V history; samples from outside the project are copied into its `Samples/Imported`.
 
+A version committed `--local` isn't on the team's branch until the next commit shares it: the team, and the project's other copies on this computer (workspaces), don't see it. `r3v status` counts such versions (`unshared` with `--json`), `r3v workspace list` each workspace's; merging or updating from another copy that can't see them says which copy has them and how many (`unshared_elsewhere`, warning `unshared_versions`), rather than only "nothing to merge".
+
 Versions store file contents by SHA-256 in `.r3v/objects` inside the project (deduplicated). Samples referenced from outside the project are stored too and, on a computer that lacks them, placed under `.r3v/external/` with the set's sample paths rewritten. Samples from Live packs are only recorded by pack name. `Backup/` and `*.asd` are ignored.
 
 ## Checking the history
@@ -202,6 +217,8 @@ r3v verify --repair   # bring back what can be: from the project folder or the t
 ```
 
 The app does the same from a project's ⋯ menu in the sidebar (**Check project…**). A file damaged here (a failing disk, say) comes back from a file in the project folder with the same content, or from the team's storage; what has no copy left anywhere is listed with the version it's in.
+
+It says what is where. Versions: every version on this computer, of which those in this branch's history (what `r3v log` lists); the others are other branches' or workspaces' (a version committed `--local` in a workspace, say) or R3V's own (work kept through an update). Files: those stored in `.r3v` (read again), and those only in the team's storage: once a version is shared, R3V lets go of its copy here of files the team's storage has (Live Sets and the rules stay) and downloads one when a version needs it, so few files stored here is expected, not history lost; going back to an old version then needs the team's storage. `--json`: `versions`, `in_history`, `other_versions`, `folder_lists`, `local_files`, `local_bytes`, `team_only_files`, `folder_only_files`, `team_checked`, `problems`, `open_problems`, `summary`.
 
 ## Backing up the team
 
@@ -234,10 +251,11 @@ r3v agent setup [--tool claude-code]   # in a project or workspace folder: Claud
 r3v lock <paths…> [--claim]            # lock files or folders for this workspace, all or none
 r3v unlock <paths…>                    # free this workspace's locks
 r3v locks                              # every agent lock here (stale ones marked), and the files the person changed
+r3v lock --take <paths…> --reason <why>  # take over locks whose holder is gone, when the user says so (the reason kept with the lock)
 r3v lock --break <path>                # take anyone's lock off a path (the person's call)
 ```
 
-Agent locks keep two agents (each in a workspace of the project) from changing the same file that can't be merged: textures, models, sounds, `.blend`, Unity and Unreal assets (the project's own kinds and paths when it sets them, else the team's lock kinds when it has them; the team or the project can turn agent locks off: docs/design/team-settings.md). Code never locks: it merges hunk by hunk; `--claim` only tells other agents you're on it. `agent setup` writes `.claude/settings.local.json` (a `PreToolUse` hook running `r3v hook pre-tool`, and `R3V_ACTOR` in `env`, merged with what is there; this copy's, never tracked) and, in the main copy, adds the agents' lines to `CLAUDE.md` (commit it); `workspace add --agent claude-code` sets a workspace up; the hook locks a file when the agent first changes it, or refuses the change saying who holds it. A commit by an agent changing a file another workspace holds, or one the person changed and hasn't committed, is refused (`files_locked_by_agent`); a person's commit never is. A lock is held until its branch is merged; one whose agent hasn't been heard of for 15 minutes is stale, and the next lock asked over it takes it. Kept on this computer only, beside the project's store (`.r3v/agent-locks`). See [design/agent-workspaces.md](design/agent-workspaces.md).
+Agent locks keep two agents (each in a workspace of the project) from changing the same file that can't be merged: textures, models, sounds, `.blend`, Unity and Unreal assets (the project's own kinds and paths when it sets them, else the team's lock kinds when it has them; the team or the project can turn agent locks off: docs/design/team-settings.md). Code never locks: it merges hunk by hunk; `--claim` only tells other agents you're on it (`lock` on such a file claims it instead, listed in `claimed_instead`). `agent setup` writes `.claude/settings.local.json` (a `PreToolUse` hook running `r3v hook pre-tool`, and `R3V_ACTOR` in `env`, merged with what is there; this copy's, never tracked) and, in the main copy, adds the agents' lines to `CLAUDE.md` (commit it); `workspace add --agent claude-code` sets a workspace up; the hook locks a file when the agent first changes it, or refuses the change saying who holds it. A commit by an agent changing a file another workspace holds, or one the person changed and hasn't committed, is refused (`files_locked_by_agent`); a person's commit never is. A lock protects work not committed, and work not yet merged into the branch the workspaces merge into (main, or a workspace's base): on a workspace's own branch it is held until that branch is merged; on a base branch (the main copy's, usually) a commit frees the copy's locks on what it committed (folder locks stay until unlocked). One whose agent hasn't been heard of for 15 minutes is stale, and the next lock asked over it takes it; `--take` takes over one sooner, when its holder is gone, with a reason that `locks` shows. Kept on this computer only, beside the project's store (`.r3v/agent-locks`). See [design/agent-workspaces.md](design/agent-workspaces.md).
 
 ## Steps: an agent's moves (Nightly)
 

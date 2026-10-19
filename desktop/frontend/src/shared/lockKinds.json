@@ -76,9 +76,15 @@
       "*.glb",
       "*.usd",
       "*.usdc",
-      "*.abc"
+      "*.abc",
+      "*.dae",
+      "*.usda",
+      "*.usdz",
+      "*.3ds",
+      "*.stl",
+      "*.ply"
     ],
-    "default": false
+    "default": true
   },
   {
     "id": "audio",

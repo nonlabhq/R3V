@@ -7,6 +7,9 @@ import (
 	"syscall"
 )
 
+// deniedErrnos say R3V may not write a path (fs.ErrPermission aside).
+var deniedErrnos = []error{syscall.EROFS, syscall.EISDIR, syscall.ENOTDIR}
+
 // lockFile takes an exclusive lock on path, released when it is closed or
 // this program ends.
 func lockFile(path string) (func(), error) {

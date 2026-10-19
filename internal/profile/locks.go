@@ -38,7 +38,10 @@ var LockKinds = []LockKind{
 	{"source-art", []string{"*.psd", "*.psb", "*.kra", "*.spp", "*.ma", "*.mb", "*.max", "*.c4d"}, true},
 	{"godot-text", []string{"*.tscn", "*.tres"}, false},
 	{"images", []string{"*.png", "*.jpg", "*.jpeg", "*.tga", "*.tif", "*.tiff", "*.exr", "*.hdr"}, false},
-	{"models", []string{"*.fbx", "*.obj", "*.gltf", "*.glb", "*.usd", "*.usdc", "*.abc"}, false},
+	// Models: two people (or agents) changing one lose a side at the merge,
+	// as with a .blend, so they lock by default too.
+	{"models", []string{"*.fbx", "*.obj", "*.gltf", "*.glb", "*.usd", "*.usdc", "*.abc",
+		"*.dae", "*.usda", "*.usdz", "*.3ds", "*.stl", "*.ply"}, true},
 	{"audio", []string{"*.wav", "*.aif", "*.aiff", "*.flac", "*.mp3", "*.ogg"}, false},
 	{"video", []string{"*.mp4", "*.mov", "*.mkv", "*.avi"}, false},
 }

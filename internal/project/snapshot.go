@@ -344,7 +344,11 @@ func (r *Repo) Snapshot(message string) (*Manifest, error) {
 	if err := r.setHead(m.ID); err != nil {
 		return nil, err
 	}
-	return m, ix.save()
+	if err := ix.save(); err != nil {
+		return m, err
+	}
+	r.releaseCommittedLocks(m, ix)
+	return m, nil
 }
 
 // workingManifest is the working files as a version after HEAD (not

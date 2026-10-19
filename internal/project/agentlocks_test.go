@@ -61,6 +61,8 @@ func TestAgentLocked(t *testing.T) {
 
 func TestAgentCommitRefused(t *testing.T) {
 	r := agentProject(t)
+	r.Config.Branch = "renderer" // a workspace's branch: its locks are held until merged
+	r.SaveConfig()
 	if _, err := r.AgentLockList().Take(other, []string{"tex/"}, agentlock.KindLock, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -180,12 +182,92 @@ func TestReleaseMergedLocks(t *testing.T) {
 	l := r.AgentLockList()
 	l.Take(other, []string{"tex/rock.png"}, agentlock.KindLock, nil)
 	l.Take(agentlock.Holder{Workspace: "main-copy", Branch: "main"}, []string{"models/"}, agentlock.KindLock, nil)
+	l.Take(agentlock.Holder{Workspace: "dev-copy", Branch: "dev"}, []string{"sfx/"}, agentlock.KindLock, nil)
+	r.saveWorkspaces([]WorkspaceEntry{{Folder: t.TempDir(), Branch: "ui", Base: "dev"}})
 	r.releaseMergedLocks("main")
+	r.releaseMergedLocks("dev") // a workspace's base: merging it in is catching up
 	r.releaseMergedLocks("renderer")
-	if all, _ := l.All(); len(all) != 1 || all[0].Branch != "main" {
+	if all, _ := l.All(); len(all) != 2 || all[0].Branch != "main" || all[1].Branch != "dev" {
 		t.Fatalf("left: %+v", all)
+	}
+}
+
+// On a base branch (the main copy's main here) a commit frees the locks
+// on what it committed: nothing merges main anywhere, so those locks would
+// otherwise stop every workspace until stale.
+func TestBaseBranchCommitReleases(t *testing.T) {
+	r := agentProject(t)
+	r.Actor = claudeCode
+	// First touch (the hook) of the model and the texture.
+	if _, err := r.TakeAgentLocks([]string{"models/ship.glb", "tex/rock.png", "tex/"}, agentlock.KindLock, "s"); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(r.Root, "models", "ship.glb"), []byte("ship 2"), 0o644)
+	if _, err := r.Snapshot("the main copy's agent"); err != nil {
+		t.Fatal(err)
+	}
+	// The model was committed; the folder lock stays until unlocked; the
+	// texture wasn't changed at all: nothing to protect either.
+	all, _ := r.AgentLockList().All()
+	if len(all) != 1 || all[0].Path != "tex/" {
+		t.Fatalf("left after the commit on main: %+v", all)
+	}
+	r.UnlockAgent([]string{"tex/"})
+	// A workspace can lock it right after.
+	if _, err := r.AgentLockList().Take(other, []string{"models/ship.glb"}, agentlock.KindLock, nil); err != nil {
+		t.Fatalf("a workspace after main's commit: %v", err)
+	}
+	r.AgentLockList().Unlock(other.Workspace, []string{"models/ship.glb"})
+
+	// Changed again, not committed yet: held.
+	r.TakeAgentLocks([]string{"models/ship.glb"}, agentlock.KindLock, "s")
+	os.WriteFile(filepath.Join(r.Root, "models", "ship.glb"), []byte("ship 3"), 0o644)
+	var refused *agentlock.Refused
+	if _, err := r.AgentLockList().Take(other, []string{"models/ship.glb"}, agentlock.KindLock, nil); !errors.As(err, &refused) {
+		t.Fatalf("uncommitted work on main is held: %v", err)
+	}
+	// Committed on main by whoever (the person here): freed as well.
+	r.Actor = nil
+	mustSnapshot(t, r, "the person's")
+	if all, _ := r.AgentLockList().All(); len(all) != 0 {
+		t.Fatalf("left: %+v", all)
+	}
+}
+
+// A base branch other than main: any workspace's.
+func TestIsBaseBranch(t *testing.T) {
+	r := agentProject(t)
+	if !r.isBaseBranch("main") || r.isBaseBranch("dev") {
+		t.Fatal("main only")
+	}
+	r.saveWorkspaces([]WorkspaceEntry{{Folder: t.TempDir(), Branch: "ui", Base: "dev"}})
+	if !r.isBaseBranch("dev") || r.isBaseBranch("ui") {
+		t.Fatal("a workspace's base")
 	}
 }
 
 // claudeCode is the actor an agent's commands have (the CLI sets it).
 var claudeCode = &Actor{Kind: "agent", Tool: "claude-code"}
+
+// The refusal says who holds each file, and where: "the project's main
+// copy" when it's main, not "another workspace".
+func TestLockedByAgentSaysWho(t *testing.T) {
+	r := agentProject(t)
+	id := r.workspaceID()
+	copies := r.LockCopies()
+	if c := copies[id]; !c.Main || c.Folder != r.Root {
+		t.Fatalf("this copy: %+v", copies)
+	}
+	err := r.LockedByAgent([]agentlock.Lock{
+		{Path: "Assets/Scenes/Main.unity", Workspace: id, Branch: "main", Actor: "claude-code"},
+		{Path: "tex/", Workspace: other.Workspace, Branch: other.Branch, Actor: other.Actor},
+		{Path: "models/ship.glb", Workspace: id, Branch: "main", Person: true},
+	})
+	want := "files locked by another copy of this project: " +
+		"Assets/Scenes/Main.unity is locked by agent claude-code in the project's main copy (workspace " + id[:8] + ") on branch main; " +
+		"tex/ is locked by agent claude-code in workspace 01234567 on branch renderer; " +
+		"models/ship.glb is changed, not committed, by the person in the project's main copy (workspace " + id[:8] + ")"
+	if err.Error() != want {
+		t.Fatalf("got  %s\nwant %s", err, want)
+	}
+}

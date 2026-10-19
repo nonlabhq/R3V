@@ -131,6 +131,45 @@ func TestStaleTakeover(t *testing.T) {
 	}
 }
 
+// A holder that's gone before its locks went stale: taken over on
+// purpose, the reason and the holder kept.
+func TestTakeOver(t *testing.T) {
+	l, _ := testList(t)
+	if _, err := l.Take(ws1, []string{"a.png", "tex/"}, KindLock, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := l.TakeOver(ws2, []string{"a.png"}, " ", nil); err == nil {
+		t.Fatal("a takeover without a reason")
+	}
+	// The person's changes still win: nothing taken.
+	extra := []Lock{{Path: "tex/b.png", Kind: KindLock, Workspace: "person", Person: true}}
+	var refused *Refused
+	if _, err := l.TakeOver(ws2, []string{"a.png", "tex/b.png"}, "gone", extra); !errors.As(err, &refused) {
+		t.Fatalf("the person's: %v", err)
+	}
+	if all, _ := l.All(); len(all) != 2 || all[0].Workspace != ws1.Workspace {
+		t.Fatalf("refused: nothing taken over: %+v", all)
+	}
+	res, err := l.TakeOver(ws2, []string{"a.png", "tex/b.png"}, "its session ended", nil)
+	if err != nil || len(res.TakenOver) != 2 || len(res.Taken) != 2 {
+		t.Fatalf("take over: %+v %v", res, err)
+	}
+	all, _ := l.All()
+	if len(all) != 2 || paths(all) != "a.png,tex/b.png" {
+		t.Fatalf("after: %+v", all)
+	}
+	for _, lk := range all {
+		if lk.Workspace != ws2.Workspace || lk.Reason != "its session ended" || !strings.Contains(lk.TakenFrom, "renderer") {
+			t.Fatalf("recorded: %+v", lk)
+		}
+	}
+	// Nothing in the way: an ordinary lock, no reason kept.
+	res, err = l.TakeOver(ws2, []string{"c.png"}, "gone", nil)
+	if err != nil || len(res.TakenOver) != 0 || res.Taken[0].Reason != "" {
+		t.Fatalf("free: %+v %v", res, err)
+	}
+}
+
 func TestClaims(t *testing.T) {
 	l, _ := testList(t)
 	if _, err := l.Take(ws1, []string{"src/renderer/"}, KindClaim, nil); err != nil {

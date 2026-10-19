@@ -32,14 +32,78 @@ func (r *Repo) agentTool() string {
 	return ""
 }
 
-// ErrLockedByAgent is a commit refused because another workspace (an
-// agent's, or the person's changes) holds files it changes.
+// ErrLockedByAgent is a commit refused because another copy of the
+// project on this computer (an agent's workspace, or the person's changes)
+// holds files it changes.
 type ErrLockedByAgent struct {
 	Locks []agentlock.Lock
+	// Copies: the project's copies here by workspace id, to say which
+	// holds a lock (the main copy, or a workspace's folder).
+	Copies map[string]LockCopy
+}
+
+// LockCopy is a copy of the project on this computer that may hold locks.
+type LockCopy struct {
+	Folder string
+	Main   bool // the project's main copy, not a workspace
 }
 
 func (e *ErrLockedByAgent) Error() string {
-	return "files held by another workspace: " + (&agentlock.Refused{Locks: e.Locks}).Error()
+	var b strings.Builder
+	b.WriteString("files locked by another copy of this project: ")
+	for i, l := range e.Locks {
+		if i > 0 {
+			b.WriteString("; ")
+		}
+		b.WriteString(l.Path + " is " + HolderOf(l, e.Copies))
+	}
+	return b.String()
+}
+
+// HolderOf says who holds l, and where: "locked by claude-code in the
+// project's main copy (workspace 8e314ecc) on branch main". Without its
+// copy in copies, its workspace id alone.
+func HolderOf(l agentlock.Lock, copies map[string]LockCopy) string {
+	where := "workspace " + short8(l.Workspace)
+	if c, ok := copies[l.Workspace]; ok {
+		if c.Main {
+			where = "the project's main copy (" + where + ")"
+		} else if c.Folder != "" {
+			where += " (" + c.Folder + ")"
+		}
+	}
+	if l.Person {
+		return "changed, not committed, by the person in " + where
+	}
+	who := "an agent"
+	if l.Actor != "" {
+		who = "agent " + l.Actor
+	}
+	s := "locked by " + who + " in " + where
+	if l.Branch != "" {
+		s += " on branch " + l.Branch
+	}
+	return s
+}
+
+func short8(id string) string { return id[:min(8, len(id))] }
+
+// LockedByAgent is the refusal for locks others hold, saying where each
+// holder is.
+func (r *Repo) LockedByAgent(locks []agentlock.Lock) *ErrLockedByAgent {
+	return &ErrLockedByAgent{Locks: locks, Copies: r.LockCopies()}
+}
+
+// LockCopies are this project's copies on this computer by workspace id
+// (this one included).
+func (r *Repo) LockCopies() map[string]LockCopy {
+	out := map[string]LockCopy{}
+	for _, o := range append([]*Repo{r}, r.otherCopies()...) {
+		if id := o.Config.WorkspaceID; id != "" {
+			out[id] = LockCopy{Folder: o.Root, Main: !o.IsWorkspace()}
+		}
+	}
+	return out
 }
 
 // AgentLockList is the project's agent lock list on this computer, beside
@@ -133,6 +197,19 @@ func (r *Repo) TakeAgentLocks(paths []string, kind, session string) (agentlock.R
 		}
 	}
 	return r.AgentLockList().Take(r.AgentHolder(session), paths, kind, person)
+}
+
+// TakeOverAgentLocks locks paths for this workspace, taking over the locks
+// of others in the way (agentlock.List.TakeOver): their holder is gone.
+// The person's uncommitted changes still refuse an agent.
+func (r *Repo) TakeOverAgentLocks(paths []string, reason, session string) (agentlock.Result, error) {
+	var person []agentlock.Lock
+	if r.agentTool() != "" {
+		if m := r.personCopy(); m != nil {
+			person = r.personHeld(m, paths)
+		}
+	}
+	return r.AgentLockList().TakeOver(r.AgentHolder(session), paths, reason, person)
 }
 
 // UnlockAgent takes back this workspace's own locks and claims on paths.
@@ -316,17 +393,68 @@ func (r *Repo) checkAgentLocks(m *Manifest) error {
 	_, err := r.TakeAgentLocks(changed, agentlock.KindLock, "")
 	var refused *agentlock.Refused
 	if errors.As(err, &refused) {
-		return &ErrLockedByAgent{Locks: refused.Locks}
+		return r.LockedByAgent(refused.Locks)
 	}
 	return err
 }
 
 // releaseMergedLocks frees the locks held for a branch merged here: its
-// conflicts were settled by the merge. Not main's: a workspace merging main
-// in is catching up, not landing.
+// conflicts were settled by the merge. Not a base branch's: a workspace
+// merging its base in is catching up, not landing, and a base branch's
+// locks guard uncommitted work only (releaseCommittedLocks).
 func (r *Repo) releaseMergedLocks(branch string) {
-	if !AgentLocks || branch == "main" || branch == "" {
+	if !AgentLocks || branch == "" || r.isBaseBranch(branch) {
 		return
 	}
 	r.AgentLockList().ReleaseBranch(branch)
+}
+
+// isBaseBranch says whether workspaces merge into branch: main, or the
+// branch any workspace of the project here was made from. A lock held on
+// a base branch is never released by a merge (nothing merges it into
+// anything), so a commit there releases it.
+func (r *Repo) isBaseBranch(branch string) bool {
+	if branch == "main" {
+		return true
+	}
+	list, _ := r.LocalWorkspaces()
+	for _, e := range list {
+		if e.Base == branch {
+			return true
+		}
+	}
+	return false
+}
+
+// releaseCommittedLocks frees, after a commit on a base branch, this
+// copy's locks on files now as committed: a lock there protects
+// uncommitted work, and once it's a version on the branch the others merge
+// from, there's nothing left to protect (a workspace changing it later
+// merges it in first, or decides at the merge). Folder locks stay until
+// unlocked. A stop before this leaves the locks, freed by the next commit
+// here or gone stale.
+func (r *Repo) releaseCommittedLocks(m *Manifest, ix *index) {
+	branch := r.BranchName()
+	if !AgentLocks || !r.isBaseBranch(branch) {
+		return
+	}
+	list := r.AgentLockList()
+	all, err := list.All()
+	if err != nil {
+		return
+	}
+	me := r.workspaceID()
+	files := m.FileMap()
+	var done []string
+	for _, lk := range all {
+		if lk.Workspace != me || lk.Branch != branch || lk.Kind != agentlock.KindLock || strings.HasSuffix(lk.Path, "/") {
+			continue
+		}
+		if !r.changedHere(lk.Path, files, ix) {
+			done = append(done, lk.Path)
+		}
+	}
+	if len(done) > 0 {
+		list.Unlock(me, done)
+	}
 }

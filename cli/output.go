@@ -6,15 +6,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/blob"
 	"github.com/nonlabhq/r3v/internal/cloud"
+	"github.com/nonlabhq/r3v/internal/flock"
 	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
+	"github.com/nonlabhq/r3v/internal/teams"
 )
 
 // Output for programs and AI agents: with --json, a command that supports
@@ -36,8 +39,8 @@ var jsonMode bool
 
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
-	"version": true, "backup": true, "switch": true, "goto": true, "checkout": true, "parked": true,
-	"discard": true, "rules": true, "profile": true} // (rules: only rules ignore)
+	"version": true, "backup": true, "init": true, "switch": true, "goto": true, "checkout": true, "parked": true,
+	"discard": true, "rules": true, "profile": true, "verify": true} // (rules: only rules ignore)
 
 // stripJSON takes --json (or -json) out of args.
 func stripJSON(args []string) ([]string, bool) {
@@ -124,7 +127,10 @@ type cliError struct {
 	Holder    *holderJSON // project_busy: who holds the project
 	// Suggestion: the branch meant, when one asked for isn't there.
 	Suggestion string
-	Deleted    *deletedJSON // project_deleted: what happened
+	// Path: no_write_access: where R3V may not write.
+	Path    string
+	Next    []nextJSON   // not_connected: how to connect the project
+	Deleted *deletedJSON // project_deleted: what happened
 }
 
 // deletedJSON is what the team's log tells of a project deleted from its
@@ -171,6 +177,10 @@ type lockJSON struct {
 	Workspace string `json:"workspace,omitempty"`
 	Branch    string `json:"branch,omitempty"`
 	Actor     string `json:"actor,omitempty"`
+	// Folder, MainCopy: files_locked_by_agent: the holder's copy here (the
+	// project's main copy: main_copy true).
+	Folder   string `json:"folder,omitempty"`
+	MainCopy bool   `json:"main_copy,omitempty"`
 }
 
 func (e *cliError) Error() string { return e.Err.Error() }
@@ -187,6 +197,10 @@ type errorJSON struct {
 	Holder    *holderJSON    `json:"holder,omitempty"`
 	// Suggestion: the closest branch to one asked for that isn't there.
 	Suggestion string `json:"suggestion,omitempty"`
+	// Path: where R3V may not write (no_write_access).
+	Path string `json:"path,omitempty"`
+	// Next: what to run (not_connected: the ways to connect the project).
+	Next []nextJSON `json:"next,omitempty"`
 	// Deleted: project_deleted's details.
 	Deleted *deletedJSON `json:"deleted,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
@@ -262,11 +276,20 @@ func classify(err error) *cliError {
 	var byAgent *project.ErrLockedByAgent
 	if errors.As(err, &byAgent) {
 		ce := &cliError{Code: "files_locked_by_agent", Exit: exitError, Err: err,
-			Hint: "another workspace here holds these files: leave them, or ask the user (who can break the lock)"}
+			Hint: "another copy of the project here holds these files: leave them, or ask the user (who can break the lock)"}
 		for _, l := range byAgent.Locks {
-			ce.Locks = append(ce.Locks, lockJSONOf(l))
+			ce.Locks = append(ce.Locks, lockJSONIn(l, byAgent.Copies))
+			if c := byAgent.Copies[l.Workspace]; c.Main && !l.Person {
+				ce.Hint = "the project's main copy holds some of these files (for work there not committed yet: " +
+					"a commit there frees a file's lock): leave them, or ask the user (who can unlock them there, or break the lock)"
+			}
 		}
 		return ce
+	}
+	var noAccess *flock.NoAccessError
+	if errors.As(err, &noAccess) { // (before busy: no one holds it, waiting won't help)
+		return &cliError{Code: "no_write_access", Exit: exitError, Err: err, Path: noAccess.Path,
+			Hint: noAccessHint(noAccess.Path)}
 	}
 	var busy *project.BusyError
 	if errors.As(err, &busy) {
@@ -291,7 +314,11 @@ func classify(err error) *cliError {
 	}
 	for _, c := range codes {
 		if errors.Is(err, c.err) {
-			return &cliError{Code: c.code, Exit: c.exit, Err: err, Hint: c.hint}
+			ce := &cliError{Code: c.code, Exit: c.exit, Err: err, Hint: c.hint}
+			if c.err == project.ErrNoRemote {
+				ce.Next = connectSteps()
+			}
+			return ce
 		}
 	}
 	if remote.Transient(err) {
@@ -319,18 +346,51 @@ func deletedError(err error, gone *project.DeletedError) *cliError {
 	if !gone.Time.IsZero() {
 		d.Time = gone.Time.UTC().Format(time.RFC3339)
 	}
-	hint := "the versions stay committed here; ask the user what to do: "
-	switch {
-	case gone.MovedToTeam != "":
-		hint += fmt.Sprintf("`r3v remote --team %q` points this copy at the team it moved to (its versions shared there by the next commit)", gone.MovedTo)
-	case gone.MovedTo != "":
-		hint += fmt.Sprintf("it moved to %s, which this computer hasn't joined: join it in R3V, then `r3v remote --team %q`", gone.MovedTo, gone.MovedTo)
-	case gone.NotAllowed:
-		hint += "an owner or admin of the team can bring it back (`r3v project restore`)"
-	default:
-		hint += "an owner or admin of the team can bring it back, with its history: `r3v project restore`"
+	next := deletedSteps(gone)
+	hint := "the versions stay committed here; ask the user what to do (never on your own)"
+	if len(next) > 0 {
+		hint += ": " + next[0].Why + " (`" + next[0].Command + "`)"
 	}
-	return &cliError{Code: "project_deleted", Exit: exitError, Err: err, Hint: hint, Deleted: d}
+	return &cliError{Code: "project_deleted", Exit: exitError, Err: err, Hint: hint, Deleted: d, Next: next}
+}
+
+// deletedSteps are the ways out of project_deleted, the person's to pick:
+// point this copy at the team the project moved to, else bring it back.
+func deletedSteps(gone *project.DeletedError) []nextJSON {
+	var out []nextJSON
+	switch {
+	case gone.MovedToTeam != "" && teamByName:
+		out = append(out, nextJSON{"r3v remote --team " + shellArg(gone.MovedTo),
+			fmt.Sprintf("point this copy at %s, where the project moved: the next commit shares its versions there", gone.MovedTo)})
+	case gone.MovedToTeam != "":
+		out = append(out, nextJSON{"r3v status",
+			fmt.Sprintf("the project moved to %s: in the R3V app, Share now › Point this copy at %s", gone.MovedTo, gone.MovedTo)})
+	case gone.MovedTo != "":
+		out = append(out, nextJSON{"r3v teams",
+			fmt.Sprintf("the project moved to %s, which this computer hasn't joined: the person joins it in R3V, then points this copy at it", gone.MovedTo)})
+	}
+	if !gone.NotAllowed {
+		out = append(out, nextJSON{"r3v project restore",
+			fmt.Sprintf("or bring it back to %s with its history, for everyone in it (R3V Cloud: owners and admins)", gone.Team)})
+	}
+	return out
+}
+
+// noAccessHint says what to do about a path R3V may not write: its own
+// settings folder can be put elsewhere (R3V_CONFIG_DIR), a project's can't.
+func noAccessHint(path string) string {
+	if dir := teams.Dir(); inFolder(path, dir) {
+		return "R3V keeps its settings (teams, keys) in " + dir + " and may not write there (a sandbox, or a read-only folder): " +
+			"trying again won't help. Give it write access, or set R3V_CONFIG_DIR to a folder it can write " +
+			"(teams joined in the usual folder aren't there: the user copies teams.json into it, or joins again)"
+	}
+	return "R3V may not write there (a sandbox, or a read-only folder): trying again won't help; the user must give it write access"
+}
+
+// inFolder: path is dir or in it.
+func inFolder(path, dir string) bool {
+	rel, err := filepath.Rel(dir, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
 }
 
 // fail reports err (text on stderr, or JSON on stdout) and returns the exit
@@ -340,12 +400,15 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Deleted: ce.Deleted, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Deleted: ce.Deleted, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
-	if ce.Code == "merge_conflict" || ce.Code == "project_deleted" { // (how to go on isn't in the message)
+	if ce.Code == "merge_conflict" || ce.Code == "no_write_access" || ce.Code == "project_deleted" { // (how to go on isn't in the message)
 		fmt.Fprintln(os.Stderr, ce.Hint)
+	}
+	for _, s := range ce.Next {
+		fmt.Fprintf(os.Stderr, "  %s\n      %s\n", s.Command, s.Why)
 	}
 	return ce.Exit
 }

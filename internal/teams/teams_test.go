@@ -1,6 +1,7 @@
 package teams
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/flock"
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
@@ -187,5 +189,20 @@ func TestSaveWhileRead(t *testing.T) {
 	}
 	if s, _ := Load(); len(s.Teams) != 2 {
 		t.Fatalf("teams = %+v", s.Teams)
+	}
+}
+
+// A settings folder R3V may not write (a sandbox's, or a file in its
+// place) is said so, naming it: not "locked by another R3V".
+func TestUnwritableDirIsNoAccess(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "R3V")
+	if err := os.WriteFile(file, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("R3V_CONFIG_DIR", file)
+	_, err := Update(func(*Store) error { return nil })
+	var na *flock.NoAccessError
+	if !errors.As(err, &na) || errors.Is(err, flock.ErrBusy) || !strings.Contains(err.Error(), file) {
+		t.Fatalf("got %v, want no access to %s", err, file)
 	}
 }

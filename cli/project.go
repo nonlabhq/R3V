@@ -212,7 +212,7 @@ func cmdInit(args []string) error {
 		return err
 	}
 	ensureRules(r)
-	fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
+	out := initJSON{Folder: r.Root, Project: r.Config.Name, Author: r.Config.Author}
 	if team != nil {
 		wait := 30 * time.Second
 		if waitGiven {
@@ -226,15 +226,36 @@ func cmdInit(args []string) error {
 		if err := joinTeam(r, team); err != nil {
 			return err
 		}
-		fmt.Printf("it is %s's: r3v commit -m \"first version\" shares it\n", team.Name)
-		return nil
-	}
-	if teamByName {
-		fmt.Println("next: r3v remote --team NAME (r3v teams lists them), then r3v commit -m \"first version\"")
+		out.Team = team.Name
 	} else {
-		fmt.Println("next: r3v remote <connection-code>, then r3v commit -m \"first version\"")
+		out.Next = connectSteps()
 	}
+	out.Next = append(out.Next, agentSteps(r.Root)...)
+	first := nextJSON{`r3v commit -m "first version"`, "commit the first version: shared with the team once the project is connected, on this computer only until then"}
+	if team != nil {
+		first.Why = "commit the first version and share it with " + team.Name
+	}
+	out.Next = append(out.Next, first)
+	result("init", out, func() {
+		fmt.Printf("initialized r3v project in %s (author %s)\n", r.Root, r.Config.Author)
+		if team != nil {
+			fmt.Printf("it is %s's project\n", team.Name)
+		} else {
+			fmt.Println("not connected to a team yet: versions committed now stay on this computer")
+		}
+		printNext("next:", out.Next)
+	})
 	return nil
+}
+
+// initJSON is `r3v init --json`: the project made, its team ("" for
+// none) and what to run next.
+type initJSON struct {
+	Folder  string     `json:"folder"`
+	Project string     `json:"project"`
+	Author  string     `json:"author"`
+	Team    string     `json:"team"`
+	Next    []nextJSON `json:"next"`
 }
 
 // statusJSON is `r3v status --json`.
@@ -243,10 +264,14 @@ type statusJSON struct {
 	Branch  string `json:"branch"`
 	Version string `json:"version"` // the version the files are on ("" before the first)
 	// OnOlderVersion: checked out an older version (Latest is the newest).
-	OnOlderVersion bool         `json:"on_older_version"`
-	Latest         string       `json:"latest,omitempty"`
-	Team           *teamJSON    `json:"team"` // null when not in a team
-	Changes        []changeJSON `json:"changes"`
+	OnOlderVersion bool      `json:"on_older_version"`
+	Latest         string    `json:"latest,omitempty"`
+	Team           *teamJSON `json:"team"` // null when not in a team
+	// Connected: the project is in a team (false: its versions stay on
+	// this computer; Next says how to connect it).
+	Connected bool         `json:"connected"`
+	Next      []nextJSON   `json:"next,omitempty"`
+	Changes   []changeJSON `json:"changes"`
 	// InUse: files another program holds (Live writing a Freeze): read once
 	// they are free, counted as in the version you are on until then.
 	InUse []string `json:"in_use"`
@@ -259,9 +284,15 @@ type statusJSON struct {
 	Base *baseJSON `json:"base,omitempty"`
 	// Warnings: what is worth a look before committing (see warningJSON).
 	Warnings []warningJSON `json:"warnings"`
+	// Unshared: versions committed here the team's branch doesn't have
+	// (commit --local); no other copy sees them until shared. Absent
+	// without a team, or when it can't be reached.
+	Unshared *int `json:"unshared,omitempty"`
 }
 
 // warningJSON is a word before committing, never a refusal. Code
+// "not_connected": the project is in no team, what is committed stays on
+// this computer (Reason says so; the other fields are empty). Code
 // "looks_built": a folder new in the changes looks like a build's output
 // (named like a folder the rules leave out, or full of built files or
 // bytes); committed, it stays in the team's storage for good. Kind says
@@ -279,6 +310,12 @@ type warningJSON struct {
 	Bytes   int64  `json:"bytes"`
 	Rule    string `json:"rule"`
 	Pattern string `json:"pattern"`
+	// Code "unshared_versions" (merge, update: unshared.go): another copy
+	// here with versions not shared, which this couldn't see; Reason says
+	// so in English.
+	Workspace string `json:"workspace,omitempty"`
+	Branch    string `json:"branch,omitempty"`
+	Count     int    `json:"count,omitempty"`
 }
 
 func builtWarnings(found []project.BuiltFolder) []warningJSON {
@@ -290,9 +327,13 @@ func builtWarnings(found []project.BuiltFolder) []warningJSON {
 	return out
 }
 
-// printWarnings says what each warning is about, and the rule to add.
+// printWarnings says what each looks_built warning is about, and the rule
+// to add (the others are said where they belong).
 func printWarnings(ws []warningJSON, committed bool) {
 	for _, w := range ws {
+		if w.Code != "looks_built" {
+			continue
+		}
 		files := fmt.Sprintf("%d files", w.Files)
 		if w.Files == 1 {
 			files = "1 file"
@@ -378,6 +419,11 @@ func cmdStatus(args []string) error {
 			archived, _ := remote.ArchivedProjects(c)
 			_, out.Team.Archived = archived[r.Config.ProjectID]
 		}
+		if out.Team.Error == "" {
+			if n, err := r.Unshared(); err == nil {
+				out.Unshared = &n
+			}
+		}
 		if c, err := r.Client(); err == nil && out.Team.Error == "" && remote.ProjectSections {
 			ss, _ := remote.Sections(c)
 			if i := remote.FindSection(ss, remote.SectionOf(ss, r.Config.ProjectID)); i >= 0 {
@@ -400,6 +446,10 @@ func cmdStatus(args []string) error {
 		return err
 	}
 	out.Warnings = builtWarnings(built)
+	if out.Connected = connected(r); !out.Connected {
+		out.Warnings = append(out.Warnings, notConnected())
+		out.Next = connectSteps()
+	}
 	for _, c := range changes {
 		ch := changeJSON{Path: c.Path, Status: c.Status, From: c.From, Edited: c.Edited}
 		if c.SetDiff != nil {
@@ -426,12 +476,17 @@ func printStatus(r *project.Repo, s statusJSON) {
 	}
 	switch t := s.Team; {
 	case t == nil:
+		fmt.Println("not connected to a team: versions committed here stay on this computer")
+		defer printNext("to connect it:", s.Next)
 	case !t.Reachable:
 		fmt.Printf("team: not reachable (%s)\n", t.Error)
 	case t.Incoming:
 		fmt.Println("team: new versions saved by others (run `r3v update`)")
 	default:
 		fmt.Println("team: up to date")
+	}
+	if s.Unshared != nil && *s.Unshared > 0 {
+		fmt.Printf("%d version(s) committed here not shared yet: the team and the project's other copies don't see them; `r3v commit` shares them\n", *s.Unshared)
 	}
 	printSuggestions(r)
 	for _, p := range s.InUse {
@@ -685,6 +740,12 @@ func cmdVerify(args []string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	if jsonMode {
+		out := verifyOf(rep)
+		out.TeamUnreachable = r.Config.Remote != nil && !rep.TeamChecked
+		result("verify", out, nil)
+		return 0, nil
+	}
 	open := 0
 	for _, p := range rep.Problems {
 		what := p.ID[:min(10, len(p.ID))]
@@ -714,6 +775,50 @@ func cmdVerify(args []string) (int, error) {
 		return 1, nil
 	}
 	return 0, nil
+}
+
+// verifyJSON is `r3v verify --json`: what was checked, and where the files
+// are (few kept here after sharing is expected: team_only_files).
+type verifyJSON struct {
+	Versions        int   `json:"versions"`       // every version record on this computer
+	InHistory       int   `json:"in_history"`     // of them, this branch's history (as log lists it)
+	OtherVersions   int   `json:"other_versions"` // other branches' or workspaces', or R3V's own
+	FolderLists     int   `json:"folder_lists"`   // checked
+	LocalFiles      int   `json:"local_files"`    // stored on this computer, read again
+	LocalBytes      int64 `json:"local_bytes"`
+	TeamOnlyFiles   int   `json:"team_only_files"`   // only in the team's storage (downloaded when needed)
+	FolderOnlyFiles int   `json:"folder_only_files"` // only in the project folder
+	TeamChecked     bool  `json:"team_checked"`
+	// TeamUnreachable: in a team whose storage couldn't be asked: files only
+	// it has weren't checked.
+	TeamUnreachable bool          `json:"team_unreachable"`
+	Repaired        bool          `json:"repaired"` // --repair was given
+	Problems        []problemJSON `json:"problems"`
+	OpenProblems    int           `json:"open_problems"` // not repaired (text: exit 1)
+	Summary         string        `json:"summary"`
+}
+
+type problemJSON struct {
+	Kind   string `json:"kind"` // version, folder-list, file
+	ID     string `json:"id"`
+	Path   string `json:"path,omitempty"`
+	Detail string `json:"detail"`
+	Fixed  bool   `json:"fixed"`
+	How    string `json:"how,omitempty"`
+}
+
+func verifyOf(rep *project.VerifyReport) verifyJSON {
+	out := verifyJSON{Versions: rep.Versions, InHistory: rep.InHistory, OtherVersions: rep.Versions - rep.InHistory,
+		FolderLists: rep.Folders, LocalFiles: rep.Files, LocalBytes: rep.Bytes, TeamOnlyFiles: rep.TeamOnly,
+		FolderOnlyFiles: rep.InFolder, TeamChecked: rep.TeamChecked, Repaired: rep.Repaired,
+		Problems: []problemJSON{}, Summary: rep.Summary()}
+	for _, p := range rep.Problems {
+		out.Problems = append(out.Problems, problemJSON{Kind: p.Kind, ID: p.ID, Path: p.Path, Detail: p.Detail, Fixed: p.Fixed, How: p.How})
+		if !p.Fixed {
+			out.OpenProblems++
+		}
+	}
+	return out
 }
 
 func cmdStorageCleanup(args []string) error {

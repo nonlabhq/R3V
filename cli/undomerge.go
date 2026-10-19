@@ -69,6 +69,7 @@ func cmdUndoMerge(args []string) error {
 		return err
 	}
 	defer tidy(r)
+	before := r.Head()
 	m, res, err := r.UndoMerge(pos[0], *message, opts)
 	if err != nil {
 		return undoConflict(err)
@@ -76,6 +77,7 @@ func cmdUndoMerge(args []string) error {
 	out := syncJSON{Action: "local", Merged: []string{}, Relink: []string{}} // (in no team)
 	if res != nil {
 		out = syncOf(res)
+		out.ReopenSets = r.SetsChanged(before, r.Head()) // (an undo rewrites what the merge brought in)
 	}
 	if m != nil {
 		v := versionOf(m, nil)
@@ -87,8 +89,11 @@ func cmdUndoMerge(args []string) error {
 		}
 		if res != nil {
 			printMerge(res)
-			if res.Action == "published" {
+			switch {
+			case res.Action == "published" && out.ReopenSets:
 				fmt.Println("shared with the team; reopen the set in Live")
+			case res.Action == "published":
+				fmt.Println("shared with the team")
 			}
 		}
 	})
