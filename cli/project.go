@@ -743,6 +743,14 @@ func cmdVerify(args []string) (int, error) {
 	if jsonMode {
 		out := verifyOf(rep)
 		out.TeamUnreachable = r.Config.Remote != nil && !rep.TeamChecked
+		if out.OpenProblems > 0 { // (exit 1, as in text: ok must say so too)
+			hint := "show the user error.details.problems; r3v verify --repair brings back what can be"
+			if *repair {
+				hint = "show the user error.details.problems: what --repair couldn't bring back"
+			}
+			return 0, &cliError{Code: "verify_problems", Exit: exitError, Details: out, Hint: hint,
+				Err: fmt.Errorf("%d problem(s) not repaired: %s", out.OpenProblems, out.Summary)}
+		}
 		result("verify", out, nil)
 		return 0, nil
 	}
@@ -794,7 +802,7 @@ type verifyJSON struct {
 	TeamUnreachable bool          `json:"team_unreachable"`
 	Repaired        bool          `json:"repaired"` // --repair was given
 	Problems        []problemJSON `json:"problems"`
-	OpenProblems    int           `json:"open_problems"` // not repaired (text: exit 1)
+	OpenProblems    int           `json:"open_problems"` // not repaired (then exit 1: verify_problems)
 	Summary         string        `json:"summary"`
 }
 

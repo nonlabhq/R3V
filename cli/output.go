@@ -130,6 +130,9 @@ type cliError struct {
 	// Path: no_write_access: where R3V may not write.
 	Path string
 	Next []nextJSON // not_connected: how to connect the project
+	// Details: what the command found, as its result would have said
+	// (verify_problems: verify's result).
+	Details any
 }
 
 // holderJSON is who holds a project's lock, as it recorded itself (Running
@@ -185,6 +188,8 @@ type errorJSON struct {
 	Path string `json:"path,omitempty"`
 	// Next: what to run (not_connected: the ways to connect the project).
 	Next []nextJSON `json:"next,omitempty"`
+	// Details: what the command found (verify_problems: verify's result).
+	Details any `json:"details,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
 	// having failed after.
 	Recovered  *recoveredJSON  `json:"recovered,omitempty"`
@@ -340,7 +345,7 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Details: ce.Details, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
