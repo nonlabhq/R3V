@@ -10,12 +10,14 @@
   import ProjectMenu from "./ProjectMenu.svelte";
   import TeamActivity from "$shared/team/TeamActivity.svelte";
   import { appTeamSource } from "./teamSource";
+  import { toast } from "./notify.svelte";
+  import { errorText } from "./api";
 
   // A team's home (a click on the team in the sidebar): who's in it, what
   // happened lately, and its projects (those on this computer, then those
   // only on the cloud storage; a project's workspaces counted on it, not
   // listed) or its settings.
-  let { overview, team, projects, open, onopen, onadd, onsettings, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
+  let { overview, team, projects, open, onopen, onadd, onsettings, onarchive, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
     projects: TeamProject[];
@@ -23,6 +25,7 @@
     onopen: (p: TeamProject) => void;
     onadd: () => void;
     onsettings: (p: TeamProject) => void; // a project's settings (from its menu)
+    onarchive?: (p: TeamProject) => void; // Archive project… (in its menu; none: not offered)
     adding?: boolean;
     reload: () => Promise<void>;
     canMove?: boolean;
@@ -40,12 +43,29 @@
 
   let kind = $derived(storageKind(team));
   let mains = $derived(projects.filter((p) => !p.workspace));
-  let here = $derived(mains.filter((p) => p.status !== "remote"));
-  let away = $derived(mains.filter((p) => p.status === "remote"));
+  // Archived for the team (docs/design/archive.md): listed apart, folded.
+  let active = $derived(mains.filter((p) => !p.archived));
+  let archived = $derived(mains.filter((p) => p.archived));
+  let here = $derived(active.filter((p) => p.status !== "remote"));
+  let away = $derived(active.filter((p) => p.status === "remote"));
+  let archivedOpen = $state(false);
+  let unarchiving = $state("");
+  async function unarchive(p: TeamProject) {
+    unarchiving = p.id;
+    try {
+      await api.UnarchiveProject(team.id, p.id);
+      toast(t("“{name}” is back for the team", { name: p.name }), "ok");
+      await reload();
+    } catch (e) {
+      toast(errorText(e), "error");
+    } finally {
+      unarchiving = "";
+    }
+  }
   const same = (a = "", b = "") => !!a && !!b && a.replace(/[\/]+$/, "").toLowerCase() === b.replace(/[\/]+$/, "").toLowerCase();
   const spaces = (p: TeamProject) => projects.filter((w) => w.workspace && same(w.mainRoot, p.root)).length;
   let summary = $derived([members.length ? tn(members.length, "{n} member", "{n} members") : "",
-    tn(mains.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
+    tn(active.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
   // A version from the activity, in its project's graph.
   function openVersion(id: string, version: string) {
     const p = mains.find((x) => x.id === id);
@@ -126,7 +146,7 @@
         </section>
       {/if}
       <section class="pane projects">
-        <h2 class="band flat-only">{t("Projects")}<span class="end">{mains.length}</span></h2>
+        <h2 class="band flat-only">{t("Projects")}<span class="end">{active.length}</span></h2>
         <div class="pane-in">
           <h3>{t("On this computer")}<span class="count">{here.length}</span></h3>
           <div class="cards">
@@ -146,11 +166,30 @@
               {#each away as p (p.id)}{@render card(p)}{/each}
             </div>
           {/if}
+          {#if archived.length}
+            <!-- archived for the team (docs/design/archive.md): folded -->
+            <h3><button class="fold" aria-expanded={archivedOpen} onclick={() => (archivedOpen = !archivedOpen)}>
+              <span class="caret" aria-hidden="true">{archivedOpen ? "▾" : "▸"}</span>{t("Archived")}<span class="count">{archived.length}</span></button>
+              <span class="hint">{t("Hidden for everyone in the team; nothing deleted")}</span></h3>
+            {#if archivedOpen}
+              <div class="cards archived">
+                {#each archived as p (p.id)}
+                  <div class="archived-card">
+                    {@render card(p)}
+                    {#if team.canArchive}
+                      <button class="unarchive" onclick={() => unarchive(p)} disabled={unarchiving === p.id}>{t("Unarchive")}</button>
+                    {/if}
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          {/if}
         </div>
       </section>
     </div>
     {#if menu}
-      <ProjectMenu p={menu.p} at={menu.at} opener={menu.opener} {onsettings} onclose={() => (menu = null)} />
+      <ProjectMenu p={menu.p} at={menu.at} opener={menu.opener} {onsettings} onarchive={team.canArchive ? onarchive : undefined}
+        onclose={() => (menu = null)} />
     {/if}
   {:else}
     <div class="body settings">
@@ -219,5 +258,14 @@
   .slot:hover .more, .slot.on .more, .more:focus-visible { opacity: 1; }
   .slot:hover .card :is(.tag, .cloud), .slot.on .card :is(.tag, .cloud), .slot:has(.more:focus-visible) .card :is(.tag, .cloud) { visibility: hidden; }
   .card.add { border-style: dashed; background: transparent; }
+  h3 .fold { display: inline-flex; align-items: baseline; gap: var(--sp-8); padding: 0; border: none; border-radius: 0; background: transparent;
+    font: inherit; color: inherit; }
+  h3 .fold:hover:not(:disabled) { background: transparent; color: var(--text); }
+  .caret { font-size: var(--fs-xs); color: var(--faint); }
+  .archived-card { position: relative; min-width: 0; }
+  .archived-card .card { padding-right: 110px; }
+  .archived-card .card .name { color: var(--muted); }
+  .unarchive { position: absolute; right: var(--sp-12); top: 50%; transform: translateY(-50%); padding: var(--sp-4) var(--sp-10);
+    font-size: var(--fs-md); }
   .plus { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: var(--fs-xl); color: var(--muted); }
 </style>

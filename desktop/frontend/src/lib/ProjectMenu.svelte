@@ -9,11 +9,13 @@
   // in the team's home (one menu, so both offer the same). Placed on the
   // window (at: where it was asked for), it closes itself on a click
   // elsewhere or Esc (focus back on opener, the button that opened it).
-  let { p, at, opener = null, onsettings, onclose }: {
+  let { p, at, opener = null, onsettings, onarchive, onclose }: {
     p: TeamProject;
     at: { left: number; top: number };
     opener?: HTMLElement | null;
     onsettings: (p: TeamProject) => void;
+    // Archive project… (docs/design/archive.md; none: not offered here)
+    onarchive?: (p: TeamProject) => void;
     onclose: () => void;
   } = $props();
 
@@ -146,6 +148,9 @@
   {#if !p.workspace}
     {#if p.root && p.status !== "missing"}<div class="sep"></div>{/if}
     <button class="item" role="menuitem" onclick={() => then(onsettings)}>{t("Settings…")}</button>
+    {#if onarchive && p.id && !p.archived}
+      <button class="item" role="menuitem" onclick={() => then(onarchive!)}>{t("Archive project…")}</button>
+    {/if}
   {/if}
 </div>
 

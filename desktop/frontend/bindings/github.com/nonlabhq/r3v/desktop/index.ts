@@ -11,6 +11,7 @@ export {
     Actor,
     AgentWorkflow,
     AgentWorkspace,
+    ArchiveInfo,
     ArchivedBranch,
     BackupInfo,
     BackupOthers,

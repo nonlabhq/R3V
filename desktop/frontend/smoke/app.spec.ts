@@ -183,3 +183,21 @@ test("the folded sidebar's team mark has the team list beside it, on hover", asy
   await expect(page.getByRole("menu")).toHaveCount(0);
   await page.getByRole("button", { name: "Show the sidebar" }).click();
 });
+
+test("archives a project for the team from its right-click menu, and brings it back from the team's home", async () => {
+  const row = () => page.locator("aside").getByRole("button", { name: /^Night Drive/ });
+  await row().first().click({ button: "right" });
+  await page.getByRole("menu", { name: "Night Drive" }).getByRole("menuitem", { name: "Archive project…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Archive “Night Drive”?" });
+  await expect(dialog).toContainText("Nothing is deleted");
+  await dialog.getByRole("button", { name: /^Archive( anyway)?$/ }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(row()).toHaveCount(0);
+  await page.locator(".team-menu .switch").click();
+  await page.getByRole("button", { name: "Projects", exact: true }).click();
+  const fold = page.locator(".home h3").getByRole("button", { name: /Archived/ });
+  await expect(fold).toHaveAttribute("aria-expanded", "false");
+  await fold.click();
+  await page.getByRole("button", { name: "Unarchive" }).click();
+  await expect(row().first()).toBeVisible();
+});

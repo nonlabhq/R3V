@@ -54,7 +54,8 @@ export interface TeamWorkflowData {
 }
 
 /** One thing that happened in the team. kind: share, merge, branch-made,
- * branch-deleted, project-added, project-removed, member-joined. tool and
+ * branch-deleted, project-added, project-removed, project-archived,
+ * project-unarchived, member-joined. tool and
  * model: the AI agent that made the version, for its member (by). */
 export interface ActivityEntry {
   time: string;

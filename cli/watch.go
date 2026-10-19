@@ -44,8 +44,16 @@ func cmdWatch(args []string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := r.Client(); err != nil {
+	c, err := r.Client()
+	if err != nil {
 		return err
+	}
+	// An archived project isn't watched, as in the app (docs/design/archive.md).
+	if archived, err := remote.ArchivedProjects(c); err == nil {
+		if _, ok := archived[r.Config.ProjectID]; ok {
+			fmt.Printf("%q is archived for the team: not watched (`r3v project unarchive` brings it back)\n", r.Config.Name)
+			return nil
+		}
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

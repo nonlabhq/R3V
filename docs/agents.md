@@ -14,7 +14,7 @@ words: [glossary.md](glossary.md).
 
 ## Rules
 
-- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `lock` and `locks`, and
+- **Use `--json`** with `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `project`, `lock` and `locks`, and
   read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
@@ -320,6 +320,17 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
   committed or parked; `--force` loses them (ask the user first). Its
   branch stays on the team.
 
+`project` (Nightly; archiving a project for the whole team):
+`project list`: `projects` (`id`, `name`, `archived`, `archived_by` a
+member id, `archived_at`, `here` the project in this folder). `project
+archive [--force]` and `project unarchive`: `project`, `id`, `archived`,
+`changed` (false: it already was, or wasn't). Archiving hides the project
+for everyone in the team (nothing deleted; the folder here stays); it's
+refused with `unsaved_changes` or `unshared_versions` unless `--force`
+(ask the user first), and on R3V Cloud teams with `not_admin` for anyone
+but owners and admins. Archive or unarchive only when the user asks.
+`status` gives `team.archived: true` for an archived project.
+
 `backup run [folder]` (back up the whole team's storage into a folder; only
 adds): `team`, `kind` (`folder`, or `s3` for a bucket set up in the app),
 `folder` (where), `run` (its record: `<folder>/runs/<run>.json`),
@@ -394,6 +405,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `cloud_quota` | the team's storage on R3V Cloud is full: the versions stay committed here; tell the user (they delete projects or versions, or get more room), `commit` again later |
 | 1 | `cloud_beta_only` | R3V Cloud is in a closed beta: making a team needs an invitation; tell the user (the waitlist: https://r3v.so/waitlist) |
 | 1 | `cloud_one_team` | the beta gives one team of the user's own, and it exists: use it |
+| 1 | `not_admin` | on an R3V Cloud team only its owners and admins do this (archiving a project): tell the user |
 | 1 | `not_a_merge` | `undo-merge` takes a merge version: `r3v log --first-parent` lists them |
 | 1 | `nothing_to_discard` | `discard <path>...`: nothing changed in those paths |
 | 1 | `nothing_to_undo` | what that merge brought in is already gone from the branch: nothing to do |

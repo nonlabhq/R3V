@@ -38,7 +38,7 @@ export class ActivityItem {
 
     /**
      * Kind: share, merge, branch-made, branch-deleted, project-added,
-     * project-removed, member-joined.
+     * project-removed, project-archived, project-unarchived, member-joined.
      */
     "kind": string;
 
@@ -364,6 +364,59 @@ export class AgentWorkspace {
             $$parsedSource["results"] = $$createField17_0($$parsedSource["results"]);
         }
         return new AgentWorkspace($$parsedSource as Partial<AgentWorkspace>);
+    }
+}
+
+/**
+ * ArchiveInfo is what archiving a project asks first.
+ */
+export class ArchiveInfo {
+    /**
+     * CanArchive: this computer may (an R3V Cloud team's admins only).
+     */
+    "canArchive": boolean;
+    "archived": boolean;
+
+    /**
+     * OnTeam: the team has the project (one added and never shared isn't
+     * on it yet: nothing to archive).
+     */
+    "onTeam": boolean;
+
+    /**
+     * Changes and Unshared: the copy here has uncommitted changes, or
+     * versions the team hasn't got (archiving asks first).
+     */
+    "changes": number;
+    "unshared": boolean;
+
+    /** Creates a new ArchiveInfo instance. */
+    constructor($$source: Partial<ArchiveInfo> = {}) {
+        if (!("canArchive" in $$source)) {
+            this["canArchive"] = false;
+        }
+        if (!("archived" in $$source)) {
+            this["archived"] = false;
+        }
+        if (!("onTeam" in $$source)) {
+            this["onTeam"] = false;
+        }
+        if (!("changes" in $$source)) {
+            this["changes"] = 0;
+        }
+        if (!("unshared" in $$source)) {
+            this["unshared"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ArchiveInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ArchiveInfo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ArchiveInfo($$parsedSource as Partial<ArchiveInfo>);
     }
 }
 
@@ -1908,6 +1961,11 @@ export class Overview {
      */
     "teamChecked": boolean;
 
+    /**
+     * Archive: this build archives projects (Nightly while it's new).
+     */
+    "archive": boolean;
+
     /** Creates a new Overview instance. */
     constructor($$source: Partial<Overview> = {}) {
         if (!("author" in $$source)) {
@@ -1927,6 +1985,9 @@ export class Overview {
         }
         if (!("teamChecked" in $$source)) {
             this["teamChecked"] = false;
+        }
+        if (!("archive" in $$source)) {
+            this["archive"] = false;
         }
 
         Object.assign(this, $$source);
@@ -4471,6 +4532,12 @@ export class TeamProject {
     "workspace": boolean;
     "mainRoot": string;
 
+    /**
+     * Archived: the team archived it (docs/design/archive.md): out of the
+     * left panel, listed under Archived in the team's home.
+     */
+    "archived": boolean;
+
     /** Creates a new TeamProject instance. */
     constructor($$source: Partial<TeamProject> = {}) {
         if (!("id" in $$source)) {
@@ -4505,6 +4572,9 @@ export class TeamProject {
         }
         if (!("mainRoot" in $$source)) {
             this["mainRoot"] = "";
+        }
+        if (!("archived" in $$source)) {
+            this["archived"] = false;
         }
 
         Object.assign(this, $$source);
@@ -4635,6 +4705,13 @@ export class TeamSummary {
      */
     "noAccess": boolean;
 
+    /**
+     * CanArchive: this computer may archive the team's projects and bring
+     * them back (docs/design/archive.md): anyone on a team's own storage,
+     * an R3V Cloud team's admins (known once the team is asked).
+     */
+    "canArchive": boolean;
+
     /** Creates a new TeamSummary instance. */
     constructor($$source: Partial<TeamSummary> = {}) {
         if (!("id" in $$source)) {
@@ -4705,6 +4782,9 @@ export class TeamSummary {
         }
         if (!("noAccess" in $$source)) {
             this["noAccess"] = false;
+        }
+        if (!("canArchive" in $$source)) {
+            this["canArchive"] = false;
         }
 
         Object.assign(this, $$source);

@@ -78,6 +78,10 @@ type TeamSummary struct {
 	// NoAccess: a hosted team the account signed in isn't in (any more): it
 	// stays, with its projects, until removed.
 	NoAccess bool `json:"noAccess"`
+	// CanArchive: this computer may archive the team's projects and bring
+	// them back (docs/design/archive.md): anyone on a team's own storage,
+	// an R3V Cloud team's admins (known once the team is asked).
+	CanArchive bool `json:"canArchive"`
 }
 
 // TeamProject is a project as the sidebar shows it.
@@ -100,6 +104,9 @@ type TeamProject struct {
 	// (OpenWorkspace); MainRoot is the project's main copy.
 	Workspace bool   `json:"workspace"`
 	MainRoot  string `json:"mainRoot"`
+	// Archived: the team archived it (docs/design/archive.md): out of the
+	// left panel, listed under Archived in the team's home.
+	Archived bool `json:"archived"`
 }
 
 type Overview struct {
@@ -112,6 +119,8 @@ type Overview struct {
 	// listed, TeamError says if it couldn't be reached); LocalOverview
 	// doesn't ask it.
 	TeamChecked bool `json:"teamChecked"`
+	// Archive: this build archives projects (Nightly while it's new).
+	Archive bool `json:"archive"`
 }
 
 func teamSummary(t teams.Team) TeamSummary {
@@ -165,9 +174,11 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		}
 	}
 	ov := &Overview{Author: store.Author, CurrentTeam: store.Current, Teams: []TeamSummary{},
-		Projects: []TeamProject{}}
+		Projects: []TeamProject{}, Archive: remote.ProjectArchive}
 	for _, t := range store.Teams {
-		ov.Teams = append(ov.Teams, teamSummary(t))
+		s := teamSummary(t)
+		s.CanArchive = remote.ProjectArchive && !s.Hosted
+		ov.Teams = append(ov.Teams, s)
 	}
 	t := store.Find(store.Current)
 	if t == nil {
@@ -203,6 +214,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	}
 	if !askTeam {
 		addRemote(lastTeamProjects(t.ID), false)
+		archivedOf(ov.Projects, lastArchived(t.ID))
 		sortProjects(ov.Projects)
 		ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 		return ov, nil
@@ -227,6 +239,8 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 					teams.SyncTeamLook(t.ID, look)
 					ov.Teams[i].Icon, ov.Teams[i].Color, ov.Teams[i].Picture = look.Icon, look.Color, dataURL(readPicture(look.Picture))
 				}
+				// (an R3V Cloud team's role asks the service: only now)
+				ov.Teams[i].CanArchive = remote.ProjectArchive && canEditWorkflow(t)
 				ov.Teams[i].Moving = info.Moving != nil
 				ov.Teams[i].MovedTo = info.MovedTo
 				if to := store.FindByURL(info.MovedTo); info.MovedTo != "" && to != nil {
@@ -251,6 +265,13 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		}
 		addRemote(ps, true)
 	}
+	// (unread: as last read, as the team's projects are)
+	if err == nil {
+		if archived, err := remote.ArchivedProjects(b); err == nil {
+			a.followArchived(store, t.ID, archived)
+		}
+	}
+	archivedOf(ov.Projects, lastArchived(t.ID))
 	sortProjects(ov.Projects)
 	ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 	return ov, nil
@@ -305,6 +326,7 @@ func (a *App) AllProjects() ([]TeamProjects, error) {
 			}
 			ps = append(ps, tp)
 		}
+		archivedOf(ps, lastArchived(t.ID))
 		sortProjects(ps)
 		out = append(out, TeamProjects{Team: t.ID, Projects: ps})
 	}

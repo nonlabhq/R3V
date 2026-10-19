@@ -12,14 +12,14 @@ import (
 
 // A team's Activity (docs/design/team-settings.md): what happened, newest
 // first, from what its storage keeps: the projects' branch logs (shares,
-// merges, branches made and deleted) and the team log (projects added and
-// removed, members joining).
+// merges, branches made and deleted) and the team log (projects added,
+// removed, archived and brought back, members joining).
 
 // ActivityItem is one thing that happened.
 type ActivityItem struct {
 	Time string `json:"time"`
 	// Kind: share, merge, branch-made, branch-deleted, project-added,
-	// project-removed, member-joined.
+	// project-removed, project-archived, project-unarchived, member-joined.
 	Kind        string `json:"kind"`
 	Project     string `json:"project"`     // its id ("" for a member joining)
 	ProjectName string `json:"projectName"` // as it is now, else as it was

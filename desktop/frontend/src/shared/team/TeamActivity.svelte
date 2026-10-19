@@ -56,6 +56,8 @@
       case "branch-deleted": return t("{who} deleted the branch {branch}", { who, branch: i.branch });
       case "project-added": return t("{who} added the project {project}", { who, project: i.projectName });
       case "project-removed": return t("{who} removed the project {project}", { who, project: i.projectName });
+      case "project-archived": return t("{who} archived the project {project}", { who, project: i.projectName });
+      case "project-unarchived": return t("{who} brought back the project {project}", { who, project: i.projectName });
       case "member-joined": return t("{who} joined the team", { who });
     }
     return i.kind;

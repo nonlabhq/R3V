@@ -77,6 +77,16 @@ func (r *Repo) shared(c remote.Backend) (bool, error) {
 	return r.isAncestor(head, remoteHead)
 }
 
+// Shared says whether the team has every version of the branch here
+// (asking it), as switching branches checks.
+func (r *Repo) Shared() (bool, error) {
+	c, err := r.Client()
+	if err != nil {
+		return false, err
+	}
+	return r.shared(c)
+}
+
 // CreateBranch starts a branch at the current version and switches to it.
 func (r *Repo) CreateBranch(name string) error { return r.createBranch(name, true) }
 
