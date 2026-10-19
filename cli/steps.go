@@ -14,18 +14,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/transcript"
 )
 
 // Steps (docs/design/steps.md): the agent tool's hooks make them (`r3v hook
-// prompt`, `r3v hook post-tool`); `r3v steps` lists them, `r3v step` makes
-// one by hand, goes back to one, compares two.
+// prompt`, `r3v hook post-tool`), or an agent tool without hooks itself
+// (`r3v step start`, `r3v step end`); `r3v steps` lists them, `r3v step`
+// makes one by hand, goes back to one, compares two.
 
 const stepsUsage = `
 steps (an agent's moves, on this computer; Nightly):
   steps [--session ID] [--list] [--json] the latest session's prompts and steps (--list: the sessions)
   step [-m NOTE]                         a step of the files as they are now
+  step start -m "WHAT"                   an agent without hooks begins a task (ends one left open)
+  step end [-m "WHAT I DID"]             and ends it: a step of the files as they are
   step back <n> [--session ID]           the files as at step n (the files now are a step first)
   step diff <a> [<b>] [--session ID]     what changed from step a to step b (or to the files now)
 `
@@ -164,10 +168,13 @@ func cmdStep(args []string) error {
 	if len(args) > 0 && (args[0] == "back" || args[0] == "diff") {
 		return cmdStepGo(args[0], args[1:])
 	}
+	if len(args) > 0 && (args[0] == "start" || args[0] == "end") {
+		return cmdStepTask(args[0], args[1:])
+	}
 	fs := flag.NewFlagSet("step", flag.ContinueOnError)
 	note := fs.String("m", "", "a note for the step")
 	if err := fs.Parse(args); err != nil || fs.NArg() > 0 {
-		return usageError("usage: r3v step [-m NOTE] | r3v step back <n> | r3v step diff <a> [<b>]")
+		return usageError("usage: r3v step [-m NOTE] | r3v step back <n> | r3v step diff <a> [<b>] | r3v step start -m WHAT | r3v step end")
 	}
 	r, err := openRepo()
 	if err != nil {
@@ -188,6 +195,87 @@ func cmdStep(args []string) error {
 		fmt.Printf("step %d: %s\n", st.N, filesLine(st.Files))
 	})
 	return nil
+}
+
+// cmdStepTask is `step start` and `step end`: an agent tool without hooks
+// wraps each task in them (docs/design/steps.md, "Tools without hooks").
+// Forgiving, so that an agent told to run them always can: steps off, or
+// Claude Code whose hooks make its steps here, change nothing; a start
+// while a task is open ends that one first; an end with none open is a
+// no-op.
+func cmdStepTask(what string, args []string) error {
+	fs := flag.NewFlagSet("step "+what, flag.ContinueOnError)
+	note := fs.String("m", "", "what you're about to do (start), or what you did (end)")
+	if err := fs.Parse(args); err != nil || fs.NArg() > 0 {
+		return usageError(`usage: r3v step start -m "what I'm about to do" | r3v step end [-m "what I did"]`)
+	}
+	r, err := openRepo()
+	if err != nil {
+		return err
+	}
+	res := map[string]any{}
+	say := ""
+	switch {
+	case !r.StepsOn():
+		res["off"] = true
+		say = "steps are off for this project (R3V's project settings): nothing kept"
+	case r.Actor != nil && r.Actor.Tool == agentsetup.ClaudeCodeTool && agentsetup.StepHooks(r.Root):
+		res["hooked"] = true
+		say = "Claude Code's hooks make the steps here: nothing to do"
+	}
+	if say != "" {
+		res["note"] = say
+		result("step", res, func() { fmt.Println(say) })
+		return nil
+	}
+	if what == "start" {
+		st, err := r.StepStart(*note)
+		if err != nil {
+			return err
+		}
+		res["open"], res["before"], res["previous"] = st.Open, st.Before, st.Previous
+		result("step", res, func() {
+			if p := st.Previous; p != nil {
+				fmt.Printf("ended the step left open (turn %d)%s\n", p.Turn, endedLine(p))
+			}
+			fmt.Printf("started turn %d of session %s", st.Open.Turn, st.Open.Session)
+			if st.Before != nil {
+				fmt.Printf(" (step %d: the files as they were, %s)", st.Before.N, filesLine(st.Before.Files))
+			}
+			fmt.Println()
+		})
+		return nil
+	}
+	ended, err := r.StepEnd(*note)
+	if err != nil {
+		return err
+	}
+	res["ended"] = ended
+	res["step"] = nil
+	if ended == nil {
+		res["note"] = "no step was started (r3v step start): nothing to end"
+	} else {
+		res["step"] = ended.Step
+	}
+	result("step", res, func() {
+		if ended == nil {
+			fmt.Println(res["note"])
+			return
+		}
+		fmt.Printf("ended turn %d%s\n", ended.Turn, endedLine(ended))
+	})
+	return nil
+}
+
+// endedLine says what an end kept.
+func endedLine(e *project.StepEnded) string {
+	switch {
+	case e.Stale:
+		return ": open too long, closed without a step"
+	case e.Step == nil:
+		return ": nothing changed since the step before"
+	}
+	return fmt.Sprintf(": step %d, %s", e.Step.N, filesLine(e.Step.Files))
 }
 
 func cmdStepGo(what string, args []string) error {

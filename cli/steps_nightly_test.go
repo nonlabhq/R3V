@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
@@ -67,5 +68,69 @@ func TestStepsFromHooks(t *testing.T) {
 	exit, rep = run(t, a, "log")
 	if n := strings.Count(string(rep.Result), `"id"`); exit != 0 || n != 1 {
 		t.Fatalf("log: %d versions: %s", n, rep.Result)
+	}
+}
+
+// An agent tool without hooks wraps a task in step start and step end:
+// a turn with its note, then a step by that tool, listed as the hooks'
+// are. Claude Code whose hooks make the steps changes nothing with them.
+func TestStepStartEndWithoutHooks(t *testing.T) {
+	asUnknown(t)
+	t.Setenv("CODEX_THREAD_ID", "th-1")
+	a := newFolder(t, map[string]string{"notes.txt": "one"})
+	if _, err := project.Init(a, "yi"); err != nil {
+		t.Fatal(err)
+	}
+	run(t, a, "commit", "-m", "first")
+	if exit, rep := run(t, a, "step", "end"); exit != 0 || !strings.Contains(string(rep.Result), `"ended": null`) ||
+		!strings.Contains(string(rep.Result), "no step was started") {
+		t.Fatalf("end, none open: %d %s %+v", exit, rep.Result, rep.Error)
+	}
+	exit, rep := run(t, a, "step", "start", "-m", "Make the notes longer")
+	var started struct {
+		Open     project.OpenStep
+		Before   *project.Step
+		Previous *project.StepEnded
+	}
+	json.Unmarshal(rep.Result, &started)
+	if exit != 0 || started.Open.Session != "th-1" || started.Open.Turn != 1 || started.Before != nil || started.Previous != nil {
+		t.Fatalf("start: %d %s %+v", exit, rep.Result, rep.Error)
+	}
+	os.WriteFile(filepath.Join(a, "notes.txt"), []byte("one, two"), 0o644)
+	exit, rep = run(t, a, "step", "end", "-m", "Longer notes")
+	var ended struct {
+		Ended *project.StepEnded
+		Step  *project.Step
+	}
+	json.Unmarshal(rep.Result, &ended)
+	if exit != 0 || ended.Step == nil || ended.Step.Tool != project.ToolStepEnd || ended.Step.Actor != "codex" ||
+		ended.Ended == nil || ended.Ended.Turn != 1 {
+		t.Fatalf("end: %d %s %+v", exit, rep.Result, rep.Error)
+	}
+	exit, rep = run(t, a, "steps")
+	var got struct{ Session project.Session }
+	json.Unmarshal(rep.Result, &got)
+	if s := got.Session; exit != 0 || s.ID != "th-1" || s.Steps != 1 || s.Turns[0].Note != "Make the notes longer" ||
+		s.Turns[0].Steps[0].Detail != "Longer notes" {
+		t.Fatalf("steps: %s", rep.Result)
+	}
+	if exit, rep = run(t, a, "step", "start", "extra"); exit != 2 || rep.Error.Code != "usage" {
+		t.Fatalf("usage: %d %+v", exit, rep.Error)
+	}
+
+	asAgent(t)
+	if _, err := agentsetup.ClaudeCode(a, "r3v hook pre-tool", false, true); err != nil {
+		t.Fatal(err)
+	}
+	exit, rep = run(t, a, "step", "start", "-m", "anything")
+	if exit != 0 || !strings.Contains(string(rep.Result), `"hooked": true`) {
+		t.Fatalf("Claude Code with hooks: %d %s", exit, rep.Result)
+	}
+	r, err := project.Open(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := r.Sessions(); len(s) != 1 {
+		t.Fatalf("sessions: %+v", s)
 	}
 }

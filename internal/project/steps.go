@@ -230,6 +230,12 @@ func (r *Repo) TakeStep(session, tool, note string) (*Step, error) {
 // TakeStepWith is TakeStep with what the call did, in a line (a command's
 // description, redacted).
 func (r *Repo) TakeStepWith(session, tool, detail, note string) (*Step, error) {
+	return r.takeStep(session, 0, tool, detail, note)
+}
+
+// takeStep is TakeStepWith, the step in turn inTurn (0: the session's
+// latest).
+func (r *Repo) takeStep(session string, inTurn int, tool, detail, note string) (*Step, error) {
 	if !r.StepsOn() {
 		return nil, nil
 	}
@@ -241,6 +247,9 @@ func (r *Repo) TakeStepWith(session, tool, detail, note string) (*Step, error) {
 		return nil, err
 	}
 	turn, prev := lastOf(lines)
+	if inTurn > 0 && note == "" {
+		turn = inTurn
+	}
 	if note != "" {
 		turn++
 		if err := r.appendStepLine(session, stepLine{Turn: turn, Time: time.Now().UTC().Format(time.RFC3339), Note: note}); err != nil {
