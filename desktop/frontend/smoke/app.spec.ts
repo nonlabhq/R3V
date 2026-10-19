@@ -1,4 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 // The app's main paths on the demo team (desktop/cmd/r3v-demo), in order:
 // the steps change the team (an update, a commit). Night Drive starts with
@@ -25,6 +28,25 @@ test("opens on the team's projects", async () => {
   }
   await page.getByRole("button", { name: /^Night Drive/ }).first().click();
   await expect(page.getByRole("heading", { name: "Night Drive" })).toBeVisible();
+});
+
+// The demo runs apart from this computer's own R3V: no R3V Cloud account
+// signed in, and no team but the demo's (its storage is the demo's fake, on
+// this computer). The app has started by now, so a sync it ran would show.
+test("sees only the demo's team, and no R3V Cloud account", async () => {
+  const store = JSON.parse(readFileSync(join(tmpdir(), "r3v-smoke", "you", "config", "teams.json"), "utf8"));
+  const foreign = (store.teams ?? []).filter((t: { remote?: { url?: string } }) => !t.remote?.url?.startsWith("s3+http://127.0.0.1:"));
+  expect(foreign.length, "teams not made by the demo").toBe(0);
+
+  await page.locator("button.who").first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/Signed in as/)).toHaveCount(0);
+  if (await dialog.getByRole("heading", { name: "R3V Cloud" }).count()) {
+    await expect(dialog.getByText("Not signed in.")).toBeVisible();
+  }
+  await dialog.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("shows the versions in the graph, and your changes", async () => {

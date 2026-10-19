@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -70,9 +71,11 @@ func newFakeService(t *testing.T) *fakeService {
 	})
 	f.Server = httptest.NewServer(mux)
 	t.Cleanup(f.Close)
-	t.Cleanup(func() { keyring.Delete(target(f.URL)) })
-	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	dir := t.TempDir()
+	t.Setenv("R3V_CONFIG_DIR", dir)
 	t.Setenv("R3V_CLOUD_TOKEN", "")
+	// (the session is kept under this settings folder's name)
+	t.Cleanup(func() { os.Setenv("R3V_CONFIG_DIR", dir); keyring.Delete(target(f.URL)) })
 	return f
 }
 
@@ -180,6 +183,43 @@ func TestSignInKeepsTheSessionAndSyncsTeams(t *testing.T) {
 	}
 	if store, _ = teams.Load(); len(store.Teams) != 3 {
 		t.Errorf("teams after signing out: %d", len(store.Teams))
+	}
+}
+
+// A run with its own settings folder (tests, the demo) has its own session:
+// another folder, or this user's own setup, isn't signed in by it, and it
+// doesn't see theirs.
+func TestSessionFollowsTheSettingsFolder(t *testing.T) {
+	f := newFakeService(t)
+	one := os.Getenv("R3V_CONFIG_DIR")
+	if _, err := SignIn(context.Background(), f.URL, f.browser(t, "")); err != nil {
+		t.Fatal(err)
+	}
+	if !SignedIn(f.URL) {
+		t.Fatal("not signed in after signing in")
+	}
+
+	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
+	if SignedIn(f.URL) {
+		t.Error("another settings folder sees the session")
+	}
+	if _, err := SyncTeams(f.URL); !errors.Is(err, remote.ErrSignedOut) {
+		t.Errorf("sync from another settings folder: %v", err)
+	}
+	if store, _ := teams.Load(); len(store.Teams) != 0 {
+		t.Errorf("another settings folder got %d teams", len(store.Teams))
+	}
+	t.Setenv("R3V_CONFIG_DIR", "")
+	if SignedIn(f.URL) {
+		t.Error("the user's own setup sees the test's session")
+	}
+
+	t.Setenv("R3V_CONFIG_DIR", one)
+	if err := SignOut(f.URL); err != nil {
+		t.Fatal(err)
+	}
+	if SignedIn(f.URL) {
+		t.Error("still signed in after signing out")
 	}
 }
 

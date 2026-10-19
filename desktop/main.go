@@ -5,8 +5,11 @@
 package desktop
 
 import (
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"github.com/nonlabhq/r3v/internal/applog"
+	"github.com/nonlabhq/r3v/internal/teams"
 	"github.com/nonlabhq/r3v/internal/version"
 	"log"
 	"os"
@@ -176,10 +179,17 @@ func droppedFiles(files []string, target *application.DropTargetDetails) FilesDr
 }
 
 // instanceID makes a second launch open the running app's window; a build
-// with extensions has its own, so it runs next to the public app.
+// with extensions has its own, so it runs next to the public app. So does a
+// run with its own settings folder (R3V_CONFIG_DIR: tests, the demo), which
+// would otherwise hand itself over to the user's running app.
 func instanceID() string {
-	if version.Edition == "" {
-		return "com.nonlabhq.r3v"
+	id := "com.nonlabhq.r3v"
+	if version.Edition != "" {
+		id += "." + strings.ToLower(strings.ReplaceAll(version.Edition, " ", "-"))
 	}
-	return "com.nonlabhq.r3v." + strings.ToLower(strings.ReplaceAll(version.Edition, " ", "-"))
+	if os.Getenv("R3V_CONFIG_DIR") != "" {
+		h := sha256.Sum256([]byte(teams.Dir()))
+		id += "." + hex.EncodeToString(h[:6])
+	}
+	return id
 }

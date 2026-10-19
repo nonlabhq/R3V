@@ -37,6 +37,7 @@ var (
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
+	isolate()
 	if err := os.RemoveAll(*dir); err != nil {
 		log.Fatal(err)
 	}
@@ -177,6 +178,19 @@ func main() {
 	signal.Notify(stop, os.Interrupt)
 	go func() { <-stop; cmd.Process.Kill() }()
 	cmd.Wait()
+}
+
+// isolate keeps the demo (and the app it starts, which inherits this
+// environment) off this computer's own R3V: no session or name from the
+// environment, R3V Cloud at an address where nothing answers, no update
+// checks. The settings folder, and with it the sign-in, is each person's
+// (who.use).
+func isolate() {
+	for _, k := range []string{"R3V_CLOUD_TOKEN", "R3V_AUTHOR", "R3V_DEV_FEED"} {
+		os.Unsetenv(k)
+	}
+	os.Setenv("R3V_CLOUD_URL", "http://127.0.0.1:9") // (the discard port: refused at once)
+	os.Setenv("R3V_NO_UPDATE_CHECK", "1")
 }
 
 type who struct{ config, projects string }
