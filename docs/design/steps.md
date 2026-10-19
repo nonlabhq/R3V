@@ -25,8 +25,8 @@ files, so its steps cover all of it.
 
 | | What | Made |
 |---|---|---|
-| **Step** | the project after one move | by itself after each tool call that changed files; by hand with `r3v step` |
-| **Turn** | one prompt and the steps it led to | when the person sends the agent a prompt |
+| **Step** | the project after one move | by itself after each tool call that changed files; at the end of a task (tools without hooks); by hand with `r3v step` |
+| **Turn** | one prompt and the steps it led to | when the person sends the agent a prompt; when a tool without hooks starts a task |
 | **Session** | an agent's conversation: its turns | by the agent tool (its session id) |
 | **Version** | a piece of work, shared with the team | by a commit |
 
@@ -78,6 +78,70 @@ that only read makes none.
 
 And by hand: `r3v step [-m NOTE]`, for a person or an agent that wants a
 point to come back to (a note is a turn of its own, its text the note).
+
+### Tools without hooks
+
+Claude Code is the only tool R3V sets hooks up for. Others (Codex,
+opencode, Pi, Gemini CLI, Cursor…) read `AGENTS.md`, whose R3V part
+tells them to wrap each task in two commands; Claude Code set up with
+`r3v agent setup` is told its hooks do it (the guide is one text for
+every tool, so it says which).
+
+- **`r3v step start -m "what I'm about to do"`**: a turn whose `note` is
+  the agent's words (redacted, as a prompt is; kept even when prompts
+  aren't: they are the agent's, not the person's), then a step (`tool`
+  `step start`) when the files changed since the session's step before:
+  the person's edits between two tasks, or work done outside one, kept
+  apart from the task's.
+- **`r3v step end [-m "what I did"]`**: a step of the files as they are
+  (`tool` `step end`, `detail` the agent's words), in the start's turn.
+  None when nothing changed.
+
+The lines are the hooks' own (a turn: `turn`, `time`, `note`; a step:
+the keys above), so the app, `r3v steps` and an older R3V read them
+alike. Who is asking is `actor.Resolve`'s: the tool and its session
+(`R3V_ACTOR_SESSION`, or the tool's own: Codex's thread, opencode's,
+Pi's). A tool that gives no session id goes on in its latest session
+while that was written to in the last 4 hours, else starts
+`<tool>-<UTC time>`. A person with no agent runs them in `by-hand`.
+
+What is open is kept beside the lists, one file per agent (tool and
+session): `.r3v/steps/.open-<tool>.<session>.json` (a hash of them when
+the session id isn't a plain name), `{"session",
+"open": {"session", "turn", "since", "note"}}` (the latest session, for
+a tool without ids, stays after the end). This copy's, read by nothing
+but start and end; the lists never depend on it.
+
+The rules, so that an agent told to run them always can:
+
+- **A start while a task is open ends it first**, a step of the files
+  now in that task's turn (`detail` says it wasn't ended), rather than
+  refusing: an agent that forgot the end, or crashed, loses nothing and
+  needn't handle an error. Open longer than **12 hours** (an agent gone
+  long ago; the person has likely worked since), it is closed without a
+  step: the files go to the new task's first step, kept apart.
+- **An end with none open** changes nothing and says so (`ended`: null).
+- **Steps off**, or **Claude Code whose hooks make the steps here**:
+  both change nothing, ok (`off`, `hooked`), so the same guide works
+  everywhere.
+- **A commit** doesn't look at what is open: the guide says to end
+  first, so the version lists the task's steps (made on its parent before
+  it). Committed while open, the end then makes its step on the new
+  version (often of the very same files).
+- Two agents of one tool with no session ids in one copy share an open
+  task; each in a workspace of its own (the guide's way) has its own.
+
+Stopped half-way:
+
+| In between | What there is | What comes next |
+|---|---|---|
+| start: the turn written | a turn with no steps (shown as a note) | nothing open: an end is a no-op, the next start begins anew |
+| start: the first step written | the turn and its step | as above |
+| start: the open record written | a task open | the end, or the next start, ends it |
+| end: the step written, the record not cleared | the step | ending again makes no second step (the files are as at it); the next start ends it, nothing changed |
+
+The open record is written whole or not at all (written aside, then
+renamed); one that can't be read counts as nothing open.
 
 Not for a person by themselves in the first version: a person saves in
 their tool all the time, and a step per save would be noise. (An "auto
@@ -204,4 +268,7 @@ and the contents stay on this computer:
 
 - The budget and the 7 days: right for a game project with big files?
 - Codex and other agent tools: which of them give a prompt hook and a
-  post-tool hook, and their session ids.
+  post-tool hook (steps per tool call, as Claude Code's), beyond `step
+  start` and `step end` per task.
+- The 12 hours and the 4 hours of tools without hooks: right once tried
+  with them?
