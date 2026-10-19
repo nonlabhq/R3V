@@ -262,7 +262,7 @@ func loadFile(path string) (*Store, error) {
 // Save could write back an old copy over another's change.
 func Update(fn func(*Store) error) (*Store, error) {
 	if err := os.MkdirAll(Dir(), 0o700); err != nil {
-		return nil, err
+		return nil, flock.NoAccess(Dir(), err)
 	}
 	unlock, err := flock.Lock(filepath.Join(Dir(), "teams.lock"), 15*time.Second)
 	if err != nil {
@@ -285,7 +285,7 @@ func Update(fn func(*Store) error) (*Store, error) {
 // writes back whatever this copy holds, even over a newer change.
 func (s *Store) Save() error {
 	if err := os.MkdirAll(filepath.Dir(s.path), 0o700); err != nil {
-		return err
+		return flock.NoAccess(filepath.Dir(s.path), err)
 	}
 	if !s.locked {
 		unlock, err := flock.Lock(filepath.Join(filepath.Dir(s.path), "teams.lock"), 15*time.Second)
@@ -312,7 +312,7 @@ func (s *Store) Save() error {
 	tmp := s.path + ".tmp"
 	// 0600: the file holds tokens and storage keys.
 	if err := os.WriteFile(tmp, append(data, '\n'), 0o600); err != nil {
-		return err
+		return flock.NoAccess(tmp, err)
 	}
 	// On Windows the rename fails while anyone reads teams.json (Load
 	// takes no lock): Replace tries again for a moment.

@@ -417,6 +417,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `changes_parked_here` | changes parked here are waiting (they need choices): `r3v parked bring …` or `discard` them before leaving with new changes |
 | 1 | `files_locked` | the team uses file locks and someone else holds files the versions change (`locks`: `path`, `member_id`); the versions stay committed here: tell the user, `commit` again once they are unlocked |
 | 1 | `files_locked_by_agent` | another workspace on this computer holds files the commit or `lock` needs (`locks`: `path`, `holder` `agent`\|`person`, `workspace`, `branch`, `actor`); nothing was committed or locked: leave those files, or ask the user |
+| 1 | `no_write_access` | R3V may not write `path` (a sandbox, a read-only folder): no one holds it, **don't retry**. When it is R3V's settings folder (`%APPDATA%\R3V`, the hint says so), set `R3V_CONFIG_DIR` to a folder you can write (see [Good to know](#good-to-know)) or ask the user for access; in the project, ask the user |
 | 1 | `cloud_quota` | the team's storage on R3V Cloud is full: the versions stay committed here; tell the user (they delete projects or versions, or get more room), `commit` again later |
 | 1 | `cloud_beta_only` | R3V Cloud is in a closed beta: making a team needs an invitation; tell the user (the waitlist: https://r3v.so/waitlist) |
 | 1 | `cloud_one_team` | the beta gives one team of the user's own, and it exists: use it |
