@@ -212,6 +212,8 @@ var codes = []struct {
 	{cloud.ErrBetaOnly, "cloud_beta_only", exitError, "R3V Cloud is in a closed beta: ask for an invitation, or join the waitlist at " + cloud.Waitlist},
 	{cloud.ErrOneTeam, "cloud_one_team", exitError, "the beta includes one team of your own: use it, or delete it to make another"},
 	{remote.ErrNotAdmin, "not_admin", exitError, "on an R3V Cloud team only its owners and admins do this: ask one of them"},
+	{remote.ErrNoSection, "no_section", exitError, "r3v section list gives the team's sections"},
+	{remote.ErrSectionExists, "section_exists", exitError, "pick another name, or use that section"},
 }
 
 // classify gives err its code.
