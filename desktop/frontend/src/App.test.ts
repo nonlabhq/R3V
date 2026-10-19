@@ -423,7 +423,7 @@ describe("App: a project's right-click menu", () => {
     await fireEvent.mouseEnter(sub.parentElement!);
     const list = await screen.findByRole("menu", { name: "Open the folder in" });
     await waitFor(() => expect(within(list).getAllByRole("menuitem").map((b) => b.textContent)).toEqual(
-      ["Explorer", "VS Code", "My Editor", "Choose a program…"]));
+      ["VS Code", "My Editor", "Choose a program…"])); // (not Explorer: "Open folder" is in the menu)
     expect(api.OpenPrograms).toHaveBeenCalledWith("C:/Song");
     await fireEvent.click(within(list).getByRole("menuitem", { name: "My Editor" }));
     expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Song", "D:/Apps/My Editor.exe");
