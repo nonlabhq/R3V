@@ -514,11 +514,11 @@ describe("App: the user", () => {
     expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
   });
 
-  it("keeps the user area as it was where looks aren't (Stable)", async () => {
+  it("opens User settings from your picture where looks aren't (Stable) too: the one way to your name", async () => {
     api.Profile.mockResolvedValue({ available: false, name: "Yi", memberId: "m1", color: "", picture: "", notShared: [] });
     render(App);
-    await screen.findByText("Yi");
-    await new Promise((r) => setTimeout(r, 20));
-    expect(screen.queryByRole("button", { name: /Yi/ })).toBeNull();
+    await fireEvent.click(await screen.findByRole("button", { name: /Yi/ }));
+    expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Upload picture…" })).toBeNull(); // (no looks: no picture or colour)
   });
 });

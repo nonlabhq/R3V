@@ -52,6 +52,7 @@
   import FirstVersionDialog from "./FirstVersionDialog.svelte";
   import ShareVersionsDialog from "./ShareVersionsDialog.svelte";
   import AgentsView from "./AgentsView.svelte";
+  import { look } from "./look.svelte";
 
   // firstShare: the project was just added (to a team, or this computer).
   // With no versions yet, it asks whether to commit (and share) a first one
@@ -363,8 +364,13 @@
   let overviewWidth = $state(0);
   let graphWidth = $derived(splitPx("graph", 0.36, overviewWidth, 280, 520));
   // The graph's card fills the tab (inset); the details float over its right
-  // part, from graphWidth to the card's edge less GAP.
-  const INSET = 16, GAP = 20;
+  // part, from graphWidth to the card's edge less GAP. The Flat look sets
+  // them side by side instead: the graph to graphWidth, the details from
+  // there to the edge, the gutter between.
+  let flat = $derived(look() === "flat");
+  let INSET = $derived(flat ? 0 : 16);
+  let GAP = $derived(flat ? 0 : 20);
+  const GUTTER = 2;
 
   // Runs an action; handles conflicts (ask, retry with decisions) and a
   // running Live (ask, retry with force).
@@ -1013,6 +1019,7 @@
   </div>
 {:else}
   <div class="view">
+    <div class="head">
     <ProjectHeader {st} team={teams.find((tm) => tm.id === st!.teamId)} {entry} {onteamsettings}>
       {#snippet notice()}
         <NoticeSlot st={st!} {progress} {busy} {looks} cancelling={!!cancelling[root]} oncancel={() => cancelSave(root)}
@@ -1057,6 +1064,7 @@
         <button class:on={tab === "history"} onclick={() => (tab = "history")}>{t("History")}</button>
       {/if}
     </nav>
+    </div>
 
     {#snippet changesPanel(scope: "changes" | "all" | undefined, footer = false)}
       {#snippet summary()}<EditsSummary st={st!} />{/snippet}
@@ -1089,7 +1097,7 @@
     <main class:flush={tab !== "history"} class:reading inert={reading}>
       {#if tab === "overview"}
         <div class="overview" bind:clientWidth={overviewWidth}>
-          <div class="graph-pane">
+          <div class="graph-pane" style:right={flat ? `${overviewWidth - graphWidth}px` : undefined}>
             <div class="graph-bar" bind:offsetHeight={graphBarH}>
               <BranchMenu {st} onswitch={switchTo} onmerge={openMergePreview} onnewbranch={() => (newBranch = "")}
                 onsettings={(key) => (branchSettings = key)} onmilestone={(id) => (graphPick = id)} />
@@ -1130,10 +1138,11 @@
               pending={st.changes.length} selected={shown} onselect={(id) => (graphPick = id)}
               parked={(st.parked ?? []).map((p) => ({ key: parkKey(p), base: p.base, files: p.files, since: p.since, where: placeOf(p) }))}
               {parkedActions} remember={root} top={graphBarH ? graphBarH + GRAPH_BAR_TOP : 0}
-              reserve={Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
+              reserve={flat ? 0 : Math.max(0, overviewWidth - graphWidth - INSET)} panelInset={GAP} />
           </div>
           {#if overviewWidth}<Splitter key="graph" def={0.36} width={overviewWidth} minLeft={280} minRight={520} />{/if}
-          <div class="detail-pane" style:left="{graphWidth}px" style:top="{INSET + GAP}px" style:right="{INSET + GAP}px" style:bottom="{INSET + GAP}px">
+          <div class="detail-pane" style:left="{graphWidth + (flat ? GUTTER : 0)}px" style:top="{INSET + GAP}px" style:right="{INSET + GAP}px" style:bottom="{INSET + GAP}px">
+            <div class="band flat-only">{t("Details")}</div>
             {#if shown === "pending"}
               <div class="pending-h">
                 <strong>{t("Your changes")}</strong>
@@ -1350,7 +1359,8 @@
 
 <style>
   label.check { display: flex; align-items: center; gap: var(--sp-8); margin-top: var(--sp-12); color: var(--text); font-size: var(--fs-base); }
-  .view { display: flex; flex-direction: column; height: 100%; }
+  .view { display: flex; flex-direction: column; gap: var(--pane-gap); height: 100%; background: var(--surface-gutter); }
+  .head { flex: none; background: var(--surface-head); }
   .refreshing { position: fixed; inset: 0; z-index: var(--z-dialog); display: flex; align-items: center; justify-content: center; gap: var(--sp-10);
     background: var(--scrim); backdrop-filter: var(--scrim-blur); color: var(--text); font-size: var(--fs-md); animation: dim .12s ease-out; }
   @keyframes dim { from { opacity: 0; } }
@@ -1368,8 +1378,9 @@
   .suggestion { display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-10) 0; border-top: var(--border-width) solid var(--line); }
   .suggestion > :global(div:first-child) { flex: 1; }
 
-  nav { display: flex; gap: var(--sp-4); padding: var(--sp-10) var(--sp-24) 0; border-bottom: var(--border-width) solid var(--line); }
-  nav button { border: none; background: transparent; border-radius: var(--radius) var(--radius) 0 0; padding: var(--sp-8) var(--sp-14); color: var(--muted); border-bottom: 2px solid transparent; }
+  nav { display: flex; gap: var(--sp-4); padding: var(--sp-10) var(--sp-24) 0; border-bottom: var(--border-width) solid var(--pane-edge); }
+  nav button { border: none; background: transparent; border-radius: var(--tab-radius) var(--tab-radius) 0 0; padding: var(--sp-8) var(--sp-14); color: var(--muted); border-bottom: 2px solid transparent;
+    font-size: var(--tab-fs); text-transform: var(--tab-case); letter-spacing: var(--tab-spacing); }
   nav button.on { color: var(--text); border-bottom-color: var(--accent); }
   /* changes not committed yet: a dot by Versions (how many on hover) */
   nav .dot { display: inline-block; width: 7px; height: 7px; margin-left: var(--sp-6); vertical-align: 2px; border-radius: 50%; background: var(--accent); }
@@ -1381,9 +1392,9 @@
   /* Overview: the graph, then the picked version (or your changes) and its files. */
   .overview { position: relative; height: 100%; min-height: 0; }
   /* The graph: one big card (dots 18px apart) filling the tab. */
-  .graph-pane { position: absolute; inset: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
-    border-radius: var(--radius-card); background-color: var(--panel); box-shadow: var(--shadow-card);
-    background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.4px); background-size: 18px 18px; }
+  .graph-pane { position: absolute; inset: var(--pane-inset); display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    border-radius: var(--pane-radius); background-color: var(--surface-graph); box-shadow: var(--shadow-card);
+    background-image: var(--graph-ground); background-size: var(--graph-ground-size); }
   .graph-pane > :global(:last-child) { flex: 1; min-height: 0; }
   .graph-bar { position: absolute; top: var(--sp-14); left: var(--sp-16); z-index: var(--z-sticky); display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-6); }
   nav .bad { color: var(--warn); }
@@ -1407,8 +1418,8 @@
   .pending-body > :global(*) { flex: 1; min-height: 0; }
   .settings { max-width: 680px; }
   /* Files and Settings: in a card like the Overview's graph */
-  .pane { height: calc(100% - 32px); margin: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
-    border-radius: var(--radius-card); background-color: var(--panel); box-shadow: var(--shadow-card); }
+  .pane { height: calc(100% - 2 * var(--pane-inset)); margin: var(--pane-inset); display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    border-radius: var(--pane-radius); background-color: var(--surface-pane); box-shadow: var(--shadow-card); }
   .pane > :global(*) { flex: 1; min-height: 0; }
   .pane.scroll { display: block; overflow: auto; padding: var(--sp-20) var(--sp-24) var(--sp-32); }
   .pad { padding: var(--sp-16); }

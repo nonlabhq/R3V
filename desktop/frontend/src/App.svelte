@@ -890,16 +890,12 @@
         <button class="folded-proj add-icon" onclick={addToTeam} disabled={busy === "add" || !current} title={t("Add project")} aria-label={t("Add project")}>+</button>
       </div>
       <!-- folded: who you are, as your picture -->
-      {#if current?.memberName}
+      {#if current}
         <div class="user folded-user">
-          {#if profile?.available}
-            <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName} · ${t("User settings")}`}
-              aria-label={t("User settings")}>
-              <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} size={28} />
-            </button>
-          {:else}
-            <span class="avatar" title={current.memberName}>{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
-          {/if}
+          <button class="ghost who" onclick={() => (userSettings = true)} title={`${current.memberName || t("No name yet")} · ${t("User settings")}`}
+            aria-label={t("User settings")}>
+            <Avatar name={current.memberName || "?"} seed={current.memberId} color={profile?.color ?? ""} picture={profile?.picture ?? ""} size={28} />
+          </button>
         </div>
       {/if}
       {:else}
@@ -920,9 +916,11 @@
         onsettings={openTeamSettings} /></div>
 
       <div class="list">
-        <div class="section row-h section-slot">
+        <div class="section row-h section-slot band">
           <span>{t("Projects")}</span>
           {#if current}
+            <button class="ghost tiny flat-only add-tiny" onclick={addToTeam} disabled={busy === "add"} title={t("Add project")}
+              aria-label={t("Add project")}>+</button>
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
@@ -943,10 +941,12 @@
             <li class="empty faint">{t("No projects in this team yet.")}</li>
           {/each}
         </ul>
-        <button class="add" onclick={addToTeam} disabled={busy === "add" || !current}>
-          <span>+ {t("Add project")}</span>
-          <span class="hint">{t("Select project folder")}</span>
-        </button>
+        <div class="cards-only">
+          <button class="add" onclick={addToTeam} disabled={busy === "add" || !current}>
+            <span>+ {t("Add project")}</span>
+            <span class="hint">{t("Select project folder")}</span>
+          </button>
+        </div>
       </div>
       <!-- what needs you: R3V's update, the team's asks (kept below the
            projects, so they stay where they are folded or not) -->
@@ -971,16 +971,14 @@
         {/if}
         <TeamMenu {overview} {reload} part="notices" onhome={() => goHome()} onsettings={openTeamSettings} />
       </div>
-      <!-- who you are in this team, and the app's settings -->
+      <!-- who you are in this team (the one way to your name, colour and
+           account: User settings), and the app's settings -->
       <div class="user">
-        {#if current?.memberName && profile?.available}
+        {#if current}
           <button class="ghost who" onclick={() => (userSettings = true)} title={t("User settings")}>
-            <Avatar name={current.memberName} seed={current.memberId} color={profile.color} picture={profile.picture} />
-            <span class="user-name">{current.memberName}</span>
+            <Avatar name={current.memberName || "?"} seed={current.memberId} color={profile?.color ?? ""} picture={profile?.picture ?? ""} />
+            <span class="user-name">{current.memberName || t("No name yet")}</span>
           </button>
-        {:else if current?.memberName}
-          <span class="avatar" aria-hidden="true">{([...current.memberName.trim()][0] ?? "?").toUpperCase()}</span>
-          <span class="user-name">{current.memberName}</span>
         {/if}
         <button class="ghost keys" onclick={() => (keysHelp = true)} title={t("Keyboard shortcuts") + " (Ctrl+/)"}
           aria-label={t("Keyboard shortcuts")}>⌨</button>
@@ -1179,8 +1177,9 @@
 {/if}
 
 {#if userSettings}
-  <UserSettings team={current} onclose={() => (userSettings = false)}
-    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }} />
+  <UserSettings team={current} author={overview?.author ?? ""} onclose={() => (userSettings = false)}
+    onchanged={async (p) => { profile = p; await reload(); refreshKey++; }}
+    onidentity={async () => { await reload(); loadProfile(); refreshKey++; }} />
 {/if}
 
 {#snippet projectSettings(p: TeamProject, inline: boolean)}
@@ -1206,7 +1205,7 @@
 
 {#if teamSettingsFor && overview}
   {@const tm = overview.teams.find((x) => x.id === teamSettingsFor!.id) ?? teamSettingsFor}
-  <TeamSettings team={tm} author={overview.author} {reload} onclose={() => (teamSettingsFor = null)}
+  <TeamSettings team={tm} {reload} onclose={() => (teamSettingsFor = null)}
     teams={overview.teams} canMove
     offline={tm.id === overview.currentTeam && !!overview.teamError}
     roots={tm.id === overview.currentTeam ? overview.projects.filter((p) => p.root && p.status === "downloaded").map((p) => p.root) : []} />
@@ -1257,7 +1256,7 @@
 {#if nightly}<StyleLab />{/if}
 
 <style>
-  .shell { position: relative; display: grid; grid-template-columns: 256px 1fr; height: 100%; }
+  .shell { position: relative; display: grid; grid-template-columns: 256px 1fr; column-gap: var(--pane-gap); height: 100%; background: var(--surface-gutter); }
   .side-split { position: absolute; top: 0; bottom: 0; width: 7px; margin-left: -4px; z-index: var(--z-sticky); cursor: col-resize; touch-action: none; }
   .side-split:hover, .shell.sizing .side-split { background: linear-gradient(to right, transparent 3px, var(--accent) 3px, var(--accent) 4px, transparent 4px); }
   .shell.sizing { cursor: col-resize; user-select: none; }
@@ -1272,8 +1271,6 @@
   .section-slot { height: var(--section-h); box-sizing: border-box; flex: none; }
   .user { display: flex; align-items: center; gap: var(--sp-8); margin: var(--sp-8) calc(var(--sp-10) * -1) calc(var(--sp-12) * -1);
     padding: var(--sp-10) var(--sp-14); border-top: var(--border-width) solid var(--line); }
-  .user .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: var(--fs-xs); font-weight: var(--fw-semibold); background: var(--panel-2); color: var(--text); }
   .who { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-8); padding: var(--sp-2) var(--sp-4);
     margin-left: calc(var(--sp-4) * -1); text-align: left; color: var(--text); }
   .user-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
@@ -1295,9 +1292,9 @@
   .folded-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; align-items: center;
     padding: 0; margin: 0 calc(var(--sp-6) * -1); }
   .folded-row { height: var(--row-h); flex: none; display: flex; align-items: center; justify-content: center; }
-  .folded-proj { padding: var(--sp-2); border: var(--border-width) solid transparent; border-radius: var(--radius-lg); background: transparent; line-height: 0; }
-  .folded-proj:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
-  .folded-proj.on { background: var(--accent-bg); border-color: var(--accent-line); }
+  .folded-proj { padding: var(--sp-2); border: var(--border-width) solid transparent; border-radius: var(--row-radius); background: transparent; line-height: 0; }
+  .folded-proj:hover:not(:disabled) { background: var(--side-hover); border-color: transparent; }
+  .folded-proj.on { background: var(--select-bg); box-shadow: var(--select-bar); border-color: var(--select-line); }
   .folded-proj.remote { opacity: .45; }
   .add-icon { flex: none; width: 36px; height: 36px; margin-top: var(--sp-4); line-height: 1; font-size: var(--fs-lg); color: var(--muted); border-style: dashed; border-color: var(--line); }
   /* The project dragged: lifted over the others, where the pointer is; let
@@ -1315,14 +1312,17 @@
   .logo img { width: 22px; height: 22px; display: block; }
   .logo .news { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn);
     box-shadow: 0 0 0 2px var(--bg-sunken); }
-  aside { background: var(--bg-sunken); border-right: var(--border-width) solid var(--line); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
+  aside { background: var(--surface-side); border-right: var(--border-width) solid var(--pane-edge); display: flex; flex-direction: column; padding: var(--sp-12) var(--sp-10); min-height: 0; }
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }
   .brand:hover { background: var(--panel-2); }
   .brand img { width: 24px; height: 24px; }
   .brand img.wordmark { width: auto; height: 18px; }
-  .list { flex: 1; overflow: auto; min-height: 0; }
+  .list { flex: 1; overflow: auto; min-height: 0; margin: 0 calc(var(--sp-10) * -1); padding: 0 var(--sp-10); }
   .section { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-8) var(--sp-8) var(--sp-4); }
+  /* (Flat: a band across the side bar, a step apart from the rows) */
+  .section.band { margin: 0 calc(var(--sp-10) * -1) var(--side-band-gap); padding-left: var(--sp-18); padding-right: var(--sp-18); }
+  .add-tiny { font-size: var(--fs-lg); line-height: 18px; margin-left: auto; }
   .row-h { display: flex; align-items: center; justify-content: space-between; }
   .tiny { padding: 0 var(--sp-6); font-size: var(--fs-md); line-height: 18px; color: var(--faint); }
   .tiny:hover { color: var(--text); }
@@ -1334,12 +1334,12 @@
   .dl-progress { width: 360px; max-width: 100%; margin: var(--sp-10) auto 0; display: flex; text-align: left; }
   ul { list-style: none; margin: 0; padding: 0; }
   li { display: flex; align-items: center; position: relative; }
-  .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--radius-lg); text-align: left; }
-  .proj:hover { background: var(--panel); }
+  .proj { flex: 1; min-width: 0; height: var(--row-h); box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent; padding: 0 var(--sp-28) 0 var(--sp-10); border-radius: var(--row-radius); text-align: left; }
+  .proj:hover { background: var(--side-hover); }
   /* an agent's workspace: under its project, a step in */
   li.ws .proj { padding-left: var(--sp-28); }
   li.has-ws .proj { padding-right: calc(var(--sp-28) + var(--sp-16)); }
-  .proj.on { background: var(--accent-bg); }
+  .proj.on, .proj.on:hover { background: var(--select-bg); box-shadow: var(--select-bar); }
   .icon { width: 16px; text-align: center; color: var(--accent); }
   .text { display: flex; flex-direction: column; min-width: 0; }
   .name { font-weight: var(--fw-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1399,13 +1399,14 @@
      and the window's buttons. Empty space drags the window. */
   .titlebar, .aside-top { --wails-draggable: drag; }
   .titlebar button, .titlebar .tab, .aside-top button { --wails-draggable: no-drag; }
-  .titlebar { display: flex; align-items: flex-end; height: 40px; flex: none; background: var(--bg-sunken);
-    border-bottom: var(--border-width) solid var(--line); }
-  .tabs { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0 var(--sp-8); height: 100%; }
-  .tab { display: flex; align-items: center; min-width: 0; max-width: 220px; height: 32px; border: var(--border-width) solid transparent;
-    border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; color: var(--muted); }
-  .tab:hover { background: var(--panel); }
-  .tab.on { background: var(--bg); border-color: var(--line); color: var(--text); margin-bottom: calc(var(--border-width) * -1); height: calc(32px + var(--border-width)); }
+  .titlebar { display: flex; align-items: flex-end; height: var(--titlebar-h); flex: none; background: var(--surface-titlebar);
+    border-bottom: var(--border-width) solid var(--pane-edge); }
+  .tabs { flex: 1; min-width: 0; display: flex; align-items: flex-end; gap: var(--sp-2); padding: 0 var(--titlebar-pad); height: 100%; }
+  .tab { display: flex; align-items: center; min-width: 0; max-width: 220px; height: var(--tab-h); border: var(--border-width) solid transparent;
+    border-bottom: none; border-radius: var(--tab-radius) var(--tab-radius) 0 0; color: var(--muted); }
+  .tab:hover { background: var(--side-hover); }
+  .tab.on { background: var(--surface-tab); border-color: var(--pane-edge); color: var(--text); margin-bottom: calc(var(--border-width) * -1);
+    height: calc(var(--tab-h) + var(--border-width)); box-shadow: var(--select-bar-top); }
   .tab-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-6); border: none; background: transparent;
     padding: 0 var(--sp-4) 0 var(--sp-12); color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-md); }
   .tab-name:hover:not(:disabled) { background: transparent; }

@@ -7,7 +7,7 @@
   import { branchGraph } from "$shared/branchGraph";
   import { branchLabel, branchLane } from "$shared/branches";
   import { initial } from "$shared/palette";
-  import { baseName, isChanged } from "$shared/files";
+  import { baseName, dirOf, isChanged } from "$shared/files";
   import FileIcon from "$shared/FileIcon.svelte";
   import LockBadge from "./LockBadge.svelte";
   import { lockText, type LockItem } from "./locks.svelte";
@@ -110,6 +110,7 @@
 </script>
 
 <div class="fp">
+  <div class="band flat-only">{t("File")}<span class="end where" title={file.path}>{dirOf(file.path)}</span></div>
   <header>
     <span class="badge"><FileIcon path={file.path} kind={file.kind} /></span>
     <strong class="name" title={file.path}>{baseName(file.path)}</strong>
@@ -157,9 +158,9 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       {#if histOpen}<div class="hsplit" onpointerdown={resizeTop}></div>{/if}
       <section class="history" class:folded={!histOpen}>
-        <h3><button class="fold" aria-expanded={histOpen} onclick={toggleHistory}>
+        <h3 class="band"><button class="fold" aria-expanded={histOpen} onclick={toggleHistory}>
           <span class="chev" aria-hidden="true">{histOpen ? "▾" : "▸"}</span>{t("History of this file")}{#if !histOpen && history?.length}<span class="n">{history.length}</span>{/if}
-        </button></h3>
+        </button>{#if histOpen && history?.length}<span class="end flat-only">{tn(history.length, "{n} version", "{n} versions")}</span>{/if}</h3>
         {#if !histOpen}
           <!-- (folded: the file takes the room) -->
         {:else if history === null}
@@ -203,6 +204,7 @@
 
 <style>
   .fp { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  .where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
   header { flex: none; display: flex; align-items: center; gap: var(--sp-10); padding: var(--sp-16) var(--sp-18) var(--sp-12); }
   .badge { flex: none; min-width: 22px; height: 18px; padding: 0 var(--sp-4); border-radius: var(--radius-sm); background: var(--hover-strong);
     color: var(--muted); font-size: var(--fs-2xs); font-weight: var(--fw-bold); display: inline-flex; align-items: center; justify-content: center; }
@@ -219,7 +221,9 @@
   .hsplit:hover, .hsplit:active { background: linear-gradient(to bottom, transparent 4px, var(--accent) 4px, var(--accent) 5px, transparent 5px); }
   .history { flex: 1; min-height: 0; overflow: auto; }
   .history.folded { flex: none; padding-bottom: var(--sp-10); }
-  .history.folded h3 { margin: 0; }
+  .history.folded h3 { margin: 0 calc(var(--sp-18) * -1 * var(--bleed)); }
+  .history h3 { margin: calc(var(--sp-12) * -1 * var(--bleed)) calc(var(--sp-18) * -1 * var(--bleed)) var(--sp-10); }
+  .history.folded { padding-top: calc(var(--sp-12) * (1 - var(--bleed))); }
   .top.grow { flex: 1; }
   .fold { display: inline-flex; align-items: center; gap: var(--sp-6); padding: 0; border: none; background: none; color: inherit;
     font: inherit; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
@@ -237,13 +241,14 @@
     text-transform: uppercase; letter-spacing: .08em; }
   .small { font-size: var(--fs-sm); }
   .timeline { list-style: none; margin: 0 calc(var(--sp-8) * -1); padding: 0; }
-  .timeline li { position: relative; display: flex; align-items: center; border-radius: var(--radius-lg); }
+  .timeline li { position: relative; display: flex; align-items: center; border-radius: var(--row-radius); }
   /* the line from one version to the one before, in the newer one's colour */
   .timeline li:not(:last-child)::before { content: ""; position: absolute; left: calc(var(--sp-8) + 11px); top: 34px; bottom: -10px;
     width: 2px; background: var(--c); opacity: .7; }
   .timeline li:hover { background: var(--hover); }
   /* the version shown, picked in the accent like a project picked in the side bar */
-  .timeline li.on { background: var(--accent-bg); box-shadow: inset 0 0 0 var(--border-width) var(--accent-line); }
+  .timeline li.on { background: var(--select-bg); box-shadow: var(--select-bar), inset 0 0 0 var(--border-width) var(--select-line); }
+  .timeline li.on .msg { color: var(--text); }
   .row { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--sp-10); border: none; background: transparent;
     padding: var(--sp-6) var(--sp-8); text-align: left; border-radius: var(--radius-lg); }
   .row:hover:not(:disabled) { background: transparent; }
@@ -256,7 +261,7 @@
   .cur { flex: none; font-size: var(--fs-xs); color: var(--faint); margin-right: var(--sp-6); }
   .restore { flex: none; visibility: hidden; margin-right: var(--sp-8); padding: var(--sp-2) var(--sp-10); border-radius: var(--radius-pill);
     font-size: var(--fs-xs); }
-  .timeline li:hover .restore, .restore:focus-visible { visibility: visible; }
+  .timeline li:hover .restore, .timeline li.on .restore, .restore:focus-visible { visibility: visible; }
   footer { flex: none; display: flex; gap: var(--sp-10); padding: var(--sp-12) var(--sp-18) var(--sp-16);
     border-top: var(--border-width) solid var(--line-strong); }
   footer .primary { flex: 1; }

@@ -1926,5 +1926,15 @@
 "Mouse": "Mouse",
 "Middle click · Ctrl+click": "Clique do meio · Ctrl+clique",
 "In the sidebar: open a project or team in a new tab": "Na barra lateral: abrir um projeto ou equipe em uma nova aba",
-"Middle click on a tab": "Clique do meio em uma aba"
+"Middle click on a tab": "Clique do meio em uma aba",
+"Appearance": "Aparência",
+"Look": "Estilo",
+"Flat": "Plano",
+"Cards": "Cartões",
+"Panels side by side, compact.": "Painéis lado a lado, compacto.",
+"Cards floating on the window, roomier.": "Cartões flutuando sobre a janela, mais espaçoso.",
+"Invite": "Convidar",
+"Teammates join with the team's invitation, in its settings": "Colegas entram com o convite da equipe, nas configurações dela",
+"Team activity": "Atividade da equipe",
+"No name yet": "Ainda sem nome"
 }
