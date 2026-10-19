@@ -385,16 +385,28 @@ workspace at a time; code is never locked (it merges hunk by hunk).
   theirs: refused too.
 - Lock ahead, all or none: `r3v lock <paths…> --json` (a folder covers
   what's under it; too wide is warned about). `r3v unlock <paths…>` frees
-  yours. Locks are freed when your branch is merged.
+  yours. A lock protects work not committed, and work not merged yet:
+  in a workspace, yours are freed when your branch is merged; on the
+  branch the workspaces merge into (the main copy's, main), a commit
+  frees the locks on what it committed (folder locks stay until
+  unlocked).
 - Working on code someone else might take too: `r3v lock src/renderer/
-  --claim` tells the other agents; it blocks nothing.
+  --claim` tells the other agents; it blocks nothing. `r3v lock` on a
+  file that never locks (code) claims it instead (`claimed_instead`, and a
+  warning): a lock there would stop no one.
 - `r3v locks --json`: `locks` (`path`, `kind` `lock`|`claim`,
   `workspace`, `branch`, `actor`, `since`, `heartbeat`, `stale`, `person`
   (the user's uncommitted change), `mine`). A lock not heard of for 15
-  minutes is `stale`; the next lock over it takes it.
+  minutes is `stale`; the next lock over it takes it. A lock taken over
+  also has `reason` and `taken_from` (who held it).
+- `r3v lock --take <paths…> --reason "<why>" --json` takes over others'
+  locks before they are stale, when their holder is gone (its session
+  ended, the user said so): only then, and say why. Files the user changed
+  stay theirs.
 - `r3v lock --break <path>` is the user's: never break a lock on your own.
 - `lock --json` result: `taken`, `others` (others' claims over the paths),
-  `taken_over` (stale locks replaced), `warnings`.
+  `taken_over` (locks replaced: stale ones, or with `--take` any),
+  `claimed_instead` (files claimed as they never lock), `warnings`.
 
 ## Errors
 

@@ -146,7 +146,7 @@ freed and broken the same way. Underneath, two scopes:
 | Held by | a member | a workspace (and its session) |
 | Kept | by R3V Cloud | on this computer, beside the shared store |
 | Enforced | by the service, at a share | by the hook before a change, and at commit |
-| Until | shared | merged into the base branch |
+| Until | shared | merged into the base branch (on the base branch: committed) |
 
 What locks itself is the team's choice of kinds (`profile.LockKinds`;
 a project's own settings narrow it: team-settings.md), the same for both: files that
@@ -164,7 +164,16 @@ Agent locks:
 - **The person's changes count**: a file changed and not committed in a
   copy a person works in (no workspace's agent) is held by them.
 - **Held until merged** into the base branch: conflicts happen at the
-  merge, not the commit.
+  merge, not the commit. A lock protects work not committed, and work not
+  yet merged into the base. On the base branch itself (the main copy's,
+  where nothing merges it anywhere) a commit frees it: what's committed
+  there is what the workspaces merge from, so there's nothing left to
+  protect. Held until merged there, one commit of a scene in the main
+  copy stopped every workspace until the lock went stale.
+- **Taken over** on purpose: `r3v lock --take <paths…> --reason <why>`
+  takes others' locks before they go stale, when their holder is gone;
+  the new lock keeps the reason and who held it (`locks` shows both).
+  The person's uncommitted changes still refuse it.
 - **Two checks**: before a change (the `PreToolUse` hook refuses an
   agent's Edit or Write on a path another holds), and at commit (a commit
   changing such a path is refused: catches a tool's own save, an editor
@@ -186,7 +195,9 @@ check in `project.Snapshot`, `cli/agentlocks.go`):
 - What locks: the team's kinds as last read (`agent-locks/team-locks.json`,
   refreshed by `agent setup` and `locks`: the hook never asks the team),
   else every kind but Godot's text scenes (`profile.AgentLockKinds`:
-  textures, models, sounds too, which the team's defaults leave out);
+  textures and sounds too, which the team's defaults leave out; models
+  are among the defaults now, a team that chose its kinds before keeps
+  its list);
   the project's settings narrow them (team-settings.md; `.r3v.yaml`'s
   `file_locks` before 0.1.75); ignored files and files a
   preset merges as text never lock.
@@ -197,8 +208,17 @@ check in `project.Snapshot`, `cli/agentlocks.go`):
 - An agent's commit takes the locks of the locking files it changes (as a
   first touch would), or is refused (`files_locked_by_agent`) with
   nothing taken. A person's never is.
-- Merging branch X (`r3v merge X`) frees X's locks; not main's (a
-  workspace merging main in is catching up).
+- Merging branch X (`r3v merge X`) frees X's locks; not a base branch's
+  (a workspace merging its base in is catching up).
+- A base branch is main, or any registered workspace's `base`
+  (`workspaces.json`). After a commit there, the copy's file locks on that
+  branch whose files are as committed (or as before, never changed) are
+  freed; folder locks stay until unlocked. Stopped between the commit and
+  that, the locks stay: the next commit there frees them, or they go
+  stale.
+- `r3v lock` on a file that never locks (code, ignored files) takes a
+  claim instead (`claimed_instead`): a lock there would stop no one, and
+  an ineffective record would mislead whoever reads the list.
 - The hook denies with Claude Code's `permissionDecision: deny`; a note
   about others' claims goes in `additionalContext`, once per claim and
   workspace. It never answers `allow` (that would skip the person's
