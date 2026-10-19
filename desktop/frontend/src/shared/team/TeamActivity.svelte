@@ -20,6 +20,14 @@
     src.activity(d).then((v) => { if (source === src && days === d) items = v ?? []; })
       .catch((e) => { if (source === src) error = errorText(e); });
   });
+  // Something happened meanwhile (the source says so): read again, what's
+  // shown staying until the new list is there.
+  $effect(() => {
+    const src = source, d = days;
+    return src.activityChanges?.(() => {
+      src.activity(d).then((v) => { if (source === src && days === d) items = v ?? []; }).catch(() => {});
+    });
+  });
 
   // Who: everyone, people, agents, a member (m:<id>), an agent (a:<tool>).
   let who = $state("");

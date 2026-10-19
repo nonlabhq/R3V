@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/cloud"
 	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/remote"
 )
@@ -13,7 +14,8 @@ import (
 // A team's Activity (docs/design/team-settings.md): what happened, newest
 // first, from what its storage keeps: the projects' branch logs (shares,
 // merges, branches made and deleted) and the team log (projects added,
-// removed, archived and brought back, members joining).
+// removed, archived and brought back, members joining). An R3V Cloud team's
+// service makes the same from them (GET …/events).
 
 // ActivityItem is one thing that happened.
 type ActivityItem struct {
@@ -42,6 +44,16 @@ func (a *App) TeamActivity(teamID string, days int) ([]ActivityItem, error) {
 	if err != nil {
 		return nil, err
 	}
+	if days <= 0 {
+		days = 30
+	}
+	// An R3V Cloud team's service has it ready made; the team's storage is
+	// read as below when it can't say (an older service, a failure).
+	if svc, ok := cloud.Hosted(*t); ok {
+		if items, err := hostedActivity(svc, cloud.TeamID(t.Remote.URL), days); err == nil {
+			return items, nil
+		}
+	}
 	b, err := t.Open()
 	if err != nil {
 		return nil, err
@@ -49,9 +61,6 @@ func (a *App) TeamActivity(teamID string, days int) ([]ActivityItem, error) {
 	s, ok := b.(*remote.BucketBackend)
 	if !ok {
 		return []ActivityItem{}, nil
-	}
-	if days <= 0 {
-		days = 30
 	}
 	since := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 	ps, err := b.Projects()
@@ -157,6 +166,25 @@ func (a *App) TeamActivity(teamID string, days int) ([]ActivityItem, error) {
 	}
 	wg.Wait()
 
+	at := func(s string) time.Time { t, _ := time.Parse(time.RFC3339Nano, s); return t }
+	sort.SliceStable(out, func(i, j int) bool { return at(out[i].Time).After(at(out[j].Time)) })
+	if len(out) > activityMax {
+		out = out[:activityMax]
+	}
+	return out, nil
+}
+
+// hostedActivity is a hosted team's Activity as its service tells it
+// (GET …/events: one request).
+func hostedActivity(service, team string, days int) ([]ActivityItem, error) {
+	evs, err := cloud.Events(service, team, min(days, 366))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ActivityItem, 0, min(len(evs), activityMax))
+	for _, e := range evs {
+		out = append(out, ActivityItem(e))
+	}
 	at := func(s string) time.Time { t, _ := time.Parse(time.RFC3339Nano, s); return t }
 	sort.SliceStable(out, func(i, j int) bool { return at(out[i].Time).After(at(out[j].Time)) })
 	if len(out) > activityMax {

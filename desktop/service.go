@@ -51,6 +51,10 @@ type App struct {
 	// live: hosted teams' notices (R3V-Cloud), instead of waiting for the
 	// next poll.
 	live *cloud.Hub
+	// teamLive: the hosted teams listened to as teams (watchHostedTeams),
+	// by address: their stops. liveKeys: their keys' notices gathered.
+	teamLive map[string]func()
+	liveKeys liveKeys
 }
 
 func NewApp() *App {
@@ -62,6 +66,7 @@ func NewApp() *App {
 	a.live.OnTeamChange = func(service string) { a.syncTeams(service) }
 	a.live.OnRecord = a.onRecord
 	a.live.OnLock = a.onLock
+	a.live.OnKey = a.onKey
 	return a
 }
 
@@ -91,6 +96,7 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 		for _, root := range store.Roots() {
 			a.startWatch(root)
 		}
+		a.watchHostedTeams()
 		go a.syncHosted()
 		go a.shareSetups(ctx)
 		go a.backUpOnSchedule(ctx)

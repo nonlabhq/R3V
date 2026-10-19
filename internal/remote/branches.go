@@ -7,7 +7,6 @@ import (
 	"errors"
 	"path"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -130,34 +129,20 @@ func (s *BucketBackend) BranchRecords(pid string) (map[string]BranchRecord, erro
 	if !validHex(pid, 32) {
 		return nil, errors.New("invalid project id")
 	}
-	keys, err := s.list(projectDir(pid) + "branchinfo/")
+	got, err := s.readDir(projectDir(pid)+"branchinfo/", "")
 	if err != nil {
 		return nil, err
 	}
-	var mu sync.Mutex
 	out := map[string]BranchRecord{}
-	err = parallel(keys, func(k string) error {
+	for k, data := range got {
 		name := strings.TrimSuffix(path.Base(k), ".json")
-		if !validBranch(name) {
-			return nil
-		}
-		data, err := s.get(k)
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
 		var r BranchRecord
-		if json.Unmarshal(data, &r) != nil {
-			return nil // one that can't be read shows as its key
+		if !validBranch(name) || json.Unmarshal(data, &r) != nil {
+			continue // one that can't be read shows as its key
 		}
-		mu.Lock()
 		out[name] = r
-		mu.Unlock()
-		return nil
-	})
-	return out, err
+	}
+	return out, nil
 }
 
 func (s *BucketBackend) PutBranchRecord(pid, key string, r BranchRecord) error {

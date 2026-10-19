@@ -1,7 +1,10 @@
 // Package cloudtest is a fake R3V-Cloud for tests: the small keys (with
 // conditional writes), folders, the presigned URLs it hands out and the
-// storage they point at, which objects a project lacks, and file locks
-// (branch moves carrying the paths they change, checked against them).
+// storage they point at, which objects a project lacks, file locks
+// (branch moves carrying the paths they change, checked against them), the
+// bulk reads (keys/read, listings with values) and a team's Activity
+// (/events), or an older service without them (Old); it counts the
+// requests (Requests).
 package cloudtest
 
 import (
@@ -36,6 +39,71 @@ type Fake struct {
 	BranchBodies map[string]int
 	// Down: the service can't be reached (connections dropped).
 	Down atomic.Bool
+	// Old: an older service, without the bulk reads (keys/read answers 404,
+	// listings leave values out) and without /events.
+	Old atomic.Bool
+	// PageKeys and ReadBytes: a values listing's page (1000 keys) and how
+	// many bytes of values keys/read gives before "later" (4 MB), smaller
+	// for tests.
+	PageKeys, ReadBytes int
+
+	requests map[string]int
+	events   []map[string]any
+	// EventsDays: the days the last /events asked for.
+	EventsDays string
+}
+
+// Requests counts the requests to the service by what they were ("GET
+// key", "GET keys", "GET keys values", "POST keys/read", "GET folders",
+// "GET events", …), since the last ResetRequests.
+func (f *Fake) Requests() map[string]int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := map[string]int{}
+	for k, v := range f.requests {
+		out[k] = v
+	}
+	return out
+}
+
+// Total is how many requests the service got (presigned transfers left
+// out), since the last ResetRequests.
+func (f *Fake) Total() int {
+	n := 0
+	for _, v := range f.Requests() {
+		n += v
+	}
+	return n
+}
+
+func (f *Fake) ResetRequests() {
+	f.mu.Lock()
+	f.requests = map[string]int{}
+	f.mu.Unlock()
+}
+
+// SetEvents sets what /events answers (the service makes them from the
+// team's logs and its index; the fake hands these out as they are).
+func (f *Fake) SetEvents(items []map[string]any) {
+	f.mu.Lock()
+	f.events = items
+	f.mu.Unlock()
+}
+
+// what names a request to the service, for Requests.
+func what(method, rest string, q url.Values) string {
+	switch {
+	case rest == "/keys/read" && method == "POST":
+		return "POST keys/read"
+	case strings.HasPrefix(rest, "/keys/"):
+		return method + " key"
+	case rest == "/keys" && q.Get("values") == "1":
+		return method + " keys values"
+	case strings.HasPrefix(rest, "/projects/"):
+		parts := strings.Split(rest, "/")
+		return method + " projects/" + parts[len(parts)-1]
+	}
+	return method + " " + strings.TrimPrefix(rest, "/")
 }
 
 type member struct {
@@ -60,7 +128,7 @@ func New(t testing.TB) string { return NewFake(t).Address }
 func NewFake(t testing.TB) *Fake {
 	t.Helper()
 	f := &Fake{members: map[string]member{"token": {Owner, true}}, locks: map[string]map[string]*lock{},
-		BranchBodies: map[string]int{}}
+		BranchBodies: map[string]int{}, requests: map[string]int{}}
 	kv := map[string][]byte{}
 	tags := map[string]int{}
 	n := 0
@@ -115,7 +183,28 @@ func NewFake(t testing.TB) *Fake {
 			w.WriteHeader(404)
 			return
 		}
+		f.requests[what(r.Method, rest, r.URL.Query())]++
+		old := f.Old.Load()
 		switch {
+		case rest == "/keys/read" && r.Method == "POST":
+			if old {
+				w.WriteHeader(404)
+				return
+			}
+			f.readKeys(w, body, kv, tags)
+		case rest == "/events" && r.Method == "GET":
+			if old {
+				w.WriteHeader(404)
+				return
+			}
+			f.EventsDays = r.URL.Query().Get("days")
+			items := f.events
+			if items == nil {
+				items = []map[string]any{}
+			}
+			json.NewEncoder(w).Encode(map[string]any{"items": items})
+		case rest == "/keys" && r.URL.Query().Get("values") == "1" && !old:
+			f.listValues(w, r.URL.Query(), kv, tags)
 		case strings.HasPrefix(rest, "/keys/"):
 			k, _ := url.PathUnescape(strings.TrimPrefix(rest, "/keys/"))
 			data, there := kv[k]
@@ -423,4 +512,85 @@ func listed(kv map[string][]byte, key string) bool {
 		return ok
 	}
 	return true
+}
+
+// contentsKey: a project's contents, which go through URLs.
+func contentsKey(k string) bool {
+	parts := strings.SplitN(k, "/", 4)
+	if len(parts) < 4 || parts[0] != "projects" {
+		return false
+	}
+	switch parts[2] {
+	case "objects", "chunked", "snapshots":
+		return true
+	}
+	return false
+}
+
+// readKeys answers POST keys/read {keys}: each key's value and etag,
+// missing, or later past ReadBytes.
+func (f *Fake) readKeys(w http.ResponseWriter, body []byte, kv map[string][]byte, tags map[string]int) {
+	var req struct{ Keys []string }
+	if json.Unmarshal(body, &req) != nil || len(req.Keys) > 1000 {
+		w.WriteHeader(400)
+		return
+	}
+	limit := f.ReadBytes
+	if limit == 0 {
+		limit = 4 << 20
+	}
+	bytes := 0
+	items := []map[string]any{}
+	for _, k := range req.Keys {
+		data, there := kv[k]
+		switch {
+		case !there || contentsKey(k) || strings.HasPrefix(k, "pictures/"):
+			items = append(items, map[string]any{"key": k, "missing": true})
+		case bytes > limit:
+			items = append(items, map[string]any{"key": k, "later": true})
+		default:
+			bytes += len(data)
+			items = append(items, map[string]any{"key": k, "value": string(data), "etag": fmt.Sprintf(`"%d"`, tags[k])})
+		}
+	}
+	json.NewEncoder(w).Encode(map[string]any{"items": items})
+}
+
+// listValues answers GET keys?prefix=&after=&values=1: the keys with their
+// values (pictures without: binary), PageKeys or about 1 MB a page.
+func (f *Fake) listValues(w http.ResponseWriter, q url.Values, kv map[string][]byte, tags map[string]int) {
+	prefix, after := q.Get("prefix"), q.Get("after")
+	if contentsKey(prefix + "x") {
+		w.WriteHeader(400)
+		return
+	}
+	var keys []string
+	for k := range kv {
+		if strings.HasPrefix(k, prefix) && k > after && !contentsKey(k) {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	page := f.PageKeys
+	if page == 0 {
+		page = 1000
+	}
+	items := []map[string]any{}
+	bytes, more := 0, false
+	for i, k := range keys {
+		if i == page || bytes > 1<<20 {
+			more = true
+			break
+		}
+		it := map[string]any{"key": k, "etag": fmt.Sprintf(`"%d"`, tags[k]), "size": len(kv[k]),
+			"modified": time.Now().UTC().Format(time.RFC3339)}
+		if strings.HasPrefix(k, "pictures/") {
+			it["binary"] = true
+		} else {
+			it["value"] = string(kv[k])
+			bytes += len(kv[k])
+		}
+		items = append(items, it)
+	}
+	json.NewEncoder(w).Encode(map[string]any{"items": items, "more": more})
 }

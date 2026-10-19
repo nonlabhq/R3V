@@ -5,7 +5,6 @@ import (
 	"errors"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/jsonx"
@@ -66,34 +65,20 @@ func (s *BucketBackend) Milestones(pid string) (map[string]Milestone, error) {
 	if !validHex(pid, 32) {
 		return nil, errors.New("invalid project id")
 	}
-	keys, err := s.list(projectDir(pid) + "milestones/")
+	got, err := s.readDir(projectDir(pid)+"milestones/", "")
 	if err != nil {
 		return nil, err
 	}
-	var mu sync.Mutex
 	out := map[string]Milestone{}
-	err = parallel(keys, func(k string) error {
+	for k, data := range got {
 		id := strings.TrimSuffix(path.Base(k), ".json")
-		if !validHex(id, 32) {
-			return nil
-		}
-		data, err := s.get(k)
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
 		var m Milestone
-		if json.Unmarshal(data, &m) != nil || !validHex(m.Version, 64) {
-			return nil // one that can't be read isn't shown
+		if !validHex(id, 32) || json.Unmarshal(data, &m) != nil || !validHex(m.Version, 64) {
+			continue // one that can't be read isn't shown
 		}
-		mu.Lock()
 		out[id] = m
-		mu.Unlock()
-		return nil
-	})
-	return out, err
+	}
+	return out, nil
 }
 
 func (s *BucketBackend) PutMilestone(pid, id string, m Milestone) error {

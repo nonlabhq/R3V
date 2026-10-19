@@ -107,37 +107,17 @@ func (s *BucketBackend) BranchLogSince(pid string, since time.Time) ([]BranchMov
 
 // readSince reads the log records in dir named at since or after.
 func (s *BucketBackend) readSince(dir string, since time.Time, fn func(data []byte)) error {
-	keys, err := s.list(dir)
+	// (the records are named <time>-<random>.json: those after from are
+	// those at since or after)
+	from := dir + since.UTC().Format(logKeyTime)
+	got, err := s.readDir(dir, from)
 	if err != nil {
 		return err
 	}
-	from := dir + since.UTC().Format(logKeyTime)
-	var recent []string
-	for _, k := range keys {
+	for _, k := range sortedKeys(got) {
 		if strings.HasSuffix(k, ".json") && k >= from {
-			recent = append(recent, k)
+			fn(got[k])
 		}
 	}
-	got := make([][]byte, len(recent))
-	idx := map[string]int{}
-	for i, k := range recent {
-		idx[k] = i
-	}
-	err = parallel(recent, func(key string) error {
-		data, err := s.get(key)
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		got[idx[key]] = data
-		return nil
-	})
-	for _, d := range got {
-		if d != nil {
-			fn(d)
-		}
-	}
-	return err
+	return nil
 }

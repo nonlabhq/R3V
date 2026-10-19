@@ -130,26 +130,16 @@ func parallelN(n int, items []string, fn func(string) error) error {
 }
 
 // readAll reads every key under dir (records: small), skipping ones gone
-// meanwhile; fn gets each key and its bytes.
+// meanwhile; fn gets each key and its bytes, in key order.
 func (s *BucketBackend) readAll(dir string, fn func(key string, data []byte)) error {
-	keys, err := s.list(dir)
+	got, err := s.readDir(dir, "")
 	if err != nil {
 		return err
 	}
-	var mu sync.Mutex
-	return parallel(keys, func(key string) error {
-		data, err := s.get(key)
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		mu.Lock()
-		fn(key, data)
-		mu.Unlock()
-		return nil
-	})
+	for _, k := range sortedKeys(got) {
+		fn(k, got[k])
+	}
+	return nil
 }
 
 // --- keys ---
@@ -193,25 +183,18 @@ func (s *BucketBackend) Projects() ([]Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	var mu sync.Mutex
+	got, err := s.readKeys(projectRecordKeys(dirs))
+	if err != nil {
+		return nil, err
+	}
 	out := []Project{}
-	err = parallel(dirs, func(dir string) error {
-		data, err := s.get(dir + "project.json")
-		if errors.Is(err, ErrNotFound) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
+	for _, k := range sortedKeys(got) {
 		var p Project
-		if json.Unmarshal(data, &p) == nil && p.ID != "" {
-			mu.Lock()
+		if json.Unmarshal(got[k], &p) == nil && p.ID != "" {
 			out = append(out, p)
-			mu.Unlock()
 		}
-		return nil
-	})
-	return out, err
+	}
+	return out, nil
 }
 
 func (s *BucketBackend) PutProject(p Project) error {
@@ -265,23 +248,17 @@ func (s *BucketBackend) BranchHead(pid, name string) (string, error) {
 }
 
 func (s *BucketBackend) Branches(pid string) (map[string]string, error) {
-	keys, err := s.list(projectDir(pid) + "branches/")
+	got, err := s.readDir(projectDir(pid)+"branches/", "")
 	if err != nil {
 		return nil, err
 	}
-	var mu sync.Mutex
 	out := map[string]string{}
-	err = parallel(keys, func(key string) error {
-		name := path.Base(key)
-		id, _, err := s.branch(pid, name)
-		if err == nil && id != "" {
-			mu.Lock()
-			out[name] = id
-			mu.Unlock()
+	for key, data := range got {
+		if id := strings.TrimSpace(string(data)); id != "" {
+			out[path.Base(key)] = id
 		}
-		return err
-	})
-	return out, err
+	}
+	return out, nil
 }
 
 // UpdateBranch uses conditional writes: create only if absent, move or

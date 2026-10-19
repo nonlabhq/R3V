@@ -121,6 +121,7 @@ func (a *App) syncTeams(svc string) error {
 				" (any more). Its projects stay on this computer as they are; remove the team to keep them as local projects.")
 		}
 	}
+	a.watchHostedTeams()
 	if a.emit != nil {
 		a.emit("teams", svc)
 	}

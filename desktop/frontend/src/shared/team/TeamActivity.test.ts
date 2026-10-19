@@ -38,4 +38,20 @@ describe("TeamActivity", () => {
     await fireEvent.click(screen.getByText("Robin shared “Harbor lights”"));
     expect(onopen).toHaveBeenCalledWith("p1", "v3");
   });
+
+  it("reads again when the source says something happened, keeping the list meanwhile", async () => {
+    let changed = () => {};
+    const stop = vi.fn();
+    const src = source() as TeamSource & { activity: ReturnType<typeof vi.fn> };
+    src.activityChanges = (fn) => { changed = fn; return stop; };
+    const { unmount } = render(TeamActivity, { source: src });
+    expect(await screen.findByText("Robin shared “Harbor lights”")).toBeTruthy();
+    src.activity.mockImplementation(async () => [item({ time: at(0), version: "v4", title: "Night sky" })]);
+    changed();
+    expect(screen.getByText("Robin shared “Harbor lights”")).toBeTruthy();
+    expect(await screen.findByText("Robin shared “Night sky”")).toBeTruthy();
+    expect(src.activity).toHaveBeenCalledTimes(2);
+    unmount();
+    expect(stop).toHaveBeenCalled();
+  });
 });

@@ -98,6 +98,8 @@ export type TeamSource = {
   clearOverrides(pick: "locks" | "agents"): Promise<number>;
 
   activity(days: number): Promise<ActivityEntry[]>;
+  /** Calls fn when the team's Activity may have changed (live notices); returns its stop. None: read once. */
+  activityChanges?(fn: () => void): () => void;
   usage(): Promise<TeamUsageData>;
   /** Counts again (a team on its own storage); none: the usage is the service's. */
   countUsage?(): Promise<TeamUsageData>;
