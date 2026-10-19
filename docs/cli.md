@@ -141,6 +141,8 @@ Teams on storage keep a log of every branch move (each move is its own record, n
 r3v workspace add --branch renderer                       # another copy, on a branch of its own (../game.workspaces/renderer)
 r3v workspace add ../elsewhere/tauri --branch tauri --from main   # or in a folder you choose
 r3v workspace list [--json]                               # each one: branch, ahead/behind, changes
+r3v workspace list --against dev                          # ahead/behind dev instead of each one's base
+r3v workspace base ../game.workspaces/renderer dev        # it merges into dev from now on
 r3v workspace remove ../game.workspaces/renderer [--force]        # once its branch is merged
 ```
 
@@ -172,6 +174,10 @@ when the work is done (`r3v merge renderer`).
   loses them). Its branch stays on the team. A folder left by an `add` or
   `remove` that stopped half-way is finished by `add` again, or cleared by
   `remove`.
+- A workspace merges into the branch it was made from (its base) until
+  `workspace base` names another: ahead/behind, `remove`'s check and the
+  app's **Merge into {branch}** go by it. `workspace list --against BRANCH` only
+  counts against another branch, once.
 - A workspace can't be inside the project's folder (or hold it). Its team
   is the main copy's: connecting, renaming or moving the project is done
   there.

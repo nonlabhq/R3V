@@ -15,6 +15,8 @@ workspaces (several agents on one project; Nightly):
                                          unless <folder>); --agent claude-code sets it up for
                                          the agent (its branch an agent's, hook, R3V_ACTOR)
   workspace list                         each workspace: branch, ahead/behind its base, changes
+                                         (--against BRANCH: ahead/behind that branch instead)
+  workspace base <folder> <branch>       the branch a workspace merges into from now on
   workspace remove <folder> [--force]    once its branch is merged (archived then; --force: lose
                                          its work)
 `

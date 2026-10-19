@@ -439,7 +439,14 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
   `unshared` (versions committed there `--local`, not on the team's
   branch: a merge here doesn't see them), `changes` (files changed, not
   committed), `parked`, `last_activity`,
-  `missing` (the folder is gone: remove it from the list).
+  `missing` (the folder is gone: remove it from the list). `--against
+  BRANCH` counts `ahead` and `behind` against that branch for this call
+  (`against`: its key; `base` stays what is recorded).
+- `workspace base <folder> <branch>`: the workspace merges into `branch`
+  from now on (made from `main`, its work lands on `dev` now): `workspace`
+  as `add` gives it. `ahead`/`behind`, `status`'s `base`, the check before
+  `remove`, the app's "merge into" and the locks kept on base branches all
+  go by it. Nothing in the folders changes.
 - `workspace remove <folder> [--force]`: `removed`. Refused
   (`workspace_not_merged`) while its versions aren't all merged into
   `base` (`r3v merge <branch>` in the main copy), or it has changes not

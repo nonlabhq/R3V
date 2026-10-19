@@ -463,6 +463,14 @@ type WorkspaceStatus struct {
 // WorkspaceStatuses lists the workspaces with where each is (see
 // WorkspaceStatus). It reads every workspace's files for its changes.
 func (r *Repo) WorkspaceStatuses() ([]WorkspaceStatus, error) {
+	return r.WorkspaceStatusesAgainst("")
+}
+
+// WorkspaceStatusesAgainst is WorkspaceStatuses with Ahead and Behind
+// counted against the branch against (its key or name) instead of each
+// one's base: where they stand against a branch the team gathers work on
+// now. "" is each one's base.
+func (r *Repo) WorkspaceStatusesAgainst(against string) ([]WorkspaceStatus, error) {
 	list, err := r.LocalWorkspaces()
 	if err != nil {
 		return nil, err
@@ -477,6 +485,16 @@ func (r *Repo) WorkspaceStatuses() ([]WorkspaceStatus, error) {
 			heads = map[string]string{}
 		}
 		recs, _ = r.BranchRecords()
+	}
+	if against != "" {
+		key, err := r.ResolveBranch(against)
+		if err != nil {
+			return nil, err
+		}
+		if heads != nil && heads[key] == "" {
+			return nil, fmt.Errorf("the team has no branch %q", against)
+		}
+		against = key
 	}
 	out := []WorkspaceStatus{}
 	for _, e := range list {
@@ -503,6 +521,9 @@ func (r *Repo) WorkspaceStatuses() ([]WorkspaceStatus, error) {
 		s.Parked = len(ws.ParkedSets())
 		if heads != nil {
 			base := heads[e.Base]
+			if against != "" {
+				base = heads[against]
+			}
 			if r.fetchSnapshots(c, base) == nil {
 				if ahead, behind, err := r.aheadBehind(ws.tip(), base); err == nil {
 					s.Ahead, s.Behind = &ahead, &behind
@@ -549,6 +570,52 @@ func (r *Repo) aheadBehind(a, b string) (ahead, behind int, err error) {
 		}
 	}
 	return ahead, behind, nil
+}
+
+// SetWorkspaceBase changes the branch a workspace merges into (made from
+// main, it lands on dev now): its ahead and behind, BaseNews, removal's
+// check that all is merged and the locks kept for base branches all go by
+// the registry's Base, so only that changes. The workspace's own record
+// (workspaceLink) keeps what its add started from: an add stopped half-way
+// goes on from it, and this one is whole. Nothing in the folders changes.
+func (r *Repo) SetWorkspaceBase(folder, branch string) (*WorkspaceEntry, error) {
+	root, err := filepath.Abs(folder)
+	if err != nil {
+		return nil, err
+	}
+	key, err := r.ResolveBranch(strings.TrimSpace(branch))
+	if err != nil {
+		return nil, err
+	}
+	c, err := r.Client()
+	if err != nil {
+		return nil, err
+	}
+	heads, err := c.Branches(r.Config.ProjectID)
+	if err != nil && !errors.Is(err, remote.ErrNotFound) {
+		return nil, err
+	}
+	if heads[key] == "" {
+		return nil, fmt.Errorf("the team has no branch %q", branch)
+	}
+	var out *WorkspaceEntry
+	err = r.changeWorkspaces(func(list []WorkspaceEntry) ([]WorkspaceEntry, error) {
+		i := slices.IndexFunc(list, func(e WorkspaceEntry) bool { return samePath(e.Folder, root) })
+		if i < 0 {
+			return nil, fmt.Errorf("%s is not a workspace of this project (r3v workspace list)", root)
+		}
+		if list[i].Branch == key {
+			return nil, fmt.Errorf("%s is the workspace's own branch: it merges into another", r.BranchLabel(key))
+		}
+		list[i].Base = key
+		e := list[i]
+		out = &e
+		return list, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // WorkspaceNotDoneError: a workspace has work its removal would lose.
