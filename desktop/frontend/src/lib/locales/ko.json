@@ -346,7 +346,7 @@
 "Now (not committed)": "현재(커밋 안 됨)",
 "Now on “{version}”": "“{version}”(으)로 이동했습니다",
 "Now working on “{branch}”": "“{branch}”에서 작업 중",
-"On the team, not on this computer yet": "팀에 있지만 이 컴퓨터에는 아직 없음",
+"On the cloud storage, not on this computer yet": "클라우드 저장소에 있지만 이 컴퓨터에는 아직 없음",
 "Only on this computer": "이 컴퓨터에만 있음",
 "Only this file changes; commit it when you're happy.": "이 파일만 바뀝니다. 마음에 들면 커밋하세요.",
 "Open": "열기",

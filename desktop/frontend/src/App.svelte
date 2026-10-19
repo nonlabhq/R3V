@@ -1128,7 +1128,7 @@
     <button class="proj {p.status}" class:on={!home && selectedEntry === p} onclick={(e) => pick(p, e)}
       onmousedown={noAutoscroll} onauxclick={middle(() => openTab(projRef(p)))}
       class:locked={p.status === "remote" && teamLocked}
-      title={p.status === "remote" ? t("On the team, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
+      title={p.status === "remote" ? t("On the cloud storage, not on this computer yet") : p.workspace ? t("An agent's workspace of {name}: {folder}", { name: p.name, folder: p.root }) : p.root}>
       <ProjectIcon {p} size={24} />
       <span class="text">
         <span class="name">{p.workspace ? `⑂ ${p.branchLabel || p.branch}` : p.name}</span>

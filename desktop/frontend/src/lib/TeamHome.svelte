@@ -44,7 +44,7 @@
   const spaces = (p: TeamProject) => projects.filter((w) => w.workspace && same(w.mainRoot, p.root)).length;
   let summary = $derived([members.length ? tn(members.length, "{n} member", "{n} members") : "",
     tn(mains.length, "{n} project", "{n} projects"), kind].filter(Boolean).join(" · "));
-  const status = (p: TeamProject) => (({ remote: t("On the team, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status]
+  const status = (p: TeamProject) => (({ remote: t("On the cloud storage, not on this computer yet"), missing: t("Folder not found") } as Record<string, string>)[p.status]
     ?? `⑂ ${p.branchLabel || p.branch}`);
 
   // A card's menu (its ⋯, or a right click): the same as the project's row
