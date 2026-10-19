@@ -80,7 +80,15 @@ r3v branch archive yi-ideas   # put it away: its versions stay
 r3v branch archived           # what was archived, by whom, when
 r3v branch unarchive yi-ideas # back where it was
 r3v branch delete yi-ideas    # an archived branch, for good
+r3v milestone add "Sent to the label" [VERSION] [-m NOTE]   # name a shared version for the team (a tag)
+r3v milestones                # the project's milestones (also: r3v milestone, r3v milestone list)
+r3v milestone rename|note|remove NAME ...
 ```
+
+`r3v milestone NAME` names one too, unless NAME is one of the command's
+words (`add`, `list`, `ls`, `rename`, `note`, `remove`, `rm`, `delete`,
+`show`, `help`): `r3v milestone list` lists, and the others are a usage
+error. `r3v milestone add list` names a milestone "list" on purpose.
 
 On a team that keeps branch names, a branch can be called anything
 (`r3v branch new Mia's verse`, `r3v switch "Mia 的主歌"`); commands take its

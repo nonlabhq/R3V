@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -55,6 +56,50 @@ func TestMilestoneCommands(t *testing.T) {
 	}
 	if exit, rep := run(t, a, "tags"); exit != 0 || len(list()) != 0 {
 		t.Fatalf("tags after removing: %s %+v", rep.Result, rep.Error)
+	}
+}
+
+// The words of r3v milestone never name a milestone by accident: milestone
+// (alone) and milestone list list them, milestone add names any word.
+func TestMilestoneWords(t *testing.T) {
+	a := teamProject(t)
+	count := func(args ...string) int {
+		t.Helper()
+		exit, rep := run(t, a, args...)
+		if exit != 0 {
+			t.Fatalf("%v: %+v", args, rep.Error)
+		}
+		var got struct{ Milestones []milestoneItem }
+		if err := json.Unmarshal(rep.Result, &got); err != nil || got.Milestones == nil {
+			t.Fatalf("%v didn't list: %s", args, rep.Result)
+		}
+		return len(got.Milestones)
+	}
+	for _, args := range [][]string{{"milestone"}, {"milestone", "list"}, {"tag", "LIST"}, {"milestone", "ls"}} {
+		if n := count(args...); n != 0 {
+			t.Fatalf("%v: %d milestones", args, n)
+		}
+	}
+	for _, w := range []string{"show", "delete", "rm", "Show"} {
+		exit, rep := run(t, a, "milestone", w)
+		if exit != exitUsage || rep.Error == nil || rep.Error.Code != "usage" || !strings.Contains(rep.Error.Hint, "milestone add") {
+			t.Fatalf("milestone %s: exit %d %+v", w, exit, rep.Error)
+		}
+	}
+	if n := count("milestones"); n != 0 {
+		t.Fatalf("a word named a milestone: %d", n)
+	}
+	if exit, rep := run(t, a, "milestone", "add", "list", "-m", "said so"); exit != 0 {
+		t.Fatalf("milestone add list: %+v", rep.Error)
+	}
+	if exit, rep := run(t, a, "milestone", "add", "Beta"); exit != 0 {
+		t.Fatalf("milestone add Beta: %+v", rep.Error)
+	}
+	if n := count("milestone"); n != 2 {
+		t.Fatalf("after add: %d", n)
+	}
+	if exit, rep := run(t, a, "milestone", "remove", "list"); exit != 0 || count("milestone", "list") != 1 {
+		t.Fatalf("remove list: %+v", rep.Error)
 	}
 }
 

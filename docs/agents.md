@@ -107,9 +107,11 @@ same `next` (see Output); `update` and `merge` fail with
   on return (`switch --json`: `parked`, `restored`).
 - Branches are archived (`branch archive`), not deleted; only an archived
   branch is deleted for good (`branch delete`: ask the user).
-- A tag is a milestone: `milestone NAME [VERSION] [-m NOTE]`
-  names a shared version for the whole team, `milestones` lists them
-  (`tag` and `tags` work too). Only shared versions take one.
+- A tag is a milestone: `milestone add NAME [VERSION] [-m NOTE]`
+  names a shared version for the whole team, `milestones` (or `milestone`,
+  `milestone list`) lists them (`tag` and `tags` work too). Only shared
+  versions take one. `milestone NAME` works too, but not for the words of
+  the command (`list`, `rename`, `remove`, …): those never name one.
 
 ## Everyday flow
 
