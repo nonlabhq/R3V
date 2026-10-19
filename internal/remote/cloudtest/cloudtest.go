@@ -131,6 +131,10 @@ func NewFake(t testing.TB) *Fake {
 					w.Write(data)
 				}
 			case "PUT":
+				if !me.admin && adminsOnly(k) {
+					w.WriteHeader(403)
+					return
+				}
 				if c := r.Header.Get("if-none-match"); c == "*" && there {
 					w.WriteHeader(412)
 					return
@@ -248,6 +252,10 @@ func (f *Fake) Locks(pid string) map[string]string {
 	}
 	return out
 }
+
+// adminsOnly: team-level keys only owners and admins write, as the
+// service has it (the archived projects' record).
+func adminsOnly(k string) bool { return k == "archived.json" }
 
 func branchKey(k string) (pid string, ok bool) {
 	parts := strings.Split(k, "/")

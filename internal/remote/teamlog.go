@@ -23,6 +23,9 @@ const (
 	EventProjectAdded   = "project-added"
 	EventProjectRemoved = "project-removed"
 	EventMemberJoined   = "member-joined"
+	// A project archived for the team, or brought back (archived.go).
+	EventProjectArchived   = "project-archived"
+	EventProjectUnarchived = "project-unarchived"
 )
 
 // TeamEvent is one thing that happened to the team.
