@@ -35,7 +35,7 @@
       <div class="menu-h">{t("Current branch")}</div>
       <div class="item current">
         <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, st.branch)})"></span>{label(st.branch)}</span>
-        <span class="faint">{current?.latest ? `${current.latest.author} · ${ago(current.latest.time)}` : ""}</span>
+        <span class="faint meta">{current?.latest ? `${current.latest.author} · ${ago(current.latest.time)}` : ""}</span>
         {#if st.branchNames && onsettings}
           <button class="ghost gear" title={t("Branch settings")} aria-label={t("Branch settings")}
             onclick={() => { open = false; onsettings(st.branch); }}>⋯</button>
@@ -47,7 +47,7 @@
         <div class="row">
           <button class="item" onclick={() => { open = false; onswitch(b.name); }}>
             <span class="bn"><span class="dot" style:--c="var(--lane-{branchLane(st.branches, b.name)})"></span>{label(b.name)}{#if b.kind === "agent"} <AgentBadge tool={b.latest?.actor?.tool ?? ""} compact title={t("An agent's branch")} />{/if}</span>
-            <span class="faint">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
+            <span class="faint meta">{b.latest ? `${b.latest.author} · ${ago(b.latest.time)}` : ""}</span>
           </button>
           {#if st.branchNames && onsettings}
             <button class="ghost gear" title={t("Branch settings")} aria-label={t("Branch settings")}
@@ -73,7 +73,7 @@
           {#each st.milestones as m (m.id)}
             <button class="item" onclick={() => { open = false; onmilestone(m.version); }} title={m.note}>
               <span class="bn">⚑ {m.name}</span>
-              <span class="faint">{ago(m.time)}</span>
+              <span class="faint meta">{ago(m.time)}</span>
             </button>
           {/each}
         </div>
@@ -90,11 +90,11 @@
     font-size: var(--fs-md); line-height: 1.25; }
   .cap { font-size: var(--fs-2xs); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
   .menu {
-    position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-dropdown); min-width: 260px; padding: var(--sp-6);
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: var(--z-dropdown); min-width: 320px; max-width: 420px; padding: var(--sp-6);
     border: var(--border-width) solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop);
   }
   .menu-h { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-6) var(--sp-8) var(--sp-2); }
-  .item { display: flex; justify-content: space-between; width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; gap: var(--sp-12); }
+  .item { display: flex; align-items: center; justify-content: space-between; width: 100%; border: none; background: transparent; padding: var(--sp-6) var(--sp-8); text-align: left; gap: var(--sp-12); }
   .item:hover:not(:disabled) { background: var(--hover); }
   div.item:hover { background: transparent; }
   .item.current { font-weight: var(--fw-semibold); color: var(--accent); }
@@ -104,6 +104,9 @@
   .row .item { flex: 1; min-width: 0; }
   .item.current { align-items: center; }
   .bn { display: inline-flex; align-items: center; gap: var(--sp-6); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Who saved last and when: smaller, on one line, cut short before the
+     branch name is (shrinks first). */
+  .meta { flex: 0 1000 auto; min-width: 4em; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name { display: inline-flex; align-items: center; gap: var(--sp-6); }
   .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
   .gear { flex: none; padding: var(--sp-2) var(--sp-6); color: var(--muted); line-height: 1; }
