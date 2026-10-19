@@ -40,7 +40,7 @@ var jsonMode bool
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
 	"version": true, "backup": true, "init": true, "switch": true, "goto": true, "checkout": true, "parked": true,
-	"discard": true, "rules": true, "profile": true, "verify": true} // (rules: only rules ignore)
+	"discard": true, "rules": true, "profile": true, "verify": true, "branch": true} // (rules: only rules ignore)
 
 // stripJSON takes --json (or -json) out of args.
 func stripJSON(args []string) ([]string, bool) {
@@ -311,6 +311,11 @@ func classify(err error) *cliError {
 	}
 	if errors.Is(err, remote.ErrUpdateR3V) {
 		return &cliError{Code: "newer_version_needed", Exit: exitUpgrade, Err: err, Hint: "install the current R3V"}
+	}
+	var touched *project.TouchedChangesError
+	if errors.As(err, &touched) { // (unsaved_changes, saying which)
+		return &cliError{Code: "unsaved_changes", Exit: exitError, Err: err, Details: map[string]any{"files": touched.Paths},
+			Hint: "the merge writes or deletes these files: commit them first (r3v commit -m \"...\" FILES), or discard them"}
 	}
 	var mc *project.MergeConflictError
 	if errors.As(err, &mc) {

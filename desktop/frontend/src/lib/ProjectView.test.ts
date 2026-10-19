@@ -429,6 +429,28 @@ describe("ProjectView: the team", () => {
     expect(await screen.findByRole("dialog", { name: "Archive “idea” now that it's merged?" })).toBeTruthy();
   });
 
+  it("merges with uncommitted changes the merge doesn't touch, not with ones it does", async () => {
+    const branches = [{ name: "main", label: "", color: "", parent: "", current: true, latest: null },
+      { name: "idea", label: "", color: "", parent: "main", current: false, latest: null }];
+    await show({ branches, changes: [change("notes.txt")] });
+    api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge idea", versions: [], changes: [change("Song.als")], conflicts: [] });
+    api.MergeBranch.mockResolvedValue({ ...result("merged"), keptWork: true });
+    api.Workspaces.mockResolvedValue([]);
+    api.VersionsOnlyOnBranch.mockResolvedValue(0);
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: /^idea$/ }).at(-1)!);
+    const merge = await screen.findByRole("button", { name: "Merge and share" }) as HTMLButtonElement;
+    expect(merge.disabled).toBe(false);
+    await fireEvent.click(merge);
+    await toasted(/Your uncommitted changes are kept/);
+
+    api.PreviewMerge.mockResolvedValue({ action: "merge", message: "Merge idea", versions: [], changes: [change("notes.txt")], conflicts: [] });
+    await fireEvent.click(screen.getByRole("button", { name: /main ▾/ }));
+    await fireEvent.click(within(screen.getByRole("menu")).getAllByRole("button", { name: /^idea$/ }).at(-1)!);
+    expect(await screen.findByText(/This merge changes files you have uncommitted changes in \(notes.txt\)/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Merge and share" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("can't archive the branch you're on, nor main", async () => {
     await show({ branchNames: true, branch: "idea", branches: [{ name: "main", label: "", color: "", parent: "", current: false, latest: null },
       { name: "idea", label: "", color: "", parent: "main", current: true, latest: null }] });

@@ -60,7 +60,8 @@ func openRead() (*project.Repo, error) {
 			if busy.Holder != nil {
 				who = busy.Holder.String()
 			}
-			fmt.Fprintf(os.Stderr, "note: %s is working on this project: read as it is, nothing kept here\n", who)
+			// Plain enough that an agent sees it needn't do anything.
+			fmt.Fprintf(os.Stderr, "note: %s is using this project right now, so this was read without waiting for it; nothing to do\n", who)
 		}
 		return r, nil
 	}

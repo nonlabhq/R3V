@@ -100,16 +100,19 @@ same `next` (see Output); `update` and `merge` fail with
 - A conflict is a track of a Live set, a hunk of a text file or a whole
   file, never markers in a file: decide each (`--resolve <key>=<choice>`),
   or all at once (`--strategy ours|theirs|both`).
-- `update` never runs by itself, and keeps uncommitted changes.
+- `update` never runs by itself, and keeps uncommitted changes; `merge`
+  keeps those in files it doesn't touch (as Git does).
 - Every version keeps the branch it was made on (`log --json`:
   `made_on`); merging another branch always makes a version.
 - Switching with uncommitted changes parks them (Nightly); they come back
   on return (`switch --json`: `parked`, `restored`).
 - Branches are archived (`branch archive`), not deleted; only an archived
   branch is deleted for good (`branch delete`: ask the user).
-- A tag is a milestone: `milestone NAME [VERSION] [-m NOTE]`
-  names a shared version for the whole team, `milestones` lists them
-  (`tag` and `tags` work too). Only shared versions take one.
+- A tag is a milestone: `milestone add NAME [VERSION] [-m NOTE]`
+  names a shared version for the whole team, `milestones` (or `milestone`,
+  `milestone list`) lists them (`tag` and `tags` work too). Only shared
+  versions take one. `milestone NAME` works too, but not for the words of
+  the command (`list`, `rename`, `remove`, …): those never name one.
 
 ## Everyday flow
 
@@ -196,6 +199,16 @@ into the files; when you and a teammate changed the same file or track it
 stops with `merge_conflict` first (`--strategy` decides). `result.kept_work`
 is true when uncommitted changes were kept.
 
+`merge <branch>` (and an `update` that must merge versions committed
+here with the team's) works with changes not committed, as Git does, when
+what comes in writes or deletes none of the files changed (changed,
+added, deleted or moved): the merge version is made without them and they
+stay as they are, uncommitted (`kept_work`: true). When it would touch
+one, it stops with `unsaved_changes` before changing anything, the files
+in `error.details.files` (a change of `.r3v.yaml` coming in touches them
+all): commit those (`r3v commit -m "..." FILES`) or ask the user, then
+merge again.
+
 ## Output
 
 Every `--json` command prints one object on stdout:
@@ -244,7 +257,9 @@ Reading commands (`status`, `log`, `diff`, `results`, `merge --preview`,
 `branch`, `workspace list`, `rules check`/`explain`) don't wait for the app
 or another command working on the project: they read it as it is, write
 nothing, and add `"busy": true` and `holder` (who has it, as in
-`project_busy` below) to their result. Commands that change the project
+`project_busy` below) to their result; without `--json` a note on stderr
+says so. Nothing is needed of you then: the result is good, only what the
+other is doing right now may be missing. Commands that change the project
 wait for it up to 10 seconds; `--wait SECONDS` (any command) waits longer
 or less, and with a reading command waits that long for the lock before
 reading without it.
@@ -308,6 +323,18 @@ names): `r3v branch` shows them marked.
 one you're on); `branch archived` lists them; `branch unarchive NAME` brings
 one back; `branch delete NAME` deletes an archived branch for good (ask the
 user first).
+
+`branch --json`: `branches`, each `key`, `name` (what people call it;
+the key when it has no other), `head`, `current`, `kind` (`agent`, or
+none: a person's), `owner` (the member an agent's works for) and
+`owner_name`, `color`, `parent` (the branch it was made from) and `from`
+(the version it started at), `latest` (its latest version, as `log`
+gives one; absent when not on this computer). `branch archived --json`:
+`archived` (`key`, `name`, `head`, `by`, `by_name`, `time`). `branch log
+[NAME] --json`: `moves`, oldest first (`branch`, `from`, `to`, `by`,
+`by_name`, `time`; no `from`: made, no `to`: deleted). `branch new`,
+`archive`, `unarchive`, `delete`: `op` and `key` (`new` also `name`,
+`agent`, `head`).
 
 `commit`, `update` and `merge`: `action` (`published`, `local`,
 `nothing-changed`, `up-to-date`, `ahead`, `fast-forward`, `merged`),
@@ -423,7 +450,14 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
   `unshared` (versions committed there `--local`, not on the team's
   branch: a merge here doesn't see them), `changes` (files changed, not
   committed), `parked`, `last_activity`,
-  `missing` (the folder is gone: remove it from the list).
+  `missing` (the folder is gone: remove it from the list). `--against
+  BRANCH` counts `ahead` and `behind` against that branch for this call
+  (`against`: its key; `base` stays what is recorded).
+- `workspace base <folder> <branch>`: the workspace merges into `branch`
+  from now on (made from `main`, its work lands on `dev` now): `workspace`
+  as `add` gives it. `ahead`/`behind`, `status`'s `base`, the check before
+  `remove`, the app's "merge into" and the locks kept on base branches all
+  go by it. Nothing in the folders changes.
 - `workspace remove <folder> [--force]`: `removed`. Refused
   (`workspace_not_merged`) while its versions aren't all merged into
   `base` (`r3v merge <branch>` in the main copy), or it has changes not
@@ -549,7 +583,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 6 | `newer_version_needed` | the team uses a newer R3V: the user must update |
 | 6 | `needs_nightly` | a Unity/Unreal/Godot (…) project: the user must switch R3V to the Nightly channel |
 | 6 | `team_needs_features` | the team turned on features this R3V lacks: update, or switch to Nightly |
-| 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared |
+| 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared. From `merge` (or such an `update`): `details.files`, the uncommitted files it would write or delete (the others are kept) |
 | 1 | `on_older_version` | on an older version: `r3v goto latest` |
 | 1 | `switch_unfinished` | a switch stopped half-way and its files aren't put back (see `unfinished`): nothing was committed. Run any command to let R3V finish or roll back the step; if it reports `changed_since_switch`, ask the user, then `r3v goto <version> --force` (replacing those files) or the app's offer |
 | 1 | `unshared_versions` | `r3v commit -m ...` shares them. (Also a warning's code, never a refusal, in `merge` and `update`: another copy here has versions not shared) |

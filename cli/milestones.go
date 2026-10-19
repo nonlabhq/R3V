@@ -16,13 +16,21 @@ import (
 // the graph.
 
 const milestonesUsage = `
-milestones (a version named for the whole team, like a Git tag; Nightly):
-  milestone NAME [VERSION] [-m NOTE]     name a version the team has (default: the one you're on)
+milestones (a version named for the whole team, like a Git tag):
+  milestone add NAME [VERSION] [-m NOTE] name a version the team has (default: the one you're on)
+  milestone NAME [VERSION] [-m NOTE]     the same, for a name that isn't one of the words here
   milestone rename NAME NEW              rename a milestone
   milestone note NAME NOTE               change its note ("" for none)
   milestone remove NAME                  take a milestone away (the version stays)
   milestones                             the project's milestones, newest first
+  milestone [list]                       the same
 `
+
+// milestoneWords are milestone's subcommands and words an agent may try
+// for one: as the first word they never name a milestone by accident
+// ("r3v milestone list" lists). milestone add names a version any of them.
+var milestoneWords = map[string]bool{"add": true, "list": true, "ls": true, "rename": true, "note": true,
+	"remove": true, "rm": true, "delete": true, "show": true, "help": true}
 
 // milestoneItem is a milestone as --json gives it.
 type milestoneItem struct {
@@ -80,17 +88,27 @@ func findMilestone(r *project.Repo, name string) (milestoneItem, error) {
 }
 
 func cmdMilestone(args []string) error {
-	if len(args) > 0 {
-		switch args[0] {
-		case "rename", "note", "remove":
-			return milestoneChange(args[0], args[1:])
-		}
+	if len(args) == 0 {
+		return listMilestones("milestone", nil)
+	}
+	explicit := false
+	switch strings.ToLower(args[0]) {
+	case "list", "ls":
+		return listMilestones("milestone", args[1:])
+	case "rename", "note", "remove":
+		return milestoneChange(strings.ToLower(args[0]), args[1:])
+	case "add":
+		explicit, args = true, args[1:]
 	}
 	fs := flag.NewFlagSet("milestone", flag.ContinueOnError)
 	note := fs.String("m", "", "a note (what it is, for the team)")
 	pos, err := parseArgs(fs, args)
 	if err != nil || len(pos) < 1 || len(pos) > 2 {
-		return usageError("usage: r3v milestone NAME [VERSION] [-m NOTE]")
+		return usageError("usage: r3v milestone add NAME [VERSION] [-m NOTE]")
+	}
+	if word := strings.ToLower(strings.TrimSpace(pos[0])); !explicit && milestoneWords[word] {
+		return &cliError{Code: "usage", Exit: exitUsage, Hint: fmt.Sprintf("to name a version so, say it: r3v milestone add %q", pos[0]),
+			Err: fmt.Errorf("%q is a word of r3v milestone, not a name (r3v milestones lists them)", pos[0])}
 	}
 	r, err := openRepo()
 	if err != nil {
@@ -153,8 +171,11 @@ func milestoneChange(op string, args []string) error {
 	return nil
 }
 
-func cmdMilestones(args []string) error {
-	fs := flag.NewFlagSet("milestones", flag.ContinueOnError)
+func cmdMilestones(args []string) error { return listMilestones("milestones", args) }
+
+// listMilestones is r3v milestones (and milestone, milestone list).
+func listMilestones(command string, args []string) error {
+	fs := flag.NewFlagSet(command, flag.ContinueOnError)
 	pos, err := parseArgs(fs, args)
 	if err != nil || len(pos) != 0 {
 		return usageError("usage: r3v milestones")
@@ -167,9 +188,9 @@ func cmdMilestones(args []string) error {
 	if err != nil {
 		return milestoneErr(err)
 	}
-	result("milestones", map[string]any{"milestones": all}, func() {
+	result(command, map[string]any{"milestones": all}, func() {
 		if len(all) == 0 {
-			fmt.Println("no milestones yet (r3v milestone NAME names the version you're on)")
+			fmt.Println("no milestones yet (r3v milestone add NAME names the version you're on)")
 			return
 		}
 		for _, m := range all {

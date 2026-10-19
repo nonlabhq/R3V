@@ -2005,5 +2005,7 @@
 "This copy is {team}'s now, and your versions are shared there": "Esta cópia agora é de {team}, e suas versões foram compartilhadas lá",
 "New: {kind} can lock too": "Novo: {kind} também podem ser bloqueados",
 "R3V locks them by default now. Your team picked its kinds before, so they don't lock until you add them.": "O R3V agora os bloqueia por padrão. Sua equipe escolheu os tipos antes, então eles não bloqueiam até você adicioná-los.",
-"Add": "Adicionar"
+"Add": "Adicionar",
+"This merge changes files you have uncommitted changes in ({files}). Commit them first, then merge.": "Esta mesclagem altera arquivos em que você tem alterações não confirmadas ({files}). Confirme-as primeiro e depois mescle.",
+"Your uncommitted changes are kept, still uncommitted.": "Suas alterações não confirmadas foram mantidas, ainda não confirmadas."
 }

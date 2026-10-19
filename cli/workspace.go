@@ -41,7 +41,7 @@ func workspaceOf(e project.WorkspaceEntry) workspaceJSON {
 }
 
 func cmdWorkspace(args []string) error {
-	usage := errors.New("usage: r3v workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent TOOL] | list | remove <folder> [--force]")
+	usage := errors.New("usage: r3v workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent TOOL] | list [--against BRANCH] | base <folder> <branch> | remove <folder> [--force]")
 	if len(args) == 0 {
 		return usage
 	}
@@ -50,6 +50,7 @@ func cmdWorkspace(args []string) error {
 	from := fs.String("from", "", "a branch or version to start from (default: where this copy is)")
 	agent := fs.String("agent", "", "set it up for an agent tool (claude-code, codex, opencode...): its identity, and Claude Code's hook and R3V_ACTOR")
 	force := fs.Bool("force", false, "remove even with work not merged or not committed (it is lost)")
+	against := fs.String("against", "", "list: ahead and behind this branch instead of each one's base")
 	pos, err := parseArgs(fs, args[1:])
 	if err != nil {
 		return err
@@ -101,9 +102,15 @@ func cmdWorkspace(args []string) error {
 		if len(pos) != 0 {
 			return usage
 		}
-		list, err := r.WorkspaceStatuses()
+		list, err := r.WorkspaceStatusesAgainst(*against)
 		if err != nil {
 			return err
+		}
+		vs := "" // what ahead and behind count against ("": each one's base)
+		if *against != "" {
+			if vs, err = r.ResolveBranch(*against); err != nil {
+				return err
+			}
 		}
 		out := []workspaceJSON{}
 		for _, s := range list {
@@ -113,7 +120,11 @@ func cmdWorkspace(args []string) error {
 			w.LastActivity = s.LastActivity.UTC().Format(time.RFC3339)
 			out = append(out, w)
 		}
-		result("workspace", map[string]any{"main": r.MainRoot(), "workspaces": out}, func() {
+		res := map[string]any{"main": r.MainRoot(), "workspaces": out}
+		if vs != "" {
+			res["against"] = vs
+		}
+		result("workspace", res, func() {
 			if len(out) == 0 {
 				fmt.Println("no workspaces (r3v workspace add --branch NAME)")
 			}
@@ -124,7 +135,11 @@ func cmdWorkspace(args []string) error {
 				}
 				where := "ahead/behind not known (team not reached)"
 				if w.Ahead != nil {
-					where = fmt.Sprintf("%d ahead, %d behind %s", *w.Ahead, *w.Behind, w.Base)
+					of := w.Base
+					if vs != "" {
+						of = vs
+					}
+					where = fmt.Sprintf("%d ahead, %d behind %s", *w.Ahead, *w.Behind, r.BranchLabel(of))
 				}
 				fmt.Printf("%s  %s  %s, %d change(s) not committed  (last %s)\n", w.Folder, w.BranchName, where,
 					w.Changes, w.LastActivity)
@@ -136,6 +151,19 @@ func cmdWorkspace(args []string) error {
 					fmt.Println("  " + line)
 				}
 			}
+		})
+	case "base":
+		if len(pos) != 2 {
+			return usage
+		}
+		e, err := r.SetWorkspaceBase(pos[0], pos[1])
+		if err != nil {
+			return err
+		}
+		out := workspaceOf(*e)
+		out.BranchName = r.BranchLabel(e.Branch)
+		result("workspace", map[string]any{"workspace": out}, func() {
+			fmt.Printf("workspace %s (%s) merges into %s now\n", e.Folder, out.BranchName, r.BranchLabel(e.Base))
 		})
 	case "remove":
 		if len(pos) != 1 {

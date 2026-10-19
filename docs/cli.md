@@ -68,7 +68,7 @@ Keys: `text:<path>#<n>` a hunk (`both`: yours, then theirs), `file:<path>` a who
 ## Branches (advanced)
 
 ```
-r3v branch                    # list branches and their latest versions
+r3v branch [--json]           # list branches and their latest versions
 r3v branch new yi-ideas       # start a branch from your current version
 r3v switch main
 r3v merge yi-ideas --preview  # what would come in and what conflicts
@@ -80,7 +80,15 @@ r3v branch archive yi-ideas   # put it away: its versions stay
 r3v branch archived           # what was archived, by whom, when
 r3v branch unarchive yi-ideas # back where it was
 r3v branch delete yi-ideas    # an archived branch, for good
+r3v milestone add "Sent to the label" [VERSION] [-m NOTE]   # name a shared version for the team (a tag)
+r3v milestones                # the project's milestones (also: r3v milestone, r3v milestone list)
+r3v milestone rename|note|remove NAME ...
 ```
+
+`r3v milestone NAME` names one too, unless NAME is one of the command's
+words (`add`, `list`, `ls`, `rename`, `note`, `remove`, `rm`, `delete`,
+`show`, `help`): `r3v milestone list` lists, and the others are a usage
+error. `r3v milestone add list` names a milestone "list" on purpose.
 
 On a team that keeps branch names, a branch can be called anything
 (`r3v branch new Mia's verse`, `r3v switch "Mia 的主歌"`); commands take its
@@ -110,6 +118,14 @@ then each version's title (oldest first, at most 10; titles saying `WIP`,
 `draft`, `do not merge` or `not for merge` left out). The app's merge
 preview starts with the same text, yours to change.
 
+`r3v merge` with changes not committed goes ahead, as `git merge` does,
+when what comes in writes or deletes none of those files: the merge
+version is made without them, and they stay as they were, uncommitted.
+When it would touch one, it refuses before changing anything and names
+the files (`--json`: `unsaved_changes`, `details.files`); a change of
+`.r3v.yaml` coming in touches them all. The app does the same. Stopped
+half-way, putting the files back gives the changes back with them.
+
 `r3v undo-merge <version>` (Nightly) takes back a merge without rewriting
 the history: a new version on your branch without what it brought in.
 What changed since the merge stays; where the same thing changed again it
@@ -133,6 +149,8 @@ Teams on storage keep a log of every branch move (each move is its own record, n
 r3v workspace add --branch renderer                       # another copy, on a branch of its own (../game.workspaces/renderer)
 r3v workspace add ../elsewhere/tauri --branch tauri --from main   # or in a folder you choose
 r3v workspace list [--json]                               # each one: branch, ahead/behind, changes
+r3v workspace list --against dev                          # ahead/behind dev instead of each one's base
+r3v workspace base ../game.workspaces/renderer dev        # it merges into dev from now on
 r3v workspace remove ../game.workspaces/renderer [--force]        # once its branch is merged
 ```
 
@@ -164,6 +182,10 @@ when the work is done (`r3v merge renderer`).
   loses them). Its branch stays on the team. A folder left by an `add` or
   `remove` that stopped half-way is finished by `add` again, or cleared by
   `remove`.
+- A workspace merges into the branch it was made from (its base) until
+  `workspace base` names another: ahead/behind, `remove`'s check and the
+  app's **Merge into {branch}** go by it. `workspace list --against BRANCH` only
+  counts against another branch, once.
 - A workspace can't be inside the project's folder (or hold it). Its team
   is the main copy's: connecting, renaming or moving the project is done
   there.

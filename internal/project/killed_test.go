@@ -64,6 +64,8 @@ func killedChild(op string) int {
 			_, _, err = r.Save("change", Strategy("fail"))
 		case "update":
 			_, err = r.Update(Strategy("fail"))
+		case "merge":
+			_, err = r.MergeBranch(os.Getenv("R3V_KILL_TO"), "", Strategy("fail"))
 		case "checkout":
 			_, _, err = r.Checkout(os.Getenv("R3V_KILL_TO"), false)
 		case "undo-merge":
