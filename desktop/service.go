@@ -639,9 +639,11 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 	part := &TeamPart{Online: view != nil, Branches: []Branch{}, Incoming: []Version{}, TakenBack: []Version{}, Milestones: []Milestone{}}
 	part.Unshared = view != nil && view.Heads[r.BranchName()] == "" && r.Head() != ""
 	tips := map[string][]string{}
+	var infos []project.BranchInfo
 	if view != nil {
 		recs := branchRecords(r, fetchNames)
-		for _, b := range r.BranchesFrom(view.Heads) {
+		infos = r.BranchesFrom(view.Heads)
+		for _, b := range infos {
 			tips[b.Head] = append(tips[b.Head], b.Name)
 			br := toBranch(b, recs[b.Name])
 			part.Branches = append(part.Branches, br)
@@ -667,6 +669,16 @@ func (a *App) teamPart(r *project.Repo, view *project.TeamView, fetchNames bool)
 		return nil, err
 	}
 	part.History = toVersions(all, tips)
+	if len(infos) > 0 {
+		byID := make(map[string]*project.Manifest, len(all))
+		for _, m := range all {
+			byID[m.ID] = m
+		}
+		counts := branchVersionCounts(byID, infos)
+		for i := range part.Branches {
+			part.Branches[i].Versions = counts[part.Branches[i].Name]
+		}
+	}
 	graphData(r, all, part.History)
 	if notHere := r.MissingHere(all); len(notHere) > 0 {
 		for i := range part.History {

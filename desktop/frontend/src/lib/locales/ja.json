@@ -1910,5 +1910,6 @@
 "As in the version you're on · {ago}": "今いるバージョンの状態 · {ago}",
 "An older version · {ago}": "以前のバージョン · {ago}",
 "Copy path": "パスをコピー",
-"Copied {path}": "{path} をコピーしました"
+"Copied {path}": "{path} をコピーしました",
+"Archived ({n})": "アーカイブ済み（{n}）"
 }

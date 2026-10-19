@@ -15,9 +15,9 @@ import { forgetWorkspaces, refreshWorkspaces } from "./workspaces.svelte";
 
 const ROOT = "C:\\Projects\\Song Project";
 const branches = [
-  { name: "main", label: "", color: "", parent: "", current: true, latest: null, kind: "", owner: "" },
-  { name: "b-r1", label: "renderer", color: "", parent: "main", current: false, latest: null, kind: "agent", owner: "" },
-  { name: "idea", label: "", color: "", parent: "main", current: false, latest: null, kind: "", owner: "" },
+  { name: "main", label: "", color: "", parent: "", current: true, latest: null, kind: "", owner: "", versions: 1 },
+  { name: "b-r1", label: "renderer", color: "", parent: "main", current: false, latest: null, kind: "agent", owner: "", versions: 1 },
+  { name: "idea", label: "", color: "", parent: "main", current: false, latest: null, kind: "", owner: "", versions: 1 },
 ];
 const ws = (over: Record<string, unknown> = {}) => ({ folder: "C:\\Projects\\Song (renderer)", branch: "b-r1", label: "renderer",
   base: "main", baseLabel: "main", created: "2026-10-10T08:00:00Z", ahead: 3, behind: 2, changes: 1, parked: 0,

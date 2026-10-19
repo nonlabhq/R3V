@@ -87,6 +87,7 @@ describe("ProjectSettings in its tab", () => {
     api.ProjectInfo.mockResolvedValue({ branch: "main", rules: { applied: [], error: "" } });
     api.Steps.mockResolvedValue({ available: true, on: true, settings: {}, hooked: false, session: null, sessions: [] });
     render(ProjectSettings, { p: project("Song") as never, inline: true, onclose: vi.fn(), onrenamed: vi.fn(), oncheck: vi.fn(), ondelete: vi.fn(), onunlink: vi.fn(), onlocate: vi.fn() });
+    await fireEvent.click(await screen.findByRole("button", { name: "Workflow" })); // (its tab)
     await fireEvent.click(await screen.findByRole("button", { name: "Set up" }));
     await waitFor(() => expect(api.SetUpSteps).toHaveBeenCalledWith("C:/Song"));
   });

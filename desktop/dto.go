@@ -101,6 +101,9 @@ type Branch struct {
 	// "" for a person's; Owner the member it works for.
 	Kind  string `json:"kind"`
 	Owner string `json:"owner"`
+	// Versions: how many versions are its own (branchVersionCounts), of
+	// those on this computer.
+	Versions int `json:"versions"`
 }
 
 // toBranch is a branch with what the team keeps of it (rec: its record).

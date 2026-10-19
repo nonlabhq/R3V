@@ -1910,5 +1910,6 @@
 "As in the version you're on · {ago}": "Como na versão em que você está · {ago}",
 "An older version · {ago}": "Uma versão anterior · {ago}",
 "Copy path": "Copiar caminho",
-"Copied {path}": "{path} copiado"
+"Copied {path}": "{path} copiado",
+"Archived ({n})": "Arquivados ({n})"
 }

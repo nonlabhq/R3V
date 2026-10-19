@@ -1910,5 +1910,6 @@
 "As in the version you're on · {ago}": "你目前所在版本中的樣子 · {ago}",
 "An older version · {ago}": "舊版本 · {ago}",
 "Copy path": "複製路徑",
-"Copied {path}": "已複製 {path}"
+"Copied {path}": "已複製 {path}",
+"Archived ({n})": "已封存（{n}）"
 }
