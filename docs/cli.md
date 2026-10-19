@@ -140,6 +140,19 @@ when the work is done (`r3v merge renderer`).
   is the main copy's: connecting, renaming or moving the project is done
   there.
 
+## Archiving a project (Nightly)
+
+```sh
+r3v project list              # the team's projects, archived ones marked
+r3v project archive           # put this project away for the whole team
+r3v project unarchive         # bring it back
+```
+
+Archiving hides the project for everyone in the team; nothing is deleted
+(its versions and stored files stay) and this folder stays as it is. With
+uncommitted changes or versions not shared it's refused unless `--force`.
+On an R3V Cloud team only its owners and admins archive.
+
 ## Results (Nightly)
 
 ```
