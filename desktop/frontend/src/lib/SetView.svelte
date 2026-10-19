@@ -529,7 +529,7 @@
             <div class="ctitle {r.status ?? ''}" class:small={compare && small(r)} class:clickable={compare && r.details.length > 0} onclick={() => toggleDetails(r)}
               class:inner title={trackTip(r.t)}>
               <!-- a track in a group: under the band of the group's color, which runs on from the group's title -->
-              {#if inner}<i class="band" style:background={band}></i>{/if}
+              {#if inner}<i class="gband" style:background={band}></i>{/if}
               <div class="tt" style:background={liveColor(r.t.color)} style:color={inkOn(r.t.color)}>
                 {@render trackName(r, wasOf(r))}
                 {#if r.t.kind === "group" && !compare}
@@ -697,7 +697,7 @@
     background-image: repeating-linear-gradient(135deg, rgba(0, 0, 0, .38) 0 1.5px, transparent 1.5px 3.5px); }
   /* columns of a group: a band of its color over the titles, as in Live */
   /* the band reaches over the 1px gap to its left, so it runs on unbroken from the group's title */
-  .ctitle .band { display: block; flex: none; height: 5px; margin: 0 0 var(--sp-2) -1px; }
+  .ctitle .gband { display: block; flex: none; height: 5px; margin: 0 0 var(--sp-2) -1px; }
   .gfold { margin-left: auto; font-size: var(--fs-2xs); line-height: 1; padding: 0 var(--sp-2); opacity: .85; }
   .scene { height: 20px; line-height: 20px; padding: 0 var(--sp-6); background: #333; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .cmix { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-4); padding: var(--sp-4); background: #333; }

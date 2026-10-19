@@ -65,8 +65,18 @@
     renaming = true;
     error = "";
     try {
-      const saved = await api.SetIdentity(team.id, team.memberId, name.trim());
-      toast(t("Renamed for everyone in {team}", { team: team.name }), "ok");
+      let saved: TeamSummary | null;
+      if (team.hosted) {
+        // R3V Cloud: the account's name, then each of its teams' record.
+        const r = await api.SetCloudName(team.id, name.trim());
+        saved = r.team;
+        toast(t("Renamed on R3V Cloud, for everyone in your teams there"), "ok");
+        if (r.notUpdated?.length)
+          toast(t("{teams} couldn't be reached: rename again later so they show the new name.", { teams: r.notUpdated.join(", ") }), "info", 8000);
+      } else {
+        saved = await api.SetIdentity(team.id, team.memberId, name.trim());
+        toast(t("Renamed for everyone in {team}", { team: team.name }), "ok");
+      }
       if (saved) onidentity?.(saved);
       if (profile) onchanged({ ...profile, name: name.trim() });
     } catch (e) {
@@ -137,13 +147,7 @@
     </div>
     {/if}
 
-    {#if team?.hosted}
-      <section>
-        <h3>{t("Name")}</h3>
-        <strong>{team.memberName}</strong>
-        <span class="hint">{t("Your name comes from your R3V-Cloud account.")}</span>
-      </section>
-    {:else if team?.memberId}
+    {#if team?.memberId}
       <section>
         <h3>{t("Name")}</h3>
         <div class="line">
@@ -151,7 +155,8 @@
           <button class="small" onclick={rename} disabled={renaming || !name.trim() || name.trim() === team.memberName}>
             {renaming ? t("Renaming…") : t("Rename")}</button>
         </div>
-        <span class="hint">{t("Your name in {team}.", { team: team.name })} {t("Shown next to the versions you commit, for everyone in the team.")}</span>
+        <span class="hint">{team.hosted ? t("Your name on R3V Cloud, in all your teams there.") : t("Your name in {team}.", { team: team.name })}
+          {t("Shown next to the versions you commit, for everyone in the team.")}</span>
       </section>
     {:else if team}
       <section>

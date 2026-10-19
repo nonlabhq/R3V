@@ -43,6 +43,48 @@ function pickFile(file: File) {
 }
 
 describe("User settings", () => {
+  it("renames you on R3V Cloud from an R3V Cloud team, and says which teams weren't reached", async () => {
+    api.Profile.mockResolvedValue(profile());
+    const saved = team({ hosted: true, memberName: "Yi Chen" });
+    api.SetCloudName.mockResolvedValue({ team: saved, notUpdated: ["Label"] });
+    const onidentity = vi.fn();
+    render(UserSettings, { team: team({ hosted: true }), onchanged: () => {}, onidentity, onclose: () => {} });
+    const field = await screen.findByRole("textbox", { name: "Name" });
+    expect(screen.queryByText("Your name comes from your R3V-Cloud account.")).toBeNull();
+    expect(screen.getByText(/Your name on R3V Cloud, in all your teams there/)).toBeTruthy();
+    await fireEvent.input(field, { target: { value: " Yi Chen " } });
+    await fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+    await waitFor(() => expect(api.SetCloudName).toHaveBeenCalledWith("t1", "Yi Chen"));
+    expect(api.SetIdentity).not.toHaveBeenCalled();
+    await waitFor(() => expect(onidentity).toHaveBeenCalledWith(saved));
+    expect(toast).toHaveBeenCalledWith("Renamed on R3V Cloud, for everyone in your teams there", "ok");
+    expect(toast).toHaveBeenCalledWith(expect.stringContaining("Label"), "info", 8000);
+  });
+
+  it("says plainly when R3V Cloud can't take the name, and keeps it to try again", async () => {
+    api.Profile.mockResolvedValue(profile());
+    api.SetCloudName.mockRejectedValue(new Error("R3V Cloud can't be reached: check the connection and try again"));
+    const onidentity = vi.fn();
+    render(UserSettings, { team: team({ hosted: true }), onchanged: () => {}, onidentity, onclose: () => {} });
+    const field = await screen.findByRole("textbox", { name: "Name" });
+    await fireEvent.input(field, { target: { value: "Yi Chen" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("can't be reached");
+    expect(onidentity).not.toHaveBeenCalled();
+    expect((field as HTMLInputElement).value).toBe("Yi Chen");
+    expect((screen.getByRole("button", { name: "Rename" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("renames you in a self-hosted team there, as before", async () => {
+    api.Profile.mockResolvedValue(profile());
+    api.SetIdentity.mockResolvedValue(team({ memberName: "Robin" }));
+    render(UserSettings, { team: team(), onchanged: () => {}, onclose: () => {} });
+    await fireEvent.input(await screen.findByRole("textbox", { name: "Name" }), { target: { value: "Robin" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+    await waitFor(() => expect(api.SetIdentity).toHaveBeenCalledWith("t1", "m1", "Robin"));
+    expect(api.SetCloudName).not.toHaveBeenCalled();
+  });
+
   it("changes the colour, at random too", async () => {
     api.Profile.mockResolvedValue(profile({ color: "b2" }));
     api.SetProfileColor.mockImplementation(async (c: string) => profile({ color: c }));

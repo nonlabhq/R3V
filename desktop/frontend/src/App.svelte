@@ -1,5 +1,6 @@
 <script lang="ts">
   import TeamMark from "$shared/TeamMark.svelte";
+  import Wordmark from "./lib/Wordmark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
   import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type TeamProject, type TeamSummary, type Profile,
@@ -603,16 +604,22 @@
   }
   // A section's menu (a right click on its header, or its ⋯; the Projects
   // band's: New section…), and what it asks first.
-  let sectionMenu = $state<{ id: string; at: { left: number; top: number }; opener: HTMLElement | null } | null>(null);
+  let sectionMenu = $state<{ id: string; at: { left: number; top: number }; opener: HTMLElement | null; add?: boolean } | null>(null);
   let sectionAsk = $state<{ id: string; name: string } | null>(null); // a new one (id ""), or renaming one
   let sectionDelete = $state<SectionView | null>(null);
   let sectionBusy = $state(false);
-  function openSectionMenu(id: string, e: MouseEvent, opener: HTMLElement | null = null) {
+  function openSectionMenu(id: string, e: MouseEvent, opener: HTMLElement | null = null, add = false) {
     if (!canEditSections) return;
     e.preventDefault();
     const r = opener?.getBoundingClientRect();
     const x = r ? r.right - 200 : e.clientX, y = r ? r.bottom + 4 : e.clientY;
-    sectionMenu = { id, opener, at: { left: Math.max(0, Math.min(x, window.innerWidth - 220)), top: Math.min(y, window.innerHeight - 180) } };
+    sectionMenu = { id, opener, add, at: { left: Math.max(0, Math.min(x, window.innerWidth - 220)), top: Math.min(y, window.innerHeight - 180) } };
+  }
+  // The Projects band's +: a project, or (for those who may change the
+  // team's sections) a choice of a project or a new section.
+  function plus(e: MouseEvent) {
+    if (canEditSections) openSectionMenu("", e, e.currentTarget as HTMLElement, true);
+    else addToTeam();
   }
   async function sectionCall(f: () => Promise<unknown>): Promise<boolean> {
     sectionBusy = true;
@@ -1030,7 +1037,7 @@
       {:else}
       <div class="aside-top">
       <button class="brand" onclick={() => (appSettings = true)} title={t("R3V settings")}>
-        <img class="wordmark" src="/brand/r3v-wordmark-on-dark.svg" alt="R3V" />
+        <Wordmark />
         {#if edition}<span class="edition" title={t("A R3V build with extensions")}>{edition}</span>{/if}
       </button>
       <!-- the version, short (0.1.3, and Nightly); in full in its tooltip, copied on a click -->
@@ -1050,8 +1057,9 @@
         <div class="section row-h section-slot band" oncontextmenu={(e) => openSectionMenu("", e)}>
           <span>{t("Projects")}</span>
           {#if current}
-            <button class="ghost tiny flat-only add-tiny" onclick={addToTeam} disabled={busy === "add"} title={t("Add project")}
-              aria-label={t("Add project")}>+</button>
+            <button class="ghost tiny flat-only add-tiny" onclick={plus} disabled={busy === "add"}
+              title={canEditSections ? t("Add a project or a section") : t("Add project")} aria-label={canEditSections ? t("Add a project or a section") : t("Add project")}
+              aria-haspopup={canEditSections ? "menu" : undefined}>+</button>
             <button class="ghost tiny" class:spin={turning.on} onclick={reload} title={t("Check the team for new projects") + " (F5)"} aria-label={t("Check the team for new projects")}><svg class="ico-s" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg></button>
           {/if}
         </div>
@@ -1176,7 +1184,7 @@
       <div class="content-body">
       {#if current && (home || !selectedEntry)}
         <TeamHome {overview} team={current} projects={entries} open={isOpen} onopen={select} onadd={addToTeam}
-          onsettings={(p) => (settingsFor = p)} onarchive={(p) => { if (canArchive(p)) archiving = p; }}
+          onnewsection={canEditSections ? () => (sectionAsk = { id: "", name: "" }) : undefined} onsettings={(p) => (settingsFor = p)} onarchive={(p) => { if (canArchive(p)) archiving = p; }}
           adding={busy === "add"} {reload} canMove agents={nightly} bind:section={homeSection} />
       {:else if selectedEntry && selectedEntry.status === "downloaded"}
         {#key selectedEntry.root}
@@ -1304,8 +1312,8 @@
   {@const i = sections.findIndex((s) => s.id === id)}
   <SectionMenu name={sections[i]?.name ?? ""} at={sectionMenu.at} opener={sectionMenu.opener} first={i === 0} last={i === sections.length - 1}
     onrename={() => (sectionAsk = { id, name: sections[i]?.name ?? "" })} onmove={(by) => moveSection(id, by)}
-    ondelete={() => (sectionDelete = sections[i] ?? null)} onnew={() => (sectionAsk = { id: "", name: "" })}
-    onclose={() => (sectionMenu = null)} />
+    ondelete={() => (sectionDelete = sections[i] ?? null)} onadd={sectionMenu.add ? addToTeam : undefined}
+    onnew={() => (sectionAsk = { id: "", name: "" })} onclose={() => (sectionMenu = null)} />
 {/if}
 {#if sectionAsk}
   <PromptDialog title={sectionAsk.id ? t("Rename the section") : t("New section")} label={t("Section name")} bind:value={sectionAsk.name}
@@ -1506,8 +1514,6 @@
   .brand { display: flex; align-items: center; gap: var(--sp-8); font-weight: var(--fw-bold); font-size: var(--fs-lg); padding: var(--sp-4) var(--sp-8); margin: calc(var(--sp-2) * -1) 0 var(--sp-8);
     background: none; border: 0; border-radius: var(--radius); color: var(--text); text-align: left; cursor: pointer; width: 100%; }
   .brand:hover { background: var(--panel-2); }
-  .brand img { width: 24px; height: 24px; }
-  .brand img.wordmark { width: auto; height: 18px; }
   .list { flex: 1; overflow: auto; min-height: 0; margin: 0 calc(var(--sp-10) * -1); padding: 0 var(--sp-10); }
   .section { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: var(--sp-8) var(--sp-8) var(--sp-4); }
   /* (Flat: a band across the side bar, a step apart from the rows) */

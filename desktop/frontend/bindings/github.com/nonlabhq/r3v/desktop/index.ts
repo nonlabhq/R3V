@@ -22,6 +22,7 @@ export {
     ChannelInfo,
     CloudInvitation,
     CloudPeople,
+    CloudRename,
     CloudStatus,
     Combined,
     Conflict,

@@ -8,6 +8,7 @@
   import { storageKind } from "./teamText";
   import { linkPick } from "./links.svelte";
   import ProjectMenu from "./ProjectMenu.svelte";
+  import SectionMenu from "./SectionMenu.svelte";
   import TeamActivity from "$shared/team/TeamActivity.svelte";
   import { appTeamSource } from "./teamSource";
   import { toast } from "./notify.svelte";
@@ -18,13 +19,14 @@
   // happened lately, and its projects (those on this computer, then those
   // only on the cloud storage; a project's workspaces counted on it, not
   // listed) or its settings.
-  let { overview, team, projects, open, onopen, onadd, onsettings, onarchive, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
+  let { overview, team, projects, open, onopen, onadd, onnewsection, onsettings, onarchive, adding = false, reload, canMove = false, agents = false, section = $bindable("projects") }: {
     overview: Overview;
     team: TeamSummary;
     projects: TeamProject[];
     open: (p: TeamProject) => boolean; // already in a tab
     onopen: (p: TeamProject) => void;
     onadd: () => void;
+    onnewsection?: () => void; // New section… (none: the band's + adds a project)
     onsettings: (p: TeamProject) => void; // a project's settings (from its menu)
     onarchive?: (p: TeamProject) => void; // Archive project… (in its menu; none: not offered)
     adding?: boolean;
@@ -89,6 +91,14 @@
     const r = el.getBoundingClientRect();
     menu = { p, opener: el, at: { left: Math.max(0, Math.min(r.right - 220, window.innerWidth - 240)), top: Math.min(r.bottom + 4, window.innerHeight - 160) } };
   }
+  // The Projects band's +: a project, or a choice of a project or a new
+  // section (onnewsection: for those who may change the team's sections).
+  let plusMenu = $state<{ at: { left: number; top: number }; opener: HTMLElement } | null>(null);
+  function plus(e: MouseEvent) {
+    if (!onnewsection) { onadd(); return; }
+    const el = e.currentTarget as HTMLElement, r = el.getBoundingClientRect();
+    plusMenu = plusMenu ? null : { opener: el, at: { left: Math.max(0, Math.min(r.right - 200, window.innerWidth - 220)), top: Math.min(r.bottom + 4, window.innerHeight - 120) } };
+  }
   function rightMenu(p: TeamProject, e: MouseEvent) {
     e.preventDefault();
     menu = { p, opener: null, at: { left: Math.min(e.clientX, window.innerWidth - 240), top: Math.min(e.clientY, window.innerHeight - 160) } };
@@ -147,11 +157,14 @@
       {#if !overview.teamError}
         <section class="pane activity">
           <h2 class="band">{t("Team activity")}</h2>
-          <div class="pane-in"><TeamActivity source={appTeamSource(team.id, !!team.hosted)} latest={5} onopen={openVersion} /></div>
+          <div class="pane-in"><TeamActivity source={appTeamSource(team.id, !!team.hosted)} latest={5} onePerProject onopen={openVersion} /></div>
         </section>
       {/if}
       <section class="pane projects">
-        <h2 class="band flat-only">{t("Projects")}<span class="end">{active.length}</span></h2>
+        <h2 class="band flat-only">{t("Projects")}<span class="end">{active.length}</span>
+          <button class="ghost band-add" onclick={plus} disabled={adding} title={onnewsection ? t("Add a project or a section") : t("Add project")}
+            aria-label={onnewsection ? t("Add a project or a section") : t("Add project")} aria-haspopup={onnewsection ? "menu" : undefined}
+            aria-expanded={onnewsection ? !!plusMenu : undefined}>+</button></h2>
         <div class="pane-in">
           <h3>{t("On this computer")}<span class="count">{here.length}</span></h3>
           <div class="cards">
@@ -210,6 +223,9 @@
       <ProjectMenu p={menu.p} at={menu.at} opener={menu.opener} {onsettings} onarchive={team.canArchive ? onarchive : undefined}
         onclose={() => (menu = null)} />
     {/if}
+    {#if plusMenu && onnewsection}
+      <SectionMenu at={plusMenu.at} opener={plusMenu.opener} {onadd} onnew={onnewsection} onclose={() => (plusMenu = null)} />
+    {/if}
   {:else}
     <div class="body settings">
       {#key team.id}
@@ -252,6 +268,8 @@
     font-weight: var(--fw-semibold); color: var(--muted); }
   .activity h2 { margin-top: var(--sp-4); }
   h2 .end { font-size: var(--fs-sm); color: var(--faint); font-weight: normal; }
+  .band-add { margin-right: calc(var(--sp-4) * -1); padding: 0 var(--sp-6); font-size: var(--fs-lg); line-height: 18px; color: var(--faint); }
+  .band-add:hover:not(:disabled) { color: var(--text); }
   h3 { display: flex; align-items: baseline; gap: var(--sp-8); margin: var(--sp-10) 0 var(--sp-10); font-size: var(--fs-sm);
     font-weight: var(--fw-semibold); color: var(--muted); }
   h3 .count { font-size: var(--fs-sm); color: var(--faint); font-variant-numeric: tabular-nums; }

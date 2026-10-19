@@ -2,9 +2,11 @@
 // conditional writes), folders, the presigned URLs it hands out and the
 // storage they point at, which objects a project lacks, file locks
 // (branch moves carrying the paths they change, checked against them), the
-// bulk reads (keys/read, listings with values) and a team's Activity
-// (/events), or an older service without them (Old); it counts the
-// requests (Requests).
+// bulk reads (keys/read, listings with values), a team's Activity
+// (/events) and the person's name (PATCH /v1/me), or an older service
+// without the bulk reads and events (Old); it counts the requests
+// (Requests). Like the service, a member's record (members/<id>.json) is
+// written only by that member or an admin.
 package cloudtest
 
 import (
@@ -109,6 +111,7 @@ func what(method, rest string, q url.Values) string {
 type member struct {
 	id    string
 	admin bool
+	name  string // the account's display name (PATCH /v1/me)
 }
 
 type lock struct {
@@ -127,7 +130,7 @@ func New(t testing.TB) string { return NewFake(t).Address }
 // owner's ("token").
 func NewFake(t testing.TB) *Fake {
 	t.Helper()
-	f := &Fake{members: map[string]member{"token": {Owner, true}}, locks: map[string]map[string]*lock{},
+	f := &Fake{members: map[string]member{"token": {id: Owner, admin: true}}, locks: map[string]map[string]*lock{},
 		BranchBodies: map[string]int{}, requests: map[string]int{}}
 	kv := map[string][]byte{}
 	tags := map[string]int{}
@@ -170,11 +173,24 @@ func NewFake(t testing.TB) *Fake {
 			return
 		}
 		if ep == "/v1/me" {
+			f.requests[r.Method+" me"]++
+			if r.Method == "PATCH" {
+				var req struct{ Name *string }
+				if json.Unmarshal(body, &req) != nil || req.Name == nil || strings.TrimSpace(*req.Name) == "" || len(*req.Name) > 100 {
+					w.WriteHeader(400)
+					json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": "bad_request", "message": "A name needs 1 to 100 characters."}})
+					return
+				}
+				me.name = strings.TrimSpace(*req.Name)
+				f.members[strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")] = me
+				json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+				return
+			}
 			role := "member"
 			if me.admin {
 				role = "owner"
 			}
-			json.NewEncoder(w).Encode(map[string]any{"user": map[string]string{"id": "u" + me.id, "email": me.id + "@example.test"},
+			json.NewEncoder(w).Encode(map[string]any{"user": map[string]string{"id": "u" + me.id, "email": me.id + "@example.test", "name": me.name},
 				"teams": []map[string]string{{"id": "t", "name": "Team", "role": role, "memberId": me.id}}})
 			return
 		}
@@ -220,7 +236,7 @@ func NewFake(t testing.TB) *Fake {
 					w.Write(data)
 				}
 			case "PUT":
-				if !me.admin && adminsOnly(k) {
+				if !me.admin && (adminsOnly(k) || othersRecord(k, me.id)) {
 					w.WriteHeader(403)
 					return
 				}
@@ -328,7 +344,7 @@ func NewFake(t testing.TB) *Fake {
 func (f *Fake) AddMember(token, id string, admin bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.members[token] = member{id, admin}
+	f.members[token] = member{id: id, admin: admin}
 }
 
 // Locks lists a project's locks: path -> member id.
@@ -345,6 +361,19 @@ func (f *Fake) Locks(pid string) map[string]string {
 // adminsOnly: team-level keys only owners and admins write, as the
 // service has it (the archived projects' record, the sections).
 func adminsOnly(k string) bool { return k == "archived.json" || k == "sections.json" }
+
+// othersRecord: another member's record, which only they (and admins) write.
+func othersRecord(k, id string) bool {
+	rec, ok := strings.CutPrefix(k, "members/")
+	return ok && strings.HasSuffix(rec, ".json") && !strings.Contains(rec, "/") && rec != id+".json"
+}
+
+// UserName is the account name a session (token) set (PATCH /v1/me).
+func (f *Fake) UserName(token string) string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.members[token].name
+}
 
 func branchKey(k string) (pid string, ok bool) {
 	parts := strings.Split(k, "/")

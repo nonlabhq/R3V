@@ -7,8 +7,12 @@
   // A team's Activity tab (docs/design/team-settings.md): what happened,
   // newest first, by day; filtered by project, by each member or each agent,
   // and how far back. A version's line opens it in its project's graph.
-  // latest: only the newest few, unfiltered (a team's home).
-  let { source, onopen, latest = 0 }: { source: TeamSource; onopen?: (project: string, version: string) => void; latest?: number } = $props();
+  // latest: only the newest few, unfiltered (a team's home). onePerProject:
+  // of those, a project's newest alone (a busy one doesn't fill the list),
+  // its name in a column of its own at the left.
+  let { source, onopen, latest = 0, onePerProject = false }: {
+    source: TeamSource; onopen?: (project: string, version: string) => void; latest?: number; onePerProject?: boolean;
+  } = $props();
 
   let days = $state(30);
   let items = $state<ActivityItem[] | null>(null);
@@ -38,6 +42,13 @@
   let shown = $derived((items ?? []).filter((i) => (!project || i.project === project) && (
     !who || (who === "people" && !i.tool) || (who === "agents" && !!i.tool)
     || (who.startsWith("m:") && !i.tool && i.by === who.slice(2)) || (who.startsWith("a:") && i.tool === who.slice(2)))));
+
+  // (what isn't a project's, like someone joining, each stays)
+  let newest = $derived.by(() => {
+    if (!onePerProject) return shown;
+    const seen = new Set<string>();
+    return shown.filter((i) => !i.project || (!seen.has(i.project) && !!seen.add(i.project)));
+  });
 
   // By day, as the computer's calendar has them.
   const dayOf = (iso: string) => new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -85,8 +96,9 @@
   }
   // Where (the project, the branch) and when.
   function meta(i: ActivityItem): string {
-    const where = i.projectName && !i.kind.startsWith("project") && i.kind !== "sections-changed" ? [i.projectName] : [];
-    if (where.length && i.branch && (i.kind === "share" || i.kind === "merge")) where.push(i.branch);
+    const named = !!i.projectName && !i.kind.startsWith("project") && i.kind !== "sections-changed";
+    const where = named && !onePerProject ? [i.projectName] : [];
+    if (named && i.branch && (i.kind === "share" || i.kind === "merge")) where.push(i.branch);
     return [...where, ago(i.time)].join(" · ");
   }
   const opens = (i: ActivityItem) => !!onopen && !!i.version && (i.kind === "share" || i.kind === "merge" || i.kind === "branch-made");
@@ -94,6 +106,7 @@
 
 {#snippet line(i: ActivityItem)}
   <li class={i.kind} class:agent={!!i.tool}>
+    {#if onePerProject}<span class="proj" title={i.projectName}>{i.projectName}</span>{/if}
     {#if opens(i)}
       <button class="line" onclick={() => onopen!(i.project, i.version)}>{text(i)}</button>
     {:else}
@@ -137,7 +150,7 @@
     <p class="faint">{t("Nothing happened in this time.")}</p>
   {:else if latest}
     <ul>
-      {#each shown.slice(0, latest) as i, n (n + i.time)}{@render line(i)}{/each}
+      {#each newest.slice(0, latest) as i, n (n + i.time)}{@render line(i)}{/each}
     </ul>
   {:else}
     {#each byDay as d (d.day)}
@@ -162,6 +175,8 @@
   button.line:hover:not(:disabled) { background: none; color: var(--accent-text); }
   li.agent .line { color: var(--info-text); }
   li.merge .line { font-weight: var(--fw-medium); }
+  .proj { flex: none; width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--fw-medium); color: var(--muted); }
+  .proj ~ .line { flex: 1; }
   .meta { flex: none; font-size: var(--fs-xs); color: var(--faint); }
   .error { color: var(--danger); }
 </style>
