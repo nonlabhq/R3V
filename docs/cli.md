@@ -4,9 +4,11 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore`, `verify` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
-While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so.
+While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so. A file R3V may not write at all (a sandbox, a read-only folder) is not someone working: that fails at once, naming the path (`no_write_access`).
+
+**R3V's own settings** (the teams this computer joined and their keys, `teams.json`; the app's lists of projects; logs) are in `%APPDATA%\R3V`. `R3V_CONFIG_DIR=<folder>` keeps them in that folder instead: for a sandbox, a CI job or an agent that may only write in its workspace. Projects are unaffected (each keeps its own `.r3v`). The teams joined in the usual folder aren't in a new one: copy `teams.json` over (the same Windows user can read its keys), or join again; an R3V Cloud sign-in stays in Windows' Credential Manager.
 
 `r3v help` starts by sending AI agents to `r3v help agents` (and, on Nightly, the one-time `r3v agent setup`), and its setup section lists the first steps in the order they're taken: `login` (R3V Cloud) and `teams`, then `init` (or `init --team NAME`, Nightly) or connecting a project made before (`remote --team NAME`, Nightly, or `remote <connection code>`), then `agent setup`.
 
@@ -202,6 +204,8 @@ r3v commit --local -m "message"      # commit a version on this computer only
 
 On an older version, newer versions are kept. Committing, getting updates and merging wait until you go back to the latest version; to continue from the older one, start a branch there (`r3v branch new NAME`). An exported copy has no R3V history; samples from outside the project are copied into its `Samples/Imported`.
 
+A version committed `--local` isn't on the team's branch until the next commit shares it: the team, and the project's other copies on this computer (workspaces), don't see it. `r3v status` counts such versions (`unshared` with `--json`), `r3v workspace list` each workspace's; merging or updating from another copy that can't see them says which copy has them and how many (`unshared_elsewhere`, warning `unshared_versions`), rather than only "nothing to merge".
+
 Versions store file contents by SHA-256 in `.r3v/objects` inside the project (deduplicated). Samples referenced from outside the project are stored too and, on a computer that lacks them, placed under `.r3v/external/` with the set's sample paths rewritten. Samples from Live packs are only recorded by pack name. `Backup/` and `*.asd` are ignored.
 
 ## Checking the history
@@ -212,6 +216,8 @@ r3v verify --repair   # bring back what can be: from the project folder or the t
 ```
 
 The app does the same from a project's ⋯ menu in the sidebar (**Check project…**). A file damaged here (a failing disk, say) comes back from a file in the project folder with the same content, or from the team's storage; what has no copy left anywhere is listed with the version it's in.
+
+It says what is where. Versions: every version on this computer, of which those in this branch's history (what `r3v log` lists); the others are other branches' or workspaces' (a version committed `--local` in a workspace, say) or R3V's own (work kept through an update). Files: those stored in `.r3v` (read again), and those only in the team's storage: once a version is shared, R3V lets go of its copy here of files the team's storage has (Live Sets and the rules stay) and downloads one when a version needs it, so few files stored here is expected, not history lost; going back to an old version then needs the team's storage. `--json`: `versions`, `in_history`, `other_versions`, `folder_lists`, `local_files`, `local_bytes`, `team_only_files`, `folder_only_files`, `team_checked`, `problems`, `open_problems`, `summary`.
 
 ## Backing up the team
 

@@ -6,15 +6,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/nonlabhq/r3v/internal/blob"
 	"github.com/nonlabhq/r3v/internal/cloud"
+	"github.com/nonlabhq/r3v/internal/flock"
 	"github.com/nonlabhq/r3v/internal/manifest"
 	"github.com/nonlabhq/r3v/internal/profile"
 	"github.com/nonlabhq/r3v/internal/project"
 	"github.com/nonlabhq/r3v/internal/remote"
+	"github.com/nonlabhq/r3v/internal/teams"
 )
 
 // Output for programs and AI agents: with --json, a command that supports
@@ -37,7 +40,7 @@ var jsonMode bool
 // jsonCommands support --json.
 var jsonCommands = map[string]bool{"status": true, "log": true, "commit": true, "save": true, "snapshot": true, "update": true, "merge": true,
 	"version": true, "backup": true, "init": true, "switch": true, "goto": true, "checkout": true, "parked": true,
-	"discard": true, "rules": true, "profile": true} // (rules: only rules ignore)
+	"discard": true, "rules": true, "profile": true, "verify": true} // (rules: only rules ignore)
 
 // stripJSON takes --json (or -json) out of args.
 func stripJSON(args []string) ([]string, bool) {
@@ -124,7 +127,9 @@ type cliError struct {
 	Holder    *holderJSON // project_busy: who holds the project
 	// Suggestion: the branch meant, when one asked for isn't there.
 	Suggestion string
-	Next       []nextJSON // not_connected: how to connect the project
+	// Path: no_write_access: where R3V may not write.
+	Path string
+	Next []nextJSON // not_connected: how to connect the project
 }
 
 // holderJSON is who holds a project's lock, as it recorded itself (Running
@@ -156,6 +161,10 @@ type lockJSON struct {
 	Workspace string `json:"workspace,omitempty"`
 	Branch    string `json:"branch,omitempty"`
 	Actor     string `json:"actor,omitempty"`
+	// Folder, MainCopy: files_locked_by_agent: the holder's copy here (the
+	// project's main copy: main_copy true).
+	Folder   string `json:"folder,omitempty"`
+	MainCopy bool   `json:"main_copy,omitempty"`
 }
 
 func (e *cliError) Error() string { return e.Err.Error() }
@@ -172,6 +181,8 @@ type errorJSON struct {
 	Holder    *holderJSON    `json:"holder,omitempty"`
 	// Suggestion: the closest branch to one asked for that isn't there.
 	Suggestion string `json:"suggestion,omitempty"`
+	// Path: where R3V may not write (no_write_access).
+	Path string `json:"path,omitempty"`
 	// Next: what to run (not_connected: the ways to connect the project).
 	Next []nextJSON `json:"next,omitempty"`
 	// Recovered, Unfinished: as in a result (openedJSON), the command
@@ -247,11 +258,20 @@ func classify(err error) *cliError {
 	var byAgent *project.ErrLockedByAgent
 	if errors.As(err, &byAgent) {
 		ce := &cliError{Code: "files_locked_by_agent", Exit: exitError, Err: err,
-			Hint: "another workspace here holds these files: leave them, or ask the user (who can break the lock)"}
+			Hint: "another copy of the project here holds these files: leave them, or ask the user (who can break the lock)"}
 		for _, l := range byAgent.Locks {
-			ce.Locks = append(ce.Locks, lockJSONOf(l))
+			ce.Locks = append(ce.Locks, lockJSONIn(l, byAgent.Copies))
+			if c := byAgent.Copies[l.Workspace]; c.Main && !l.Person {
+				ce.Hint = "the project's main copy holds some of these files (for work there not committed yet: " +
+					"a commit there frees a file's lock): leave them, or ask the user (who can unlock them there, or break the lock)"
+			}
 		}
 		return ce
+	}
+	var noAccess *flock.NoAccessError
+	if errors.As(err, &noAccess) { // (before busy: no one holds it, waiting won't help)
+		return &cliError{Code: "no_write_access", Exit: exitError, Err: err, Path: noAccess.Path,
+			Hint: noAccessHint(noAccess.Path)}
 	}
 	var busy *project.BusyError
 	if errors.As(err, &busy) {
@@ -296,6 +316,23 @@ func classify(err error) *cliError {
 	return &cliError{Code: "error", Exit: exitError, Err: err}
 }
 
+// noAccessHint says what to do about a path R3V may not write: its own
+// settings folder can be put elsewhere (R3V_CONFIG_DIR), a project's can't.
+func noAccessHint(path string) string {
+	if dir := teams.Dir(); inFolder(path, dir) {
+		return "R3V keeps its settings (teams, keys) in " + dir + " and may not write there (a sandbox, or a read-only folder): " +
+			"trying again won't help. Give it write access, or set R3V_CONFIG_DIR to a folder it can write " +
+			"(teams joined in the usual folder aren't there: the user copies teams.json into it, or joins again)"
+	}
+	return "R3V may not write there (a sandbox, or a read-only folder): trying again won't help; the user must give it write access"
+}
+
+// inFolder: path is dir or in it.
+func inFolder(path, dir string) bool {
+	rel, err := filepath.Rel(dir, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
+}
+
 // fail reports err (text on stderr, or JSON on stdout) and returns the exit
 // status.
 func fail(command string, err error) int {
@@ -303,11 +340,11 @@ func fail(command string, err error) int {
 	if jsonMode {
 		printJSON(envelope{Schema: jsonSchema, OK: false, Command: command, Error: &errorJSON{Code: ce.Code,
 			Message: ce.Error(), Hint: ce.Hint, Exit: ce.Exit, Conflicts: ce.Conflicts, Set: ce.Set, Locks: ce.Locks,
-			Holder: ce.Holder, Suggestion: ce.Suggestion, Next: ce.Next, Recovered: recovered, Unfinished: unfinished}})
+			Holder: ce.Holder, Suggestion: ce.Suggestion, Path: ce.Path, Next: ce.Next, Recovered: recovered, Unfinished: unfinished}})
 		return ce.Exit
 	}
 	fmt.Fprintln(os.Stderr, "error:", ce.Error())
-	if ce.Code == "merge_conflict" { // the conflicts are in the message; how to go on is not
+	if ce.Code == "merge_conflict" || ce.Code == "no_write_access" { // (how to go on isn't in the message)
 		fmt.Fprintln(os.Stderr, ce.Hint)
 	}
 	for _, s := range ce.Next {

@@ -208,6 +208,9 @@ type previewJSON struct {
 	// SameFilesAs: the merge version will have exactly this version's
 	// files (you are behind it); its results carry over.
 	SameFilesAs string `json:"same_files_as,omitempty"`
+	// UnsharedElsewhere, Warnings: as in merge's and update's results.
+	UnsharedElsewhere []unsharedJSON `json:"unshared_elsewhere,omitempty"`
+	Warnings          []warningJSON  `json:"warnings,omitempty"`
 }
 
 func previewOf(r *project.Repo, p *project.Preview) previewJSON {
@@ -300,24 +303,35 @@ func cmdMergeBranch(args []string) error {
 		if err != nil {
 			return err
 		}
-		result("merge", previewOf(r, p), func() { printPreview(p, "branch "+pos[0]) })
+		out := previewOf(r, p)
+		out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, key)
+		result("merge", out, func() { printPreview(p, "branch "+pos[0]); printUnshared(out.UnsharedElsewhere) })
 		return nil
 	}
 	if err := guardLiveAlways(r, *force); err != nil {
 		return err
 	}
 	defer tidy(r)
+	before := r.Head()
 	res, err := r.MergeBranch(key, *message, opts)
 	if err != nil {
 		return err
 	}
-	result("merge", syncOf(res), func() {
+	out := syncOf(res)
+	out.ReopenSets = reopenSets(r, res, before, r.Head())
+	out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, key)
+	result("merge", out, func() {
+		defer printUnshared(out.UnsharedElsewhere)
 		switch res.Action {
 		case "up-to-date", "ahead":
-			fmt.Printf("nothing to merge: you already have everything from %s\n", pos[0])
+			fmt.Printf("nothing to merge: you already have everything the team's branch %s has\n", pos[0])
 		default:
 			printMerge(res)
-			fmt.Printf("merged %s into %s and shared it (%s); reopen the set in Live\n", pos[0], r.BranchName(), short(res.To))
+			reopen := ""
+			if out.ReopenSets {
+				reopen = "; reopen the set in Live"
+			}
+			fmt.Printf("merged %s into %s and shared it (%s)%s\n", pos[0], r.BranchName(), short(res.To), reopen)
 		}
 	})
 	return nil

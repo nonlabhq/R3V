@@ -447,9 +447,12 @@ type WorkspaceStatus struct {
 	// Ahead: versions on its branch not in the base branch; Behind: in the
 	// base branch, not on its branch. Nil when the team can't be reached.
 	Ahead, Behind *int
-	Changes       int       // files changed, not committed
-	Parked        int       // parked sets
-	LastActivity  time.Time // its last commit, switch or change not committed
+	// Unshared: its versions its team branch doesn't have (commit --local:
+	// no other copy sees them). Nil when the team can't be reached.
+	Unshared     *int
+	Changes      int       // files changed, not committed
+	Parked       int       // parked sets
+	LastActivity time.Time // its last commit, switch or change not committed
 	// Missing: the folder is gone, or no longer this project's workspace
 	// (remove takes it off the list).
 	Missing bool
@@ -503,6 +506,11 @@ func (r *Repo) WorkspaceStatuses() ([]WorkspaceStatus, error) {
 			if r.fetchSnapshots(c, base) == nil {
 				if ahead, behind, err := r.aheadBehind(ws.tip(), base); err == nil {
 					s.Ahead, s.Behind = &ahead, &behind
+				}
+			}
+			if team := heads[e.Branch]; team == "" || r.fetchSnapshots(c, team) == nil {
+				if n := r.unsharedOn(ws.tip(), team); n >= 0 {
+					s.Unshared = &n
 				}
 			}
 		}

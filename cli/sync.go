@@ -301,6 +301,12 @@ type syncJSON struct {
 	// SameFilesAs: the merge version has exactly this version's files (the
 	// branch was behind it); its results carry over.
 	SameFilesAs string `json:"same_files_as,omitempty"`
+	// UnsharedElsewhere (update, merge): the project's other copies here
+	// with versions on that branch not shared, which this couldn't see;
+	// each also a warning "unshared_versions". (commit has warnings of
+	// its own.)
+	UnsharedElsewhere []unsharedJSON `json:"unshared_elsewhere,omitempty"`
+	Warnings          []warningJSON  `json:"warnings,omitempty"`
 }
 
 // commitJSON is r3v commit's result: Warnings as status has them, of what
@@ -314,9 +320,16 @@ type commitJSON struct {
 	Next     []nextJSON    `json:"next,omitempty"`
 }
 
+// reopenSets: a merge changed Live Sets (between before, the version the
+// files were on, and after): only then must they be reopened in Live.
+// Other kinds of project have none.
+func reopenSets(r *project.Repo, res *project.SyncResult, before, after string) bool {
+	return len(res.MergeLog) > 0 && r.SetsChanged(before, after)
+}
+
 func syncOf(res *project.SyncResult) syncJSON {
 	return syncJSON{Action: res.Action, From: res.From, To: res.To, Merged: nonNil(res.MergeLog),
-		Relink: nonNil(res.Relinked), ReopenSets: len(res.MergeLog) > 0, KeptWork: res.KeptWork,
+		Relink: nonNil(res.Relinked), KeptWork: res.KeptWork,
 		SameFilesAs: res.SameFilesAs}
 }
 
@@ -361,6 +374,7 @@ func cmdCommit(args []string) error {
 	defer tidy(r)
 	var m *project.Manifest
 	var res *project.SyncResult
+	reopen := false
 	if *local { // (a version here only: the next commit shares it)
 		m, err = r.Snapshot(msg)
 		if errors.Is(err, project.ErrNothingToSnapshot) {
@@ -370,7 +384,10 @@ func cmdCommit(args []string) error {
 			err = project.ErrNoRemote // (said as for a project in no team)
 		}
 	} else {
-		m, res, err = r.Save(msg, opts)
+		before := r.Head()
+		if m, res, err = r.Save(msg, opts); err == nil {
+			reopen = reopenSets(r, res, before, r.Head())
+		}
 	}
 	var out syncJSON
 	switch {
@@ -383,6 +400,7 @@ func cmdCommit(args []string) error {
 		return err
 	default:
 		out = syncOf(res)
+		out.ReopenSets = reopen
 		if out.Action == "up-to-date" && m == nil {
 			out.Action = "nothing-changed"
 		}
@@ -406,7 +424,8 @@ func cmdCommit(args []string) error {
 		switch out.Action {
 		case "local":
 			if connected(r) {
-				fmt.Printf("committed version %s on this computer: your next commit shares it\n", short(m.ID))
+				fmt.Printf("committed version %s on this computer: your next commit shares it "+
+					"(until then the team's branch, and the project's other copies, don't have it)\n", short(m.ID))
 				return
 			}
 			fmt.Printf("committed version %s on this computer only: it is not shared, this project is not connected to a team\n", short(m.ID))
@@ -427,8 +446,10 @@ func cmdCommit(args []string) error {
 		switch res.Action {
 		case "published":
 			fmt.Println("shared with the team")
-			if len(res.MergeLog) > 0 {
+			if out.ReopenSets {
 				fmt.Println("others' changes were merged into your files: reopen the set in Live")
+			} else if len(res.MergeLog) > 0 {
+				fmt.Println("others' changes were merged into your files")
 			}
 		case "fast-forward":
 			fmt.Println("you had nothing new; updated to the team's latest version")
@@ -459,20 +480,26 @@ func cmdUpdate(args []string) error {
 		if err != nil {
 			return err
 		}
-		result("update", previewOf(r, p), func() { printPreview(p, "the team") })
+		out := previewOf(r, p)
+		out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, r.BranchName())
+		result("update", out, func() { printPreview(p, "the team"); printUnshared(out.UnsharedElsewhere) })
 		return nil
 	}
 	if err := guardLive(r, *force); err != nil {
 		return err
 	}
 	defer tidy(r)
+	before := r.Head()
 	res, err := r.Update(opts)
 	if err != nil {
 		return err
 	}
 	out := syncOf(res)
+	out.ReopenSets = reopenSets(r, res, before, r.Head())
 	out.Base = baseNews(r)
+	out.UnsharedElsewhere, out.Warnings = unsharedElsewhere(r, r.BranchName())
 	result("update", out, func() {
+		defer printUnshared(out.UnsharedElsewhere)
 		defer printBaseNews(out.Base)
 		switch res.Action {
 		case "up-to-date":

@@ -55,6 +55,15 @@ func lockJSONOf(l agentlock.Lock) lockJSON {
 	return lockJSON{Path: l.Path, Holder: holder, Workspace: l.Workspace, Branch: l.Branch, Actor: l.Actor}
 }
 
+// lockJSONIn is lockJSONOf with where its holder is on this computer.
+func lockJSONIn(l agentlock.Lock, copies map[string]project.LockCopy) lockJSON {
+	out := lockJSONOf(l)
+	if c, ok := copies[l.Workspace]; ok {
+		out.Folder, out.MainCopy = c.Folder, c.Main
+	}
+	return out
+}
+
 // lockArgs turns paths on the command line into lock paths of the project.
 func lockArgs(r *project.Repo, args []string) ([]string, error) {
 	var out []string
@@ -172,7 +181,7 @@ func cmdLock(args []string) error {
 		}
 		var refused *agentlock.Refused
 		if errors.As(err, &refused) {
-			return &project.ErrLockedByAgent{Locks: refused.Locks}
+			return r.LockedByAgent(refused.Locks)
 		}
 		if err != nil {
 			return err
@@ -416,7 +425,7 @@ func hookPath(r *project.Repo, rel, session string) (deny, note string) {
 		res, err := r.TakeAgentLocks([]string{rel}, agentlock.KindLock, session)
 		var refused *agentlock.Refused
 		if errors.As(err, &refused) {
-			return refusedReason(rel, refused.Locks), ""
+			return refusedReason(rel, refused.Locks, r.LockCopies()), ""
 		}
 		if err != nil {
 			return "", ""
@@ -445,10 +454,13 @@ func hookPath(r *project.Repo, rel, session string) (deny, note string) {
 	return "", strings.Join(said, " ")
 }
 
-func refusedReason(rel string, holders []agentlock.Lock) string {
+func refusedReason(rel string, holders []agentlock.Lock, copies map[string]project.LockCopy) string {
 	var who []string
 	for _, l := range holders {
 		w := l.Who()
+		if !l.Person {
+			w = strings.TrimPrefix(project.HolderOf(l, copies), "locked by ")
+		}
 		if !l.Person && l.Path != rel {
 			w += " (" + l.Path + ")"
 		}
