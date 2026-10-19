@@ -82,6 +82,9 @@ type TeamSummary struct {
 	// them back (docs/design/archive.md): anyone on a team's own storage,
 	// an R3V Cloud team's admins (known once the team is asked).
 	CanArchive bool `json:"canArchive"`
+	// CanEditSections: this computer may make, change and fill the team's
+	// sections (docs/design/sections.md), as CanArchive.
+	CanEditSections bool `json:"canEditSections"`
 }
 
 // TeamProject is a project as the sidebar shows it.
@@ -107,6 +110,9 @@ type TeamProject struct {
 	// Archived: the team archived it (docs/design/archive.md): out of the
 	// left panel, listed under Archived in the team's home.
 	Archived bool `json:"archived"`
+	// Section and SectionName: the team's section it's in ("": none).
+	Section     string `json:"section"`
+	SectionName string `json:"sectionName"`
 }
 
 type Overview struct {
@@ -121,6 +127,10 @@ type Overview struct {
 	TeamChecked bool `json:"teamChecked"`
 	// Archive: this build archives projects (Nightly while it's new).
 	Archive bool `json:"archive"`
+	// Sections: the current team's, in its order (as last read when it
+	// isn't asked); SectionsOn: this build has them (Nightly).
+	Sections   []SectionView `json:"sections"`
+	SectionsOn bool          `json:"sectionsOn"`
 }
 
 func teamSummary(t teams.Team) TeamSummary {
@@ -174,10 +184,11 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		}
 	}
 	ov := &Overview{Author: store.Author, CurrentTeam: store.Current, Teams: []TeamSummary{},
-		Projects: []TeamProject{}, Archive: remote.ProjectArchive}
+		Projects: []TeamProject{}, Archive: remote.ProjectArchive, Sections: []SectionView{}, SectionsOn: remote.ProjectSections}
 	for _, t := range store.Teams {
 		s := teamSummary(t)
 		s.CanArchive = remote.ProjectArchive && !s.Hosted
+		s.CanEditSections = remote.ProjectSections && !s.Hosted
 		ov.Teams = append(ov.Teams, s)
 	}
 	t := store.Find(store.Current)
@@ -215,6 +226,8 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 	if !askTeam {
 		addRemote(lastTeamProjects(t.ID), false)
 		archivedOf(ov.Projects, lastArchived(t.ID))
+		ov.Sections = lastSections(t.ID)
+		sectionsOf(ov.Projects, ov.Sections)
 		sortProjects(ov.Projects)
 		ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 		return ov, nil
@@ -241,6 +254,7 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 				}
 				// (an R3V Cloud team's role asks the service: only now)
 				ov.Teams[i].CanArchive = remote.ProjectArchive && canEditWorkflow(t)
+				ov.Teams[i].CanEditSections = remote.ProjectSections && canEditWorkflow(t)
 				ov.Teams[i].Moving = info.Moving != nil
 				ov.Teams[i].MovedTo = info.MovedTo
 				if to := store.FindByURL(info.MovedTo); info.MovedTo != "" && to != nil {
@@ -265,13 +279,18 @@ func (a *App) overview(askTeam bool) (*Overview, error) {
 		}
 		addRemote(ps, true)
 	}
-	// (unread: as last read, as the team's projects are)
+	// The team-level records (unread: as last read, as the team's projects are).
 	if err == nil {
 		if archived, err := remote.ArchivedProjects(b); err == nil {
 			a.followArchived(store, t.ID, archived)
 		}
+		if ss, err := remote.Sections(b); err == nil && remote.ProjectSections {
+			rememberSections(t.ID, sectionViews(ss))
+		}
 	}
 	archivedOf(ov.Projects, lastArchived(t.ID))
+	ov.Sections = lastSections(t.ID)
+	sectionsOf(ov.Projects, ov.Sections)
 	sortProjects(ov.Projects)
 	ov.Projects = append(ov.Projects, openedWorkspaces(store, ov.Projects)...) // (after the projects: the page puts each by its own)
 	return ov, nil
@@ -327,6 +346,7 @@ func (a *App) AllProjects() ([]TeamProjects, error) {
 			ps = append(ps, tp)
 		}
 		archivedOf(ps, lastArchived(t.ID))
+		sectionsOf(ps, lastSections(t.ID))
 		sortProjects(ps)
 		out = append(out, TeamProjects{Team: t.ID, Projects: ps})
 	}
