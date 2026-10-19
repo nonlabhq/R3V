@@ -1,7 +1,9 @@
 // Package agentsetup sets a project's copy up for an AI agent tool
-// (docs/design/agent-workspaces.md, "Setting agents up"): the hook that
-// takes agent locks, R3V_ACTOR, and the agents' guide. Used by the CLI
-// (`r3v agent setup`, `r3v workspace add --agent`) and the app.
+// (docs/design/agent-workspaces.md, "Setting agents up", and
+// docs/design/agent-identity.md): the copy's agent identity, the agents'
+// guide in AGENTS.md (which most tools read), and for Claude Code its
+// hooks and R3V_ACTOR. Used by the CLI (`r3v agent setup`, `r3v workspace
+// add --agent`) and the app.
 package agentsetup
 
 import (
@@ -21,6 +23,44 @@ import (
 
 // ClaudeCodeTool is the name of Claude Code, as R3V_ACTOR and --agent say it.
 const ClaudeCodeTool = "claude-code"
+
+// Options say how Setup sets a copy up.
+type Options struct {
+	Tool  string // the agent tool's name (actor.ToolName)
+	Model string // the model it runs; "": the one set before for this tool, if any
+	Hook  string // Claude Code's hook command (HookCommand)
+	Guide bool   // the agents' guide too (the main copy: committed once)
+	Steps bool   // Claude Code's step hooks (ClaudeCode)
+}
+
+// Setup sets the copy in root (its .r3v: dir) up for the tool: its
+// identity in dir (versions committed here say this agent made them),
+// with Guide the agents' guide in AGENTS.md, and for Claude Code its
+// settings (ClaudeCode, CLAUDE.md importing the guide). Running it again
+// changes nothing. It returns the files it wrote (relative to root) and
+// the identity kept.
+func Setup(root, dir string, o Options) ([]string, actor.Identity, error) {
+	id := actor.Identity{Tool: o.Tool, Model: o.Model}
+	if old := actor.ReadIdentity(dir); id.Model == "" && old != nil && old.Tool == id.Tool {
+		id.Model = old.Model
+	}
+	var changed []string
+	var err error
+	if o.Tool == ClaudeCodeTool {
+		changed, err = ClaudeCode(root, o.Hook, o.Guide, o.Steps)
+	} else if o.Guide {
+		changed, err = GuideFor(root, false)
+	}
+	if err != nil {
+		return changed, id, err
+	}
+	wrote, err := actor.WriteIdentity(dir, id)
+	if wrote {
+		rel, _ := filepath.Rel(root, filepath.Join(dir, actor.IdentityFile))
+		changed = append(changed, filepath.ToSlash(rel))
+	}
+	return changed, id, err
+}
 
 // HookMatcher is the Claude Code tools the hook is asked about: those that
 // change a file.
@@ -103,13 +143,17 @@ func ClaudeCode(root, command string, guide, steps bool) ([]string, error) {
 }
 
 // Guide puts the agents' guide in the project (the copy in root): in
-// AGENTS.md, which agent tools read (Codex, Cursor and others), and a line
-// importing it in CLAUDE.md (Claude Code reads that one). Both are the
-// project's: committed, and so in every workspace. R3V's part of AGENTS.md
-// is between two markers; an older one is replaced, the rest of the file
-// left as it is. Running it again changes nothing. It returns the files it
-// wrote.
-func Guide(root string) ([]string, error) {
+// AGENTS.md, which agent tools read (Codex, opencode, Cursor, Gemini CLI
+// and others), and a line importing it in CLAUDE.md (Claude Code reads
+// that one). Both are the project's: committed, and so in every workspace.
+// R3V's part of AGENTS.md is between two markers; an older one is
+// replaced, the rest of the file left as it is. Running it again changes
+// nothing. It returns the files it wrote.
+func Guide(root string) ([]string, error) { return GuideFor(root, true) }
+
+// GuideFor is Guide, with CLAUDE.md only when claudeMD (set up for
+// another tool, a project has no reason to get one).
+func GuideFor(root string, claudeMD bool) ([]string, error) {
 	var changed []string
 	path := filepath.Join(root, "AGENTS.md")
 	old, err := os.ReadFile(path)
@@ -133,6 +177,9 @@ func Guide(root string) ([]string, error) {
 		changed = append(changed, "AGENTS.md")
 	}
 
+	if !claudeMD {
+		return changed, nil
+	}
 	path = filepath.Join(root, "CLAUDE.md")
 	old, err = os.ReadFile(path)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -343,4 +390,16 @@ func IsOurHook(c any) bool {
 	s, _ := c.(string)
 	s = strings.TrimSpace(s)
 	return strings.HasSuffix(s, "hook pre-tool") || strings.HasSuffix(s, "hook post-tool") || strings.HasSuffix(s, "hook prompt")
+}
+
+// CopyTool is the agent tool the copy in root is set up for: Claude
+// Code's settings (ToolOf), else the copy's identity; "" when none.
+func CopyTool(root string) string {
+	if tool := ToolOf(root); tool != "" {
+		return tool
+	}
+	if id := actor.ReadIdentity(filepath.Join(root, ".r3v")); id != nil {
+		return id.Tool
+	}
+	return ""
 }

@@ -4,6 +4,7 @@ package cli
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -26,9 +27,18 @@ func TestNoResultsInStable(t *testing.T) {
 	}
 }
 
-// Nor teams by name: --team is refused (a connection code it is).
-func TestNoTeamByNameInStable(t *testing.T) {
-	if _, err := joinedTeam("Band"); err == nil {
-		t.Fatal("--team in Stable")
+// Teams by name are Stable's since 0.2 (R3V Cloud teams are): --team
+// looks the team up (TestTeamByName runs in every build), as agent setup
+// is (TestAgentSetupAnyTool).
+func TestTeamByNameAndAgentSetupInStable(t *testing.T) {
+	noTeams(t)
+	if _, err := joinedTeam("Band"); err == nil || !strings.Contains(err.Error(), "hasn't joined") {
+		t.Fatalf("--team in Stable: %v", err)
+	}
+	if _, ok := extraCommands["agent"]; !ok || !jsonCommands["agent"] {
+		t.Fatal("no r3v agent setup in Stable")
+	}
+	if u := fullUsage(); !strings.Contains(u, "\n  init --team NAME") || !strings.Contains(u, "\n  agent setup [--tool NAME]") {
+		t.Fatal("r3v -h in Stable lacks --team or agent setup")
 	}
 }

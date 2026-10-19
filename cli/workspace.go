@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/nonlabhq/r3v/internal/actor"
 	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
 )
@@ -40,14 +41,14 @@ func workspaceOf(e project.WorkspaceEntry) workspaceJSON {
 }
 
 func cmdWorkspace(args []string) error {
-	usage := errors.New("usage: r3v workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent claude-code] | list | remove <folder> [--force]")
+	usage := errors.New("usage: r3v workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent TOOL] | list | remove <folder> [--force]")
 	if len(args) == 0 {
 		return usage
 	}
 	fs := flag.NewFlagSet("workspace", flag.ContinueOnError)
 	branch := fs.String("branch", "", "the name of the workspace's branch (made for it)")
 	from := fs.String("from", "", "a branch or version to start from (default: where this copy is)")
-	agent := fs.String("agent", "", "set it up for an agent tool (claude-code): its hook and R3V_ACTOR")
+	agent := fs.String("agent", "", "set it up for an agent tool (claude-code, codex, opencode...): its identity, and Claude Code's hook and R3V_ACTOR")
 	force := fs.Bool("force", false, "remove even with work not merged or not committed (it is lost)")
 	pos, err := parseArgs(fs, args[1:])
 	if err != nil {
@@ -70,15 +71,20 @@ func cmdWorkspace(args []string) error {
 		if len(pos) == 1 {
 			folder = pos[0]
 		}
-		if *agent != "" && *agent != "claude-code" {
-			return usageError("agent tools set up for now: claude-code")
+		if *agent != "" {
+			tool, ok := actor.ToolName(*agent)
+			if !ok {
+				return usageError("--agent %q: an agent tool's name, such as claude-code, codex or opencode", *agent)
+			}
+			*agent = tool
 		}
 		e, err := r.AddWorkspace(folder, project.WorkspaceOptions{Branch: *branch, From: *from, Agent: *agent != ""})
 		if err != nil {
 			return err
 		}
 		if *agent != "" { // (the workspace is made: set up, or said why not)
-			if _, err := agentsetup.ClaudeCode(e.Folder, hookCommand(), false, project.Steps); err != nil {
+			ws := filepath.Join(e.Folder, ".r3v")
+			if _, _, err := agentsetup.Setup(e.Folder, ws, agentsetup.Options{Tool: *agent, Hook: hookCommand(), Steps: project.Steps}); err != nil {
 				return fmt.Errorf("the workspace is made, but setting %s up failed: %w (run r3v agent setup there)", *agent, err)
 			}
 		}

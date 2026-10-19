@@ -20,7 +20,7 @@ import (
 
 const usage = `usage: r3v <command> [args]
 
-AI agents: run "r3v help agents" first (how to work with R3V as an agent{{agent-setup}}),
+AI agents: run "r3v help agents" first (how to work with R3V as an agent, the one-time "r3v agent setup"),
 then make sure the project is on the person's team: "r3v status --json" gives "connected".
 
 everyday (run inside a project folder):
@@ -42,11 +42,18 @@ setup (the first time, in this order):
   init [--author NAME] [--preset code|none]
                                          start tracking this project (--preset: a folder R3V
                                          doesn't recognise, as code and documents, or files as they are)
-{{team-setup}}  remote <connection-code>               or connect this project to a self-hosted team's storage
+  init --team NAME [--preset code|none]  make the folder a project of a team this computer has joined
+                                         (r3v teams lists them; no connection code needed)
+  remote --team NAME                     connect this project to that team
+  remote <connection-code>               or connect this project to a self-hosted team's storage
                                          (S3-compatible bucket) with its connection code: the person
                                          enters it (it holds the storage keys)
   clone <code> <project> [folder]        download a team's project
-{{team-clone}}{{agent-setup-line}}  logout [--service URL]                 sign this computer out of R3V Cloud
+  clone --team NAME <project> [folder]   download a project of a team this computer has joined
+  agent setup [--tool NAME] [--model M]  an AI agent, once in its project folder: who it is (its versions
+                                         say an agent made them), the agents' guide in AGENTS.md;
+                                         Claude Code's hooks and R3V_ACTOR
+  logout [--service URL]                 sign this computer out of R3V Cloud
   version                                show the R3V version
   connection-code --endpoint URL --bucket NAME --access-key K --secret-key S [--prefix P] [--name TEAM]
                                          create a code for team storage
@@ -103,6 +110,8 @@ for programs and AI agents:
   --wait SECONDS                         how long a command waits for the app or another command
                                          working on the project (default 10); reading commands
                                          (status, log...) read without waiting
+  --as person                            this command is the person's own, in a folder set up for an
+                                         agent (its versions don't say an agent made them)
   R3V_CONFIG_DIR=<folder>                keep R3V's own settings (teams joined, their keys) there,
                                          not in %APPDATA%\R3V: for a sandbox that can't write it
   help agents [--snippet]                how AI agents use R3V (or lines for a project's
@@ -120,7 +129,7 @@ const setCommandsAt = "\nset commands:\n"
 // fullUsage is the usage with this build's own sections (extraUsage) among
 // the others, before the Live Sets' and the agents' ones, not after them.
 func fullUsage() string {
-	u := setupUsage().Replace(usage)
+	u := usage
 	i := strings.Index(u, setCommandsAt)
 	if i < 0 {
 		return u + extraUsage
@@ -130,31 +139,6 @@ func fullUsage() string {
 		return u[:i] + extraUsage + u[end:]
 	}
 	return u[:i] + extraUsage + u[i:]
-}
-
-// setupUsage fills in the usage's first lines and its setup section for
-// this build: joining a team by name and setting an agent up are on the
-// Nightly channel while they're new, and an agent reads the setup
-// section in the order a newcomer needs it.
-func setupUsage() *strings.Replacer {
-	team := "                                         (to put it on a team in r3v teams: Add project in the R3V app)\n"
-	if teamByName {
-		team = "  init --team NAME [--preset code|none]  make the folder a project of a team this computer has joined\n" +
-			"                                         (r3v teams lists them; no connection code needed)\n" +
-			"  remote --team NAME                     connect this project to that team\n"
-	}
-	clone := ""
-	if teamByName {
-		clone = "  clone --team NAME <project> [folder]   download a project of a team this computer has joined\n"
-	}
-	agent, agentLine := ", and R3V_ACTOR", ""
-	if _, ok := extraCommands["agent"]; ok {
-		agent = ", the one-time \"r3v agent setup\""
-		agentLine = "  agent setup [--tool claude-code]       an AI agent, once in its project folder: R3V_ACTOR (its versions\n" +
-			"                                         say an agent made them), its hooks, the agents' guide\n"
-	}
-	return strings.NewReplacer("{{agent-setup}}", agent, "{{team-setup}}", team, "{{team-clone}}", clone,
-		"{{agent-setup-line}}", agentLine)
 }
 
 // extraCommands are commands only some builds have (the Nightly channel's),
@@ -174,6 +158,10 @@ func Run(args []string) int {
 	readBusy, recovered, unfinished = nil, nil, nil
 	var waitErr error
 	args, lockWait, waitGiven, waitErr = stripWait(args)
+	if waitErr != nil {
+		return fail("", waitErr)
+	}
+	args, byPerson, waitErr = stripAs(args)
 	if waitErr != nil {
 		return fail("", waitErr)
 	}
