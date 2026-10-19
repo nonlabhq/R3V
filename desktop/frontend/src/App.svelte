@@ -2,7 +2,7 @@
   import TeamMark from "$shared/TeamMark.svelte";
   import { onMount } from "svelte";
   import { Events, Window } from "@wailsio/runtime";
-  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
+  import { api, errorText, formatBytes, progressShort, titleOf, unknownKind, type Overview, type Progress, type Program, type ProjectInfo, type TeamProject, type TeamSummary, type Profile } from "./lib/api";
   import type { DownloadSize, UpdateInfo, UpdateState } from "../bindings/github.com/nonlabhq/r3v/desktop/models";
   import ProgressBar from "./lib/ProgressBar.svelte";
   import { toast } from "./lib/notify.svelte";
@@ -32,7 +32,7 @@
   import { preuploads, queue, watchPreuploads } from "./lib/preupload.svelte";
   import UploadQueue from "./lib/UploadQueue.svelte";
   import KeysHelp from "./lib/KeysHelp.svelte";
-  import { migrateOpenWith } from "./lib/openwith";
+  import { chooseProgram, loadPrograms, migrateOpenWith, openFolderWith, programLabel } from "./lib/openwith";
   import Tooltip from "./lib/Tooltip.svelte";
   import Avatar from "$shared/Avatar.svelte";
   import UserSettings from "./lib/UserSettings.svelte";
@@ -67,21 +67,35 @@
   }
   // The menu's "Open in" (read when the menu opens).
   let menuInfo = $state<ProjectInfo | null>(null);
-  let openSub = $state(false);
-  // The list of sets beside the menu: placed on the window (the sidebar's
-  // list scrolls, and would cut it off), kept open while the pointer
-  // crosses over to it.
+  // A list beside the menu (the project's sets, or the programs to open its
+  // folder in): placed on the window (the sidebar's list scrolls, and would
+  // cut it off), kept open while the pointer crosses over to it.
+  let openSub = $state<"" | "sets" | "programs">("");
   let subAt = $state({ left: 0, top: 0 });
   let subTimer: ReturnType<typeof setTimeout> | undefined;
-  function showSub(e: MouseEvent) {
+  function showSub(e: MouseEvent, which: "sets" | "programs") {
     clearTimeout(subTimer);
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    subAt = { left: r.right - 2, top: r.top - 6 };
-    openSub = true;
+    subAt = { left: Math.min(r.right - 2, window.innerWidth - 220), top: r.top - 6 };
+    openSub = which;
   }
   function hideSub() {
     clearTimeout(subTimer);
-    subTimer = setTimeout(() => (openSub = false), 180);
+    subTimer = setTimeout(() => (openSub = ""), 180);
+  }
+  // The programs the folder can be opened in (as the header's "Open in"
+  // menu lists them), read when that list first shows.
+  let menuPrograms = $state<Program[] | null>(null);
+  function showPrograms(e: MouseEvent, p: TeamProject) {
+    showSub(e, "programs");
+    if (menuPrograms) return;
+    const key = rowKey(p);
+    loadPrograms(p.root).then((l) => { if (rowMenu === key) menuPrograms = l; });
+  }
+  function openFolderIn(p: TeamProject, prog: Program | null) {
+    rowMenu = "";
+    if (prog) openFolderWith(p.root, prog);
+    else chooseProgram(p.root);
   }
   function openMenu(p: TeamProject, e: MouseEvent) {
     e.preventDefault();
@@ -89,7 +103,8 @@
     rowMenu = key;
     menuAt = { left: Math.min(e.clientX, window.innerWidth - 240), top: Math.min(e.clientY, window.innerHeight - 160) };
     menuInfo = null;
-    openSub = false;
+    menuPrograms = null;
+    openSub = "";
     if (rowMenu && p.root && p.status === "downloaded") {
       api.ProjectInfo(p.root).then((i) => { if (rowMenu === key) menuInfo = i; }).catch(() => {});
     }
@@ -1206,11 +1221,11 @@
         {#if menuInfo && menuInfo.openable.length === 1}
           <button class="item" onclick={() => openIn(p, menuInfo!.openable[0])}>{t("Open in {tool}", { tool: toolName(menuInfo.tool) })}</button>
         {:else if menuInfo && menuInfo.openable.length > 1}
-          <div class="sub" role="none" onmouseenter={showSub} onmouseleave={hideSub}>
-            <button class="item has-sub" aria-expanded={openSub}>
+          <div class="sub" role="none" onmouseenter={(e) => showSub(e, "sets")} onmouseleave={hideSub}>
+            <button class="item has-sub" aria-expanded={openSub === "sets"}>
               {t("Open in {tool}", { tool: toolName(menuInfo.tool) })}<span class="arrow">›</span>
             </button>
-            {#if openSub}
+            {#if openSub === "sets"}
               <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" style:left="{subAt.left}px" style:top="{subAt.top}px"
                 onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
                 {#each menuInfo.openable as rel}
@@ -1222,6 +1237,26 @@
         {/if}
         {#if p.root && p.status !== "missing"}
           <button class="item" onclick={() => { rowMenu = ""; api.ShowFolder(p.root); }}>{t("Open folder")}</button>
+        {/if}
+        {#if p.root && p.status === "downloaded"}
+          <div class="sub" role="none" onmouseenter={(e) => showPrograms(e, p)} onmouseleave={hideSub}>
+            <button class="item has-sub" aria-haspopup="menu" aria-expanded={openSub === "programs"}
+              onclick={(e) => showPrograms(e, p)}>{t("Open the folder in")}<span class="arrow">›</span></button>
+            {#if openSub === "programs"}
+              <div class="row-menu submenu surface-menu" role="menu" tabindex="-1" aria-label={t("Open the folder in")}
+                style:left="{subAt.left}px" style:top="{subAt.top}px" onmouseenter={() => clearTimeout(subTimer)} onmouseleave={hideSub}>
+                {#if menuPrograms === null}
+                  <div class="item faint">{t("Looking for programs…")}</div>
+                {:else}
+                  {#each menuPrograms as prog (prog.id)}
+                    <button class="item" role="menuitem" title={prog.path || undefined} onclick={() => openFolderIn(p, prog)}>{programLabel(prog)}</button>
+                  {/each}
+                {/if}
+                <div class="sep"></div>
+                <button class="item" role="menuitem" onclick={() => openFolderIn(p, null)}>{t("Choose a program…")}</button>
+              </div>
+            {/if}
+          </div>
         {/if}
         {#if !p.workspace}
           <div class="sep"></div>
@@ -1458,6 +1493,8 @@
   .row-menu.submenu { position: fixed; right: auto; min-width: 200px; max-width: 340px; z-index: var(--z-submenu); }
   .row-menu.submenu .item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .row-menu .has-sub[aria-expanded="true"] { background: var(--hover); }
+  .row-menu div.item.faint { color: var(--faint); cursor: default; }
+  .row-menu div.item.faint:hover { background: none; }
   .danger-text { color: var(--danger); }
   .confirm-input { width: 100%; margin-top: var(--sp-6); }
   .empty { padding: var(--sp-6) var(--sp-10); font-size: var(--fs-md); }

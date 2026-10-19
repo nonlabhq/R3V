@@ -400,6 +400,41 @@ describe("App: tabs of more than one team", () => {
   });
 });
 
+describe("App: a project's right-click menu", () => {
+  const found = [{ id: "explorer", name: "Explorer", path: "", chosen: false }, { id: "vscode", name: "VS Code", path: "C:/Code.exe", chosen: false },
+    { id: "D:/Apps/My Editor.exe", name: "My Editor", path: "D:/Apps/My Editor.exe", chosen: true }];
+  const rowOf = (name: string) => screen.getAllByRole("button", { name: new RegExp(`^${name}`) })[0];
+  async function menuOf(name: string) {
+    await fireEvent.contextMenu(rowOf(name), { clientX: 20, clientY: 40 });
+    return document.querySelector<HTMLElement>(".row-menu")!;
+  }
+
+  it("opens the folder in the programs the header's Open in lists, or one chosen", async () => {
+    api.ProjectInfo.mockResolvedValue({ tool: "Ableton Live", openable: ["."] });
+    api.OpenPrograms.mockResolvedValue(found);
+    render(App);
+    await waitFor(() => expect(tabs()).toHaveLength(1));
+    const menu = await menuOf("Song");
+    const sub = within(menu).getByRole("button", { name: /Open the folder in/ });
+    await fireEvent.mouseEnter(sub.parentElement!);
+    const list = await screen.findByRole("menu", { name: "Open the folder in" });
+    await waitFor(() => expect(within(list).getAllByRole("menuitem").map((b) => b.textContent)).toEqual(
+      ["Explorer", "VS Code", "My Editor", "Choose a program…"]));
+    expect(api.OpenPrograms).toHaveBeenCalledWith("C:/Song");
+    await fireEvent.click(within(list).getByRole("menuitem", { name: "My Editor" }));
+    expect(api.OpenFolderWith).toHaveBeenCalledWith("C:/Song", "D:/Apps/My Editor.exe");
+    expect(document.querySelector(".row-menu")).toBeNull();
+
+    // Choose a program…: kept for the project by R3V, and the folder opened in it
+    api.ChooseProgram.mockResolvedValue({ id: "D:/Other.exe", name: "Other", path: "D:/Other.exe", chosen: true });
+    const again = await menuOf("Beat");
+    await fireEvent.mouseEnter(within(again).getByRole("button", { name: /Open the folder in/ }).parentElement!);
+    await fireEvent.click(await screen.findByRole("menuitem", { name: "Choose a program…" }));
+    expect(api.ChooseProgram).toHaveBeenCalledWith("C:/Beat", expect.any(String));
+    await waitFor(() => expect(api.OpenFolderWith).toHaveBeenLastCalledWith("C:/Beat", "D:/Other.exe"));
+  });
+});
+
 describe("App: what Open in kept in the page before", () => {
   it("sends the programs the page kept for projects to R3V once, and forgets them", async () => {
     localStorage.setItem("r3v.openWith:C:/Song", JSON.stringify({ last: { id: "vscode", name: "VS Code" }, chosen: ["D:/Apps/My Editor.exe", 3] }));
