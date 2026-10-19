@@ -37,7 +37,7 @@ var renderer = agentlock.Holder{Workspace: "0123456789abcdef", Branch: "renderer
 func TestAppAgentLocks(t *testing.T) {
 	t.Setenv("R3V_CONFIG_DIR", t.TempDir())
 	if !project.AgentLocks {
-		t.Fatal("agent locks are off in Nightly")
+		t.Fatal("agent locks are off in this build")
 	}
 	a := NewApp()
 	var events []string

@@ -54,8 +54,8 @@ type pictureSizes struct {
 	NewHeight int `json:"new_height"`
 }
 
-// fileCommands: diff takes the project's files, any kind (Nightly while new;
-// Stable compares two sets on disk only).
+// fileCommands: diff takes the project's files, any kind (every build since
+// 0.1.81, filediff_cmds.go; an older R3V compares two sets on disk only).
 var fileCommands = false
 
 const fileDiffsUsage = `

@@ -562,7 +562,7 @@ describe("ProjectView: tabs", () => {
   });
 });
 
-describe("ProjectView: agents (Nightly)", () => {
+describe("ProjectView: agents", () => {
   const ws = (over: Record<string, unknown> = {}) => ({ folder: "C:/Projects/Song (renderer)", branch: "b-r1", label: "renderer",
     base: "main", baseLabel: "main", created: "2026-10-10T08:00:00Z", ahead: 2, behind: 0, changes: 0, parked: 0,
     lastActivity: new Date().toISOString(), missing: false, locks: [], tool: "claude-code", owner: "", stale: false, opened: false, ...over });

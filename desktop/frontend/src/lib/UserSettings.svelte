@@ -23,7 +23,7 @@
   } = $props();
 
   let profile = $state<Profile | null>(null);
-  // R3V Cloud (Nightly): who this computer is signed in as, with the way
+  // R3V Cloud: who this computer is signed in as, with the way
   // out and back in. (Teams on another service, the test one, keep theirs.)
   let cloud = $state<CloudStatus | null>(null);
   let signing = $state(false);

@@ -8,8 +8,8 @@ import (
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
-// How a team and its projects show, for the whole team (Nightly, as the
-// members' looks: looks.go): an icon and a colour, or a picture of their
+// How a team and its projects show, for the whole team (as the members'
+// looks: looks.go): an icon and a colour, or a picture of their
 // own over the icon. Pictures come as data: URLs of small square PNG or
 // JPEG (the page makes them, picture.ts) and are kept here too, so the
 // sidebar shows them without asking the team.

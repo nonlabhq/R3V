@@ -596,7 +596,7 @@ func lockedResult(r *project.Repo, err error) (*Result, bool) {
 
 // TeamLocks is a hosted team's file locks settings, for its settings page.
 type TeamLocks struct {
-	// Available: this build and team can have them (hosted, Nightly).
+	// Available: this build and team can have them (hosted).
 	Available bool               `json:"available"`
 	On        bool               `json:"on"`
 	Kinds     []string           `json:"kinds"`

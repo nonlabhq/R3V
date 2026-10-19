@@ -514,7 +514,7 @@ describe("App: what Open in kept in the page before", () => {
 });
 
 describe("App: the user", () => {
-  it("opens User settings from the user area (Nightly), and shows their picture there", async () => {
+  it("opens User settings from the user area, and shows their picture there", async () => {
     api.Profile.mockResolvedValue({ available: true, name: "Yi", memberId: "m1", color: "b2",
       picture: "data:image/png;base64,AAAA", notShared: [] });
     render(App);
@@ -524,7 +524,7 @@ describe("App: the user", () => {
     expect(await screen.findByRole("dialog", { name: "User settings" })).toBeTruthy();
   });
 
-  it("opens User settings from your picture where looks aren't (Stable) too: the one way to your name", async () => {
+  it("opens User settings from your picture where looks aren't (an older R3V) too: the one way to your name", async () => {
     api.Profile.mockResolvedValue({ available: false, name: "Yi", memberId: "m1", color: "", picture: "", notShared: [] });
     render(App);
     await fireEvent.click(await screen.findByRole("button", { name: /Yi/ }));

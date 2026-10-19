@@ -2467,7 +2467,7 @@ export class Preview {
  */
 export class Profile {
     /**
-     * Available: this build has looks (Nightly).
+     * Available: this build has looks (every build since 0.1.81).
      */
     "available": boolean;
     "name": string;
@@ -3929,8 +3929,8 @@ export class State {
     "unfinished": Version | null;
 
     /**
-     * Parking: switches keep uncommitted changes (Nightly); Parked the sets
-     * kept, oldest first.
+     * Parking: switches keep uncommitted changes (every build since 0.3);
+     * Parked the sets kept, oldest first.
      */
     "parking": boolean;
     "parked": ParkedSet[];
@@ -3964,7 +3964,7 @@ export class State {
     "branches": Branch[];
 
     /**
-     * BranchNames: the team keeps branch names and colours (Nightly): any
+     * BranchNames: the team keeps branch names and colours: any
      * name, renaming and colours are offered.
      */
     "branchNames": boolean;
@@ -4498,7 +4498,7 @@ export class TeamLockSide {
  */
 export class TeamLocks {
     /**
-     * Available: this build and team can have them (hosted, Nightly).
+     * Available: this build and team can have them (hosted).
      */
     "available": boolean;
     "on": boolean;
@@ -4601,7 +4601,7 @@ export class TeamPart {
     "capabilities": remote$0.Capabilities;
 
     /**
-     * BranchNames: the team keeps branch names and colours (Nightly): they
+     * BranchNames: the team keeps branch names and colours: they
      * can be renamed and coloured.
      */
     "branchNames": boolean;
@@ -4898,7 +4898,7 @@ export class TeamSummary {
     "backupFailing": boolean;
 
     /**
-     * Looks: the team keeps pictures, icons and colours (Nightly).
+     * Looks: the team keeps pictures, icons and colours.
      */
     "looks": boolean;
 

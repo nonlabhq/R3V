@@ -223,7 +223,7 @@
     load();
   });
 
-  // How the team's members show on the history (Nightly; a team that keeps
+  // How the team's members show on the history (a team that keeps
   // no looks: undefined, the initials as before). Asked again when the team
   // changes (refreshKey); the app keeps them a minute.
   let teamLooks = $derived(!!st?.teamId && !!teams.find((tm) => tm.id === st!.teamId)?.looks);

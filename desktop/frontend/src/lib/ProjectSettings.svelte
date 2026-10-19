@@ -37,13 +37,13 @@
     onmoved?: (teamId: string, copied: boolean) => void;
     onunlink: () => void;
     onlocate: () => void;
-    // Archiving it for the team (docs/design/archive.md; Nightly): none
-    // where the build or the project can't.
+    // Archiving it for the team (docs/design/archive.md): none where the
+    // project can't.
     onarchive?: () => void;
     onunarchive?: () => void;
-    // The team's sections (docs/design/sections.md; Nightly: none where the
-    // build has none), and putting the project in one ("": none), for
-    // those who may.
+    // The team's sections (docs/design/sections.md; none where the team
+    // has none), and putting the project in one ("": none), for those who
+    // may.
     sections?: SectionView[];
     onsection?: (id: string) => Promise<void>;
   } = $props();
@@ -116,8 +116,8 @@
     }
   }
 
-  // Its icon, colour and picture, for the whole team (Nightly: a team that
-  // keeps looks): LookPicker saves each pick; the list follows.
+  // Its icon, colour and picture, for the whole team (a team that keeps
+  // looks): LookPicker saves each pick; the list follows.
   async function setLook(icon: string, color: string) {
     await api.SetProjectLook(team!.id, p.id, icon, color);
     onrenamed();
@@ -128,7 +128,7 @@
   }
 
   // The project's branches, each opening its settings (where the team keeps
-  // branch names: Nightly).
+  // branch names).
   let branchList = $state<BranchList | null>(null);
   let branchOpen = $state<string | null>(null);
   let moving = $state(false); // the move dialog open

@@ -8,8 +8,7 @@ package remote
 // contents).
 //
 // Address: r3v-cloud+https://<host>/v1/teams/<team>; the session comes from
-// SessionToken. Only the Nightly build opens such addresses
-// (broker_nightly.go).
+// SessionToken. Every build since 0.2 opens such addresses (broker_on.go).
 
 import (
 	"bytes"
@@ -35,10 +34,10 @@ import (
 // this. R3V_CLOUD_TOKEN stands in for it in tests.
 var SessionToken = func(service string) string { return os.Getenv("R3V_CLOUD_TOKEN") }
 
-// HostedTeams: hosted teams are on in this build (the Nightly channel, see
-// broker_nightly.go). Off, a hosted team's address is no team's: nothing
-// reaches the service (sign-in, the account's teams, live notices) even with
-// the settings and the session Nightly left (both channels share them).
+// HostedTeams: hosted teams are on in this build (every build since 0.2,
+// broker_on.go). Off, as an older R3V has it (tests), a hosted team's address
+// is no team's: nothing reaches the service (sign-in, the account's teams,
+// live notices) even with the settings and the session a newer R3V left.
 var HostedTeams = false
 
 // BrokerService is the service a hosted team's address is at (https://<host>);

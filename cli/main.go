@@ -123,7 +123,7 @@ for programs and AI agents:
 `
 
 // setCommandsAt is where the Live Sets' own commands are listed: where
-// diff, info and merge-files take any kind of file (Nightly), they aren't
+// diff, info and merge-files take any kind of file, they aren't
 // (the old names still work).
 const setCommandsAt = "\nset commands:\n"
 

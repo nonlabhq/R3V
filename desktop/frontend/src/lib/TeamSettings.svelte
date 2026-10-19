@@ -30,7 +30,7 @@
     tabs?: boolean;        // in tabs down the left (docs/design/team-settings.md)
     workflowTab?: boolean; // with the Workflow tab (agents' settings, and R3V Cloud's file locks)
     teams?: TeamSummary[]; // the teams here (where it can move to)
-    canMove?: boolean;     // moving a team to R3V Cloud (Nightly)
+    canMove?: boolean;     // moving a team to R3V Cloud
     offline?: boolean; // its storage can't be reached now
     roots?: string[]; // its projects on this computer (kept under Local when leaving)
     reload: () => Promise<void>;
@@ -116,7 +116,7 @@
 
   let changed = $derived(!!conn && !!saved && JSON.stringify(conn) !== JSON.stringify(saved));
 
-  // The team's icon, colour and picture, for everyone (Nightly: looks); on
+  // The team's icon, colour and picture, for everyone (looks); on
   // a hosted team, its owners and admins change them (as its name).
   let canLook = $state(false);
   $effect(() => {

@@ -4,7 +4,7 @@
 
   // A folder R3V finds nothing of a kind it knows in (only documents, a new
   // project): the person says how to track it. code: text merged line by
-  // line, the folder's .gitignore followed (Nightly); none: every file as it
+  // line, the folder's .gitignore followed; none: every file as it
   // is. Written in its .r3v.yaml, which can be changed later.
   let { folder, code, busy = false, onpick, onclose }: {
     folder: string;

@@ -179,7 +179,7 @@ type Store struct {
 	// "" for the one this build is from. Stable and Nightly share this file:
 	// what either writes, the other reads.
 	Channel string `json:"channel,omitempty"`
-	// Look: how this user shows in their teams (Nightly: see remote.Looks),
+	// Look: how this user shows in their teams (see remote.Looks),
 	// shared with every team they're in.
 	Look *Look `json:"look,omitempty"`
 

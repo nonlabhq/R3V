@@ -9,7 +9,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/remote"
 )
 
-// Branch names and colours (Nightly, see remote.BranchRecord): asked with
+// Branch names and colours (see remote.BranchRecord): asked with
 // the team's state (TeamState), kept for the times the page is shown
 // without asking (State).
 

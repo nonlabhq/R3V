@@ -21,13 +21,13 @@ import (
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
-// Looks (Nightly, see remote.Looks): the user's colour and picture, shared
+// Looks (see remote.Looks): the user's colour and picture, shared
 // with every team they're in; teammates' as their teams give them; a
 // project's icon and colour.
 
 // Profile is the user as the settings panel shows them.
 type Profile struct {
-	// Available: this build has looks (Nightly).
+	// Available: this build has looks (every build since 0.1.81).
 	Available bool   `json:"available"`
 	Name      string `json:"name"`
 	MemberID  string `json:"memberId"` // in the current team ("" for none)

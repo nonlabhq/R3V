@@ -1,7 +1,6 @@
 # Branch names, colours, deletes and milestones
 
-Status: built, Nightly only (`remote.BranchRecords`, set in
-`internal/remote/branches_nightly.go`).
+Status: built, in every build since 0.1.81 (`remote.BranchRecords`).
 
 ## Names apart from keys
 
@@ -20,7 +19,7 @@ anything: its **record** (`projects/<pid>/branchinfo/<key>.json`,
   branch keeps working, their next share goes to the same key.
 - The CLI takes a name or a key (`r3v switch "Mia 的主歌"`;
   `Repo.ResolveBranch`), and `r3v branch new` takes several words.
-- An R3V without records (Stable, older) shows the key. Records only add
+- An R3V without records (older) shows the key. Records only add
   to what a team stores (no R3V reads `branchinfo/`; storage cleanup looks
   only under `objects/` and `chunked/`), so they are not a team feature.
 

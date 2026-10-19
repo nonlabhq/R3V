@@ -16,16 +16,16 @@ import (
 //
 // Turning locks on is a team feature: an older R3V sends branch moves
 // without the paths they change, which the service refuses; it must update
-// before sharing. Built in Nightly only (locks_nightly.go), as hosted teams
+// before sharing. In every build since 0.2 (locks_on.go), as hosted teams
 // are.
 
 // FeatureLocks is the team feature turned on with file locks.
 const FeatureLocks = "locks"
 
-// FileLocks: file locks are in this build (the Nightly channel).
+// FileLocks: file locks are in this build (every build since 0.2).
 var FileLocks = false
 
-// ErrLocksNotInBuild: this build has no file locks (Stable).
+// ErrLocksNotInBuild: this build has no file locks (an older R3V, tests).
 var ErrLocksNotInBuild = errors.New("file locks need R3V's Nightly channel")
 
 // ErrLocksOff: the team's file locking is off.

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/svelte";
 
-// Looks (Nightly): the user's colour and picture in User settings, a
+// Looks: the user's colour and picture in User settings, a
 // project's icon and colour, and teammates' pictures on the history graph;
 // with the Go bindings mocked.
 const mocks = vi.hoisted(() => {

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// withSteps turns steps on for a test (they're Nightly's).
+// withSteps turns steps on for a test (every build since 0.3 has them).
 func withSteps(t *testing.T) {
 	t.Helper()
 	was := Steps

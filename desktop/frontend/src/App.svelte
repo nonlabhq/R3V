@@ -191,7 +191,7 @@
   const pct = (st: UpdateState) => (st.total > 0 ? Math.round((st.done / st.total) * 100) : 0);
   // The settings' "Check for updates": now, and say when there's none.
   let appSettings = $state(false);
-  // The user's colour and picture (Nightly), and their settings.
+  // The user's colour and picture, and their settings.
   let profile = $state<Profile | null>(null);
   let userSettings = $state(false);
   function loadProfile() { api.Profile().then((p) => (profile = p)).catch(() => {}); }
@@ -440,7 +440,7 @@
   }
   // From the quick launcher: a team's home, or a project (its team shown
   // first).
-  // r3v:// links (R3V Cloud's web app; Nightly): a team, a project, a
+  // r3v:// links (R3V Cloud's web app): a team, a project, a
   // version, opened as the quick launcher opens them; what this computer
   // hasn't is said.
   async function openLinks() {

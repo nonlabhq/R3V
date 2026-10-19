@@ -55,7 +55,7 @@ type TeamSummary struct {
 	// BackupFailing: this computer's backups of the team have failed for a
 	// while (see BackupInfo).
 	BackupFailing bool `json:"backupFailing"`
-	// Looks: the team keeps pictures, icons and colours (Nightly).
+	// Looks: the team keeps pictures, icons and colours.
 	Looks bool `json:"looks"`
 	// Icon, Color and Picture: how the team shows (names, "" for the app's
 	// pick; Picture a data: URL, "" for none), as it last gave them.

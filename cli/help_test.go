@@ -91,7 +91,7 @@ func TestHelpLeadsAgents(t *testing.T) {
 		}
 	}
 	t.Run("this build", check)
-	t.Run("Nightly's", func(t *testing.T) {
+	t.Run("agent locks on", func(t *testing.T) {
 		withAgentLocks(t)
 		check(t)
 	})

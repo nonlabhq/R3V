@@ -9,7 +9,7 @@ import (
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
-// r3v:// links (R3V Cloud's web app, Nightly while new): the app opens a
+// r3v:// links (R3V Cloud's web app): the app opens a
 // team, a project or a version of one when Windows hands it a link, at
 // start or while it runs:
 //
@@ -20,7 +20,7 @@ import (
 // A team id is R3V Cloud's (the hosted team's address ends with it), or
 // this computer's own for a team on storage.
 
-// webLinks: this build opens r3v:// links (links_nightly.go).
+// webLinks: this build opens r3v:// links (every build since 0.2: links_on.go).
 var webLinks = false
 
 // Link is an r3v:// link, read.

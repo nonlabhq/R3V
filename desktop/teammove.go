@@ -11,8 +11,8 @@ import (
 	"github.com/nonlabhq/r3v/internal/teams"
 )
 
-// A team moving from its own storage to R3V Cloud (package teammove,
-// Nightly): the steps go on in the background; "team-move" events (the
+// A team moving from its own storage to R3V Cloud (package teammove):
+// the steps go on in the background; "team-move" events (the
 // old team's id) say when to ask TeamMoveState again.
 
 // moves is R3V Cloud's part (tests put a fake).

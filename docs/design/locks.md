@@ -6,8 +6,8 @@ two versions has to go. A lock says, before the work starts, who is
 changing a file; the others see it and wait. Live sets don't need it: R3V
 merges them track by track.
 
-Locks are an R3V Cloud feature, on the Nightly channel (built: the client
-on `feat/locks`, the service on R3V-Cloud): only a service can say who
+Locks are an R3V Cloud feature, in every build since 0.2 (the service on
+R3V-Cloud): only a service can say who
 holds a file, at once and for everyone. A team on its own storage has
 none.
 

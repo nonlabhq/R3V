@@ -7,7 +7,7 @@ import (
 )
 
 // ProjectHandlers: .r3v.yaml may say which built-in merge takes which files
-// (handlers:). Nightly for now (handlers_nightly.go).
+// (handlers:). In every build since 0.2 (handlers_on.go).
 var ProjectHandlers bool
 
 // MergeWhole in a project's handlers: the file is chosen whole when both

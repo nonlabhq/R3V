@@ -39,7 +39,7 @@ func picture(t *testing.T, side int, c color.Color) []byte {
 	return buf.Bytes()
 }
 
-// withLooks turns member pictures on for a test (as Nightly does).
+// withLooks turns member pictures on for a test (as every build has them).
 func withLooks(t *testing.T) {
 	t.Helper()
 	was := remote.Looks
