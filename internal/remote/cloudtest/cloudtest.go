@@ -6,7 +6,9 @@
 // (/events) and the person's name (PATCH /v1/me), or an older service
 // without the bulk reads and events (Old); it counts the requests
 // (Requests). Like the service, a member's record (members/<id>.json) is
-// written only by that member or an admin.
+// written only by that member or an admin, and a project deleted (its
+// project.json deleted) is kept out of everyone's reach until an admin
+// restores it (POST …/projects/<pid>/restore).
 package cloudtest
 
 import (
@@ -51,6 +53,7 @@ type Fake struct {
 
 	requests map[string]int
 	events   []map[string]any
+	deleted  map[string]bool // projects deleted, kept to restore
 	// EventsDays: the days the last /events asked for.
 	EventsDays string
 }
@@ -131,7 +134,7 @@ func New(t testing.TB) string { return NewFake(t).Address }
 func NewFake(t testing.TB) *Fake {
 	t.Helper()
 	f := &Fake{members: map[string]member{"token": {id: Owner, admin: true}}, locks: map[string]map[string]*lock{},
-		BranchBodies: map[string]int{}, requests: map[string]int{}}
+		BranchBodies: map[string]int{}, requests: map[string]int{}, deleted: map[string]bool{}}
 	kv := map[string][]byte{}
 	tags := map[string]int{}
 	n := 0
@@ -207,7 +210,7 @@ func NewFake(t testing.TB) *Fake {
 				w.WriteHeader(404)
 				return
 			}
-			f.readKeys(w, body, kv, tags)
+			f.readKeys(w, body, kv, tags, f.deleted)
 		case rest == "/events" && r.Method == "GET":
 			if old {
 				w.WriteHeader(404)
@@ -219,12 +222,36 @@ func NewFake(t testing.TB) *Fake {
 				items = []map[string]any{}
 			}
 			json.NewEncoder(w).Encode(map[string]any{"items": items})
+		case rest == "/keys" && f.deleted[projectOf(r.URL.Query().Get("prefix")+"x")]:
+			// A deleted project: nothing left for its deleting admin, out
+			// of reach for anyone else.
+			if !me.admin {
+				w.WriteHeader(404)
+				return
+			}
+			json.NewEncoder(w).Encode(map[string]any{"items": []any{}, "more": false})
 		case rest == "/keys" && r.URL.Query().Get("values") == "1" && !old:
 			f.listValues(w, r.URL.Query(), kv, tags)
 		case strings.HasPrefix(rest, "/keys/"):
 			k, _ := url.PathUnescape(strings.TrimPrefix(rest, "/keys/"))
 			data, there := kv[k]
 			tag := fmt.Sprintf(`"%d"`, tags[k])
+			if pid := projectOf(k); f.deleted[pid] {
+				// Kept to restore: its admin's deleting the rest is done
+				// already; anything else, as if it weren't there.
+				if r.Method == "DELETE" && me.admin {
+					return
+				}
+				w.WriteHeader(404)
+				return
+			} else if r.Method == "DELETE" && pid != "" && k == "projects/"+pid+"/project.json" && there {
+				if !me.admin {
+					w.WriteHeader(403)
+					return
+				}
+				f.deleted[pid] = true // (its keys stay, out of reach)
+				return
+			}
 			switch r.Method {
 			case "GET", "HEAD":
 				if !there || !listed(kv, k) {
@@ -293,13 +320,26 @@ func NewFake(t testing.TB) *Fake {
 			out := []string{}
 			for k := range kv {
 				if after, ok := strings.CutPrefix(k, dir); ok {
-					if i := strings.Index(after, "/"); i > 0 && !seen[after[:i]] {
+					if i := strings.Index(after, "/"); i > 0 && !seen[after[:i]] && !f.deleted[after[:i]] {
 						seen[after[:i]] = true
 						out = append(out, dir+after[:i+1])
 					}
 				}
 			}
 			json.NewEncoder(w).Encode(out)
+		case strings.HasPrefix(rest, "/projects/") && strings.HasSuffix(rest, "/restore") && r.Method == "POST":
+			pid := strings.TrimSuffix(strings.TrimPrefix(rest, "/projects/"), "/restore")
+			switch {
+			case !me.admin:
+				w.WriteHeader(403)
+			case !f.deleted[pid]:
+				w.WriteHeader(404)
+			default:
+				delete(f.deleted, pid)
+				json.NewEncoder(w).Encode(map[string]bool{"ok": true})
+			}
+		case strings.HasPrefix(rest, "/projects/") && f.deleted[strings.SplitN(strings.TrimPrefix(rest, "/projects/"), "/", 2)[0]]:
+			w.WriteHeader(404) // a deleted project's contents and locks: out of reach
 		case strings.HasSuffix(rest, "/urls"):
 			pid := strings.TrimSuffix(strings.TrimPrefix(rest, "/projects/"), "/urls")
 			var req struct {
@@ -356,6 +396,22 @@ func (f *Fake) Locks(pid string) map[string]string {
 		out[p] = l.MemberID
 	}
 	return out
+}
+
+// Deleted says whether project pid is deleted (kept, to restore).
+func (f *Fake) Deleted(pid string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.deleted[pid]
+}
+
+// projectOf is the project a key is under ("" if none).
+func projectOf(k string) string {
+	parts := strings.SplitN(k, "/", 3)
+	if len(parts) == 3 && parts[0] == "projects" && len(parts[1]) == 32 {
+		return parts[1]
+	}
+	return ""
 }
 
 // adminsOnly: team-level keys only owners and admins write, as the
@@ -558,7 +614,7 @@ func contentsKey(k string) bool {
 
 // readKeys answers POST keys/read {keys}: each key's value and etag,
 // missing, or later past ReadBytes.
-func (f *Fake) readKeys(w http.ResponseWriter, body []byte, kv map[string][]byte, tags map[string]int) {
+func (f *Fake) readKeys(w http.ResponseWriter, body []byte, kv map[string][]byte, tags map[string]int, deleted map[string]bool) {
 	var req struct{ Keys []string }
 	if json.Unmarshal(body, &req) != nil || len(req.Keys) > 1000 {
 		w.WriteHeader(400)
@@ -573,7 +629,7 @@ func (f *Fake) readKeys(w http.ResponseWriter, body []byte, kv map[string][]byte
 	for _, k := range req.Keys {
 		data, there := kv[k]
 		switch {
-		case !there || contentsKey(k) || strings.HasPrefix(k, "pictures/"):
+		case !there || contentsKey(k) || strings.HasPrefix(k, "pictures/") || deleted[projectOf(k)]:
 			items = append(items, map[string]any{"key": k, "missing": true})
 		case bytes > limit:
 			items = append(items, map[string]any{"key": k, "later": true})
