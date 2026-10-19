@@ -61,6 +61,10 @@ type Lock struct {
 	// Person: a file the person changed and hasn't committed (not stored:
 	// worked out from their copy, see project).
 	Person bool `json:"person,omitempty"`
+	// Reason and TakenFrom: a lock taken over from a holder that wasn't
+	// stale (TakeOver): why, and who held it, so the list says so.
+	Reason    string `json:"reason,omitempty"`
+	TakenFrom string `json:"taken_from,omitempty"`
 }
 
 // Holder is who asks: a workspace (this copy), its branch, the agent's
@@ -287,6 +291,22 @@ type Result struct {
 // list doesn't keep (the person's changes): they refuse as well. A claim
 // never refuses. A stale lock in the way is taken over.
 func (l *List) Take(h Holder, paths []string, kind string, extra []Lock) (Result, error) {
+	return l.take(h, paths, kind, extra, "")
+}
+
+// TakeOver locks paths for h as Take does, taking over others' locks in
+// the way, stale or not: for a holder that is gone before its locks went
+// stale (its session ended, a copy that won't commit them). The reason is
+// kept in the new locks with who held them. extra (the person's changes)
+// still refuses: people always win.
+func (l *List) TakeOver(h Holder, paths []string, reason string, extra []Lock) (Result, error) {
+	if strings.TrimSpace(reason) == "" {
+		return Result{}, errors.New("a takeover needs a reason")
+	}
+	return l.take(h, paths, KindLock, extra, strings.TrimSpace(reason))
+}
+
+func (l *List) take(h Holder, paths []string, kind string, extra []Lock, reason string) (Result, error) {
 	var res Result
 	if kind != KindLock && kind != KindClaim {
 		return res, fmt.Errorf("unknown kind of lock %q", kind)
@@ -322,7 +342,7 @@ func (l *List) Take(h Holder, paths []string, kind string, extra []Lock) (Result
 				}
 			case o.Kind == KindClaim || kind == KindClaim:
 				res.Others = append(res.Others, o)
-			case o.Stale:
+			case o.Stale || reason != "":
 				stale = append(stale, o)
 			default:
 				refused = append(refused, o)
@@ -339,6 +359,19 @@ func (l *List) Take(h Holder, paths []string, kind string, extra []Lock) (Result
 		}
 		write = append(write, Lock{Path: p, Kind: kind, Workspace: h.Workspace, Branch: h.Branch,
 			Session: h.Session, Actor: h.Actor, Since: l.now().UTC()})
+	}
+	if reason != "" {
+		for i := range write {
+			var from []string
+			for _, o := range dedupe(stale) {
+				if Covers(o.Path, write[i].Path) {
+					from = append(from, o.Who())
+				}
+			}
+			if len(from) > 0 {
+				write[i].Reason, write[i].TakenFrom = reason, strings.Join(from, ", ")
+			}
+		}
 	}
 	if len(refused) > 0 {
 		return Result{Others: res.Others}, &Refused{Locks: dedupe(refused)}
