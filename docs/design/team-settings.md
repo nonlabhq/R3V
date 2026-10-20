@@ -1,7 +1,7 @@
 # Team and project settings
 
-Status: agreed (2026-10-15), being built. The App first; R3V Cloud's web
-app follows with the same pages.
+Status: agreed (2026-10-15), built in the App (every build). R3V Cloud's
+web app follows with the same pages.
 
 ## What changes
 
@@ -10,7 +10,7 @@ Team Settings becomes a page with tabs down its left side:
 | Tab | What it holds |
 |---|---|
 | **General** | Icon and name; Members |
-| **Workflow** | File locking; Agents. Later: merging, reviews (docs/design/reviews.md) |
+| **Workflow** | File locking; Agents. Later: merging, reviews (not designed yet) |
 | **Activity** | What happened in the team, newest first |
 | **Usage** | How much the team keeps, by project |
 
@@ -216,12 +216,12 @@ section after Rules, its rows as above.
 5. R3V Cloud's web app: the same tabs with the shared components, once the
    App's are settled.
 
-All behind Nightly first, with a Stable test that Stable shows today's
-Team Settings.
+Steps 1–4 are built, in every build: the settings an older R3V would
+misread turn the `workflow` team feature on (`internal/remote/workflow.go`).
 
 ## Open
 
-- Which settings move into Workflow next: reviews (docs/design/reviews.md)
-  and automatic merging for agents are the first candidates.
+- Which settings move into Workflow next: reviews and automatic merging
+  for agents are the first candidates.
 - Whether Activity should also show what happens live (presence) on R3V
   Cloud teams.

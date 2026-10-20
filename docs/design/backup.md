@@ -84,7 +84,7 @@ paths. With that:
   7 days. Otherwise the sidebar suggests it, at most weekly, and only once
   the team is settled on this computer: 3 days after joining it, or 3
   projects (someone trying R3V out isn't warned of what could go wrong;
-  see [../ux-principles.md](../ux-principles.md)).
+  see [ux-principles.md](ux-principles.md)).
 - Creating a team on storage offers it in one quiet line (**Set it up
   now…**), not as a step of its own.
 - Team Settings shows this computer's backup at once and the other

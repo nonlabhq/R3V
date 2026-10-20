@@ -2,7 +2,7 @@
 
 A project's rules say which files are left out of versions. They are in one place: the `.r3v.yaml` file in the project folder, committed with the project, so the whole team follows the same rules (and so can an agent reading the project).
 
-R3V writes the file when a project is added (or opened, when it has none): it names the presets it finds, such as **ableton** for a Live project, marked `# found by R3V`. Change the file freely. In the app: the gear next to the team name → **Rules**.
+R3V writes the file when a project is added (or opened, when it has none): it names the presets it finds, such as **ableton** for a Live project, marked `# found by R3V`. Change the file freely. In the app: the project's **Settings** › **Rules**.
 
 ## Example
 
@@ -67,6 +67,10 @@ The built-in presets:
 | Preset | For | Detected by | Leaves out |
 | --- | --- | --- | --- |
 | `ableton` | Ableton Live projects | an `Ableton Project Info` folder or a `.als` file | `/Backup/`, `*.asd` |
+| `unity` | Unity projects | `ProjectSettings/ProjectVersion.txt` | `/Library/`, `/Temp/`, `/Logs/`, `/UserSettings/`, builds (`/Build/`, `*.apk`…), the IDE's files; merges code line by line and scenes and prefabs with Unity's UnityYAMLMerge |
+| `unreal` | Unreal Engine projects | a `.uproject` file | `/Binaries/`, `/Intermediate/`, `/Saved/`, `/DerivedDataCache/` (and a plugin's), the IDE's files; merges code and config line by line |
+| `godot` | Godot projects | `project.godot` | `.godot/`, `.import/`, `.mono/`, `export_credentials.cfg`; merges scripts, scenes and resources line by line |
+| `design` | Design, 3D and video files (Photoshop, Affinity, Blender, Cinema 4D, Maya, DaVinci Resolve, Resolume) | such a file in the folder or one folder down | what the programs write for themselves (Blender's `.blend1`, caches, proxies) |
 | `code` | Software, and folders of documents | `.git/`, `.gitignore`, `package.json`, `go.mod`, `Cargo.toml` and the like | what the `.gitignore` files leave out, and tool folders and build outputs (`node_modules/`, `.venv/`, `dist/`, `target/`, `.next/`, `.svelte-kit/`, `coverage/` …), `.env`; merges text files line by line |
 
 A preset can ask for the project's `.gitignore` files (`gitignore: true`), and has a `priority` for detection (0 by default): when several presets recognize a folder, the highest wins. So a folder with a `.gitignore` can be a code project (a low priority) unless it is also, say, a Unity project.
@@ -77,7 +81,9 @@ A preset also tells R3V which built-in code handles which files, what to check b
 | --- | --- | --- |
 | `ableton-set` | `merge:` | Compares and merges Live Sets track by track; with `samples: ableton`, collects and relinks their samples |
 | `text` | `merge:` | Merges text files line by line when both sides changed them; if the same lines changed differently, you choose the whole file |
+| `unity-yaml` | `merge:` | Merges Unity scenes, prefabs and assets saved as text, object by object, with Unity's UnityYAMLMerge |
 | `ableton-live` | `running:` | Doesn't rewrite a set while Live has it open |
+| `unity-editor`, `unreal-editor`, `godot-editor`, `design-apps` | `running:` | Doesn't rewrite the project's files while that program has the project (or the file) open |
 
 Files without a merge handler are chosen whole (yours, theirs or both) when both sides changed them. A `.json` file that merging line by line would leave broken (each side valid, the result not) is chosen whole too.
 
@@ -94,7 +100,7 @@ handlers:
     merge: whole
 ```
 
-R3V before 0.1.39 doesn't know `handlers:` and refuses the file, and Stable refuses it for now: set `requires: "0.1.39"` when you add it.
+R3V before 0.1.39 doesn't know `handlers:` and refuses the file (so does Stable before 0.2): set `requires: "0.1.39"` when you add it.
 
 ## Workspaces
 

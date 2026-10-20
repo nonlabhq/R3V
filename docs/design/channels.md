@@ -4,12 +4,15 @@ Status: built.
 
 One repository, one `main`, two release lines:
 
-- **Nightly** is `main` as it is, built with the `nightly` build tag: the
-  project kinds still in testing (Unity, Unreal, Godot, code and design files, in
-  `presets/`) and whatever else is behind the tag.
+- **Nightly** is `main` as it is, built with the `nightly` build tag:
+  whatever is behind the tag. Today that is moving projects between teams
+  (`project.MoveProjects`, [moving.md](moving.md)) and the app's style lab;
+  a project kind still in testing would come in the same way, through a
+  Nightly-only import in `presets/` (there is none now).
 - **Stable** is cut from `main` when it is ready, built without the tag:
-  Ableton Live projects on the team's own storage. A fix for a Stable
-  release that can't wait goes on a `release/x.y` branch and back to `main`.
+  every project kind (Live, Unity, Unreal, Godot, design files, code), on
+  a team's own storage or R3V Cloud. A fix for a Stable release that can't
+  wait goes on a `release/x.y` branch and back to `main`.
 
 A feature graduates by moving out from behind the tag, not by moving code
 between branches.

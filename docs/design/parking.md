@@ -113,7 +113,7 @@ it's done.
 - **Branch deleted** (by you, or a teammate): its set is kept and shown
   as `Parked · from <name>` on its base, Bring changes here or Discard.
 
-Nightly first, in every build since 0.3. An older R3V (parking off: it
+In every build. An older R3V (parking off: it
 keeps "discard or commit") opening a project with parked sets ignores
 `.r3v/parked/` and keeps the set versions (it removes only the kept work
 it names in `kept-work`, and its kept-work cleanup leaves parked versions

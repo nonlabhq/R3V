@@ -22,7 +22,8 @@ your branch is the team's branch. (`commit --local` commits on this
 computer only; the next commit shares it.)
 
 **No staging area.** A commit takes your changes; to leave some out,
-untick them in the app's list. On the command line a commit takes them all.
+untick them in the app's list. On the command line a commit takes them all,
+or only those in the paths you give (`r3v commit -m "…" src/menu`).
 
 **Merges understand Live sets.** A set is merged track by track (devices,
 clips, automation), not line by line. A conflict is a track, or a whole
@@ -65,7 +66,35 @@ your own latest version, when no one has it yet, can be taken back (the
 app's **Undo this commit**); otherwise undoing makes a new version.
 
 **Milestones, not tags.** A milestone names a version for the team ("Sent
-to the label"); it can be renamed or taken away.
+to the label"): only a shared version takes one, everyone sees it at once
+(nothing to push), and it can be renamed, given a note or taken away
+without touching the version. `r3v tag` and `r3v tags` work too.
+
+**Undoing a merge makes a version.** `r3v undo-merge <merge>` is `git
+revert -m 1`: a new version without what the merge brought in, the
+history kept. What changed since stays; where the same thing changed again
+you choose `keep` (as it is now) or `undo` (as before the merge), as in a
+merge.
+
+**Discard is restore.** `r3v discard` (the app's **Discard changes**) puts
+the files back as in the version you're on, as `git restore .` or `git
+reset --hard` would: changed files back, deleted ones back, files added
+since gone; what the rules leave out stays, as `git clean` isn't run. With
+paths, only those (`git restore <path>`); `--preview` lists what would go.
+The app asks first; an agent asks the user.
+
+**Workspaces, not worktrees.** `r3v workspace add --branch NAME` is `git
+worktree add -b`: another folder with the project, on a branch of its own,
+sharing the main copy's store. Unlike a worktree, its branch is the team's
+(its commits share), it is made from the files on this computer (nothing
+downloaded; block-cloned on a Dev Drive), and it can be an AI agent's
+(`--agent`), with agent locks on files that can't be merged. `workspace
+remove` refuses while its work isn't merged.
+
+**Steps have no Git counterpart.** While an AI agent works, R3V keeps the
+files after each of its moves, under the prompt that asked for it (as
+Claude Code's checkpoints, or `jj`'s operation log): `r3v steps`, `r3v step
+back <n>`. They stay on this computer, never in the history.
 
 **Storage is a bucket.** A team's storage is an S3-compatible bucket you
 own (R2, S3, B2, MinIO…) or R3V Cloud; a **connection code** holds its
@@ -74,6 +103,25 @@ address and keys. There is no server to run.
 **Big files are normal.** No LFS: a 4 GB recording is a file like any
 other, stored in pieces, and big files go up in the background before you
 commit.
+
+## R3V and git in one folder
+
+A code project can be a git repository and an R3V project at once:
+`.git/` and `.r3v/` side by side, each keeping its own history.
+
+- R3V never tracks `.git` folders. Add `.r3v/` to the `.gitignore` (R3V's
+  own data, not the project's); `.r3v.yaml`, the project's rules, can be
+  committed to both.
+- A folder with `.git/` or a `.gitignore` is a code project for R3V
+  (unless it is also, say, a Unity project): its
+  rules have `gitignore: true`, so R3V tracks what git tracks (each
+  `.gitignore` read as git reads it), and leaves out build outputs and
+  tool folders git might keep (`node_modules/`, `target/`, `dist/`…).
+  Your own `rules:` in `.r3v.yaml` come first ([profiles.md](profiles.md)).
+- The two don't know each other: a `git commit` isn't an R3V version, nor
+  the other way round, and switching branches in one doesn't switch the
+  other. Pick one to switch with, and commit in both when both should keep
+  the point.
 
 ## Commands, side by side
 
@@ -93,6 +141,10 @@ commit.
 | `git checkout <commit>` | `r3v goto <version>` |
 | `git stash` / `git stash pop` | (parked by themselves) `r3v parked` |
 | `git branch -d` | `r3v branch archive` (then `branch delete`) |
+| `git restore .`, `git reset --hard` | `r3v discard` |
+| `git revert -m 1 <merge>` | `r3v undo-merge <merge>` |
+| `git tag -a <name>` | `r3v milestone add <name>` |
+| `git worktree add -b <branch> <folder>` | `r3v workspace add <folder> --branch <branch>` |
 | `git archive` | `r3v export <version> <folder>` |
 | `git fsck` | `r3v verify` |
 | `git diff` (a .als) | `r3v diff a.als b.als` |
