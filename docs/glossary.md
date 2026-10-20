@@ -63,7 +63,7 @@ committed stay with their place: going to another branch or version
 | Step | Steps, Go back, Compare | 步驟、回到這一步、比較 | `steps`, `step`, `step start`, `step end`, `step back`, `step diff` | — (Claude Code's checkpoints, `jj`'s operation log) | The project after one of an agent's moves, under the prompt that asked for it; on this computer only, never in the history |
 | Result | (the Workspaces tab: ✓ tests) | （工作區分頁） | `result`, `results` | a commit status, a check run | What a build or the tests said about a version; on this computer, beside the version, never in it |
 | Agent guide | Add the guide | 加入指引 | `agent setup`, `help agents --snippet` | — | R3V's part of the project's `AGENTS.md` (read by `CLAUDE.md`): how agents work in an R3V project |
-| Rules | Rules… | 規則… | `rules`, `rules explain`, `help rules` | `.gitignore`, `.gitattributes` | All of `.r3v.yaml`: project types (`presets:`), your own lines (`rules:`), merges (`handlers:`). (`profile`, the CLI's name before 0.1.40, still works) |
+| Rules | Rules… | 規則… | `rules`, `rules explain`, `help rules` | `.gitignore`, `.gitattributes` | All of `.r3v.yaml`: project types (`presets:`), your own lines (`rules:`), merges (`handlers:`) |
 | Project type | Project types, Code and documents, Files as they are, Ableton Live project… | 專案類型、程式碼與文件、檔案保持原樣… | `rules preset <folder> <type>`, `init --preset`; `presets:` in `.r3v.yaml` | — | What a folder is (a Live, Unity, code project; `none`: files as they are): what its tool makes again is left out, and how its files merge. Called a preset in `.r3v.yaml` and the code; never in the app, where Live's own presets are something else |
 | Merge kind | — | — | `handlers:` in `.r3v.yaml` (`merge: text` or `whole`) | `.gitattributes` `merge=` | How a project's files merge, over what its project type says |
 | Backup | Backup | 備份 | `backup run`, `backup status`, `backup restore` | a mirror clone | The whole team, only adding |
@@ -77,29 +77,29 @@ committed stay with their place: going to another branch or version
   tag, remote** in the app: say what happens instead (share, get updates,
   parked, the version you're on).
 - **save** for making a version: in Live, saving is Ctrl+S. R3V commits.
-  (`r3v save` and `r3v snapshot`, the CLI's names before 0.1.33, still
-  work: they are `commit` and `commit --local`.)
 - **delete** for a branch put away: it is archived.
 - **upload** for sharing a version: uploading is the bytes going up (big
   files go up early, in the background). (zh-TW and zh-CN do say 上傳
   for a teammate's shared versions: 「Mia 上傳了 1 個新版本」.)
 - **preset** in the app: say project type (Live has presets of its own).
-- **profile** for the rules (the CLI's `profile`, before 0.1.40, is
-  `rules`).
+- **profile** for the rules.
+- **restore** for samples R3V brings back: they are **recovered**
+  ("Recover from R3V"); "Restore" is for files from a version, and backups.
+- **pending changes**: "Your changes", everywhere.
 
-## Settled
+The CLI keeps Git's words where they help: `clone`, `remote`, `verify`,
+`gc`. In zh-TW, a branch is 分支, Undo is 復原, and taking a version back
+is 撤回.
 
-0.1.33: samples R3V brings back are **recovered** ("Recover from R3V";
-"Restore" is for files from a version, and backups); "Your changes"
-everywhere (not "pending changes"); "Versions you commit"; zh-TW says 分支
-for branch and 復原 for Undo (撤回 for taking a version back).
+## Older names
 
-0.1.34: the CLI goes to a version with `goto`, as the app's "Go to"
-(`checkout`, its name before, still works).
+Old names on the command line still work; new text uses the new ones.
 
-0.1.40: the CLI's `profile` is `rules`, as the app's Rules; `discard` is
-the app's "Discard changes" (no `HEAD` to type); the app says **project
-type** for a preset ("Code and documents", "Files as they are"); an old
-project's versions are shared, not uploaded ("Share its {n} versions
-now?"). The CLI keeps Git's words where they help: `clone`, `remote`,
-`verify`, `gc`.
+| Older name | Now | Since |
+|---|---|---|
+| `r3v save` | `r3v commit` | 0.1.33 |
+| `r3v snapshot` | `r3v commit --local` | 0.1.33 |
+| `r3v checkout` | `r3v goto` | 0.1.34 |
+| `r3v profile` | `r3v rules` | 0.1.40 |
+| preset (in the app) | project type | 0.1.40 |
+| "upload" an old project's versions | share them ("Share its {n} versions now?") | 0.1.40 |

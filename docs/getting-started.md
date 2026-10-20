@@ -264,6 +264,54 @@ workspace (refused while it has work not merged, unless you say so).
 Locks between agents stay on this computer; with teammates on R3V Cloud,
 the team's file locks work as before.
 
+## Where your data lives
+
+- **The team's storage** (R3V Cloud, or your bucket): every version of
+  every project, for good.
+- **Each project folder**: your files, and R3V's `.r3v` folder (its
+  history on this computer; don't edit it). It stays small on a team project: once versions are shared,
+  R3V keeps the Live Sets and lets go of its copies of files the team's
+  storage has, and downloads one when an older version needs it.
+  `r3v gc` frees what is left over; `r3v verify` says what is stored
+  where. Workspaces on a Dev Drive (or ReFS) share their files until one
+  changes.
+- **R3V's settings**: `%APPDATA%\R3V` (the teams this computer joined and
+  their keys in `teams.json`, the app's lists of projects, logs in
+  `logs\`); an R3V Cloud sign-in in Windows' Credential Manager. Never in a
+  project folder.
+- **The app**: `%LOCALAPPDATA%\Programs\R3V` (the command line tool in its
+  `bin`).
+
+## Stable and Nightly
+
+Settings › **Updates** › **Channel**. **Stable** is the default. **Nightly**
+gets what is still in testing first (today: moving a project to another
+team) and updates more often. They are the same app, with the same
+settings and projects: you can switch either way (going back to Stable, a
+Nightly stays until a Stable release is newer than it). A team can mix
+both.
+
+When a project or a team needs something this R3V doesn't have, R3V says
+so and does nothing else with it:
+
+- **A newer R3V** (`newer_version_needed`, or a `.r3v.yaml` whose
+  `requires:` is newer): update (Settings › Updates).
+- **The team turned on a feature this R3V lacks** (`team_needs_features`):
+  update, or switch to Nightly when only Nightly has it yet.
+- **A project kind only Nightly has** (`needs_nightly`): switch to Nightly.
+
+## When something goes wrong
+
+- **R3V closed while it rewrote the files** (going to a version, switching,
+  getting updates): the project is partly one version, partly another. R3V
+  offers to put the files back; a file you changed since is listed before
+  it's replaced. Until then nothing is committed.
+- **Damage** (a failing disk): the project's Settings › **Check project…**
+  reads its whole history again and brings back what it can.
+- **"Working on the project"**: the app or a command (an agent's, say) is
+  busy with it; it goes on in a moment.
+- On the command line: [cli.md](cli.md#when-something-goes-wrong).
+
 ## Uninstall
 
 Settings → Apps → R3V → Uninstall. Your projects and their `.r3v` history
