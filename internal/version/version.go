@@ -22,7 +22,7 @@ func Full() string {
 // and the name, and such builds don't offer the public app's updates.
 var Edition string
 
-// Name is the app's name, with the edition ("R3V Pro").
+// Name is the app's name, with the edition (a build with extensions has its own).
 func Name() string {
 	if Edition == "" {
 		return "R3V"

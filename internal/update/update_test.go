@@ -64,9 +64,9 @@ func TestFromFeed(t *testing.T) {
 	defer srv.Close()
 	site := srv.URL + "/"
 
-	body = `{"version": "0.8.0", "download": "` + site + `R3V Pro-0.8.0-setup.exe", "notes": "` + site + `notes.html"}`
+	body = `{"version": "0.8.0", "download": "` + site + `R3V Edition-0.8.0-setup.exe", "notes": "` + site + `notes.html"}`
 	r, err := FromFeed(srv.URL+"/latest.json", "0.7.0")
-	if err != nil || r == nil || r.Version != "0.8.0" || r.DownloadURL != site+"R3V Pro-0.8.0-setup.exe" || r.PageURL != site+"notes.html" {
+	if err != nil || r == nil || r.Version != "0.8.0" || r.DownloadURL != site+"R3V Edition-0.8.0-setup.exe" || r.PageURL != site+"notes.html" {
 		t.Fatalf("newer: %+v %v", r, err)
 	}
 	if r, err := FromFeed(srv.URL+"/latest.json", "0.8.0"); err != nil || r != nil {

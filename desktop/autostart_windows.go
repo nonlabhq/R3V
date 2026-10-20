@@ -71,7 +71,7 @@ func (a *App) SetAutostart(on bool) error {
 }
 
 // runValue names the sign-in entry: the app's name, so a build with
-// extensions ("R3V Pro") has its own next to the public app's.
+// extensions (named for its edition) has its own next to the public app's.
 func runValue() string { return version.Name() }
 
 // autostartFile keeps the choice in the settings folder when R3V_CONFIG_DIR

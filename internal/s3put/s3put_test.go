@@ -18,10 +18,10 @@ func TestPut(t *testing.T) {
 	}))
 	defer srv.Close()
 	tg := Target{Endpoint: srv.URL, Bucket: "releases", AccessKey: "AK", SecretKey: "SK"}
-	if err := tg.Put("releases/0.7.1/R3V Pro+x.exe", []byte("installer"), "application/octet-stream"); err != nil {
+	if err := tg.Put("releases/0.7.1/R3V Edition+x.exe", []byte("installer"), "application/octet-stream"); err != nil {
 		t.Fatal(err)
 	}
-	if got.Method != "PUT" || got.URL.EscapedPath() != "/releases/releases/0.7.1/R3V%20Pro%2Bx.exe" || body != "installer" {
+	if got.Method != "PUT" || got.URL.EscapedPath() != "/releases/releases/0.7.1/R3V%20Edition%2Bx.exe" || body != "installer" {
 		t.Fatalf("request: %s %s %q", got.Method, got.URL.EscapedPath(), body)
 	}
 	auth := got.Header.Get("Authorization")

@@ -965,7 +965,6 @@
 "The latest Nightly is offered as an update.": "最新の Nightly がアップデートとして提供されます。",
 "Log files": "ログファイル",
 "What R3V did, to attach to a report. Keys and connection codes are left out.": "R3V が何をしたかの記録。報告に添付できます。キーや接続コードは含まれません。",
-"R3V Pro's teams and projects are here now, on the Nightly channel. You can uninstall R3V Pro (Windows Settings › Apps).": "R3V Pro のチームとプロジェクトがこちらに移りました（Nightly チャンネル）。R3V Pro はアンインストールできます（Windows の設定 › アプリ）。",
 "Make a new version that takes back what this version changed": "このバージョンの変更を取り消す新しいバージョンを作ります",
 "Undo commit": "Undo commit",
 "Undone: a new version takes back “{version}”": "取り消しました：新しいバージョンが「{version}」を取り消しています",

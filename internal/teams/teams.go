@@ -211,7 +211,7 @@ func Dir() string {
 		d = "."
 	}
 	// A build with extensions keeps its own teams and settings
-	// (%APPDATA%\R3V Pro), so it can run next to the public app.
+	// (%APPDATA%\<its name>), so it can run next to the public app.
 	return filepath.Join(d, version.Name())
 }
 

@@ -227,7 +227,7 @@ func TestEditPath(t *testing.T) {
 		{`C:\Go\bin;%LOCALAPPDATA%\Programs\R3V\bin\`, true, `C:\Go\bin;%LOCALAPPDATA%\Programs\R3V\bin\`, false},
 		{`C:\Go\bin;c:\users\YI\appdata\local\programs\r3v\BIN;C:\tools`, false, `C:\Go\bin;C:\tools`, true},
 		{`C:\Go\bin;%LOCALAPPDATA%\Programs\R3V\bin`, false, `C:\Go\bin`, true},
-		{`C:\Go\bin;C:\Users\yi\AppData\Local\Programs\R3V Pro\bin`, false, `C:\Go\bin;C:\Users\yi\AppData\Local\Programs\R3V Pro\bin`, false},
+		{`C:\Go\bin;C:\Users\yi\AppData\Local\Programs\R3V Edition\bin`, false, `C:\Go\bin;C:\Users\yi\AppData\Local\Programs\R3V Edition\bin`, false},
 	} {
 		got, ch := editPath(c.in, bin, c.add, id)
 		if got != c.want || ch != c.ch {

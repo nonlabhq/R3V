@@ -20,7 +20,7 @@ Unicode true
 !endif
 !define LINK_KEY "Software\Classes\r3v"
 
-; A build with extensions passes its own name (/DAPP="R3V Pro") and
+; A build with extensions passes its own name (/DAPP="<its name>") and
 ; welcome line (/DTAGLINE=...): it installs next to the public app, with its
 ; own folder, shortcuts and uninstall entry.
 ; NUMVER: the version as numbers only, for Windows' file properties (a
