@@ -98,7 +98,7 @@ Bringing it back, stopped half-way:
 
 # A team moves to R3V Cloud
 
-(Designed with the maintainer, 2026-10-08; part 1 being built, part 2
+(Designed with the maintainer, 2026-10-08; part 1 built, part 2
 waits for pricing.)
 
 A team that used its own storage for a while moves to R3V Cloud, often

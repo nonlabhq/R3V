@@ -7,20 +7,21 @@ For AI agents working on R3V's code. To **use** R3V in a project
 ## The project
 
 R3V is version control for creative projects (Ableton Live sets, Unity,
-Unreal and Godot projects): a Go command line tool (`cmd/r3v`, package `cli`)
+Unreal and Godot projects, design files, code): a Go command line tool (`cmd/r3v`, package `cli`)
 and a Windows desktop app (`desktop/`, Wails v3 + Svelte 5). A private build
 adds extensions through `ext/`; keep `cli` and `desktop` usable as libraries
 (no `os.Exit` outside `cli.Main`).
 
 Two release lines come from `main`: Stable, and Nightly (`-tags nightly`),
-which adds the project kinds still in testing from `presets/`. Anything
+which adds what is still in testing (today: moving projects between teams,
+the style lab; a project kind in testing would be a Nightly-only import in
+`presets/`). Anything
 that changes what a team stores so an older R3V would misread, lose or
 delete it must be a team feature; data older versions keep and ignore
 safely needn't (see [docs/design/channels.md](docs/design/channels.md)).
 
 [docs/development.md](docs/development.md) has the layout and how to build;
-`docs/design/` has the design notes (storage backends, tree manifests,
-chunked big files).
+`docs/design/` has the design notes (indexed in development.md).
 
 ## Build and test
 
@@ -45,7 +46,7 @@ cd desktop/frontend && npm run smoke   # the app's main paths in Edge, after cha
   messages users see; the app translates its UI (`desktop/frontend/src/lib/
   locales`, English text is the key: `node scripts/i18n-check.mjs` in
   `desktop/frontend` lists what is missing).
-- What users see follows [docs/ux-principles.md](docs/ux-principles.md).
+- What users see follows [docs/design/ux-principles.md](docs/design/ux-principles.md).
 - Styles use the design tokens in `desktop/frontend/src/shared/tokens.css`
   (colours by role, type sizes, corners, shadows, layers), not raw values;
   a new colour is a new token there. `npm test` fails on a raw colour or an

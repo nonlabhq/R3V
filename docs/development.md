@@ -14,7 +14,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build-windows.ps1   # -> dist\R
 
 The release number lives in `internal/version/version.go`; the build script reads it for the installer name and the file properties of `R3V.exe`.
 
-Two release lines come from `main`: Stable (the default build) and Nightly (`-tags nightly`; the build script's `-Channel nightly`), which adds the project kinds still in testing from `presets/`. Run their tests with `go test -tags nightly ./...` too. See [design/channels.md](design/channels.md).
+Two release lines come from `main`: Stable (the default build) and Nightly (`-tags nightly`; the build script's `-Channel nightly`), which adds what is still in testing (today: moving projects between teams, and the style lab). Run their tests with `go test -tags nightly ./...` too. See [design/channels.md](design/channels.md).
 
 The desktop app is in `desktop/` (Go + Svelte 5 frontend in `desktop/frontend/`). After changing Go methods the frontend calls, regenerate the TypeScript bindings:
 
@@ -48,7 +48,7 @@ in `src/shared/tokens.css`.
 ## Layout
 
 - `cmd/r3v` — command line tool (package `cli`; `--json` results and error codes in `cli/output.go`)
-- `docs/` — also a Go package: embeds `agents.md` for `r3v help agents`
+- `docs/` — also a Go package: embeds `agents.md` and `agents-snippet.md` for `r3v help agents [--snippet]`, and `profiles.md` for `r3v help rules`
 - `desktop/` — Windows desktop app (Wails v3, Svelte 5); installer in `desktop/build/windows/installer.nsi`
   - `desktop/frontend/src/shared/` — what the App shares with R3V Cloud's web app (tokens, icons, the version graph, small components), imported as `$shared/…`; it never imports the App (its README)
 - `internal/xmltree` — ordered XML tree with byte-exact round-trip of Live's output
@@ -57,7 +57,7 @@ in `src/shared/tokens.css`.
 - `internal/merge` — track-level 3-way merge (tracks, placement, order, sends, globals) with id repair
 - `internal/store` — content-addressed blob store (SHA-256)
 - `internal/project` — versions, status, history, restore with sample relinking; `sync.go` does save/update/clone and merges
-- `internal/teamwatch` — background watcher: backs up unsaved work, teammates' edits (soft locks), new versions
+- `internal/teamwatch` — background watcher: tells about versions teammates committed on the project's branch (never changes files)
 - `internal/livecheck` — detects a running Live before rewriting sets
 - `internal/manifest` — version records and folder trees
 - `internal/remote` — the `Backend` interface and its implementation on S3-compatible object storage (extensions can register more)
@@ -177,7 +177,7 @@ A lane can run the same checks before handing over.
    - *Secrets and outside input*: no keys, codes or sessions in logs,
      errors or test output; what comes from outside (a link, a file, the
      service) is checked before it's used.
-   - *The code*: as the code around it; words as docs/ux-principles.md;
+   - *The code*: as the code around it; words as docs/design/ux-principles.md;
      colours and sizes from the tokens; every locale.
    - Correctness: a code review of the whole diff (several reviewers in
      parallel), weighed with the above.
@@ -233,7 +233,47 @@ For the Web lane in particular:
 
 ## Design notes
 
-- [docs/als-format-notes.md](als-format-notes.md) — findings about the `.als` format
-- [docs/design/storage-backends.md](design/storage-backends.md) — pluggable storage backends
-- [docs/design/resolve.md](design/resolve.md) — DaVinci Resolve projects (parked)
-- [docs/cli.md](cli.md) — the command line tool
+In `docs/design/`. Each says its status at the top.
+
+How to work:
+
+- [ux-principles.md](design/ux-principles.md) — how R3V treats the people using it; decides what no note covers
+- [channels.md](design/channels.md) — Stable and Nightly, team features
+- [extending.md](design/extending.md) — builds with extensions (`ext`): presets, merges, backends
+- [agent-field-test.md](design/agent-field-test.md) — checking by hand that an AI agent finds its own way with R3V
+
+What is stored:
+
+- [formats.md](design/formats.md) — what R3V writes in a team's storage, for readers outside R3V
+- [storage-backends.md](design/storage-backends.md) — the `Backend` interface: a team's own bucket, R3V Cloud
+- [tree-manifests.md](design/tree-manifests.md) — versions as folder trees
+- [chunked-files.md](design/chunked-files.md) — big files stored in pieces
+- [preupload.md](design/preupload.md) — big files up before the commit
+- [als-format-notes.md](design/als-format-notes.md) — findings about Live's `.als` format
+
+Versions and branches:
+
+- [branch-tree.md](design/branch-tree.md) — every version keeps its branch: the history as a tree
+- [branches.md](design/branches.md) — branch names, colours, deletes and milestones
+- [parking.md](design/parking.md) — changes kept when you switch
+- [take-back.md](design/take-back.md) — Undo commit
+
+Teams:
+
+- [team-settings.md](design/team-settings.md) — team and project settings: General, Workflow, Activity, Usage
+- [locks.md](design/locks.md) — file locks (R3V Cloud teams)
+- [backup.md](design/backup.md) — team backups and restores
+- [moving.md](design/moving.md) — a project to another team, a team to R3V Cloud
+- [sections.md](design/sections.md) — named groups of a team's projects
+- [archive.md](design/archive.md) — archiving a project for the whole team
+- [looks.md](design/looks.md) — pictures, icons and colours of members and projects
+
+AI agents:
+
+- [agent-workspaces.md](design/agent-workspaces.md) — several agents on one project: workspaces, agent locks, results
+- [agent-identity.md](design/agent-identity.md) — which agent made a version
+- [steps.md](design/steps.md) — an agent's moves, to go back to
+
+Parked:
+
+- [resolve.md](design/resolve.md) — DaVinci Resolve projects
