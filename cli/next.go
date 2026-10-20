@@ -91,6 +91,9 @@ func agentSteps(root string) []nextJSON {
 	case a.Tool == agentsetup.ClaudeCodeTool && agentsetup.ToolOf(root) == "":
 		return []nextJSON{{"r3v agent setup",
 			"set Claude Code up in this folder, once: R3V_ACTOR in its settings (the versions you make say an agent made them), its hooks, the agents' guide in AGENTS.md"}}
+	case from == actor.FromTool && a.Tool == actor.GenericTool: // (AI_AGENT, naming no tool R3V can write)
+		return []nextJSON{{"r3v agent setup --tool NAME",
+			"set this folder up for your tool, once (NAME: its name, such as codex or cursor): the versions you make here say so (add --model with the model you run), the agents' guide in AGENTS.md"}}
 	case from == actor.FromTool:
 		return []nextJSON{{"r3v agent setup --tool " + a.Tool,
 			"set this folder up for " + a.Tool + ", once: the versions you make here say so (add --model with the model you run), the agents' guide in AGENTS.md"}}

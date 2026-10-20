@@ -6,11 +6,12 @@ version) and `r3v help agents --snippet` (a few lines for a project's
 `AGENTS.md` or `CLAUDE.md`).
 
 R3V is version control for creative projects: Ableton Live sets, Unity,
-Unreal and Godot projects. A project folder with a `.r3v` folder is tracked.
+Unreal and Godot projects, design files and code. A project folder with a
+`.r3v` folder is tracked.
 **`commit` makes a version and shares it with the team in one step**; there
-is no separate push. (`save`, `snapshot` and `checkout`, the names of
-`commit`, `commit --local` and `goto` before, still work.) Coming from Git: [git-users.md](git-users.md); the
-words: [glossary.md](glossary.md).
+is no separate push. Commands' older names still work
+([glossary.md](glossary.md#older-names)). Coming from Git:
+[git-users.md](git-users.md); the words: [glossary.md](glossary.md).
 
 ## Before you start
 
@@ -34,12 +35,14 @@ nobody else gets them, and nothing is backed up. Check, once per project:
 2. **Are you set up as an agent?** The versions you make should say an
    agent made them (`actor` in `log --json`). Once per folder, run
    `r3v agent setup --tool NAME [--model MODEL]` with your tool's name
-   (`claude-code`, `codex`, `opencode`, `gemini-cli`, `cursor`, `pi`...;
+   (`claude-code`, `codex`, `cursor`, or any tool's own name;
    left out, the tool R3V tells from its variables): it keeps who you
    are in this copy (`.r3v/agent.json`: this folder's only, never
    tracked or shared) and puts the agents' lines in `AGENTS.md` (commit
    it). For Claude Code it also writes `R3V_ACTOR` and its hooks in
-   `.claude/settings.local.json`, and `@AGENTS.md` in `CLAUDE.md`.
+   `.claude/settings.local.json`, and `@AGENTS.md` in `CLAUDE.md`; the
+   hooks take agent locks, keep steps and read the session's model for
+   the versions you commit.
 
 `r3v init` says the same when it makes a project: its text ends with
 what to run next, and `init --json` gives it as `next`: `[{"command",
@@ -50,8 +53,11 @@ same `next` (see Output); `update` and `merge` fail with
 
 ## Rules
 
-- **Use `--json`** with `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `rules ignore`, `backup`, `verify`, `project`, `section`, `lock` and `locks`, and
-  read the result, not the text.
+- **Use `--json`** with `init`, `status`, `log`, `diff`, `info`, `commit`, `update`, `merge`,
+  `merge-files`, `undo-merge`, `switch`, `goto`, `branch`, `discard`, `parked`, `rules ignore`,
+  `workspace`, `milestone`/`milestones` (`tag`/`tags`), `result`/`results`, `step`/`steps`,
+  `lock`, `unlock`, `locks`, `agent setup`, `backup`, `verify`, `project`, `section` and
+  `version`, and read the result, not the text.
 - **Commands never wait for an answer.** When one is needed they stop with
   an error code (below). Never pipe answers into R3V.
 - **Don't use `--force` or `r3v discard` on your own.** `--force` makes
@@ -134,15 +140,18 @@ the member you work for (`author`). Who that agent is, in order:
 1. `R3V_ACTOR` in the environment (the tool's name; `R3V_ACTOR_MODEL`,
    `R3V_ACTOR_SESSION` optional; `none`: a person, whatever else says);
 2. the copy's own identity, `.r3v/agent.json` (`r3v agent setup`);
-3. the variables tools set themselves in the commands they run (Claude
-   Code's `CLAUDECODE`, Codex's `CODEX_THREAD_ID`, opencode's `OPENCODE`,
-   Gemini CLI's `GEMINI_CLI`, Pi's `PI_CODING_AGENT`, and others: see
-   [design/agent-identity.md](design/agent-identity.md)); one of another
-   tool than the copy's wins over 2 (that tool runs here now);
-4. else a person.
+3. the variables Claude Code (`CLAUDECODE`), Codex (`CODEX_THREAD_ID`)
+   and Cursor (`CURSOR_AGENT`) set in the commands they run; one of
+   another tool than the copy's wins over 2 (that tool runs here now);
+4. else `AI_AGENT`, which more and more tools set: its value as the
+   tool's name (`agent` when it can't be one);
+5. else a person.
 
-The model is `R3V_ACTOR_MODEL`, else the tool's own (Pi's `PI_MODEL`),
-else the copy's when it is the same tool. The person's own commands in a
+Any other tool: `r3v agent setup --tool NAME`, or `R3V_ACTOR` (see
+[design/agent-identity.md](design/agent-identity.md) for why R3V reads
+only these). The model is `R3V_ACTOR_MODEL`, else the one Claude Code's
+hooks recorded for its session, else the copy's when it is the same
+tool. The person's own commands in a
 folder set up for an agent: `--as person` (any command), or
 `R3V_ACTOR=none` in their shell; the R3V app's versions are always the
 person's.
@@ -400,7 +409,7 @@ task: `ended` (`session`, `turn`, `since`, `note`, `step`, `stale`; null
 with `note` saying none was started: a no-op), `step` (`n`, `turn`,
 `version`, `files` changed since the step before, `tool` `step end`,
 `detail` your NOTE, `actor`; null when nothing changed). Your session is
-your tool's (`R3V_ACTOR_SESSION`, Codex's thread, opencode's or Pi's
+your tool's (`R3V_ACTOR_SESSION`, else Codex's thread or Claude Code's
 session); a tool without one goes on in its latest session for 4 hours,
 then starts another. A task open longer than 12 hours is closed by the
 next start without a step (`stale`: true). Both are ok and change
@@ -441,7 +450,7 @@ first). Tell the user what was parked and brought back.
 `workspace` (several agents on one project, each in a folder of
 its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on-one-project)):
 
-- `workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent claude-code]`
+- `workspace add [<folder>] --branch NAME [--from BRANCH|VERSION] [--agent TOOL]`
   (no folder: `<project>.workspaces/<branch>` beside the project):
   `workspace` (`folder`, `branch` its key, `branch_name`, `base` the
   branch it was made from, `created`). Made from the files on this
@@ -455,7 +464,12 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
   `unshared` (versions committed there `--local`, not on the team's
   branch: a merge here doesn't see them), `changes` (files changed, not
   committed), `parked`, `last_activity`,
-  `missing` (the folder is gone: remove it from the list). `--against
+  `missing` (the folder is gone: remove it from the list), `merged`
+  (true: all its versions are in `base` and nothing is changed or
+  parked, so `remove` loses nothing; false too when the team can't be
+  reached). A workspace an agent is done with stays until someone
+  removes it: offer the user to remove such ones.
+  `--against
   BRANCH` counts `ahead` and `behind` against that branch for this call
   (`against`: its key; `base` stays what is recorded).
 - `workspace base <folder> <branch>`: the workspace merges into `branch`
@@ -530,9 +544,10 @@ preview first and ask the user.
 
 ## Several agents on one project
 
-For the person setting it up: [agents-quickstart.md](agents-quickstart.md).
+For the person setting it up:
+[getting-started.md](getting-started.md#7-ai-agents-on-your-project).
 The project's `AGENTS.md` (`r3v agent setup` in the main copy, or the
-app's Agents tab) tells every agent the essentials.
+app's Workspaces tab) tells every agent the essentials.
 
 Each agent works in a workspace of its own (another folder with the same
 project, on its own branch). Files that can't be merged (textures,
@@ -549,6 +564,12 @@ workspace at a time; code is never locked (it merges hunk by hunk).
   wait or retry: go on with other work** and tell the user.
 - Files the user changed in their own copy and hasn't committed are
   theirs: refused too.
+- Working in parallel yourself (a second task at once): not in a git
+  worktree. R3V doesn't see one (it has no `.r3v`), so the work there is
+  never committed, shared or merged, and R3V run in one fails with
+  `git_worktree`. `r3v workspace add --branch NAME --agent TOOL --json`
+  makes the folder, its branch and the agent setup in one command; start
+  your tool in that folder.
 - Lock ahead, all or none: `r3v lock <paths…> --json` (a folder covers
   what's under it; too wide is warned about). `r3v unlock <paths…>` frees
   yours. A lock protects work not committed, and work not merged yet:
@@ -586,7 +607,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 5 | `project_busy` | the R3V app or another command is using the project: try again in a moment, or with `--wait SECONDS`. `holder`, when it said: `program` (`app`\|`cli`), `command`, `pid`, `since` (RFC 3339), `running` (false: that process ended, and whatever holds it now didn't say: an older R3V) |
 | 6 | `not_a_project` | not in a tracked folder: `r3v init`, or `cd` into the project |
 | 6 | `newer_version_needed` | the team uses a newer R3V: the user must update |
-| 6 | `needs_nightly` | a Unity/Unreal/Godot (…) project: the user must switch R3V to the Nightly channel |
+| 6 | `needs_nightly` | something this R3V has only on the Nightly channel (no project kind needs it now): the user must switch R3V to Nightly, or wait for a Stable release |
 | 6 | `team_needs_features` | the team turned on features this R3V lacks: update, or switch to Nightly |
 | 1 | `unsaved_changes` | commit first (`r3v commit -m ...`); `update` keeps them unless you also have versions not shared. From `merge` (or such an `update`): `details.files`, the uncommitted files it would write or delete (the others are kept) |
 | 1 | `on_older_version` | on an older version: `r3v goto latest` |
@@ -610,6 +631,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `project_deleted` | the team deleted the project (moved it to another team, or deleted it for everyone); the versions stay committed here. Read `deleted` and ask the user: never point the copy elsewhere or bring the project back on your own (see "A project its team deleted") |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |
+| 1 | `git_worktree` | this folder is a git worktree of an R3V project: R3V doesn't see work here (nothing of it is committed, shared or merged). `next`: `r3v workspace add --branch NAME --agent TOOL`, run in the project's main copy (its folder in `why`); start your tool in that workspace and move the work there, and ask the user before removing the git worktree |
 | 1 | `in_workspace` | only the project's main copy does this (connecting it to a team, moving it): run it there |
 | 1 | `workspace_orphaned` | the project's main copy was moved or deleted: the workspace can't be used; make it again |
 | 1 | `verify_problems` | `verify` found problems it didn't repair: `details` holds its result (`problems`, `open_problems`, `summary`, …). Show the user `details.problems`; `verify --repair` brings back what can be (ask the user first) |
@@ -649,5 +671,5 @@ Codes are stable; messages are for people and may change.
   `teams.json` into it, or to give R3V access. Never retry on
   `no_write_access`; `project_busy` alone means someone is working.
 - The CLI is `r3v` on PATH after installing the app (a new terminal sees
-  it); otherwise `%LOCALAPPDATA%\Programs\R3V\bin\r3v.exe` (or
-  `R3V Pro\bin`). `where r3v` shows which one runs.
+  it); otherwise `%LOCALAPPDATA%\Programs\R3V\bin\r3v.exe`. `where r3v`
+  shows which one runs.

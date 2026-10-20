@@ -21,8 +21,14 @@ import (
 // openRepo opens the project here, kept from other programs (the app) until
 // the command ends: waiting up to lockWait for one that has it. A switch
 // left halfway is put back first (recoverSwitch).
-func openRepo() (*project.Repo, error) {
-	r, err := project.Open(".")
+func openRepo() (*project.Repo, error) { return openRepoAt(".") }
+
+// openRepoAt is openRepo for the project in dir.
+func openRepoAt(dir string) (*project.Repo, error) {
+	if err := notGitWorktree(dir); err != nil {
+		return nil, err
+	}
+	r, err := project.Open(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +48,9 @@ func openRepo() (*project.Repo, error) {
 // the app reads one: desktop openRead). An agent's status or log then
 // doesn't fail while another commits; readBusy says who has it.
 func openRead() (*project.Repo, error) {
+	if err := notGitWorktree("."); err != nil {
+		return nil, err
+	}
 	r, err := project.Open(".")
 	if err != nil {
 		return nil, err
@@ -234,6 +243,9 @@ func cmdInit(args []string) error {
 	dir := "."
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
+	}
+	if err := notGitWorktree(dir); err != nil { // (not another project in an agent's git worktree)
+		return err
 	}
 	if *preset != "" {
 		if err := project.ChooseKind(dir, *preset); err != nil {

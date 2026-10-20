@@ -329,8 +329,9 @@ type hookDecision struct {
 }
 
 // cmdHook: r3v hook pre-tool, Claude Code's PreToolUse hook (and prompt,
-// post-tool: steps). Always exits
-// 0: a hook that fails (exit 2) would stop the agent's every change.
+// post-tool: steps; session-start, model-switch: the model, agenthooks.go).
+// Always exits 0: a hook that fails (exit 2) would stop the agent's every
+// change.
 func cmdHook(args []string) error {
 	if len(args) != 1 {
 		return nil
@@ -340,6 +341,8 @@ func cmdHook(args []string) error {
 		hookPreTool(os.Stdin, os.Stdout)
 	case "prompt", "post-tool": // steps (steps.go)
 		hookSteps(args[0], os.Stdin, os.Stdout)
+	case "session-start", "model-switch":
+		hookModel(os.Stdin)
 	}
 	return nil // a hook from a newer R3V: nothing to say
 }

@@ -965,7 +965,6 @@
 "The latest Nightly is offered as an update.": "最新的 Nightly 會以更新的方式提供。",
 "Log files": "記錄檔",
 "What R3V did, to attach to a report. Keys and connection codes are left out.": "R3V 做了什麼，可附在問題回報裡。金鑰和 connection code 不會寫進去。",
-"R3V Pro's teams and projects are here now, on the Nightly channel. You can uninstall R3V Pro (Windows Settings › Apps).": "R3V Pro 的團隊和專案都搬過來了，使用 Nightly 頻道。R3V Pro 可以解除安裝了（Windows 設定 › 應用程式）。",
 "Make a new version that takes back what this version changed": "建立一個新版本，把這個版本的改動撤回",
 "Undo commit": "復原提交",
 "Undone: a new version takes back “{version}”": "已復原：新版本撤回了「{version}」",

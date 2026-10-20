@@ -11,6 +11,7 @@ import (
 
 	"github.com/nonlabhq/r3v/docs"
 	"github.com/nonlabhq/r3v/internal/agentlock"
+	"github.com/nonlabhq/r3v/internal/agentsetup"
 	"github.com/nonlabhq/r3v/internal/project"
 )
 
@@ -282,7 +283,7 @@ func TestAgentSetup(t *testing.T) {
 	}
 	ours := pre[1].(map[string]any)
 	cmd := ours["hooks"].([]any)[0].(map[string]any)["command"].(string)
-	if ours["matcher"] != "Edit|Write|MultiEdit|NotebookEdit" || !strings.HasSuffix(cmd, "hook pre-tool") ||
+	if ours["matcher"] != agentsetup.HookMatcher || !strings.HasSuffix(cmd, "hook pre-tool") ||
 		!strings.Contains(cmd, filepath.ToSlash(os.Args[0][:2])) {
 		t.Fatalf("our hook (this executable, by its path): %v", ours)
 	}

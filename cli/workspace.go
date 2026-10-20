@@ -33,6 +33,9 @@ type workspaceJSON struct {
 	Missing      bool   `json:"missing,omitempty"` // the folder is gone
 	// Results: what the checks said about the version it is on.
 	Results map[string]project.Result `json:"results,omitempty"`
+	// Merged (list): all its work is in its base branch, nothing changed or
+	// parked: it can be removed, nothing lost (agent tools leave such ones).
+	Merged *bool `json:"merged,omitempty"`
 }
 
 func workspaceOf(e project.WorkspaceEntry) workspaceJSON {
@@ -118,6 +121,9 @@ func cmdWorkspace(args []string) error {
 			w.BranchName, w.Head, w.Ahead, w.Behind, w.Unshared = s.BranchName, s.Head, s.Ahead, s.Behind, s.Unshared
 			w.Changes, w.Parked, w.Missing, w.Results = s.Changes, s.Parked, s.Missing, s.Results
 			w.LastActivity = s.LastActivity.UTC().Format(time.RFC3339)
+			if !s.Missing {
+				w.Merged = &s.Merged
+			}
 			out = append(out, w)
 		}
 		res := map[string]any{"main": r.MainRoot(), "workspaces": out}
@@ -146,6 +152,10 @@ func cmdWorkspace(args []string) error {
 				if w.Unshared != nil && *w.Unshared > 0 {
 					fmt.Printf("  %d version(s) not shared yet (committed --local): merging %s doesn't see them until `r3v commit` there shares them\n",
 						*w.Unshared, w.BranchName)
+				}
+				if w.Merged != nil && *w.Merged {
+					fmt.Printf("  all merged into %s, nothing changed: can be removed (r3v workspace remove %q)\n",
+						r.BranchLabel(w.Base), w.Folder)
 				}
 				if line := resultsLine(w.Results); line != "" {
 					fmt.Println("  " + line)

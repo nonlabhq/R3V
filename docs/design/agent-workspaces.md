@@ -263,13 +263,44 @@ agents are the 0.3 theme), in the main copy or a workspace: the copy's
 identity (`.r3v/agent.json`), and in the main copy the agents' guide in
 `AGENTS.md` (committed; most tools read it). For Claude Code also the
 hooks (`PreToolUse` → `r3v hook pre-tool`, reading the tool call and
-answering allow or deny), `R3V_ACTOR` (`.claude/settings.local.json`,
+answering allow or deny; `SessionStart` and `PostModelSwitch` →
+`r3v hook session-start`/`model-switch`, reading the model), `R3V_ACTOR` (`.claude/settings.local.json`,
 this copy's and never tracked) and `@AGENTS.md` in `CLAUDE.md`; run by
 `workspace add --agent TOOL`. The hooks are Claude Code's only: other
 tools get no first-touch locking (the commit check still refuses a
 locked file), and make their steps themselves, the guide telling them
 to wrap each task in `r3v step start` and `r3v step end` (a commit
 ends one left open; [steps.md](steps.md#tools-without-hooks)).
+
+## Git worktrees
+
+Agent tools make git worktrees of their own (Claude Code's `claude
+--worktree` and subagents with `isolation: worktree`, other tools'
+parallel agents). R3V doesn't see them: a git worktree has no `.r3v`, so
+work there is never committed, shared or merged by R3V. R3V doesn't
+stand in for the tool there (no worktree hooks, no refusing `git
+worktree`: [agent-identity.md](agent-identity.md#the-principle)); it
+protects its own commands and says what to do instead:
+
+- **The guide** (`AGENTS.md`, every tool): working in parallel, one
+  command makes the folder, its branch and the agent setup (`r3v
+  workspace add --branch NAME --agent <tool> --json`); start the tool in
+  that folder. Not a git worktree, and why.
+- **`git_worktree`**: R3V run in a git worktree of an R3V project (a
+  `.git` file pointing at `<repo>/.git/worktrees/<name>`, `.r3v` in the
+  repository's main folder there) fails, `next` the `workspace add` to
+  run in the main copy: every command that opens the project, and `init`
+  (no second project in it). Without it, R3V would take a worktree
+  inside the project (`.claude/worktrees/…`) for the main copy.
+- **Left behind**: a workspace an agent is done with stays until someone
+  removes it. `workspace list` gives `merged` (true: all its versions in
+  its base branch, nothing changed or parked, so removing loses
+  nothing); the text says "can be removed".
+
+Claude Code's model is read by two passive hooks (`SessionStart`,
+`PostModelSwitch`; [agent-identity.md](agent-identity.md#order)). A test
+build of this branch had `WorktreeCreate`/`WorktreeRemove` hooks: `agent
+setup` takes R3V's out of the settings where they are.
 
 ## Stopping half-way
 

@@ -965,7 +965,6 @@
 "The latest Nightly is offered as an update.": "La dernière Nightly est proposée comme mise à jour.",
 "Log files": "Fichiers journaux",
 "What R3V did, to attach to a report. Keys and connection codes are left out.": "Ce que R3V a fait, à joindre à un signalement. Les clés et codes de connexion n'y figurent pas.",
-"R3V Pro's teams and projects are here now, on the Nightly channel. You can uninstall R3V Pro (Windows Settings › Apps).": "Les équipes et projets de R3V Pro sont maintenant ici, sur le canal Nightly. Vous pouvez désinstaller R3V Pro (Paramètres Windows › Applications).",
 "Make a new version that takes back what this version changed": "Créer une nouvelle version qui annule ce que cette version a changé",
 "Undo commit": "Undo commit",
 "Undone: a new version takes back “{version}”": "Annulé : une nouvelle version annule « {version} »",
