@@ -39,7 +39,11 @@ nobody else gets them, and nothing is backed up. Check, once per project:
    are in this copy (`.r3v/agent.json`: this folder's only, never
    tracked or shared) and puts the agents' lines in `AGENTS.md` (commit
    it). For Claude Code it also writes `R3V_ACTOR` and its hooks in
-   `.claude/settings.local.json`, and `@AGENTS.md` in `CLAUDE.md`.
+   `.claude/settings.local.json`, and `@AGENTS.md` in `CLAUDE.md`. The
+   hooks make the worktrees Claude Code asks for (`claude --worktree`,
+   subagents with `isolation: worktree`) R3V workspaces, refuse `git
+   worktree add`/`remove` in the project, and record the session's
+   model for the versions you commit.
 
 `r3v init` says the same when it makes a project: its text ends with
 what to run next, and `init --json` gives it as `next`: `[{"command",
@@ -455,7 +459,12 @@ its own on a branch of its own; see [cli.md](cli.md#workspaces-several-agents-on
   `unshared` (versions committed there `--local`, not on the team's
   branch: a merge here doesn't see them), `changes` (files changed, not
   committed), `parked`, `last_activity`,
-  `missing` (the folder is gone: remove it from the list). `--against
+  `missing` (the folder is gone: remove it from the list), `merged`
+  (true: all its versions are in `base` and nothing is changed or
+  parked, so `remove` loses nothing; false too when the team can't be
+  reached). Agent tools leave such workspaces behind (Claude Code
+  removes no subagent's worktree): offer the user to remove them.
+  `--against
   BRANCH` counts `ahead` and `behind` against that branch for this call
   (`against`: its key; `base` stays what is recorded).
 - `workspace base <folder> <branch>`: the workspace merges into `branch`
@@ -549,6 +558,14 @@ workspace at a time; code is never locked (it merges hunk by hunk).
   wait or retry: go on with other work** and tell the user.
 - Files the user changed in their own copy and hasn't committed are
   theirs: refused too.
+- Working in parallel yourself (a second task, a subagent): `r3v
+  workspace add --branch NAME --agent TOOL --json`, never `git worktree`
+  (R3V doesn't see it; Claude Code's hook refuses it, and R3V run in one
+  fails with `git_worktree`). Claude Code set up with `r3v agent setup`
+  makes its own worktrees R3V workspaces (`<project>.workspaces/<name>`,
+  on an agent branch named after the worktree); removing one is refused
+  while its work isn't merged, saying what is left: merge it or ask the
+  user.
 - Lock ahead, all or none: `r3v lock <paths…> --json` (a folder covers
   what's under it; too wide is warned about). `r3v unlock <paths…>` frees
   yours. A lock protects work not committed, and work not merged yet:
@@ -610,6 +627,7 @@ workspace at a time; code is never locked (it merges hunk by hunk).
 | 1 | `project_deleted` | the team deleted the project (moved it to another team, or deleted it for everyone); the versions stay committed here. Read `deleted` and ask the user: never point the copy elsewhere or bring the project back on your own (see "A project its team deleted") |
 | 1 | `not_downloaded` | a download was cut off (no version here yet): `r3v update`, or `r3v clone` into the same folder, finishes it |
 | 1 | `workspace_not_merged` | the workspace has versions not merged into its base branch, or changes not committed or parked: merge it (`r3v merge <branch>` in the main copy) and commit; `--force` loses its work (ask the user) |
+| 1 | `git_worktree` | this folder is a git worktree of an R3V project: R3V doesn't see work here (nothing of it is committed, shared or merged). `next`: `r3v workspace add --branch NAME --agent TOOL`, run in the project's main copy (its folder in `why`); move the work there, and ask the user before removing the git worktree |
 | 1 | `in_workspace` | only the project's main copy does this (connecting it to a team, moving it): run it there |
 | 1 | `workspace_orphaned` | the project's main copy was moved or deleted: the workspace can't be used; make it again |
 | 1 | `verify_problems` | `verify` found problems it didn't repair: `details` holds its result (`problems`, `open_problems`, `summary`, …). Show the user `details.problems`; `verify --repair` brings back what can be (ask the user first) |

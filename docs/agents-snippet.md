@@ -20,6 +20,9 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   file as it should be with `--resolved <path>=<file>`; ask the user when unsure. A lockfile that
   won't merge: take one side, then regenerate it (`npm install`, `cargo update -w`).
 - On `set_open_in_live` (exit 4) ask the user to close the set in Ableton Live.
+- Working in parallel (a second task at once, a subagent): `r3v workspace add --branch NAME
+  --agent <your tool> --json` makes the folder, its branch and the agent setup in one go; work
+  there. Never `git worktree`: R3V doesn't see it (its work isn't committed, shared or merged).
 - Working beside other agents, each in a workspace of its own (`r3v workspace list --json`): stay in
   yours. A change refused by the hook, or `files_locked_by_agent`, means another agent or the user is
   on that file (textures, models, sounds): don't wait or retry, do other work and tell the user. The

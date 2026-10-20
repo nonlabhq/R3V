@@ -30,8 +30,18 @@ For each command (`actor.Resolve`):
 4. Else a person: no actor.
 
 The model: `R3V_ACTOR_MODEL`, else the tool's own variable (only Pi has
-one: `PI_MODEL`, what runs now), else the copy's when it is the same
-tool. The session: `R3V_ACTOR_SESSION`, else the tool's own (Codex's
+one: `PI_MODEL`, what runs now), else the one the tool's hooks recorded
+for the session (`actor.ResolveIn`), else the copy's when it is the same
+tool.
+
+Claude Code has no variable for its model, but its `SessionStart` hook
+is given `model` and `PostModelSwitch` `to_model` (`r3v agent setup`
+installs both: `r3v hook session-start`, `r3v hook model-switch`). They
+keep it in the copy's `.r3v/agent-sessions/<session id>.json` (`tool`,
+`model`, `updated`; this copy's only, never tracked or shared, dropped
+after a month), and a command whose session (`CLAUDE_CODE_SESSION_ID`,
+or `R3V_ACTOR_SESSION`) has one says that model. The record is the
+version's `actor.model`, as before: no format change. The session: `R3V_ACTOR_SESSION`, else the tool's own (Codex's
 thread, opencode's, Pi's, Claude Code's session id), read only when that
 tool's marker is set.
 

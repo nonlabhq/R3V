@@ -271,6 +271,66 @@ locked file), and make their steps themselves, the guide telling them
 to wrap each task in `r3v step start` and `r3v step end` (a commit
 ends one left open; [steps.md](steps.md#tools-without-hooks)).
 
+## Claude Code's worktrees
+
+Claude Code makes git worktrees of its own (`claude --worktree`, the
+EnterWorktree tool, subagents with `isolation: worktree`, background
+sessions). In an R3V project those would be folders R3V doesn't see: work
+there is never committed, shared or merged. Claude Code lets hooks make
+them instead (code.claude.com/docs/en/hooks#worktreecreate, checked
+2026-10-20), so `agent setup` installs, beside `PreToolUse`:
+
+```json
+"WorktreeCreate": [{"hooks": [{"type": "command", "command": "r3v hook worktree-create"}]}],
+"WorktreeRemove": [{"hooks": [{"type": "command", "command": "r3v hook worktree-remove"}]}],
+"SessionStart":   [{"hooks": [{"type": "command", "command": "r3v hook session-start"}]}],
+"PostModelSwitch": [{"hooks": [{"type": "command", "command": "r3v hook model-switch"}]}]
+```
+
+and the `PreToolUse` matcher takes in the shells
+(`Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell`). The command is
+`HookCommand`'s, as for the other hooks (the full path when `r3v` on
+PATH is another).
+
+- **`worktree-create`** (input: `name`, `cwd`): `workspace add` in the
+  default folder (`<project>.workspaces/<name>`) on a new agent branch
+  called `name`, set up for Claude Code (as `--agent claude-code`); the
+  folder, absolute, is the only line on stdout (Claude Code reads the
+  last), all else on stderr. The same name again gives that workspace's
+  folder. A failure (no team, the name taken by a branch that isn't
+  this workspace's) exits 1 with the reason: Claude Code makes no
+  worktree. The parent session's recorded model is copied in (a
+  subagent runs in its parent's session).
+- **`worktree-remove`** (input: `worktree_path`): `workspace remove`
+  without `--force`, run in the main copy: refused (exit 1, the folder
+  kept, `workspace_not_merged` and what is left on stderr) while the
+  workspace has versions not in its base branch, changes not committed
+  or parked; else removed, its branch archived. A folder that isn't
+  R3V's is left alone (exit 1); one already gone is fine (exit 0). Claude
+  Code doesn't ask git about a hook-made worktree's changes, so this
+  check is the only one; `ExitWorktree`'s `discard_changes` can't get
+  past it.
+- **Left behind**: Claude Code runs `WorktreeRemove` for no subagent
+  that ends. `workspace list` gives `merged` (true: removing loses
+  nothing), the text says "can be removed".
+- **`git worktree` refused**: the pre-tool hook denies a Bash or
+  PowerShell command with `git worktree add` or `remove` in an R3V
+  project, pointing at `r3v workspace add --branch <name> --agent
+  claude-code`. Other tools have no hooks: the guide says never `git
+  worktree`, and R3V run in a git worktree of an R3V project (a `.git`
+  file pointing at `<repo>/.git/worktrees/<name>`, `.r3v` in the
+  repository's main folder there) fails with `git_worktree` and `next`
+  (also `init`: no second project in it).
+- **The model**: `session-start` (`model`) and `model-switch`
+  (`to_model`) keep the session's model in the copy's `.r3v/agent-
+  sessions/<session>.json` (this copy's, never tracked or shared;
+  a month kept); see [agent-identity.md](agent-identity.md#order).
+
+Every hook but the two worktree ones exits 0 whatever happens. An older
+R3V's `agent setup` keeps these hooks (it only replaces its own); an
+older `r3v` running `worktree-create` prints nothing, so Claude Code
+makes no worktree until R3V is updated.
+
 ## Stopping half-way
 
 Each step lists its states (docs/development.md#interruptions):
@@ -290,6 +350,12 @@ Each step lists its states (docs/development.md#interruptions):
   versions dropped (those no other copy holds), then its files, its
   `.r3v` last (so a stop leaves a folder still known as a leftover:
   `remove` again clears it).
+- `hook worktree-create`: `workspace add`, then the Claude Code setup,
+  then the folder printed. Stopped before the print, Claude Code made no
+  worktree and the folder is a leftover or a registered workspace: the
+  same name again finishes both (and `workspace list` shows it, `merged`
+  while nothing was done in it). `hook worktree-remove` is `workspace
+  remove`'s states.
 - Locks: a lock file is whole or absent (made then renamed); asking for
   several, any refused takes back the ones just made.
 - A hunk-by-hunk merge writes nothing until every hunk is decided.
