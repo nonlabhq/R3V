@@ -94,8 +94,18 @@ func ToolName(name string) (string, bool) {
 // Detect is the agent running this process in the copy whose .r3v is dir
 // ("": no copy), nil for a person.
 func Detect(dir string) *manifest.Actor {
-	a, _ := Resolve(os.Getenv, ReadIdentity(dir))
+	a, _ := ResolveIn(os.Getenv, dir)
 	return a
+}
+
+// ResolveIn is Resolve for the copy whose .r3v is dir: its identity, and
+// the model its tool's hooks recorded for the session (SessionModel) when
+// no variable says one; that is what runs now, so it comes before the
+// identity's.
+func ResolveIn(getenv func(string) string, dir string) (*manifest.Actor, string) {
+	return resolve(getenv, ReadIdentity(dir), func(tool, session string) string {
+		return SessionModel(dir, tool, session)
+	})
 }
 
 // FromEnv is the agent the variables read through getenv say, with no
@@ -110,9 +120,16 @@ func FromEnv(getenv func(string) string) *manifest.Actor {
 // else a tool's own marker (Announced). A marker of another tool than
 // id's wins over id: that tool runs here now, the copy was set up for
 // another. The model is R3V_ACTOR_MODEL's, else the tool's own variable's
-// (Pi's PI_MODEL: what runs now), else id's when it is id's tool; the
+// (Pi's PI_MODEL: what runs now), with ResolveIn the one the tool's hooks
+// recorded for the session, else id's when it is id's tool; the
 // session R3V_ACTOR_SESSION's, else the tool's own.
 func Resolve(getenv func(string) string, id *Identity) (a *manifest.Actor, from string) {
+	return resolve(getenv, id, nil)
+}
+
+// resolve is Resolve, with sessionModel (nil: none) the model recorded
+// for a tool's session.
+func resolve(getenv func(string) string, id *Identity, sessionModel func(tool, session string) string) (a *manifest.Actor, from string) {
 	tool := clean(getenv(EnvTool))
 	from = FromVariable
 	if strings.EqualFold(tool, None) {
@@ -138,6 +155,9 @@ func Resolve(getenv func(string) string, id *Identity) (a *manifest.Actor, from 
 		if a.Session == "" && m.SessionVar != "" {
 			a.Session = clean(getenv(m.SessionVar))
 		}
+	}
+	if a.Model == "" && a.Session != "" && sessionModel != nil {
+		a.Model = sessionModel(tool, a.Session)
 	}
 	if a.Model == "" && id != nil && id.Tool == tool {
 		a.Model = id.Model
