@@ -116,9 +116,9 @@ func TestInitNext(t *testing.T) {
 	t.Run("a tool R3V tells by its variables", func(t *testing.T) {
 		noTeams(t)
 		asUnknown(t)
-		t.Setenv("GEMINI_CLI", "1")
+		t.Setenv("CURSOR_AGENT", "1")
 		got := commands(initIn(t).Next)
-		if !strings.Contains(got, "r3v agent setup --tool gemini-cli | r3v commit") {
+		if !strings.Contains(got, "r3v agent setup --tool cursor | r3v commit") {
 			t.Errorf("next: %s", got)
 		}
 	})

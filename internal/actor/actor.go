@@ -119,10 +119,10 @@ func FromEnv(getenv func(string) string) *manifest.Actor {
 // ("none": a person, whatever else says), else the copy's identity id,
 // else a tool's own marker (Announced). A marker of another tool than
 // id's wins over id: that tool runs here now, the copy was set up for
-// another. The model is R3V_ACTOR_MODEL's, else the tool's own variable's
-// (Pi's PI_MODEL: what runs now), with ResolveIn the one the tool's hooks
-// recorded for the session, else id's when it is id's tool; the
-// session R3V_ACTOR_SESSION's, else the tool's own.
+// another; AI_AGENT alone (no tool's own marker) doesn't, it is too vague.
+// The model is R3V_ACTOR_MODEL's, with ResolveIn the one the tool's hooks
+// recorded for the session, else id's when it is id's tool; the session
+// R3V_ACTOR_SESSION's, else the tool's own.
 func Resolve(getenv func(string) string, id *Identity) (a *manifest.Actor, from string) {
 	return resolve(getenv, id, nil)
 }
@@ -136,9 +136,9 @@ func resolve(getenv func(string) string, id *Identity, sessionModel func(tool, s
 		return nil, ""
 	}
 	if tool == "" {
-		announced := Announced(getenv)
+		announced, generic := announcedBy(getenv)
 		switch {
-		case id != nil && (announced == "" || announced == id.Tool):
+		case id != nil && (announced == "" || announced == id.Tool || generic):
 			tool, from = id.Tool, FromCopy
 		case announced != "":
 			tool, from = announced, FromTool
@@ -148,13 +148,8 @@ func resolve(getenv func(string) string, id *Identity, sessionModel func(tool, s
 	}
 	a = &manifest.Actor{Kind: manifest.ActorAgent, Tool: tool,
 		Model: clean(getenv(EnvModel)), Session: clean(getenv(EnvSession))}
-	if m := markerOf(getenv, tool); m != nil { // (the tool's own, when it runs here)
-		if a.Model == "" && m.ModelVar != "" {
-			a.Model = clean(getenv(m.ModelVar))
-		}
-		if a.Session == "" && m.SessionVar != "" {
-			a.Session = clean(getenv(m.SessionVar))
-		}
+	if m := markerOf(getenv, tool); m != nil && a.Session == "" && m.SessionVar != "" { // (the tool's own, when it runs here)
+		a.Session = clean(getenv(m.SessionVar))
 	}
 	if a.Model == "" && a.Session != "" && sessionModel != nil {
 		a.Model = sessionModel(tool, a.Session)
@@ -166,54 +161,67 @@ func resolve(getenv func(string) string, id *Identity, sessionModel func(tool, s
 }
 
 // marker is a variable an agent tool sets in the commands it runs, the
-// value saying it ("": any but empty), and the tool's own variables for
-// its model and session, if it has them. Only ones documented by the tool
-// or read in its source: docs/design/agent-identity.md has where. A tool
-// started from another inherits that one's marker: the more specific come
-// first (Kilo Code sets opencode's too), Claude Code's last.
+// value saying it ("": any but empty), and the tool's own variable for its
+// session, if it has one. Only the three mainstream tools (tools change
+// fast: each marker is code to keep up; any other is set up with `agent
+// setup --tool`, R3V_ACTOR, or found by AI_AGENT); docs/design/agent-
+// identity.md has where each is documented. A tool started from another
+// inherits that one's marker: Claude Code's comes last.
 type marker struct {
-	Var, Value, Tool     string
-	ModelVar, SessionVar string
+	Var, Value, Tool string
+	SessionVar       string
 }
 
 var markers = []marker{
-	{Var: "KILO_PID", Tool: "kilo-code"},
 	{Var: "CODEX_THREAD_ID", Tool: "codex", SessionVar: "CODEX_THREAD_ID"},
-	{Var: "OPENCODE", Value: "1", Tool: "opencode", SessionVar: "OPENCODE_SESSION_ID"},
-	{Var: "GEMINI_CLI", Value: "1", Tool: "gemini-cli"},
-	{Var: "QWEN_CODE", Value: "1", Tool: "qwen-code"},
-	{Var: "PI_CODING_AGENT", Value: "true", Tool: "pi", ModelVar: "PI_MODEL", SessionVar: "PI_SESSION_ID"},
 	{Var: "CURSOR_AGENT", Value: "1", Tool: "cursor"},
-	{Var: "CLINE_ACTIVE", Value: "true", Tool: "cline"},  // (in the terminals it opens)
-	{Var: "ROO_ACTIVE", Value: "true", Tool: "roo-code"}, // (in VS Code terminals, not its inline runner)
-	{Var: "COPILOT_AGENT", Value: "1", Tool: "copilot"},  // (VS Code's agent mode)
-	{Var: "GOOSE_TERMINAL", Value: "1", Tool: "goose"},
 	{Var: "CLAUDECODE", Value: "1", Tool: "claude-code", SessionVar: "CLAUDE_CODE_SESSION_ID"},
 }
 
+// EnvAIAgent is the cross-tool variable more and more agent tools set
+// (VS Code's agent mode, Claude Code, opencode, Pi...), its value naming
+// the tool in no agreed form: the fallback when no tool's own marker is
+// set.
+const EnvAIAgent = "AI_AGENT"
+
+// GenericTool is the tool's name when AI_AGENT's value can't be one.
+const GenericTool = "agent"
+
 // Markers are the tools' variables R3V reads (tests clear them).
 func Markers() []string {
-	var out []string
+	out := []string{EnvAIAgent}
 	for _, m := range markers {
 		out = append(out, m.Var)
-		for _, v := range []string{m.ModelVar, m.SessionVar} {
-			if v != "" && v != m.Var {
-				out = append(out, v)
-			}
+		if m.SessionVar != "" && m.SessionVar != m.Var {
+			out = append(out, m.SessionVar)
 		}
 	}
 	return out
 }
 
-// Announced is the tool among those that mark the commands they run, ""
-// when none does.
+// Announced is the tool among those that mark the commands they run, else
+// AI_AGENT's (its value when that can be a tool's name, else "agent"); ""
+// when none says.
 func Announced(getenv func(string) string) string {
+	tool, _ := announcedBy(getenv)
+	return tool
+}
+
+// announcedBy is Announced; generic: only AI_AGENT said it.
+func announcedBy(getenv func(string) string) (tool string, generic bool) {
 	for _, m := range markers {
 		if m.set(getenv) {
-			return m.Tool
+			return m.Tool, false
 		}
 	}
-	return ""
+	v := clean(getenv(EnvAIAgent))
+	if v == "" || strings.EqualFold(v, None) {
+		return "", false
+	}
+	if name, ok := ToolName(v); ok {
+		return name, true
+	}
+	return GenericTool, true
 }
 
 func (m marker) set(getenv func(string) string) bool {
