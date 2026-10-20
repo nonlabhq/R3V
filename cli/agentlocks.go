@@ -314,12 +314,8 @@ type hookInput struct {
 		FilePath     string          `json:"file_path"`
 		NotebookPath string          `json:"notebook_path"`
 		Edits        json.RawMessage `json:"edits"`
-		Command      string          `json:"command"` // Bash, PowerShell
 	} `json:"tool_input"`
 }
-
-// shellTools are Claude Code's tools that run a command.
-var shellTools = map[string]bool{"Bash": true, "PowerShell": true}
 
 type hookOutput struct {
 	HookSpecificOutput hookDecision `json:"hookSpecificOutput"`
@@ -333,10 +329,9 @@ type hookDecision struct {
 }
 
 // cmdHook: r3v hook pre-tool, Claude Code's PreToolUse hook (and prompt,
-// post-tool: steps; session-start, model-switch: the model). These always
-// exit 0: a hook that fails (exit 2) would stop the agent's every change.
-// worktree-create and worktree-remove (agenthooks.go) fail when they
-// can't do it: Claude Code then makes or removes no worktree.
+// post-tool: steps; session-start, model-switch: the model, agenthooks.go).
+// Always exits 0: a hook that fails (exit 2) would stop the agent's every
+// change.
 func cmdHook(args []string) error {
 	if len(args) != 1 {
 		return nil
@@ -348,33 +343,20 @@ func cmdHook(args []string) error {
 		hookSteps(args[0], os.Stdin, os.Stdout)
 	case "session-start", "model-switch":
 		hookModel(os.Stdin)
-	case "worktree-create":
-		return hookWorktreeCreate(os.Stdin, os.Stdout)
-	case "worktree-remove":
-		return hookWorktreeRemove(os.Stdin)
 	}
 	return nil // a hook from a newer R3V: nothing to say
 }
 
 // hookPreTool reads a tool call and answers: a deny (with who holds the
 // file) when another workspace holds it, a note when another claims it,
-// else nothing (Claude Code goes on as it would); a deny for a command
-// making or removing a git worktree in an R3V project. Anything unexpected
+// else nothing (Claude Code goes on as it would). Anything unexpected
 // says nothing: the hook never stands in the way by mistake.
 func hookPreTool(in io.Reader, out io.Writer) {
+	if !project.AgentLocks {
+		return
+	}
 	var h hookInput
-	if json.NewDecoder(io.LimitReader(in, 16<<20)).Decode(&h) != nil {
-		return
-	}
-	if shellTools[h.ToolName] {
-		if why := gitWorktreeDenial(h.ToolInput.Command, h.Cwd); why != "" {
-			data, _ := json.Marshal(hookOutput{hookDecision{HookEventName: "PreToolUse",
-				PermissionDecision: "deny", PermissionDecisionReason: why}})
-			out.Write(append(data, '\n'))
-		}
-		return
-	}
-	if !project.AgentLocks || !hookTools[h.ToolName] {
+	if json.NewDecoder(io.LimitReader(in, 16<<20)).Decode(&h) != nil || !hookTools[h.ToolName] {
 		return
 	}
 	paths := []string{h.ToolInput.FilePath, h.ToolInput.NotebookPath}

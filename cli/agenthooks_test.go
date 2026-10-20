@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/nonlabhq/r3v/internal/actor"
-	"github.com/nonlabhq/r3v/internal/project"
 )
 
 // runHook runs `r3v hook <kind>` in dir as Claude Code does: input on
@@ -35,48 +34,14 @@ func runHook(t *testing.T, dir, kind string, input any) (int, string, string) {
 	return code, string(out), string(errOut)
 }
 
-// Claude Code's WorktreeCreate makes an R3V workspace set up for it, and
-// prints its folder, absolute, alone on stdout (the rest on stderr); the
-// same name again is that workspace. WorktreeRemove refuses while the
-// workspace's work isn't merged (the folder stays), and removes it once
-// it is.
-func TestHookWorktrees(t *testing.T) {
+// workspace list says which workspaces can go: merged into their base,
+// nothing changed (agent tools leave them behind).
+func TestWorkspaceListMerged(t *testing.T) {
 	a := teamProject(t)
-	in := map[string]any{"session_id": "sess-1", "transcript_path": "", "cwd": a,
-		"hook_event_name": "WorktreeCreate", "name": "fix-menu"}
-	code, out, errOut := runHook(t, a, "worktree-create", in)
-	r, _ := project.Open(a)
-	want := r.DefaultWorkspaceFolder("fix-menu")
-	if code != 0 || out != want+"\n" || !filepath.IsAbs(strings.TrimSpace(out)) {
-		t.Fatalf("create: exit %d, stdout %q (want %q), stderr %q", code, out, want, errOut)
+	ws := filepath.Join(t.TempDir(), "fix-menu")
+	if exit, rep := run(t, a, "workspace", "add", ws, "--branch", "fix-menu", "--agent", "claude-code"); exit != 0 {
+		t.Fatalf("add: %+v", rep.Error)
 	}
-	if !strings.Contains(errOut, "fix-menu") {
-		t.Fatalf("stderr: %q", errOut)
-	}
-	ws := strings.TrimSpace(out)
-	if agentToolOf(ws) != "claude-code" {
-		t.Fatal("the workspace isn't set up for Claude Code")
-	}
-	if code, again, _ := runHook(t, a, "worktree-create", in); code != 0 || again != out {
-		t.Fatalf("again: %d %q", code, again)
-	}
-
-	t.Run("in the workspace", func(t *testing.T) {
-		os.WriteFile(filepath.Join(ws, "src", "menu.ts"), []byte("export const menu = 1;\n"), 0o644)
-		if exit, rep := run(t, ws, "commit", "-m", "Menu"); exit != 0 {
-			t.Fatalf("commit: %+v", rep.Error)
-		}
-	})
-	rm := map[string]any{"session_id": "sess-1", "cwd": a, "hook_event_name": "WorktreeRemove", "worktree_path": ws}
-	code, out, errOut = runHook(t, a, "worktree-remove", rm)
-	if code == 0 || out != "" || !strings.Contains(errOut, "not merged") || !strings.Contains(errOut, "nothing was deleted") {
-		t.Fatalf("remove before merging: exit %d, %q %q", code, out, errOut)
-	}
-	if _, err := os.Stat(filepath.Join(ws, "src", "menu.ts")); err != nil {
-		t.Fatal("the unmerged work is gone")
-	}
-
-	// workspace list says when one can go.
 	listed := func() *bool {
 		exit, rep := run(t, a, "workspace", "list")
 		var ls struct{ Workspaces []workspaceJSON }
@@ -86,6 +51,15 @@ func TestHookWorktrees(t *testing.T) {
 		}
 		return ls.Workspaces[0].Merged
 	}
+	if m := listed(); m == nil || !*m {
+		t.Fatalf("a new workspace: %v", m)
+	}
+	t.Run("in the workspace", func(t *testing.T) {
+		os.WriteFile(filepath.Join(ws, "src", "menu.ts"), []byte("export const menu = 1;\n"), 0o644)
+		if exit, rep := run(t, ws, "commit", "-m", "Menu"); exit != 0 {
+			t.Fatalf("commit: %+v", rep.Error)
+		}
+	})
 	if m := listed(); m == nil || *m {
 		t.Fatalf("merged before merging: %v", m)
 	}
@@ -94,70 +68,6 @@ func TestHookWorktrees(t *testing.T) {
 	}
 	if m := listed(); m == nil || !*m {
 		t.Fatalf("not merged after merging: %v", m)
-	}
-	if code, _, errOut := runHook(t, a, "worktree-remove", rm); code != 0 {
-		t.Fatalf("remove: %d %q", code, errOut)
-	}
-	if _, err := os.Stat(ws); !os.IsNotExist(err) {
-		t.Fatalf("the folder is still there: %v", err)
-	}
-	if code, _, errOut := runHook(t, a, "worktree-remove", rm); code != 0 {
-		t.Fatalf("remove again: %d %q", code, errOut)
-	}
-	// A folder that isn't R3V's is left as it is.
-	other := t.TempDir()
-	rm["worktree_path"] = other
-	if code, _, errOut := runHook(t, a, "worktree-remove", rm); code == 0 || !strings.Contains(errOut, "leaves it") {
-		t.Fatalf("not a workspace: %d %q", code, errOut)
-	}
-}
-
-func agentToolOf(folder string) string {
-	data, _ := os.ReadFile(filepath.Join(folder, ".claude", "settings.local.json"))
-	var s struct {
-		Env   map[string]string `json:"env"`
-		Hooks map[string]any    `json:"hooks"`
-	}
-	json.Unmarshal(data, &s)
-	if s.Hooks["WorktreeCreate"] == nil {
-		return ""
-	}
-	return s.Env[actor.EnvTool]
-}
-
-// The pre-tool hook refuses `git worktree add` and `remove` in an R3V
-// project, Bash or PowerShell, with R3V's command instead; other git
-// commands, and git worktree outside a project, go on.
-func TestHookPreToolGitWorktree(t *testing.T) {
-	dir, _ := agentFolder(t)
-	call := func(tool, command, cwd string) string {
-		b, _ := json.Marshal(map[string]any{"session_id": "s", "cwd": cwd, "hook_event_name": "PreToolUse",
-			"tool_name": tool, "tool_input": map[string]any{"command": command}})
-		return string(b)
-	}
-	for _, c := range []struct {
-		tool, command, want string
-	}{
-		{"Bash", "git worktree add ../x -b x", "r3v workspace add --branch <name> --agent claude-code"},
-		{"Bash", "cd src && git -C .. worktree add -b x ../../x", "r3v workspace add"},
-		{"PowerShell", "git --no-pager worktree remove ../x", "r3v workspace remove"},
-		{"Bash", "git worktree list", ""},
-		{"Bash", "git status && echo worktree add", ""},
-		{"Bash", "go test ./...", ""},
-	} {
-		d, _ := hook(t, call(c.tool, c.command, dir))
-		if c.want == "" {
-			if d.PermissionDecision != "" {
-				t.Errorf("%q: %+v", c.command, d)
-			}
-			continue
-		}
-		if d.PermissionDecision != "deny" || !strings.Contains(d.PermissionDecisionReason, c.want) {
-			t.Errorf("%q: %+v", c.command, d)
-		}
-	}
-	if d, _ := hook(t, call("Bash", "git worktree add ../x", t.TempDir())); d.PermissionDecision != "" {
-		t.Fatalf("not a project: %+v", d)
 	}
 }
 

@@ -1,6 +1,7 @@
 ## Version control: R3V
 
-This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help agents`.
+This project is versioned with R3V (`.r3v/`): commit, update and merge with `r3v`. Full guide:
+`r3v help agents`.
 
 - `r3v status --json`: what changed; `r3v update --preview --json`: what teammates shared on your
   branch. `r3v update` only gets your branch's versions: in a workspace, `base` in `status --json`
@@ -19,10 +20,12 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   hunk by hunk (`text:<path>#<n>`): decide each with `--resolve <key>=ours|theirs|both`, or give the
   file as it should be with `--resolved <path>=<file>`; ask the user when unsure. A lockfile that
   won't merge: take one side, then regenerate it (`npm install`, `cargo update -w`).
-- On `set_open_in_live` (exit 4) ask the user to close the set in Ableton Live.
-- Working in parallel (a second task at once, a subagent): `r3v workspace add --branch NAME
-  --agent <your tool> --json` makes the folder, its branch and the agent setup in one go; work
-  there. Never `git worktree`: R3V doesn't see it (its work isn't committed, shared or merged).
+- On `set_open_in_live` (exit 4) ask the user to close the set in Ableton Live; on
+  `files_open_in_tool` (exit 4), to save and close the project in that tool (Unity, Unreal, Godot...).
+- Working in parallel (a second task at once): R3V doesn't see a git worktree, so work done in one
+  is never committed, shared or merged by R3V. Instead, one command makes the folder, its branch
+  and the agent setup: `r3v workspace add --branch NAME --agent <your tool> --json`; then
+  start your tool in that folder.
 - Working beside other agents, each in a workspace of its own (`r3v workspace list --json`): stay in
   yours. A change refused by the hook, or `files_locked_by_agent`, means another agent or the user is
   on that file (textures, models, sounds): don't wait or retry, do other work and tell the user. The
@@ -36,6 +39,6 @@ This project is versioned with R3V (`.r3v/`), not git. Full guide: `r3v help age
   `connected: false` in `r3v status --json`: the versions stay on this computer; `next` says how to
   connect it (ask the user which team).
 - Once per folder: `r3v agent setup --tool <your tool> [--model <model>]` (`claude-code`, `codex`,
-  `opencode`, `gemini-cli`, `cursor`, `pi`...), so the versions you commit say an agent made them.
+  `cursor`, or your tool's own name), so the versions you commit say an agent made them.
 - Never use `--force` without asking, never print connection codes (they hold storage keys), don't
   edit `.r3v/`, and keep it out of formatters and linters (Biome `"!**/.r3v"`, `.prettierignore`).

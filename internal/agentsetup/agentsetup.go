@@ -63,9 +63,8 @@ func Setup(root, dir string, o Options) ([]string, actor.Identity, error) {
 }
 
 // HookMatcher is the Claude Code tools the hook is asked about: those that
-// change a file, and the shells (a `git worktree` R3V doesn't see is
-// turned away to `r3v workspace add`).
-const HookMatcher = "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell"
+// change a file.
+const HookMatcher = "Edit|Write|MultiEdit|NotebookEdit"
 
 // HookCommand is how Claude Code runs the hook of the r3v program at exe:
 // `r3v` when that is the r3v on PATH, else its full path (another r3v on
@@ -88,9 +87,8 @@ func HookCommand(exe string) string {
 // (.claude/settings.local.json, which R3V never tracks: the hook's path and
 // R3V_ACTOR are this computer's; merged with what's there) and, with guide,
 // the agents' guide (Guide: the project's, committed, so only in the main
-// copy). Its hooks: before a tool call (locks; git worktree refused), the
-// worktrees Claude Code makes and removes (R3V workspaces), the session's
-// model. With steps, the hooks that make steps too (a turn per prompt, a
+// copy). Its hooks: before a tool call (locks), the session's model (only
+// read: what its versions say). With steps, the hooks that make steps too (a turn per prompt, a
 // step after each tool call); without, they are taken out. Running it
 // again changes nothing. It returns the files it wrote, relative to root.
 func ClaudeCode(root, command string, guide, steps bool) ([]string, error) {
@@ -119,10 +117,11 @@ func ClaudeCode(root, command string, guide, steps bool) ([]string, error) {
 	}
 	setHook(hooks, "PreToolUse", HookMatcher, command)
 	base := strings.TrimSuffix(command, "pre-tool")
-	// Worktrees Claude Code makes (claude --worktree, subagents' isolation)
-	// are R3V workspaces; the session's model is recorded for its versions.
-	for event, hook := range claudeHooks {
+	for event, hook := range modelHooks {
 		setHook(hooks, event, "", base+hook)
+	}
+	for _, event := range droppedHooks {
+		setHook(hooks, event, "", "")
 	}
 	if steps {
 		setHook(hooks, "PostToolUse", "*", base+"post-tool")
@@ -397,7 +396,8 @@ func setHook(hooks map[string]any, event, matcher, command string) {
 func IsOurHook(c any) bool {
 	s, _ := c.(string)
 	s = strings.TrimSpace(s)
-	for _, h := range []string{"pre-tool", "post-tool", "prompt", "worktree-create", "worktree-remove", "session-start", "model-switch"} {
+	// (worktree-create, worktree-remove: a test build's, taken out)
+	for _, h := range []string{"pre-tool", "post-tool", "prompt", "session-start", "model-switch", "worktree-create", "worktree-remove"} {
 		if strings.HasSuffix(s, "hook "+h) {
 			return true
 		}
@@ -405,14 +405,16 @@ func IsOurHook(c any) bool {
 	return false
 }
 
-// claudeHooks are the Claude Code hooks put in every time, by event: the
-// `r3v hook` each runs.
-var claudeHooks = map[string]string{
-	"WorktreeCreate":  "worktree-create",
-	"WorktreeRemove":  "worktree-remove",
+// modelHooks are the hooks that only read the session's model (Claude
+// Code has no variable for it), by event: the `r3v hook` each runs.
+var modelHooks = map[string]string{
 	"SessionStart":    "session-start",
 	"PostModelSwitch": "model-switch",
 }
+
+// droppedHooks are events a test build of R3V hooked (its worktree hooks,
+// which stood in for Claude Code's own): ours there are taken out.
+var droppedHooks = []string{"WorktreeCreate", "WorktreeRemove"}
 
 // CopyTool is the agent tool the copy in root is set up for: Claude
 // Code's settings (ToolOf), else the copy's identity; "" when none.
