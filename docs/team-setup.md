@@ -60,10 +60,11 @@ The sidebar lists every song in the current team. Songs not on this computer yet
 
 If you move a downloaded project folder, R3V marks it with ⚠: click **Locate folder…** to point it at the new place.
 
-The **⋯** menu next to a project: **Pin to top**, **Open in Live** (or the project's program), **Open folder** and **Settings…**. The project's settings (also the ⚙ by its title) hold:
+The **⋯** menu next to a project: **Open in {its program}** (Live, Unity…), **Open folder**, **Move to** (a section) and **Settings…**. The project's settings (also its **Settings** tab) hold:
 
 - **Name** — rename it for everyone in the team; the folder keeps its name.
 - **Rules** — which files are versioned (`.r3v.yaml`).
+- **Workflow** — file locking and the agents' settings; **Set up AI agents…**.
 - **Check project…** — read its whole history again, looking for damage.
 - **Unlink folder** — R3V stops listing the folder here; nothing is deleted.
 - **Delete from the team…** — delete it for everyone (you type its name to confirm). Copies already on someone's computer are kept.
@@ -86,7 +87,7 @@ If the team's bucket itself is gone (deleted, or its keys lost): create a new bu
 ## Everyday use
 
 - Work in Live as usual and press **Ctrl+S**. Your changes appear under **Changes**, track by track.
-- When you reach a point worth sharing, describe it and click **Commit version & share**. If a teammate committed in the meantime, R3V shows what they changed and lets you choose: combine your work with theirs (track by track; where you both changed the same track, it asks which to keep: yours, theirs, or both as two tracks), put your work on a new branch, or discard it.
+- When you reach a point worth sharing, describe it and click **Commit & Share**. If a teammate committed in the meantime, R3V shows what they changed and lets you choose: combine your work with theirs (track by track; where you both changed the same track, it asks which to keep: yours, theirs, or both as two tracks), put your work on a new branch, or discard it.
 - When a teammate saves, R3V shows it. Click **Preview** to see what changed, **Get updates** to take it. Close the set in Live first: R3V changes the files on disk and Live would overwrite them.
 - To stay out of each other's way, work on your own branch (**⑂ → New branch from here…**) and merge it into the main branch when it's ready (History tab → **Merge** on its latest version), or use your own `.als` in the same project and combine the sets in Live later. Editing the same set on the same branch works too: R3V combines your changes track by track and only asks when you both changed the same track.
 

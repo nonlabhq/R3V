@@ -1,6 +1,6 @@
 # Design: pluggable storage backends
 
-Status: steps 1–5 of the implementation plan are done. The direct object storage backend passes the contract tests against an in-memory fake, Versity S3 Gateway v1.8.0 and Cloudflare R2 (including concurrent branch updates). Step 6 is open.
+Status: built. The direct object storage backend passes the contract tests against an in-memory fake, Versity S3 Gateway v1.8.0 and Cloudflare R2 (including concurrent branch updates). The hosted service is R3V Cloud, in every build since 0.2 (below). Of step 6, `r3v gc` (this computer) and `r3v storage-cleanup` (a team's own storage) were built; `r3v migrate` wasn't: a team moves to R3V Cloud by the service's own copy ([moving.md](moving.md)).
 
 ## Summary
 
@@ -9,7 +9,7 @@ This document describes the `Backend` interface in the client and its implementa
 | Mode | Backend | Runs where |
 |---|---|---|
 | **Direct object storage** | clients read and write an S3-compatible bucket directly | any S3-compatible service, or a self-hosted S3-compatible server (e.g. on a NAS) |
-| **Hosted service** (possible later) | HTTP API for metadata; file transfers go straight to object storage via presigned URLs | a managed deployment |
+| **Hosted service** (R3V Cloud) | HTTP API for metadata; file transfers go straight to object storage via presigned URLs | a managed deployment |
 
 Because both use the same object layout, a team can move between them by copying data.
 
@@ -131,8 +131,9 @@ every feature at once:
   conditional: only if absent, or only if the etag still holds), Delete,
   List (in key order, a page at a time, from a key) and Folders. It knows
   nothing about R3V. Implementations: `s3Bucket` (signed S3 requests,
-  multipart for big objects, retries for small requests); later the hosted
-  service's brokered access (presigned URLs, branch moves through its API).
+  multipart for big objects, retries for small requests) and the hosted
+  service's brokered access (`broker.go`: presigned URLs, branch moves
+  through its API).
 - **`BucketBackend`** (`internal/remote/s3.go`, `gc.go`, `keys.go`):
   everything a team stores, written once on top of a Bucket: projects,
   versions, branches (compare-and-swap through conditional writes), members,
@@ -179,8 +180,9 @@ so `BucketBackend` and every feature on it work unchanged:
   reconnects with backoff and then looks at every project, since notices
   sent meanwhile are lost.
 
-Still to come: file locks, the app's screens, and cleanup and backup
-project by project.
+File locks are built on hosted teams ([locks.md](locks.md)). Still to
+come: storage cleanup project by project (refused on hosted teams for
+now: `ErrCleanupPerProject`, the service looks after its storage).
 
 Client-side encryption of file contents is compatible with this design because all diffing and merging happens in the client: the backend only ever needs hashes and bytes. Deduplication would then use a keyed hash per team.
 

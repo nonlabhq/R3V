@@ -14,7 +14,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build-windows.ps1   # -> dist\R
 
 The release number lives in `internal/version/version.go`; the build script reads it for the installer name and the file properties of `R3V.exe`.
 
-Two release lines come from `main`: Stable (the default build) and Nightly (`-tags nightly`; the build script's `-Channel nightly`), which adds the project kinds still in testing from `presets/`. Run their tests with `go test -tags nightly ./...` too. See [design/channels.md](design/channels.md).
+Two release lines come from `main`: Stable (the default build) and Nightly (`-tags nightly`; the build script's `-Channel nightly`), which adds what is still in testing (today: moving projects between teams, and the style lab). Run their tests with `go test -tags nightly ./...` too. See [design/channels.md](design/channels.md).
 
 The desktop app is in `desktop/` (Go + Svelte 5 frontend in `desktop/frontend/`). After changing Go methods the frontend calls, regenerate the TypeScript bindings:
 
@@ -48,7 +48,7 @@ in `src/shared/tokens.css`.
 ## Layout
 
 - `cmd/r3v` — command line tool (package `cli`; `--json` results and error codes in `cli/output.go`)
-- `docs/` — also a Go package: embeds `agents.md` for `r3v help agents`
+- `docs/` — also a Go package: embeds `agents.md` and `agents-snippet.md` for `r3v help agents [--snippet]`, and `profiles.md` for `r3v help rules`
 - `desktop/` — Windows desktop app (Wails v3, Svelte 5); installer in `desktop/build/windows/installer.nsi`
   - `desktop/frontend/src/shared/` — what the App shares with R3V Cloud's web app (tokens, icons, the version graph, small components), imported as `$shared/…`; it never imports the App (its README)
 - `internal/xmltree` — ordered XML tree with byte-exact round-trip of Live's output
@@ -57,7 +57,7 @@ in `src/shared/tokens.css`.
 - `internal/merge` — track-level 3-way merge (tracks, placement, order, sends, globals) with id repair
 - `internal/store` — content-addressed blob store (SHA-256)
 - `internal/project` — versions, status, history, restore with sample relinking; `sync.go` does save/update/clone and merges
-- `internal/teamwatch` — background watcher: backs up unsaved work, teammates' edits (soft locks), new versions
+- `internal/teamwatch` — background watcher: tells about versions teammates committed on the project's branch (never changes files)
 - `internal/livecheck` — detects a running Live before rewriting sets
 - `internal/manifest` — version records and folder trees
 - `internal/remote` — the `Backend` interface and its implementation on S3-compatible object storage (extensions can register more)

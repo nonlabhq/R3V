@@ -4,7 +4,7 @@ The desktop app covers everyday use, including creating a team on Cloudflare R2.
 
 Coming from Git: [R3V for Git users](git-users.md) and the [glossary](glossary.md).
 
-**Scripts and AI agents:** `init`, `status`, `log`, `commit`, `update`, `merge`, `undo-merge`, `switch`, `goto`, `discard`, `parked`, `workspace`, `rules ignore`, `verify`, `agent setup` and `version` take `--json` (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
+**Scripts and AI agents:** most commands take `--json` (the list is under `--json` in `r3v help`) (one JSON object on stdout, errors with fixed codes), and no command ever waits for an answer. See [R3V for AI agents](agents.md), also printed by `r3v help agents`. Every command takes `--help` (its lines of `r3v help`); `r3v help rules` prints [the project's rules](profiles.md) (`.r3v.yaml`).
 
 While the app or another command is working on the project, commands that change it wait up to 10 seconds (`--wait SECONDS` for longer or less), then fail saying who has it (`r3v commit (pid 1234) since 14:02:11`); commands that only read it (`status`, `log`, `diff`, `branch`…) read it as it is, without waiting, and say so. A file R3V may not write at all (a sandbox, a read-only folder) is not someone working: that fails at once, naming the path (`no_write_access`).
 
@@ -172,7 +172,7 @@ when the work is done (`r3v merge renderer`).
   folders are copied (block-cloned on ReFS and Dev Drive), links left out.
 - `r3v result tests pass -m "…"` in a workspace records what its tests (or
   a build) said about the version it is on; `workspace list` and the app's
-  Agents tab show it (`r3v results [VERSION]` lists a version's).
+  Workspaces tab show it (`r3v results [VERSION]` lists a version's).
 - The workspaces share the main copy's store and versions (`.r3v` of the
   main copy); each keeps its own place, files list and parked changes in
   its own `.r3v`. Freeing space (`gc`) in any copy keeps what every copy
@@ -284,7 +284,7 @@ Or in the app: the team's settings (⚙) → **Storage cleanup**. Deleted projec
 ## AI agents on one computer
 
 ```
-r3v agent setup --tool claude-code     # (every build) in a project or workspace folder: Claude Code's hook, R3V_ACTOR, the guide
+r3v agent setup --tool claude-code     # in a project or workspace folder: Claude Code's hook, R3V_ACTOR, the guide
 r3v lock <paths…> [--claim]            # lock files or folders for this workspace, all or none
 r3v unlock <paths…>                    # free this workspace's locks
 r3v locks                              # every agent lock here (stale ones marked), and the files the person changed

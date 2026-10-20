@@ -2,7 +2,7 @@
 
 [English](README.md) | **繁體中文**
 
-給創作專案用的版本管理與團隊協作工具：以 Ableton Live 為主，Unity、Unreal、Godot 專案測試中。
+給創作專案用的版本管理與團隊協作工具：Ableton Live、Unity、Unreal、Godot 專案，設計檔與程式碼。
 
 > **開發中（WIP）。** R3V 目前是 Windows 上的早期預覽版，已在 Ableton Live 12 上測試。1.0 之前可能還有粗糙之處與變動，重要的專案請自行另外備份。
 
@@ -12,13 +12,13 @@
 
 **取樣自動跟著走。** 硬碟上任何地方的取樣都會跟著版本保存，並在隊友的電腦上重新連結。大檔案（stems、影片）會切塊保存，小改動不必整個重傳；大檔案也會在你提交前先在背景上傳。
 
-**開源，儲存空間屬於你。** R3V 免費，以 Apache-2.0 授權。團隊的作品放在你自己的 S3 相容儲存空間（Cloudflare R2、Amazon S3、MinIO…），不在我們的伺服器上。小團隊通常在 Cloudflare R2 的免費額度內，也不需要有一台電腦一直開著。
+**開源，儲存空間由你選。** R3V 免費，以 Apache-2.0 授權。團隊的作品可以放在 **R3V Cloud**（登入就能開始；目前封閉測試中），或放在團隊自己的 S3 相容儲存空間（Cloudflare R2、Amazon S3、MinIO…），中間不經過我們的伺服器。用自己儲存空間的小團隊通常在 Cloudflare R2 的免費額度內，也不需要有一台電腦一直開著。
 
 ## 限制
 
-- **目前只支援 Windows**（macOS 在計畫中）。Unity、Unreal、Godot 專案在測試期間放在 Nightly 頻道（設定 › 更新）。
+- **目前只支援 Windows**（macOS 在計畫中）。
 - **不會同步外掛。** R3V 不會複製外掛，也無法收集外掛從專案外載入的取樣（例如 Kontakt 或 Serum 裡的）。如果隊友沒有同樣的外掛，分享前請先 freeze 那些音軌，或使用 Live 內建的裝置，它們能完整同步。
-- **拿到 connection code 的人都有完整權限。** 這組代碼包含儲存空間的金鑰：持有的人可以讀取、修改、刪除團隊所有作品。請私下傳給信任的人。如果外流，請建立新的金鑰並傳送新的代碼。
+- **用團隊自己的儲存空間時，拿到 connection code 的人都有完整權限。** 這組代碼包含儲存空間的金鑰：持有的人可以讀取、修改、刪除團隊所有作品。請私下傳給信任的人。如果外流，請建立新的金鑰並傳送新的代碼。（R3V Cloud 上是用邀請加入、登入使用，沒有金鑰要傳。）
 
 ## 開始使用
 
@@ -26,16 +26,18 @@
 
 每個專案都放在團隊的儲存空間裡，硬碟壞了版本也還在。**一個人用？** 建立只有自己的團隊就好。
 
-**建立團隊（一個人做）：** 選 **Create a team**，照步驟建立 Cloudflare R2 的 bucket 和金鑰（約 5 分鐘），或填入其他 S3 相容的儲存空間。R3V 確認後會給你一組 **connection code**，傳給隊友。
+**用 R3V Cloud：** 選 **R3V-Cloud**，用瀏覽器登入，然後建立團隊（封閉測試期間需要邀請），或用邀請連結加入團隊。
 
-**加入團隊：** 選 **Join a team**，貼上收到的 connection code，然後下載團隊的專案或加入你自己的。
+**用自己的儲存空間（由一個人設定）：** 選 **Create a team**，照步驟建立 Cloudflare R2 的 bucket 和金鑰（約 5 分鐘），或填入其他 S3 相容的儲存空間。R3V 確認後會給你一組 **connection code**，傳給隊友；隊友選 **Join a team** 貼上即可。
 
-詳細步驟和日常使用請看 [團隊設定指南](docs/team-setup.md)。
+接著下載團隊的專案，或加入你自己的。詳細步驟和日常使用請看 [團隊設定指南](docs/team-setup.md)。
 
 ## 更多
 
 - [團隊設定指南](docs/team-setup.md)
+- [讓 AI agent 在你的專案上工作](docs/agents-quickstart.md)
 - [命令列工具](docs/cli.md)
+- [給 Git 使用者的 R3V](docs/git-users.md) 與 [詞彙表](docs/glossary.md)
 - [給 AI agent 的說明](docs/agents.md)（Claude Code、Codex、Cursor…）
 - [建置與開發](docs/development.md)
 
