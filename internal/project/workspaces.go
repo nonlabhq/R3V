@@ -458,6 +458,11 @@ type WorkspaceStatus struct {
 	Missing bool
 	// Results: what the checks said about the version it is on (Results).
 	Results map[string]Result
+	// Merged: all its versions are in its base branch and it has nothing
+	// changed or parked, so removing it loses nothing (what remove checks).
+	// False when the team can't be reached. Agent tools leave such ones
+	// behind (Claude Code removes no subagent's worktree).
+	Merged bool
 }
 
 // WorkspaceStatuses lists the workspaces with where each is (see
@@ -510,7 +515,8 @@ func (r *Repo) WorkspaceStatusesAgainst(against string) ([]WorkspaceStatus, erro
 		if fi, err := os.Stat(filepath.Join(ws.Dir, "HEAD")); err == nil && fi.ModTime().After(s.LastActivity) {
 			s.LastActivity = fi.ModTime()
 		}
-		if changes, err := ws.Status(); err == nil {
+		changes, statusErr := ws.Status()
+		if statusErr == nil {
 			s.Changes = len(changes)
 			for _, ch := range changes {
 				if fi, err := os.Stat(ws.Abs(ch.Path)); err == nil && fi.ModTime().After(s.LastActivity) {
@@ -529,6 +535,7 @@ func (r *Repo) WorkspaceStatusesAgainst(against string) ([]WorkspaceStatus, erro
 					s.Ahead, s.Behind = &ahead, &behind
 				}
 			}
+			s.Merged = statusErr == nil && s.Changes == 0 && s.Parked == 0 && r.allMerged(c, ws, heads, e)
 			if team := heads[e.Branch]; team == "" || r.fetchSnapshots(c, team) == nil {
 				if n := r.unsharedOn(ws.tip(), team); n >= 0 {
 					s.Unshared = &n
@@ -538,6 +545,24 @@ func (r *Repo) WorkspaceStatusesAgainst(against string) ([]WorkspaceStatus, erro
 		out = append(out, s)
 	}
 	return out, nil
+}
+
+// allMerged: the workspace's versions, here and on its team branch, are
+// all in its base branch (as workspaceDone asks).
+func (r *Repo) allMerged(c remote.Backend, ws *Repo, heads map[string]string, e WorkspaceEntry) bool {
+	base := heads[e.Base]
+	if r.fetchSnapshots(c, base) != nil {
+		return false
+	}
+	for _, v := range []string{ws.tip(), heads[ws.BranchName()]} {
+		if r.fetchSnapshots(c, v) != nil {
+			return false
+		}
+		if ahead, _, err := r.aheadBehind(v, base); err != nil || ahead > 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // tip is the latest version of the branch this copy is on.
