@@ -30,12 +30,11 @@ Every project lives in a team's storage, so its versions are safe if a drive fai
 
 **On your own bucket (one person sets it up):** choose **Create a team** and follow the steps to create a Cloudflare R2 bucket and key (about 5 minutes), or enter any other S3-compatible storage. R3V checks it and gives you a **connection code** to send to your teammates, who choose **Join a team** and paste it.
 
-Then download the team's projects or add your own. The [team setup guide](docs/team-setup.md) has the details and everyday use.
+Then download the team's projects or add your own. [Getting started](docs/getting-started.md) has the details: choosing between R3V Cloud and your own bucket, everyday use, backups and AI agents.
 
 ## More
 
-- [Team setup guide](docs/team-setup.md)
-- [AI agents on your project](docs/agents-quickstart.md)
+- [Getting started](docs/getting-started.md), AI agents on your project included
 - [Command line tool](docs/cli.md)
 - [R3V for Git users](docs/git-users.md) and the [glossary](docs/glossary.md)
 - [R3V for AI agents](docs/agents.md) (Claude Code, Codex, Cursor…)
@@ -53,7 +52,7 @@ Because R3V looks after people's work, it leans on checks rather than trust:
 - End-to-end tests run real teams against real cloud storage (save, update, conflicts, interrupted uploads, restores).
 - Nothing rewrites a project file while its program has it open, and nothing deletes a teammate's work: updates keep your uncommitted changes, and storage cleanup and restores only touch what no version uses or what is missing.
 
-See [Building and development](docs/development.md), the design notes in [docs/design](docs/design) and the [UX principles](docs/ux-principles.md).
+See [Building and development](docs/development.md), the design notes in [docs/design](docs/design) and the [UX principles](docs/design/ux-principles.md).
 
 ## License
 

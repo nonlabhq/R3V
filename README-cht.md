@@ -30,12 +30,11 @@
 
 **用自己的儲存空間（由一個人設定）：** 選 **Create a team**，照步驟建立 Cloudflare R2 的 bucket 和金鑰（約 5 分鐘），或填入其他 S3 相容的儲存空間。R3V 確認後會給你一組 **connection code**，傳給隊友；隊友選 **Join a team** 貼上即可。
 
-接著下載團隊的專案，或加入你自己的。詳細步驟和日常使用請看 [團隊設定指南](docs/team-setup.md)。
+接著下載團隊的專案，或加入你自己的。詳細說明請看 [入門指南](docs/getting-started.md)（英文）：怎麼在 R3V Cloud 和自己的儲存空間之間選擇、日常使用、備份，以及 AI agent。
 
 ## 更多
 
-- [團隊設定指南](docs/team-setup.md)
-- [讓 AI agent 在你的專案上工作](docs/agents-quickstart.md)
+- [入門指南](docs/getting-started.md)（含讓 AI agent 在你的專案上工作）
 - [命令列工具](docs/cli.md)
 - [給 Git 使用者的 R3V](docs/git-users.md) 與 [詞彙表](docs/glossary.md)
 - [給 AI agent 的說明](docs/agents.md)（Claude Code、Codex、Cursor…）
@@ -53,7 +52,7 @@ R3V 是在維護者的主導與審查下，借助 AI 程式助手（Claude）開
 - 端對端測試用真實團隊對真實雲端儲存操作（提交、更新、衝突、中斷的上傳、還原）。
 - 程式開著專案時不會改寫專案檔案，也不會刪掉隊友的作品：更新會保留你未提交的變更，儲存空間清理和還原只會處理沒有版本用到的東西或遺失的東西。
 
-請參考 [建置與開發](docs/development.md)、[docs/design](docs/design) 裡的設計說明，以及 [UX 原則](docs/ux-principles.md)。
+請參考 [建置與開發](docs/development.md)、[docs/design](docs/design) 裡的設計說明，以及 [UX 原則](docs/design/ux-principles.md)。
 
 ## 授權
 

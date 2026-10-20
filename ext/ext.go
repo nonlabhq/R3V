@@ -12,7 +12,7 @@
 //	}
 //
 // Everything else in this repository is internal and may change; this
-// package is what stays put. See docs/extending.md.
+// package is what stays put. See docs/design/extending.md.
 package ext
 
 import (

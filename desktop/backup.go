@@ -475,7 +475,7 @@ func (a *App) Restore(teamID string, from RestoreSource, run string) (int, error
 
 // A team is settled on this computer once it has been here settleAfter or
 // has settleProjects projects: someone trying R3V out isn't reminded of
-// what could go wrong (see docs/ux-principles.md). A team with no time
+// what could go wrong (see docs/design/ux-principles.md). A team with no time
 // noted is taken as settled.
 const (
 	settleAfter    = 3 * 24 * time.Hour
